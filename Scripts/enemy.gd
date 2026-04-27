@@ -3,7 +3,7 @@ extends CharacterBody2D
 @export var Deathparticle : PackedScene
 
 const SPEED = 10.0
-var hp = 1
+var hp = 2
 var dmg = 2
 
 func _physics_process(delta: float) -> void:

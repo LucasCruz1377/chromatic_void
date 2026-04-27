@@ -2,7 +2,7 @@ extends Node2D
 
 @onready var target : Marker2D
 @onready var contpontos: Label = $GUI/Pontos
-@onready var player: CharacterBody2D = $CharacterBody2D
+@onready var player: CharacterBody2D = $Player
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 
