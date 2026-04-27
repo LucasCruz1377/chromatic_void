@@ -2,15 +2,8 @@
 
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="1_rkk6g"]
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://Rooms/Shader.tscn" id="2_2p674"]
-[ext_resource type="Script" uid="uid://h1nalnj0wo10" path="res://Scripts/button_fx.gd" id="2_q54p5"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3sat0"]
-bg_color = Color(0.6, 0.6, 0.6, 0)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jstqx"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u38va"]
-bg_color = Color(0.6, 0.6, 0.6, 0)
+[ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="2_3sat0"]
+[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://Rooms/buttonfx.tscn" id="3_jstqx"]
 
 [node name="TelaInicial" type="Node2D" unique_id=234702239]
 
@@ -26,9 +19,9 @@ anchor_left = 0.5
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -448.0
-offset_top = 32.0
-offset_right = -132.0
-offset_bottom = -32.0
+offset_top = 61.0
+offset_right = 127.16699
+offset_bottom = -32.1839
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.9684144, 0.9936988)
@@ -47,35 +40,32 @@ layout_mode = 2
 size_flags_horizontal = 2
 size_flags_vertical = 6
 
-[node name="Start" type="Button" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=1632418068]
-self_modulate = Color(0.90564203, 0.90564203, 0.90564203, 1)
+[node name="Start" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=1661321070 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 10
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 52
-theme_override_styles/normal = SubResource("StyleBoxFlat_3sat0")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_jstqx")
-theme_override_styles/hover = SubResource("StyleBoxFlat_u38va")
-text = "START"
 
-[node name="button_fx" type="Node" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Start" unique_id=1393556648]
-script = ExtResource("2_q54p5")
+[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
+color_trans = 0.2
+color1 = Color(0.54901963, 1, 1, 1)
 
-[node name="Start2" type="Button" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=386876060]
+[node name="Options" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 10
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 52
-text = "START"
+text = "OPTIONS"
 
-[node name="Start3" type="Button" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=1483600688]
+[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Options" unique_id=546462851 instance=ExtResource("3_jstqx")]
+color1 = Color(1, 0.78039217, 1, 1)
+
+[node name="Credits" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 10
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 52
-text = "START"
+text = "CREDITS"
+
+[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
+color1 = Color(0.56078434, 0.7137255, 0.87058824, 1)
+
+[node name="Exit" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
+layout_mode = 2
+text = "EXIT"
+
+[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Exit" unique_id=376509437 instance=ExtResource("3_jstqx")]
+color1 = Color(1, 0, 0, 1)
 
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]

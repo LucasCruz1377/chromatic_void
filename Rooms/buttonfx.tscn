@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://dnkx7mr03ncjq"]
+
+[ext_resource type="Script" uid="uid://h1nalnj0wo10" path="res://Scripts/button_fx.gd" id="1_2c6wl"]
+
+[node name="Start2" type="Node" unique_id=767019499]
+script = ExtResource("1_2c6wl")
+ease_type = 1

@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://cy7t6ktg1o6db"]
+
+[ext_resource type="StyleBox" uid="uid://c23fkov457rjq" path="res://UI/buttonmenuinicial.tres" id="1_p45a4"]
+[ext_resource type="Script" uid="uid://h1nalnj0wo10" path="res://Scripts/button_fx.gd" id="2_66lr3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jstqx"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u38va"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
+[node name="Start" type="Button" unique_id=1661321070]
+self_modulate = Color(0.90564203, 0.90564203, 0.90564203, 1)
+size_flags_horizontal = 0
+size_flags_vertical = 10
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 52
+theme_override_styles/normal = ExtResource("1_p45a4")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_jstqx")
+theme_override_styles/hover = SubResource("StyleBoxFlat_u38va")
+text = "START"
+
+[node name="button_fx" type="Node" parent="." unique_id=516148884]
+script = ExtResource("2_66lr3")
+ease_type = 1
