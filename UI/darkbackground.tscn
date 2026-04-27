@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://ylhyeitfdhgc"]
+
+[sub_resource type="Gradient" id="Gradient_q6r6c"]
+colors = PackedColorArray(0.024744183, 0.05429472, 0.08889032, 1, 0.024744183, 0.05429472, 0.08889032, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_kdubu"]
+gradient = SubResource("Gradient_q6r6c")
+fill = 1
+fill_from = Vector2(0.47391304, 0.5043478)
+
+[node name="espaco" type="Sprite2D" unique_id=435737775]
+scale = Vector2(18.531254, 11.375002)
+texture = SubResource("GradientTexture2D_kdubu")

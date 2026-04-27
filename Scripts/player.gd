@@ -10,7 +10,7 @@ extends CharacterBody2D
 @onready var hiperdashprepare: AudioStreamPlayer2D = $hiperdashprepare
 @onready var death: AudioStreamPlayer2D = $death
 
-const BULLET = preload("res://fireball.tscn")
+const BULLET = preload("res://Entities/fireball.tscn")
 const acceleration = 200.00
 const TURN_SPD = 5.00
 const SPEED = 500.00

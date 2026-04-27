@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://csrpvdvmes1a8"]
 
-[ext_resource type="Script" uid="uid://b7e1mcmiichgn" path="res://enemy.gd" id="1_7k104"]
-[ext_resource type="PackedScene" uid="uid://coyynmarr6r7e" path="res://enemydeathpart.tscn" id="2_4gyqm"]
+[ext_resource type="Script" uid="uid://b7e1mcmiichgn" path="res://Scripts/enemy.gd" id="1_7k104"]
+[ext_resource type="PackedScene" uid="uid://coyynmarr6r7e" path="res://FX/enemydeathpart.tscn" id="2_4gyqm"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_7xaro"]
 radius = 15.0

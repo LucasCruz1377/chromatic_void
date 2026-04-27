@@ -7,7 +7,7 @@ extends Node2D
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 
 
-const ENEMY = preload("res://enemy.tscn")
+const ENEMY = preload("res://Entities/enemy.tscn")
 const TIMER_MAX = 2 * 60
 
 var players = []

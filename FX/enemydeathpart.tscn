@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://coyynmarr6r7e"]
 
-[ext_resource type="Script" uid="uid://c07646k0ienly" path="res://enemydeathpart.gd" id="1_85ype"]
+[ext_resource type="Script" uid="uid://c07646k0ienly" path="res://Scripts/enemydeathpart.gd" id="1_85ype"]
 [ext_resource type="AudioStream" uid="uid://bogy4m7ubg1hj" path="res://sounds/enemydeath.wav" id="2_3anii"]
 
 [sub_resource type="Gradient" id="Gradient_8h2to"]

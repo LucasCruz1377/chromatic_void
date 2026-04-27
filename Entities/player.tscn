@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://do2fi6mvjjoq1"]
 
-[ext_resource type="Script" uid="uid://s3ie3imatvpt" path="res://player.gd" id="1_4flbx"]
-[ext_resource type="PackedScene" uid="uid://b4dprqgdg4pi0" path="res://player_death_parts.tscn" id="2_onrkg"]
+[ext_resource type="Script" uid="uid://s3ie3imatvpt" path="res://Scripts/player.gd" id="1_4flbx"]
+[ext_resource type="PackedScene" uid="uid://b4dprqgdg4pi0" path="res://FX/player_death_parts.tscn" id="2_onrkg"]
 [ext_resource type="AudioStream" uid="uid://dc7dbsinjkxc0" path="res://sounds/hiperdash.wav" id="3_i3pqv"]
 [ext_resource type="AudioStream" uid="uid://swekadacalin" path="res://sounds/somtiro.wav" id="4_2hs0m"]
 [ext_resource type="AudioStream" uid="uid://egkrngrl3hst" path="res://sounds/hiperprepare.wav" id="4_hqtel"]

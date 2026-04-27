@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bs0wfso1c5o1a"]
 
-[ext_resource type="StyleBox" uid="uid://csm4drqks8gea" path="res://botaooutlineglow.tres" id="1_n7h0m"]
+[ext_resource type="StyleBox" uid="uid://csm4drqks8gea" path="res://UI/botaooutlineglow.tres" id="1_n7h0m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p5xam"]
 bg_color = Color(0.6, 0.6, 0.6, 0)

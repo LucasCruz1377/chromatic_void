@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://d1jckmkmpfnxf"]
+
+[sub_resource type="Environment" id="Environment_fu4hl"]
+background_mode = 3
+background_canvas_max_layer = 1
+tonemap_mode = 3
+glow_enabled = true
+glow_levels/1 = 2.0
+glow_levels/2 = 2.0
+glow_levels/3 = 2.0
+glow_levels/4 = 2.0
+glow_levels/5 = 2.0
+glow_levels/6 = 2.0
+glow_levels/7 = 2.0
+glow_intensity = 1.0
+glow_bloom = 0.12
+
+[node name="WorldEnvironment" type="WorldEnvironment" unique_id=996982090]
+environment = SubResource("Environment_fu4hl")

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cawlfryapqjyx"]
 
-[ext_resource type="Script" uid="uid://3q3tq710t3o4" path="res://barra_vida.gd" id="1_sidov"]
+[ext_resource type="Script" uid="uid://3q3tq710t3o4" path="res://Scripts/barra_vida.gd" id="1_sidov"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u58gr"]
 bg_color = Color(0.6, 0.6, 0.6, 0)
