@@ -2,6 +2,10 @@
 
 [ext_resource type="Script" uid="uid://b7e1mcmiichgn" path="res://Scripts/enemy.gd" id="1_7k104"]
 [ext_resource type="PackedScene" uid="uid://coyynmarr6r7e" path="res://FX/enemydeathpart.tscn" id="2_4gyqm"]
+[ext_resource type="Shader" uid="uid://bumfm4o5rrrb6" path="res://FX/enemy.tres" id="3_0ifcb"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fjgg4"]
+shader = ExtResource("3_0ifcb")
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_7xaro"]
 radius = 15.0
@@ -24,6 +28,7 @@ script = ExtResource("1_7k104")
 Deathparticle = ExtResource("2_4gyqm")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=1427657541]
+material = SubResource("ShaderMaterial_fjgg4")
 rotation = 0.38544607
 scale = Vector2(0.99999994, 0.99999994)
 color = Color(1, 0, 0.23137255, 1)
