@@ -29,6 +29,7 @@ autoplay = true
 position = Vector2(480, 270)
 
 [node name="Player" parent="." unique_id=1457330626 instance=ExtResource("3_xeyij")]
+process_mode = 1
 position = Vector2(475, 235)
 
 [node name="Node" type="Node" parent="." unique_id=159318720]
@@ -86,6 +87,7 @@ offset_left = 21.0
 offset_top = 502.0
 offset_right = 165.0
 offset_bottom = 512.0
+max_value = 120.0
 
 [node name="caixa gameover" type="VBoxContainer" parent="GUI" unique_id=488768928]
 visible = false
@@ -152,4 +154,6 @@ text = "Despausar Jogo"
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 
 [connection signal="pressed" from="GUI/caixa gameover/Tentar de novo" to="GUI" method="_on_tentar_de_novo_pressed"]
+[connection signal="pressed" from="GUI/caixa gameover/Voltarmenu2" to="GUI" method="_on_voltarmenu_2_pressed"]
+[connection signal="pressed" from="GUI/caixa pause/voltarmenu" to="GUI" method="_on_voltarmenu_pressed"]
 [connection signal="pressed" from="GUI/caixa pause/despause" to="GUI" method="_on_despause_pressed"]

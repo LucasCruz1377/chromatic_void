@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="2_2p674"]
 [ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="2_3sat0"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="3_jstqx"]
+[ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="6_u38va"]
 
 [node name="TelaInicial" type="Node2D" unique_id=234702239]
 script = ExtResource("1_jstqx")
@@ -71,6 +72,8 @@ text = "EXIT"
 color1 = Color(1, 0, 0, 1)
 
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]
+
+[node name="aim" parent="." unique_id=525751855 instance=ExtResource("6_u38va")]
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]

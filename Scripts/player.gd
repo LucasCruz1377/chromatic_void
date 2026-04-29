@@ -80,7 +80,7 @@ func fire():
 func arrowsctrl(delta):
 	rotation += Input.get_axis("left","right") * TURN_SPD *delta
 func hiperdash():
-	if hiperdashing:
+	if hiperdashing :
 		return
 	hiperdashprepare.play()
 	hiperdashing = true

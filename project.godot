@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="PoligonsShoot"
-run/main_scene="uid://c6fgnmw33h312"
+run/main_scene="uid://4n1y5b4uhay0"
 config/features=PackedStringArray("4.6", "Mobile")
 
 [autoload]

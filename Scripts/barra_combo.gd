@@ -5,7 +5,7 @@ extends ProgressBar
 
 
 var combotarget = 0
-const max_timer = 60 * 5
+const max_timer = 60 * 2
 var timer = max_timer
 
 func _process(_delta: float) -> void:
