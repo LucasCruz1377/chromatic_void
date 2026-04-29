@@ -13,7 +13,7 @@ func _process(_delta: float) -> void:
 
 
 func _on_start_pressed() -> void:
-	get_tree().change_scene_to_file("res://Rooms/Battle_area.tscn")
+	get_tree().change_scene_to_file("res://Rooms/loading_screen.tscn")	
 
 
 func _on_exit_pressed() -> void:
