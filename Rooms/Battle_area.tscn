@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c88585sg45tkn" path="res://Scripts/battle_area.gd" id="1_iop6r"]
 [ext_resource type="AudioStream" uid="uid://cosajux0ph2yg" path="res://sounds/gamemusic.mp3" id="2_sfht8"]
-[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://Rooms/Shader.tscn" id="3_bd36c"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_bd36c"]
 [ext_resource type="PackedScene" uid="uid://do2fi6mvjjoq1" path="res://Entities/player.tscn" id="3_xeyij"]
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="4_1s1gu"]
 [ext_resource type="Script" uid="uid://dypv3egvdvjrh" path="res://Scripts/gui.gd" id="4_bd36c"]
@@ -119,6 +119,7 @@ text = "Tentar novamente"
 layout_mode = 2
 
 [node name="caixa pause" type="VBoxContainer" parent="GUI" unique_id=496644049]
+visible = false
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5

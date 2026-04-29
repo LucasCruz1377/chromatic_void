@@ -91,9 +91,9 @@ func hiperdash():
 	particles.emitting = true
 	Engine.time_scale = 1
 	somhiperdash.play()
-	velocity += transform.x * SPEED * 10
+	velocity += transform.x * SPEED * 5
 	await get_tree().create_timer(0.15).timeout
-	velocity *= 0.05
+	velocity *= 0.2
 	
 	await get_tree().create_timer(0.3).timeout
 	hiperdashing = false

@@ -93,6 +93,7 @@ emitting = false
 amount = 200
 texture = SubResource("GradientTexture2D_i3pqv")
 lifetime = 0.5
+preprocess = 2.0
 process_material = SubResource("ParticleProcessMaterial_dw050")
 
 [node name="somhiperdash" type="AudioStreamPlayer2D" parent="." unique_id=1205847850]

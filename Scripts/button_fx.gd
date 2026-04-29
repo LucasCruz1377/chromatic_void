@@ -20,34 +20,28 @@ func _ready() -> void:
 	
 	button.mouse_entered.connect(_on_mouse_hovered.bind(true))
 	button.mouse_exited.connect(_on_mouse_hovered.bind(false))
-	
+	button.pressed.connect(_on_button_pressed)
 
 func _on_mouse_hovered(hovered : bool):
 	reset_tween()
+	
+	if tween == null:
+		return
+		
 	tween.tween_property(button, "offset_left", dist if hovered else 0, anim_duration)
 	tween.tween_property(button, "modulate", color2 if hovered else color1, color_trans)
-	button.pressed.connect(_on_button_pressed)
 	
 func reset_tween():
-	if tween :
+
+	
+	if tween and tween.is_valid():
 		tween.kill()
-	tween = get_tree().create_tween().set_ease(ease_type).set_trans(transit_type).set_parallel(true)
+	
+	tween = create_tween().set_ease(ease_type).set_trans(transit_type).set_parallel(true)
 
 func _on_button_pressed():
 	# mata qualquer tween ativo (hover)
-	if tween:
+	if tween and tween.is_valid():
 		tween.kill()
 	
 	button.disabled = true
-	
-	# animação de clique
-	tween = get_tree().create_tween()
-	tween.set_ease(ease_type)
-	tween.set_trans(transit_type)
-	
-	tween.tween_property(button, "scale", Vector2(0.9, 0.9), 0.08)
-	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.08)
-	
-	# espera terminar e troca de cena
-	await tween.finished
-	get_tree().change_scene_to_file("res://Rooms/Battle_area.tscn")

@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://2t8h72wx1ukv" path="res://Scripts/tela_inicial.gd" id="1_jstqx"]
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="1_rkk6g"]
-[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://Rooms/Shader.tscn" id="2_2p674"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="2_2p674"]
 [ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="2_3sat0"]
-[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://Rooms/buttonfx.tscn" id="3_jstqx"]
+[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="3_jstqx"]
 
 [node name="TelaInicial" type="Node2D" unique_id=234702239]
 script = ExtResource("1_jstqx")
@@ -73,3 +73,4 @@ color1 = Color(1, 0, 0, 1)
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu/CaixaMenu2/Start" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="CanvasLayer/CaixaMenu/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]
