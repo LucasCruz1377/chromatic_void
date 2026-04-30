@@ -8,16 +8,15 @@ class_name ButtonsEffectsModule
 @export var color_trans : float = 0.3
 @export var scale_amount : Vector2 = Vector2(1.4,1.4)
 @export var dist : int = 30
-@export var color1 : Color = Color(1.0, 1.0, 1.0, 1.0)
+@export var color1 : Color = Color(1, 1, 1, 1)
 @export var color2 : Color = Color(0.973, 1.0, 0.0, 1.0)
 @onready var button : Button = get_parent()
 
 var tween : Tween
 
 func _ready() -> void:
-	
-	button.modulate = color1
-	
+	button.offset_left = 0
+	button.modulate = color1 
 	button.mouse_entered.connect(_on_mouse_hovered.bind(true))
 	button.mouse_exited.connect(_on_mouse_hovered.bind(false))
 	button.pressed.connect(_on_button_pressed)
@@ -44,4 +43,3 @@ func _on_button_pressed():
 	if tween and tween.is_valid():
 		tween.kill()
 	
-	button.disabled = true

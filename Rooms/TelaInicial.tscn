@@ -32,11 +32,12 @@ size_flags_horizontal = 6
 size_flags_vertical = 6
 theme_override_constants/separation = -14
 
-[node name="Title" type="Label" parent="CanvasLayer/CaixaMenu" unique_id=2081362925]
+[node name="Title" type="RichTextLabel" parent="CanvasLayer/CaixaMenu" unique_id=225701810]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 52
-text = "POLYSHOOT"
+theme_override_font_sizes/normal_font_size = 64
+bbcode_enabled = true
+text = "[rainbow][wave amp=20 freq=11]POLYSHOOT[/wave][/rainbow]"
+fit_content = true
 
 [node name="CaixaMenu2" type="VBoxContainer" parent="CanvasLayer/CaixaMenu" unique_id=1934666768]
 layout_mode = 2
@@ -47,8 +48,7 @@ size_flags_vertical = 6
 layout_mode = 2
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
-color_trans = 0.2
-color1 = Color(0.54901963, 1, 1, 1)
+color1 = Color(0, 0.81773686, 0.82237345, 1)
 
 [node name="Options" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
