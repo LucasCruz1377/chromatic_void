@@ -5,9 +5,20 @@
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="2_2p674"]
 [ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="2_3sat0"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="3_jstqx"]
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="4_kal6l"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="6_u38va"]
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kal6l"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(130.56, 1, 1)
+direction = Vector3(-1, 1, 0)
+spread = 0.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, 0, 0)
+
 [node name="TelaInicial" type="Node2D" unique_id=234702239]
+process_mode = 3
 script = ExtResource("1_jstqx")
 
 [node name="espaco" parent="." unique_id=435737775 instance=ExtResource("1_rkk6g")]
@@ -15,65 +26,77 @@ position = Vector2(479.99994, 269.99997)
 scale = Vector2(15.000002, 8.4375)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1173122518]
+process_mode = 3
 
-[node name="CaixaMenu" type="VBoxContainer" parent="CanvasLayer" unique_id=1892099612]
-anchors_preset = 13
-anchor_left = 0.5
-anchor_right = 0.5
+[node name="CaixaMenu2" type="VBoxContainer" parent="CanvasLayer" unique_id=1934666768]
+process_mode = 3
+anchors_preset = 9
 anchor_bottom = 1.0
-offset_left = -448.0
-offset_top = 61.0
-offset_right = 127.16699
-offset_bottom = -32.1839
-grow_horizontal = 2
+offset_left = 27.0
+offset_right = 308.0
+offset_bottom = -48.0
 grow_vertical = 2
-scale = Vector2(0.9684144, 0.9936988)
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/separation = -14
-
-[node name="Title" type="RichTextLabel" parent="CanvasLayer/CaixaMenu" unique_id=225701810]
-layout_mode = 2
-theme_override_font_sizes/normal_font_size = 64
-bbcode_enabled = true
-text = "[rainbow][wave amp=20 freq=11]POLYSHOOT[/wave][/rainbow]"
-fit_content = true
-
-[node name="CaixaMenu2" type="VBoxContainer" parent="CanvasLayer/CaixaMenu" unique_id=1934666768]
-layout_mode = 2
 size_flags_horizontal = 2
 size_flags_vertical = 6
+alignment = 1
 
-[node name="Start" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=1661321070 instance=ExtResource("2_3sat0")]
+[node name="Start" parent="CanvasLayer/CaixaMenu2" unique_id=1661321070 instance=ExtResource("2_3sat0")]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_kal6l")
 
-[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
+[node name="Start2" parent="CanvasLayer/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
 color1 = Color(0, 0.81773686, 0.82237345, 1)
 
-[node name="Options" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
+[node name="Options" parent="CanvasLayer/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_kal6l")
 text = "OPTIONS"
 
-[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Options" unique_id=546462851 instance=ExtResource("3_jstqx")]
+[node name="Start2" parent="CanvasLayer/CaixaMenu2/Options" unique_id=546462851 instance=ExtResource("3_jstqx")]
 color1 = Color(1, 0.78039217, 1, 1)
 
-[node name="Credits" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
+[node name="Credits" parent="CanvasLayer/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_kal6l")
 text = "CREDITS"
 
-[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
+[node name="Start2" parent="CanvasLayer/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
 color1 = Color(0.56078434, 0.7137255, 0.87058824, 1)
 
-[node name="Exit" parent="CanvasLayer/CaixaMenu/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
+[node name="Exit" parent="CanvasLayer/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_kal6l")
 text = "EXIT"
 
-[node name="Start2" parent="CanvasLayer/CaixaMenu/CaixaMenu2/Exit" unique_id=376509437 instance=ExtResource("3_jstqx")]
+[node name="Start2" parent="CanvasLayer/CaixaMenu2/Exit" unique_id=376509437 instance=ExtResource("3_jstqx")]
 color1 = Color(1, 0, 0, 1)
+
+[node name="Title" type="RichTextLabel" parent="CanvasLayer" unique_id=225701810]
+offset_left = 469.0
+offset_top = 228.0
+offset_right = 982.0
+offset_bottom = 316.0
+theme_override_fonts/normal_font = ExtResource("4_kal6l")
+theme_override_font_sizes/normal_font_size = 64
+bbcode_enabled = true
+text = "[wave amp=30 freq=12][rainbow]Chromatic[/rainbow] Void[/wave]"
+fit_content = true
+vertical_alignment = 1
 
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("6_u38va")]
 
-[connection signal="pressed" from="CanvasLayer/CaixaMenu/CaixaMenu2/Start" to="." method="_on_start_pressed"]
-[connection signal="pressed" from="CanvasLayer/CaixaMenu/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]
+[node name="parts_fundo" type="GPUParticles2D" parent="." unique_id=247251954]
+position = Vector2(734, -33)
+scale = Vector2(5.080004, 6.055698)
+amount = 200
+lifetime = 10.0
+preprocess = 10.0
+trail_enabled = true
+trail_lifetime = 0.05
+trail_sections = 3
+process_material = SubResource("ParticleProcessMaterial_kal6l")
+
+[connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="CanvasLayer/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]
