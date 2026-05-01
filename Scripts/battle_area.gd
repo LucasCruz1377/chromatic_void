@@ -16,9 +16,21 @@ var timer = TIMER_MAX
 var pontos = 0
 
 func _ready() -> void:
+	get_tree().paused = false
+	
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	
+	Global.Pontos = 0
+	Global.Combo = 0
+	
+	pontos = 0
+	timer = TIMER_MAX
+	
 	players = get_tree().get_nodes_in_group("player")
 	tocarmusica.play()
+	
+	for node in get_tree().get_nodes_in_group("enemy"):
+		node.queue_free()
 func _process(_delta: float) -> void:
 	tocarmusica.pitch_scale = Engine.time_scale
 	
@@ -46,7 +58,7 @@ func spawnar_enemy():
 		return
 
 	var inimigo = ENEMY.instantiate()
-	get_tree().current_scene.add_child(inimigo)
+	add_child(inimigo)
 	
 	var spawner = spawners.pick_random()
 	inimigo.global_position = spawner.global_position

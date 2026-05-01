@@ -15,11 +15,19 @@ class_name ButtonsEffectsModule
 var tween : Tween
 
 func _ready() -> void:
+	tween = null
 	button.offset_left = 0
 	button.modulate = color1 
-	button.mouse_entered.connect(_on_mouse_hovered.bind(true))
-	button.mouse_exited.connect(_on_mouse_hovered.bind(false))
-	button.pressed.connect(_on_button_pressed)
+	button.pivot_offset = button.size / 2
+	
+	if not button.mouse_entered.is_connected(_on_mouse_hovered.bind(true)):
+		button.mouse_entered.connect(_on_mouse_hovered.bind(true))
+		
+	if not button.mouse_exited.is_connected(_on_mouse_hovered.bind(false)):
+		button.mouse_exited.connect(_on_mouse_hovered.bind(false))
+		
+	if not button.pressed.is_connected(_on_button_pressed):
+		button.pressed.connect(_on_button_pressed)
 
 func _on_mouse_hovered(hovered : bool):
 	reset_tween()
@@ -29,17 +37,17 @@ func _on_mouse_hovered(hovered : bool):
 		
 	tween.tween_property(button, "offset_left", dist if hovered else 0, anim_duration)
 	tween.tween_property(button, "modulate", color2 if hovered else color1, color_trans)
+	tween.tween_property(button, "scale", scale_amount if hovered else Vector2(1,1), anim_duration)
 	
 func reset_tween():
-
-	
-	if tween and tween.is_valid():
+	if tween:
 		tween.kill()
+		tween = null
 	
 	tween = create_tween().set_ease(ease_type).set_trans(transit_type).set_parallel(true)
 
 func _on_button_pressed():
-	# mata qualquer tween ativo (hover)
-	if tween and tween.is_valid():
+	if tween:
 		tween.kill()
+		tween = null
 	

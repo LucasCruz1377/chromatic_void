@@ -17,6 +17,59 @@ spread = 0.0
 initial_velocity_max = 50.0
 gravity = Vector3(0, 0, 0)
 
+[sub_resource type="Animation" id="Animation_kal6l"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/telapreta_init:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_g7wv7"]
+resource_name = "fade_in"
+length = 1.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/telapreta_init:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_0lnna"]
+resource_name = "fade_out"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/telapreta_init:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.099999994, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_asbdl"]
+_data = {
+&"RESET": SubResource("Animation_kal6l"),
+&"fade_in": SubResource("Animation_g7wv7"),
+&"fade_out": SubResource("Animation_0lnna")
+}
+
 [node name="TelaInicial" type="Node2D" unique_id=234702239]
 process_mode = 3
 script = ExtResource("1_jstqx")
@@ -45,7 +98,8 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("4_kal6l")
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
-color1 = Color(0, 0.81773686, 0.82237345, 1)
+scale_amount = Vector2(1.2, 1.2)
+color1 = Color(1.1551381e-06, 0.8614051, 0.6311949, 1)
 
 [node name="Options" parent="CanvasLayer/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
@@ -53,6 +107,7 @@ theme_override_fonts/font = ExtResource("4_kal6l")
 text = "OPTIONS"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Options" unique_id=546462851 instance=ExtResource("3_jstqx")]
+scale_amount = Vector2(1.2, 1.2)
 color1 = Color(1, 0.78039217, 1, 1)
 
 [node name="Credits" parent="CanvasLayer/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
@@ -61,6 +116,7 @@ theme_override_fonts/font = ExtResource("4_kal6l")
 text = "CREDITS"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
+scale_amount = Vector2(1.2, 1.2)
 color1 = Color(0.56078434, 0.7137255, 0.87058824, 1)
 
 [node name="Exit" parent="CanvasLayer/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
@@ -69,6 +125,7 @@ theme_override_fonts/font = ExtResource("4_kal6l")
 text = "EXIT"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Exit" unique_id=376509437 instance=ExtResource("3_jstqx")]
+scale_amount = Vector2(1.2, 1.2)
 color1 = Color(1, 0, 0, 1)
 
 [node name="Title" type="RichTextLabel" parent="CanvasLayer" unique_id=225701810]
@@ -82,6 +139,14 @@ bbcode_enabled = true
 text = "[wave amp=30 freq=12][rainbow]Chromatic[/rainbow] Void[/wave]"
 fit_content = true
 vertical_alignment = 1
+
+[node name="telapreta_init" type="ColorRect" parent="CanvasLayer" unique_id=357191067]
+modulate = Color(1, 1, 1, 0)
+y_sort_enabled = true
+offset_right = 960.0
+offset_bottom = 540.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
 
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]
 
@@ -97,6 +162,10 @@ trail_enabled = true
 trail_lifetime = 0.05
 trail_sections = 3
 process_material = SubResource("ParticleProcessMaterial_kal6l")
+
+[node name="transition" type="AnimationPlayer" parent="." unique_id=1508217240]
+libraries/ = SubResource("AnimationLibrary_asbdl")
+autoplay = &"fade_out"
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]

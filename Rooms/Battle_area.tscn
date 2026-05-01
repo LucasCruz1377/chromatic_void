@@ -10,6 +10,60 @@
 [ext_resource type="PackedScene" uid="uid://lrrmsf7mxpy7" path="res://UI/barra_combo.tscn" id="6_f80io"]
 [ext_resource type="PackedScene" uid="uid://bs0wfso1c5o1a" path="res://UI/botaomenu.tscn" id="7_hv6r0"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="8_kmw88"]
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="9_1s1gu"]
+[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="10_bd36c"]
+
+[sub_resource type="Animation" id="Animation_f80io"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GUI/trans_rect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_1s1gu"]
+resource_name = "fade_in"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GUI/trans_rect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_hv6r0"]
+resource_name = "fade_in_2"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GUI/trans_rect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.033333335, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_f80io"]
+_data = {
+&"RESET": SubResource("Animation_f80io"),
+&"fade_in": SubResource("Animation_1s1gu"),
+&"fade_out": SubResource("Animation_hv6r0")
+}
 
 [node name="Battle_area" type="Node2D" unique_id=937167224]
 script = ExtResource("1_iop6r")
@@ -65,6 +119,7 @@ offset_top = 28.0
 offset_right = 303.0
 offset_bottom = 59.0
 grow_horizontal = 2
+theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 22
 text = "PONTOS:"
 
@@ -77,6 +132,7 @@ offset_top = 28.0
 offset_right = 407.0
 offset_bottom = 59.0
 grow_horizontal = 2
+theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 22
 text = "0"
 
@@ -108,6 +164,7 @@ alignment = 1
 [node name="Tentatdenovotext" type="Label" parent="GUI/caixa gameover" unique_id=164379993]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 41
 text = "VOCÊ MORREU"
 horizontal_alignment = 1
@@ -117,8 +174,16 @@ autowrap_mode = 2
 layout_mode = 2
 text = "Tentar novamente"
 
+[node name="tryagain" parent="GUI/caixa gameover/Tentar de novo" unique_id=767019499 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
 [node name="Voltarmenu2" parent="GUI/caixa gameover" unique_id=787826253 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
+
+[node name="tryagain2" parent="GUI/caixa gameover/Voltarmenu2" unique_id=1471391804 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
 
 [node name="caixa pause" type="VBoxContainer" parent="GUI" unique_id=496644049]
 visible = false
@@ -139,6 +204,7 @@ alignment = 1
 [node name="jogopausado" type="Label" parent="GUI/caixa pause" unique_id=213460373]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 41
 text = "JOGO PAUSADO"
 horizontal_alignment = 1
@@ -147,11 +213,31 @@ autowrap_mode = 2
 [node name="voltarmenu" parent="GUI/caixa pause" unique_id=497244504 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
 
+[node name="tryagain3" parent="GUI/caixa pause/voltarmenu" unique_id=1456527858 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
 [node name="despause" parent="GUI/caixa pause" unique_id=1820316957 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
 text = "Despausar Jogo"
 
+[node name="tryagain4" parent="GUI/caixa pause/despause" unique_id=13326222 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
+[node name="trans_rect" type="ColorRect" parent="GUI" unique_id=1849737488]
+modulate = Color(1, 1, 1, 0)
+z_index = 1
+offset_right = 959.0
+offset_bottom = 541.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
+
+[node name="transition" type="AnimationPlayer" parent="." unique_id=1456092539]
+libraries/ = SubResource("AnimationLibrary_f80io")
+autoplay = &"fade_out"
 
 [connection signal="pressed" from="GUI/caixa gameover/Tentar de novo" to="GUI" method="_on_tentar_de_novo_pressed"]
 [connection signal="pressed" from="GUI/caixa gameover/Voltarmenu2" to="GUI" method="_on_voltarmenu_2_pressed"]

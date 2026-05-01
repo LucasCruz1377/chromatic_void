@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://bs0wfso1c5o1a"]
 
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="1_b1vxq"]
 [ext_resource type="StyleBox" uid="uid://csm4drqks8gea" path="res://UI/botaooutlineglow.tres" id="1_n7h0m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p5xam"]
@@ -19,6 +20,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("1_b1vxq")
 theme_override_font_sizes/font_size = 29
 theme_override_styles/normal = ExtResource("1_n7h0m")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_p5xam")
