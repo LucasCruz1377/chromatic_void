@@ -10,9 +10,12 @@ config_version=5
 
 [application]
 
-config/name="PoligonsShoot"
+config/name="Chromatic Void"
+config/description="Jogo colorido inspirado em Asteroids(1979) - Atari"
 run/main_scene="uid://4n1y5b4uhay0"
 config/features=PackedStringArray("4.6", "Mobile")
+boot_splash/bg_color=Color(0, 0, 0, 1)
+config/icon="uid://d3bgt0o17j0qy"
 
 [autoload]
 
@@ -110,3 +113,4 @@ reset={
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
 viewport/hdr_2d=true
+anti_aliasing/quality/msaa_2d=1
