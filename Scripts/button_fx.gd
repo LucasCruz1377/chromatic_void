@@ -1,6 +1,6 @@
-extends Node
-
 class_name ButtonsEffectsModule
+
+extends Node
 
 @export var ease_type : Tween.EaseType
 @export var transit_type : Tween.TransitionType
@@ -10,9 +10,10 @@ class_name ButtonsEffectsModule
 @export var dist : int = 30
 @export var color1 : Color = Color(1, 1, 1, 1)
 @export var color2 : Color = Color(0.973, 1.0, 0.0, 1.0)
-@onready var button : Button = get_parent()
 
 var tween : Tween
+
+@onready var button : Button = get_parent()
 
 func _ready() -> void:
 	tween = null

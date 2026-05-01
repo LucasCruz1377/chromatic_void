@@ -6,12 +6,10 @@ extends Node2D
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 
-
 const ENEMY = preload("res://Entities/enemy.tscn")
 const TIMER_MAX = 2 * 60
 
 var players = []
-
 var timer = TIMER_MAX
 var pontos = 0
 
@@ -31,6 +29,7 @@ func _ready() -> void:
 	
 	for node in get_tree().get_nodes_in_group("enemy"):
 		node.queue_free()
+		
 func _process(_delta: float) -> void:
 	tocarmusica.pitch_scale = Engine.time_scale
 	
