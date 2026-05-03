@@ -19,7 +19,7 @@ const MAX_HEALTH = 100
 
 var health = MAX_HEALTH
 var cooldown = CD_MAX
-var mouseaim = true
+var mouseaim = Global.MiraMouse
 var hiperdashing = false
 var vivo = true
 var giroblock = false

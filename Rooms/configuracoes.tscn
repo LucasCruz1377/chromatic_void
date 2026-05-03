@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://pxl3qhqcn57s"]
+
+[ext_resource type="Script" uid="uid://cfv8folpqnrp6" path="res://Scripts/configuracoes.gd" id="1_himc1"]
+[ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="1_k7rnd"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="2_himc1"]
+[ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="4_k16so"]
+[ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="5_rxjii"]
+[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="6_w2h0g"]
+[ext_resource type="AudioStream" uid="uid://cosajux0ph2yg" path="res://sounds/gamemusic.mp3" id="7_w2h0g"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_k16so"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(130.56, 1, 1)
+direction = Vector3(-1, 1, 0)
+spread = 0.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, 0, 0)
+
+[node name="Configuracoes" type="Control" unique_id=1370224302]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_himc1")
+
+[node name="espaco" parent="." unique_id=435737775 instance=ExtResource("1_k7rnd")]
+position = Vector2(491.00003, 280)
+
+[node name="shader" parent="." unique_id=996982090 instance=ExtResource("2_himc1")]
+
+[node name="parts_fundo" type="GPUParticles2D" parent="." unique_id=1250940586]
+position = Vector2(998.00006, -157)
+scale = Vector2(7.932918, 5.212338)
+amount = 200
+lifetime = 10.0
+preprocess = 10.0
+trail_enabled = true
+trail_lifetime = 0.05
+trail_sections = 3
+process_material = SubResource("ParticleProcessMaterial_k16so")
+
+[node name="titleconfig" type="RichTextLabel" parent="." unique_id=240573768]
+layout_mode = 0
+offset_left = 330.0
+offset_top = 23.0
+offset_right = 630.0
+offset_bottom = 65.0
+theme_override_font_sizes/normal_font_size = 30
+text = "CONFIGURAÇÕES"
+fit_content = true
+horizontal_alignment = 1
+
+[node name="configs_box" type="VBoxContainer" parent="." unique_id=1333706304]
+layout_mode = 1
+anchors_preset = 13
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -99.0
+offset_top = 122.0
+offset_right = 99.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="mouse_teclado" type="CheckButton" parent="configs_box" unique_id=1033600980]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+text = "Mirar com o mouse"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="configs_box" unique_id=1167116923]
+layout_mode = 2
+size_flags_vertical = 2
+
+[node name="Label" type="Label" parent="configs_box/HBoxContainer" unique_id=217773421]
+layout_mode = 2
+text = "Sons"
+
+[node name="volume" type="HScrollBar" parent="configs_box/HBoxContainer" unique_id=1734913157]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+max_value = 1.0
+value = 1.0
+
+[node name="aim" parent="." unique_id=525751855 instance=ExtResource("4_k16so")]
+position = Vector2(8.000001, 58.000008)
+
+[node name="voltar" parent="." unique_id=1661321070 instance=ExtResource("5_rxjii")]
+layout_mode = 0
+offset_right = 216.0
+offset_bottom = 81.0
+theme_override_font_sizes/font_size = 39
+text = "< voltar"
+
+[node name="fx" parent="voltar" unique_id=767019499 instance=ExtResource("6_w2h0g")]
+scale_amount = Vector2(1.1, 1.1)
+dist = 40
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1898642177]
+stream = ExtResource("7_w2h0g")
+autoplay = true
+
+[connection signal="toggled" from="configs_box/mouse_teclado" to="." method="_on_mouse_teclado_toggled"]
+[connection signal="value_changed" from="configs_box/HBoxContainer/volume" to="." method="_on_volume_value_changed"]
+[connection signal="pressed" from="voltar" to="." method="_on_voltar_pressed"]

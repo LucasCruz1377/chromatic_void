@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 @export var Deathparticle : PackedScene
 
-const SPEED = 10.0
+const SPEED = 2.0
 var hp = 1
 var dmg = 2
 
@@ -14,6 +14,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	
 	die()
+
 func seguir(_delta):
 	var players = get_tree().get_nodes_in_group("player")
 	

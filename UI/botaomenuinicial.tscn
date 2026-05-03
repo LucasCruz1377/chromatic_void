@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://cy7t6ktg1o6db"]
 
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="1_66lr3"]
 [ext_resource type="StyleBox" uid="uid://c23fkov457rjq" path="res://UI/buttonmenuinicial.tres" id="1_p45a4"]
 [ext_resource type="Script" uid="uid://h1nalnj0wo10" path="res://Scripts/button_fx.gd" id="2_66lr3"]
 
@@ -14,6 +15,7 @@ custom_minimum_size = Vector2(100, 0)
 size_flags_horizontal = 0
 size_flags_vertical = 10
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("1_66lr3")
 theme_override_font_sizes/font_size = 52
 theme_override_styles/normal = ExtResource("1_p45a4")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_jstqx")
