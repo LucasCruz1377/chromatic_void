@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="5_rxjii"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="6_w2h0g"]
 [ext_resource type="AudioStream" uid="uid://cosajux0ph2yg" path="res://sounds/gamemusic.mp3" id="7_w2h0g"]
+[ext_resource type="PackedScene" uid="uid://sxsschqveb56" path="res://tool/debug_text.tscn" id="8_d4o0w"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_k16so"]
 particle_flag_disable_z = true
@@ -123,6 +124,17 @@ dist = 40
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1898642177]
 stream = ExtResource("7_w2h0g")
 autoplay = true
+bus = &"Music"
+
+[node name="Debug_text" parent="." unique_id=740519804 instance=ExtResource("8_d4o0w")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -224.0
+offset_right = 0.0
+offset_bottom = 169.0
+grow_horizontal = 0
 
 [connection signal="toggled" from="configs_box/mouse_teclado" to="." method="_on_mouse_teclado_toggled"]
 [connection signal="value_changed" from="configs_box/HBoxContainer/ctrl_volume_som" to="." method="_on_ctrl_volume_som_value_changed"]

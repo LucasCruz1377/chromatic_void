@@ -6,6 +6,8 @@ var volume_musica = Global.volume_musica
 
 @onready var ctrl_volume_som: HScrollBar = $configs_box/HBoxContainer/ctrl_volume_som
 @onready var ctrl_volume_musica: HScrollBar = $configs_box/HBoxContainer2/ctrl_volume_musica
+@onready var mouse_teclado: CheckButton = $configs_box/mouse_teclado
+@onready var debug_text: Label = $Debug_text
 
 
 func _ready() -> void:
@@ -13,13 +15,24 @@ func _ready() -> void:
 	if get_tree().paused:
 		get_tree().paused = false
 
+func _process(_delta: float) -> void:
+	debug_text.text = "Volume Musica: {vol_mus} \n Volume Som: {vol_som} \n Usar Mouse: {mouse}\n".format({
+			"vol_mus" : snapped(Global.volume_musica,0.1),
+			"vol_som" : snapped(Global.volume_som,0.1),
+			"mouse" : Global.mira_mouse
+		})
+	var musicbus = AudioServer.get_bus_index("Music")
+	var soundbus = AudioServer.get_bus_index("Sound") 
+	AudioServer.set_bus_volume_db(musicbus,Global.volume_musica)
+	AudioServer.set_bus_volume_db(soundbus,Global.volume_som)
+
 func _on_mouse_teclado_toggled(toggled_on: bool) -> void:
-	if toggled_on:
+	mira_mouse = toggled_on
+	
+	if mira_mouse:
 		print("usar mouse")
-		mira_mouse = true	
-	if !toggled_on:
+	else:
 		print("usar teclado")
-		mira_mouse = false
 
 func _on_voltar_pressed() -> void:
 	salvar_configuracoes()
@@ -30,8 +43,11 @@ func carregar_configuracoes():
 	mira_mouse = Global.mira_mouse
 	volume_som = Global.volume_som
 	volume_musica = Global.volume_musica
+	
 	ctrl_volume_musica.value = volume_musica
 	ctrl_volume_som.value = volume_som
+	mouse_teclado.button_pressed = mira_mouse
+	
 	
 func _on_ctrl_volume_som_value_changed(value: float) -> void:
 	volume_som = value
@@ -42,6 +58,6 @@ func _on_ctrl_volume_musica_value_changed(value: float) -> void:
 	print("Musica: " + str(volume_musica))
 
 func salvar_configuracoes():
-	Global.mira_mouse = mira_mouse 
+	Global.mira_mouse = mira_mouse
 	Global.volume_som = volume_som 
 	Global.volume_musica = volume_musica

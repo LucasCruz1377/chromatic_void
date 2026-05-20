@@ -6,11 +6,17 @@ extends Node2D
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	var musicbus = AudioServer.get_bus_index("Music")
+	var soundbus = AudioServer.get_bus_index("Sound") 
+	AudioServer.set_bus_volume_db(musicbus,Global.volume_musica)
+	AudioServer.set_bus_volume_db(soundbus,Global.volume_som)
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta: float) -> void:
+	
+	
 	if get_tree().paused:
 		get_tree().paused = false
 
@@ -29,8 +35,8 @@ func _on_exit_pressed() -> void:
 
 
 func _on_options_pressed() -> void:
-	click_som()
 	transition.play("fade_in")
+	click_som()
 	await transition.animation_finished
 	get_tree().change_scene_to_file("res://Rooms/configuracoes.tscn")
 

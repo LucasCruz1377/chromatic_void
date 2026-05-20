@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://sxsschqveb56"]
+
+[node name="Debug_text" type="Label" unique_id=740519804]
+offset_right = 385.0
+offset_bottom = 285.0
+text = "exemplo"
