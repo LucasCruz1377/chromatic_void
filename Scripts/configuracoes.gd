@@ -1,27 +1,47 @@
 extends Control
 
+var mira_mouse = Global.mira_mouse
+var volume_som = Global.volume_som
+var volume_musica = Global.volume_musica
 
-# Called when the node enters the scene tree for the first time.
+@onready var ctrl_volume_som: HScrollBar = $configs_box/HBoxContainer/ctrl_volume_som
+@onready var ctrl_volume_musica: HScrollBar = $configs_box/HBoxContainer2/ctrl_volume_musica
+
+
 func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta: float) -> void:
+	carregar_configuracoes()
 	if get_tree().paused:
 		get_tree().paused = false
 
-
-
 func _on_mouse_teclado_toggled(toggled_on: bool) -> void:
 	if toggled_on:
-		Global.MiraMouse = true	
+		print("usar mouse")
+		mira_mouse = true	
 	if !toggled_on:
-		Global.MiraMouse = false
-
-func _on_volume_value_changed(value):
-	AudioServer.set_bus_volume_db(0,value)
-
+		print("usar teclado")
+		mira_mouse = false
 
 func _on_voltar_pressed() -> void:
+	salvar_configuracoes()
+	
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
+
+func carregar_configuracoes():
+	mira_mouse = Global.mira_mouse
+	volume_som = Global.volume_som
+	volume_musica = Global.volume_musica
+	ctrl_volume_musica.value = volume_musica
+	ctrl_volume_som.value = volume_som
+	
+func _on_ctrl_volume_som_value_changed(value: float) -> void:
+	volume_som = value
+	print("som: " + str(volume_som))
+
+func _on_ctrl_volume_musica_value_changed(value: float) -> void:
+	volume_musica = value
+	print("Musica: " + str(volume_musica))
+
+func salvar_configuracoes():
+	Global.mira_mouse = mira_mouse 
+	Global.volume_som = volume_som 
+	Global.volume_musica = volume_musica

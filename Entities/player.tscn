@@ -99,14 +99,18 @@ process_material = SubResource("ParticleProcessMaterial_dw050")
 [node name="somhiperdash" type="AudioStreamPlayer2D" parent="." unique_id=1205847850]
 stream = ExtResource("3_i3pqv")
 pitch_scale = 0.48
+bus = &"Sound"
 
 [node name="somtiro" type="AudioStreamPlayer2D" parent="." unique_id=2009052138]
 stream = ExtResource("4_2hs0m")
 pitch_scale = 0.31
+bus = &"Sound"
 
 [node name="hiperdashprepare" type="AudioStreamPlayer2D" parent="." unique_id=13991466]
 stream = ExtResource("4_hqtel")
 pitch_scale = 0.4
+bus = &"Sound"
 
 [node name="death" type="AudioStreamPlayer2D" parent="." unique_id=710304148]
 stream = ExtResource("5_sweqy")
+bus = &"Sound"

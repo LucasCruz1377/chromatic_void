@@ -76,6 +76,7 @@ scale = Vector2(1.7456002, -14.767745)
 stream = ExtResource("2_sfht8")
 volume_db = -7.0
 autoplay = true
+bus = &"Music"
 
 [node name="Shader" parent="." unique_id=996982090 instance=ExtResource("3_bd36c")]
 

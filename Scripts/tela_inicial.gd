@@ -1,6 +1,7 @@
 extends Node2D
 
 @onready var transition: AnimationPlayer = $transition
+@onready var som: AudioStreamPlayer2D = $som
 
 
 # Called when the node enters the scene tree for the first time.
@@ -15,16 +16,23 @@ func _process(_delta: float) -> void:
 
 
 func _on_start_pressed() -> void:
+	click_som()
 	transition.play("fade_in")
 	await transition.animation_finished
 	get_tree().change_scene_to_file("res://Rooms/Battle_area.tscn")	
 
 
 func _on_exit_pressed() -> void:
+	click_som()
+	await get_tree().create_timer(0.5).timeout
 	get_tree().quit()
 
 
 func _on_options_pressed() -> void:
+	click_som()
 	transition.play("fade_in")
 	await transition.animation_finished
 	get_tree().change_scene_to_file("res://Rooms/configuracoes.tscn")
+
+func click_som():
+	som.play()

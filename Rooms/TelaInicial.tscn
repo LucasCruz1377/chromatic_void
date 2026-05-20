@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="3_jstqx"]
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="4_kal6l"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="6_u38va"]
+[ext_resource type="AudioStream" uid="uid://c6fawb4pnttj2" path="res://sounds/menu_click.wav" id="8_g7wv7"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kal6l"]
 particle_flag_disable_z = true
@@ -70,6 +71,11 @@ _data = {
 &"fade_out": SubResource("Animation_0lnna")
 }
 
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_0lnna"]
+random_pitch = 1.0594631
+streams_count = 1
+stream_0/stream = ExtResource("8_g7wv7")
+
 [node name="TelaInicial" type="Node2D" unique_id=234702239]
 process_mode = 3
 script = ExtResource("1_jstqx")
@@ -95,7 +101,6 @@ alignment = 1
 
 [node name="Start" parent="CanvasLayer/CaixaMenu2" unique_id=1661321070 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_kal6l")
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
 scale_amount = Vector2(1.2, 1.2)
@@ -103,7 +108,6 @@ color1 = Color(1.1551381e-06, 0.8614051, 0.6311949, 1)
 
 [node name="Options" parent="CanvasLayer/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_kal6l")
 text = "OPTIONS"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Options" unique_id=546462851 instance=ExtResource("3_jstqx")]
@@ -112,7 +116,6 @@ color1 = Color(1, 0.78039217, 1, 1)
 
 [node name="Credits" parent="CanvasLayer/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_kal6l")
 text = "CREDITS"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
@@ -121,7 +124,6 @@ color1 = Color(0.56078434, 0.7137255, 0.87058824, 1)
 
 [node name="Exit" parent="CanvasLayer/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_kal6l")
 text = "EXIT"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Exit" unique_id=376509437 instance=ExtResource("3_jstqx")]
@@ -166,6 +168,9 @@ process_material = SubResource("ParticleProcessMaterial_kal6l")
 [node name="transition" type="AnimationPlayer" parent="." unique_id=1508217240]
 libraries/ = SubResource("AnimationLibrary_asbdl")
 autoplay = &"fade_out"
+
+[node name="som" type="AudioStreamPlayer2D" parent="." unique_id=1148232166]
+stream = SubResource("AudioStreamRandomizer_0lnna")
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]

@@ -14,6 +14,8 @@ var timer = TIMER_MAX
 var pontos = 0
 
 func _ready() -> void:
+	
+	
 	get_tree().paused = false
 	
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)

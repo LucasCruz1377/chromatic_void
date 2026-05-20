@@ -17,6 +17,7 @@ const SPEED = 500.00
 const CD_MAX = 10
 const MAX_HEALTH = 100
 
+var mira_mouse = Global.mira_mouse
 var health = MAX_HEALTH
 var cooldown = CD_MAX
 var mouseaim = Global.MiraMouse
@@ -35,9 +36,6 @@ func _process(delta: float) -> void:
 	if cooldown >= 0:
 		cooldown -= 1
 	
-	if Input.is_action_just_pressed("ctrlflip"): # switch entre com mouse e com teclado
-		mouseaim = !mouseaim
-
 	if health <= 0:
 		die()
 	
