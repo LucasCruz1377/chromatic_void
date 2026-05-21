@@ -175,6 +175,13 @@ stream = SubResource("AudioStreamRandomizer_0lnna")
 bus = &"Sound"
 
 [node name="Debug_text" parent="." unique_id=740519804 instance=ExtResource("9_0lnna")]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = 574.0
+offset_right = 959.0
+grow_horizontal = 0
+text = ""
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
