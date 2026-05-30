@@ -63,6 +63,10 @@ color_ramp = SubResource("GradientTexture1D_sweqy")
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.975, 0), 0.0, 0.0, 0, 0]
 point_count = 2
 
+[sub_resource type="Curve" id="Curve_s1j76"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1.0039216, 0.9999855, 0.9999855, 1)
 self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
@@ -132,7 +136,11 @@ bus = &"Sound"
 stream = ExtResource("5_sweqy")
 bus = &"Sound"
 
-[node name="Line2D" type="Line2D" parent="." unique_id=1537280499]
+[node name="mira_reta" type="Line2D" parent="." unique_id=1537280499]
 points = PackedVector2Array(0, 0, 205.54356, 0)
 width_curve = SubResource("Curve_prmdv")
 default_color = Color(1, 1, 1, 0.06666667)
+
+[node name="rastro" type="Line2D" parent="." unique_id=666547131]
+width_curve = SubResource("Curve_s1j76")
+default_color = Color(0.6666667, 1, 0.11372549, 0.40392157)

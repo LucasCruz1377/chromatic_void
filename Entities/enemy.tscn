@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://b7e1mcmiichgn" path="res://Scripts/enemy.gd" id="1_7k104"]
 [ext_resource type="PackedScene" uid="uid://coyynmarr6r7e" path="res://FX/enemydeathpart.tscn" id="2_4gyqm"]
 [ext_resource type="Shader" uid="uid://bh3um1lk38h2l" path="res://FX/canvas_shader/enemy.gdshader" id="3_0ifcb"]
+[ext_resource type="AudioStream" uid="uid://b7tdinwmt58xw" path="res://sounds/enemy_dmgtake.wav" id="4_fjgg4"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fjgg4"]
 resource_local_to_scene = true
@@ -56,6 +57,11 @@ _data = {
 &"flash-in": SubResource("Animation_fjgg4")
 }
 
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_b15b6"]
+random_pitch = 1.0594631
+streams_count = 1
+stream_0/stream = ExtResource("4_fjgg4")
+
 [node name="enemy_quadristar" type="CharacterBody2D" unique_id=1570180816 groups=["enemies"]]
 self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
 z_index = 1
@@ -84,3 +90,8 @@ texture = SubResource("GradientTexture2D_4gyqm")
 [node name="anim" type="AnimationPlayer" parent="." unique_id=1699661545]
 libraries/ = SubResource("AnimationLibrary_b15b6")
 autoplay = &"flash-in"
+
+[node name="dmg_taken_audio" type="AudioStreamPlayer2D" parent="." unique_id=606716209]
+stream = SubResource("AudioStreamRandomizer_b15b6")
+volume_db = 1.0
+bus = &"Sound"

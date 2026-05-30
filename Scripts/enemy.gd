@@ -1,9 +1,10 @@
 extends CharacterBody2D
 
 @export var Deathparticle : PackedScene
+@onready var anim = $anim
 
 const SPEED = 2.0
-var hp = 1
+var hp = 3
 var dmg = 2
 
 func _physics_process(delta: float) -> void:
@@ -40,3 +41,8 @@ func die():
 		Global.Pontos += 10 + (10 * Global.Combo)
 		Global.Combo += 1 
 		queue_free()
+
+func tomar_dano(valor):
+	$dmg_taken_audio.play()
+	anim.play("flash-in")
+	hp -= valor

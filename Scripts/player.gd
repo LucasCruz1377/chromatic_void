@@ -16,6 +16,7 @@ const TURN_SPD = 10.00
 const SPEED = 500.00
 const CD_MAX = 10
 const MAX_HEALTH = 100.0
+const MAX_TRAIL = 50
 
 var mira_mouse = Global.mira_mouse
 var health = MAX_HEALTH
@@ -27,16 +28,16 @@ var giroblock = false
 var ctrlblock = false
 var friction = 300.0
 var escala_base = 4.0
+var trail := []
 
 func _process(delta: float) -> void:
+	
+	
 	if vivo :
 		particles.emitting = Input.is_action_pressed("accelerate")
 	
 	if health >= 0:
 		barra_vida.scale.x = escala_base * (health / MAX_HEALTH)
-	
-	position.x = wrap(position.x,0,960)
-	position.y = wrap(position.y,0,540)
 	
 	if cooldown >= 0:
 		cooldown -= 1
@@ -63,6 +64,8 @@ func _process(delta: float) -> void:
 	if Input.is_action_pressed("fire") and cooldown <= 0 and !hiperdashing and vivo:
 		fire()
 	
+	detectar_wrap()
+	criar_rastro()
 	move_and_slide() 
 	
 	colidir_com_inimigo()
@@ -116,10 +119,43 @@ func die():
 	await get_tree().create_timer(1.5).timeout
 	queue_free()
 func colidir_com_inimigo():
+	
+	
 		for i in get_slide_collision_count(): #colidir com inimigos
 			var colisao = get_slide_collision(i)
 			var corpo = colisao.get_collider()
 			if corpo.is_in_group("enemies") and !hiperdashing:
 				tomar_dano(corpo)
 			else:
-				corpo.hp -= 100
+				corpo.tomar_dano(100)
+func criar_rastro():
+	trail.push_front(global_position)
+	
+	if trail.size() > MAX_TRAIL:
+		trail.pop_back()
+		
+	$rastro.clear_points()
+	
+	for p in trail:
+		$rastro.add_point(to_local(p))
+func detectar_wrap():
+	var wrapped = false
+
+	if position.x < 0:
+		position.x = 960
+		wrapped = true
+
+	if position.x > 960:
+		position.x = 0
+		wrapped = true
+
+	if position.y < 0:
+		position.y = 540
+		wrapped = true
+
+	if position.y > 540:
+		position.y = 0
+		wrapped = true
+
+	if wrapped:
+		trail.clear()

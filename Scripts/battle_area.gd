@@ -46,7 +46,7 @@ func _process(_delta: float) -> void:
 		timer -= 1 
 	else:
 		spawnar_enemy()
-		timer = randi_range(0,TIMER_MAX)
+		timer = randi_range(10,TIMER_MAX)
 		
 	if players.size() <= 0:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
