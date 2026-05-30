@@ -12,7 +12,7 @@ extends CharacterBody2D
 
 const BULLET = preload("res://Entities/fireball.tscn")
 const acceleration = 200.00
-const TURN_SPD = 5.00
+const TURN_SPD = 10.00
 const SPEED = 500.00
 const CD_MAX = 10
 const MAX_HEALTH = 100.0
@@ -29,6 +29,9 @@ var friction = 300.0
 var escala_base = 4.0
 
 func _process(delta: float) -> void:
+	if vivo :
+		particles.emitting = Input.is_action_pressed("accelerate")
+	
 	if health >= 0:
 		barra_vida.scale.x = escala_base * (health / MAX_HEALTH)
 	
@@ -43,7 +46,8 @@ func _process(delta: float) -> void:
 	
 	if !giroblock and vivo: #se nao dash e vivo, controla
 		if mouseaim:
-			look_at(get_global_mouse_position())
+			var target_angle = global_position.angle_to_point(get_global_mouse_position())
+			rotation = rotate_toward(rotation,target_angle,TURN_SPD * delta) 
 		if !mouseaim:
 			arrowsctrl(delta)
 	if !ctrlblock and vivo:
@@ -54,7 +58,6 @@ func _process(delta: float) -> void:
 			
 	if !Input.is_action_pressed("accelerate"):
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
-	
 	if Input.is_action_just_pressed("ui_accept") and vivo:
 		hiperdash()
 	if Input.is_action_pressed("fire") and cooldown <= 0 and !hiperdashing and vivo:

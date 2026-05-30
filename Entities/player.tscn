@@ -49,15 +49,18 @@ curve = SubResource("Curve_2hs0m")
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dw050"]
 particle_flag_disable_z = true
 emission_shape = 3
-emission_box_extents = Vector3(1.1, 13, 1)
+emission_box_extents = Vector3(1, 1, 1)
 direction = Vector3(-1, 0, 0)
 spread = 0.0
-initial_velocity_min = 500.0
-initial_velocity_max = 1000.0
+initial_velocity_max = 101.799995
 gravity = Vector3(0, 0, 0)
 scale_curve = SubResource("CurveTexture_1jxqw")
-color = Color(0.7019608, 1, 0.11764706, 1)
+color = Color(0.7019608, 1, 0.5568628, 1)
 color_ramp = SubResource("GradientTexture1D_sweqy")
+
+[sub_resource type="Curve" id="Curve_prmdv"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.975, 0), 0.0, 0.0, 0, 0]
+point_count = 2
 
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1.0039216, 0.9999855, 0.9999855, 1)
@@ -71,6 +74,7 @@ script = ExtResource("1_4flbx")
 DeathParticle = ExtResource("2_onrkg")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=2090995044]
+z_index = 3
 position = Vector2(-15.027628, -26.62648)
 rotation = 1.8855863
 color = Color(0.53333336, 1, 0.101960786, 1)
@@ -89,12 +93,14 @@ shape = SubResource("CircleShape2D_4flbx")
 position = Vector2(21, 0)
 
 [node name="particles" type="GPUParticles2D" parent="." unique_id=1534008633]
-self_modulate = Color(2.454227, 2.454227, 2.454227, 1)
-emitting = false
+self_modulate = Color(1.1638972, 1.1638972, 1.1638972, 1)
+z_index = 2
+position = Vector2(-4.436192, 0)
 amount = 200
 texture = SubResource("GradientTexture2D_i3pqv")
-lifetime = 0.5
-preprocess = 2.0
+lifetime = 2.0
+speed_scale = 5.0
+randomness = 1.0
 process_material = SubResource("ParticleProcessMaterial_dw050")
 
 [node name="somhiperdash" type="AudioStreamPlayer2D" parent="." unique_id=1205847850]
@@ -115,3 +121,8 @@ bus = &"Sound"
 [node name="death" type="AudioStreamPlayer2D" parent="." unique_id=710304148]
 stream = ExtResource("5_sweqy")
 bus = &"Sound"
+
+[node name="Line2D" type="Line2D" parent="." unique_id=1537280499]
+points = PackedVector2Array(0, 0, 159.70291, 0)
+width_curve = SubResource("Curve_prmdv")
+default_color = Color(1, 1, 1, 0.16078432)
