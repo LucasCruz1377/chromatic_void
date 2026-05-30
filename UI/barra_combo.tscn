@@ -50,6 +50,7 @@ offset_left = 1.0
 offset_top = 65.0
 offset_right = 145.0
 offset_bottom = 75.0
+scale = Vector2(0.67965364, 0.67965364)
 theme_override_styles/background = SubResource("StyleBoxFlat_aeidl")
 theme_override_styles/fill = SubResource("StyleBoxFlat_1pkwq")
 max_value = 240.0

@@ -6,12 +6,17 @@
 [ext_resource type="PackedScene" uid="uid://do2fi6mvjjoq1" path="res://Entities/player.tscn" id="3_xeyij"]
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="4_1s1gu"]
 [ext_resource type="Script" uid="uid://dypv3egvdvjrh" path="res://Scripts/gui.gd" id="4_bd36c"]
-[ext_resource type="PackedScene" uid="uid://cawlfryapqjyx" path="res://UI/barra_vida.tscn" id="5_1s1gu"]
 [ext_resource type="PackedScene" uid="uid://lrrmsf7mxpy7" path="res://UI/barra_combo.tscn" id="6_f80io"]
 [ext_resource type="PackedScene" uid="uid://bs0wfso1c5o1a" path="res://UI/botaomenu.tscn" id="7_hv6r0"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="8_kmw88"]
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="9_1s1gu"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="10_bd36c"]
+
+[sub_resource type="Gradient" id="Gradient_bd36c"]
+colors = PackedColorArray(0, 0.96862745, 0, 1, 0, 0.96862745, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_1s1gu"]
+gradient = SubResource("Gradient_bd36c")
 
 [sub_resource type="Animation" id="Animation_f80io"]
 length = 0.001
@@ -104,12 +109,6 @@ position = Vector2(39, 509)
 [node name="GUI" type="CanvasLayer" parent="." unique_id=1702364142]
 process_mode = 3
 script = ExtResource("4_bd36c")
-
-[node name="Fundo" parent="GUI" unique_id=930752498 instance=ExtResource("5_1s1gu")]
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 305.0
-offset_bottom = 73.0
 
 [node name="ContadorPontos" type="Label" parent="GUI" unique_id=1644039224]
 anchors_preset = 5
@@ -233,6 +232,11 @@ offset_right = 959.0
 offset_bottom = 541.0
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
+
+[node name="Barra_vida" type="Sprite2D" parent="GUI" unique_id=111638542]
+position = Vector2(453, 514.99994)
+scale = Vector2(9.84963, -0.09310111)
+texture = SubResource("GradientTexture2D_1s1gu")
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 

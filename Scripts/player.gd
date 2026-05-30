@@ -4,7 +4,7 @@ extends CharacterBody2D
 
 @onready var ponta: Marker2D = $ponta
 @onready var particles: GPUParticles2D = $particles
-@onready var health_bar: ProgressBar = $"../GUI/Fundo"
+@onready var barra_vida = $"../GUI/Barra_vida"
 @onready var somhiperdash: AudioStreamPlayer2D = $somhiperdash
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var hiperdashprepare: AudioStreamPlayer2D = $hiperdashprepare
@@ -15,7 +15,7 @@ const acceleration = 200.00
 const TURN_SPD = 5.00
 const SPEED = 500.00
 const CD_MAX = 10
-const MAX_HEALTH = 100
+const MAX_HEALTH = 100.0
 
 var mira_mouse = Global.mira_mouse
 var health = MAX_HEALTH
@@ -26,9 +26,11 @@ var vivo = true
 var giroblock = false
 var ctrlblock = false
 var friction = 300.0
+var escala_base = 4.0
 
 func _process(delta: float) -> void:
-	health_bar.value = health
+	if health >= 0:
+		barra_vida.scale.x = escala_base * (health / MAX_HEALTH)
 	
 	position.x = wrap(position.x,0,960)
 	position.y = wrap(position.y,0,540)

@@ -62,6 +62,7 @@ color_ramp = SubResource("GradientTexture1D_sweqy")
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1.0039216, 0.9999855, 0.9999855, 1)
 self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
+scale = Vector2(0.67625564, 0.67625564)
 collision_layer = 2
 collision_mask = 13
 motion_mode = 1
