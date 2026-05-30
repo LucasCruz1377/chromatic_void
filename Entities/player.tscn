@@ -123,6 +123,6 @@ stream = ExtResource("5_sweqy")
 bus = &"Sound"
 
 [node name="Line2D" type="Line2D" parent="." unique_id=1537280499]
-points = PackedVector2Array(0, 0, 159.70291, 0)
+points = PackedVector2Array(0, 0, 205.54356, 0)
 width_curve = SubResource("Curve_prmdv")
-default_color = Color(1, 1, 1, 0.16078432)
+default_color = Color(1, 1, 1, 0.06666667)
