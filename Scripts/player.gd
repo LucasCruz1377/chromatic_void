@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 @export var DeathParticle : PackedScene
+@export var BULLET : PackedScene
 
 @onready var ponta: Marker2D = $ponta
 @onready var particles: GPUParticles2D = $particles
@@ -9,8 +10,7 @@ extends CharacterBody2D
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var hiperdashprepare: AudioStreamPlayer2D = $hiperdashprepare
 @onready var death: AudioStreamPlayer2D = $death
-
-const BULLET = preload("res://Entities/fireball.tscn")
+ 
 const acceleration = 200.00
 const TURN_SPD = 10.00
 const SPEED = 500.00

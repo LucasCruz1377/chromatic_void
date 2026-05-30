@@ -46,6 +46,7 @@ _data = {
 }
 
 [node name="barra_combo" type="ProgressBar" unique_id=40295592]
+self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
 offset_left = 1.0
 offset_top = 65.0
 offset_right = 145.0
@@ -59,6 +60,7 @@ show_percentage = false
 script = ExtResource("1_hmtgx")
 
 [node name="textocombo" type="Label" parent="." unique_id=1834415485]
+self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
