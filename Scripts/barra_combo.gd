@@ -1,6 +1,6 @@
 extends ProgressBar
 
-@onready var textocombo: Label = $textocombo
+@onready var textocombo: RichTextLabel = $textocombo
 @onready var anim: AnimationPlayer = $anim
 
 
@@ -33,4 +33,4 @@ func _process(_delta: float) -> void:
 		visible = true
 
 	value = timer
-	textocombo.text = str(combotarget) + "x"
+	textocombo.text = "[shake level=5 rate=20.0]" + str(combotarget) + "x"

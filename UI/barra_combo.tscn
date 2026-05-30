@@ -13,14 +13,14 @@ length = 0.001
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("textocombo:theme_override_font_sizes/font_size")
+tracks/0/path = NodePath("textocombo:theme_override_font_sizes/normal_font_size")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [48]
+"values": [40]
 }
 
 [sub_resource type="Animation" id="Animation_my07i"]
@@ -29,14 +29,14 @@ length = 0.23333333
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("textocombo:theme_override_font_sizes/font_size")
-tracks/0/interp = 2
+tracks/0/path = NodePath("textocombo:theme_override_font_sizes/normal_font_size")
+tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.23333333),
+"times": PackedFloat32Array(0, 0.1, 0.21),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
-"values": [48, 90, 48]
+"values": [40, 65, 40]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_1ixye"]
@@ -59,7 +59,8 @@ value = 100.0
 show_percentage = false
 script = ExtResource("1_hmtgx")
 
-[node name="textocombo" type="Label" parent="." unique_id=1834415485]
+[node name="textocombo" type="RichTextLabel" parent="." unique_id=75949660]
+modulate = Color(1, 0, 1, 1)
 self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
 layout_mode = 1
 anchors_preset = 15
@@ -71,8 +72,8 @@ offset_right = -1.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0, 1, 1)
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/normal_font_size = 40
+bbcode_enabled = true
 text = "1x"
 horizontal_alignment = 1
 vertical_alignment = 2
