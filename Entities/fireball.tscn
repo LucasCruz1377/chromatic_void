@@ -30,10 +30,10 @@ texture = SubResource("GradientTexture2D_sf4mh")
 texture_scale = 2.9
 
 [node name="Polygon2D" type="Polygon2D" parent="." unique_id=424105477]
-position = Vector2(-0.6610632, 0.56805205)
-scale = Vector2(2.1652658, 1.431948)
+position = Vector2(-6.000001, 1.1920929e-07)
+scale = Vector2(4.2, 0.7159739)
 color = Color(1, 0.24368125, 0, 1)
-polygon = PackedVector2Array(0.35639763, -1.7933977, 2.811143, -1.7933977, 3.8319273, -1.0885699, 4, 0, 3, 1, 0, 1, -1, 0, -0.83451796, -1.161483)
+polygon = PackedVector2Array(0.35639763, -1.7933977, 1.1428571, -1.7933974, 1.4803438, -1.7933977, 2.811143, -1.7933977, 3.8319273, -1.0885699, 4, 0, 3, 1, 0, 1, -1, 0, -0.83451796, -1.161483)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1607775460]
 visible = false

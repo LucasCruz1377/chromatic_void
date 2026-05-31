@@ -7,7 +7,7 @@ extends Node2D
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 
 const ENEMY = preload("res://Entities/enemy.tscn")
-const TIMER_MAX = 2 * 60
+const TIMER_MAX = 5
 
 var players = []
 var timer = TIMER_MAX
@@ -32,7 +32,7 @@ func _ready() -> void:
 	for node in get_tree().get_nodes_in_group("enemy"):
 		node.queue_free()
 		
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	tocarmusica.pitch_scale = Engine.time_scale
 	
 	var pontos_tg = Global.Pontos
@@ -43,10 +43,10 @@ func _process(_delta: float) -> void:
 	contpontos.text = str(int(pontos)).pad_zeros(8)
 	
 	if timer >= 0:
-		timer -= 1 
+		timer -= delta
 	else:
 		spawnar_enemy()
-		timer = randi_range(10,TIMER_MAX)
+		timer = randi_range(1,TIMER_MAX)
 		
 	if players.size() <= 0:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)

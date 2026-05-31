@@ -10,13 +10,13 @@ extends CharacterBody2D
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var hiperdashprepare: AudioStreamPlayer2D = $hiperdashprepare
 @onready var death: AudioStreamPlayer2D = $death
- 
+@onready var hd_particles = $hd_particles
+
 const acceleration = 200.00
 const TURN_SPD = 10.00
 const SPEED = 500.00
-const CD_MAX = 10
+const CD_MAX = 0.17
 const MAX_HEALTH = 100.0
-const MAX_TRAIL = 50
 
 var mira_mouse = Global.mira_mouse
 var health = MAX_HEALTH
@@ -28,20 +28,21 @@ var giroblock = false
 var ctrlblock = false
 var friction = 300.0
 var escala_base = 4.0
-var trail := []
+
 
 func _process(delta: float) -> void:
 	
+	position.x = wrap(position.x,0,960)
+	position.y = wrap(position.y,0,540)
 	
-	if vivo :
-		particles.emitting = Input.is_action_pressed("accelerate")
+
 	
 	if health >= 0:
 		barra_vida.scale.x = escala_base * (health / MAX_HEALTH)
 	
 	if cooldown >= 0:
-		cooldown -= 1
-	
+		cooldown -= delta
+		
 	if health <= 0:
 		die()
 	
@@ -52,6 +53,7 @@ func _process(delta: float) -> void:
 		if !mouseaim:
 			arrowsctrl(delta)
 	if !ctrlblock and vivo:
+		particles.emitting = Input.is_action_pressed("accelerate")
 		if Input.is_action_pressed("accelerate"):
 			accelerate(delta)
 		if Input.is_action_pressed("brake"):
@@ -64,8 +66,6 @@ func _process(delta: float) -> void:
 	if Input.is_action_pressed("fire") and cooldown <= 0 and !hiperdashing and vivo:
 		fire()
 	
-	detectar_wrap()
-	criar_rastro()
 	move_and_slide() 
 	
 	colidir_com_inimigo()
@@ -94,11 +94,12 @@ func hiperdash():
 	Engine.time_scale = 0.2
 	await get_tree().create_timer(0.2).timeout
 	giroblock = true
-	particles.emitting = true
 	Engine.time_scale = 1
 	somhiperdash.play()
+	hd_particles.emitting = true
 	velocity += transform.x * SPEED * 5
 	await get_tree().create_timer(0.15).timeout
+	hd_particles.emitting = false
 	velocity *= 0.2
 	
 	await get_tree().create_timer(0.3).timeout
@@ -128,34 +129,3 @@ func colidir_com_inimigo():
 				tomar_dano(corpo)
 			else:
 				corpo.tomar_dano(100)
-func criar_rastro():
-	trail.push_front(global_position)
-	
-	if trail.size() > MAX_TRAIL:
-		trail.pop_back()
-		
-	$rastro.clear_points()
-	
-	for p in trail:
-		$rastro.add_point(to_local(p))
-func detectar_wrap():
-	var wrapped = false
-
-	if position.x < 0:
-		position.x = 960
-		wrapped = true
-
-	if position.x > 960:
-		position.x = 0
-		wrapped = true
-
-	if position.y < 0:
-		position.y = 540
-		wrapped = true
-
-	if position.y > 540:
-		position.y = 0
-		wrapped = true
-
-	if wrapped:
-		trail.clear()

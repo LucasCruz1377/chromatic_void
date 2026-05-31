@@ -59,13 +59,24 @@ scale_curve = SubResource("CurveTexture_1jxqw")
 color = Color(0.7019608, 1, 0.5568628, 1)
 color_ramp = SubResource("GradientTexture1D_sweqy")
 
-[sub_resource type="Curve" id="Curve_prmdv"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.975, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
 [sub_resource type="Curve" id="Curve_s1j76"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
 point_count = 2
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_s1j76"]
+particle_flag_disable_z = true
+emission_shape_offset = Vector3(-16.36, 0, 0)
+emission_shape_scale = Vector3(1, 7.59, 1)
+emission_shape = 3
+emission_box_extents = Vector3(1, 1, 1)
+direction = Vector3(-1, 0, 0)
+spread = 0.0
+initial_velocity_min = 384.62
+initial_velocity_max = 630.76996
+radial_velocity_min = -849.46
+radial_velocity_max = 727.04
+gravity = Vector3(0, 0, 0)
+color = Color(0.7019608, 1, 0.90588236, 1)
 
 [node name="CharacterBody2D" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1.0039216, 0.9999855, 0.9999855, 1)
@@ -107,6 +118,7 @@ shape = SubResource("CircleShape2D_4flbx")
 position = Vector2(17.74477, 0)
 
 [node name="particles" type="GPUParticles2D" parent="." unique_id=1534008633]
+visible = false
 self_modulate = Color(1.1638972, 1.1638972, 1.1638972, 1)
 z_index = 2
 position = Vector2(-4.436192, 0)
@@ -136,11 +148,15 @@ bus = &"Sound"
 stream = ExtResource("5_sweqy")
 bus = &"Sound"
 
-[node name="mira_reta" type="Line2D" parent="." unique_id=1537280499]
-points = PackedVector2Array(0, 0, 205.54356, 0)
-width_curve = SubResource("Curve_prmdv")
-default_color = Color(1, 1, 1, 0.06666667)
-
 [node name="rastro" type="Line2D" parent="." unique_id=666547131]
 width_curve = SubResource("Curve_s1j76")
 default_color = Color(0.6666667, 1, 0.11372549, 0.40392157)
+
+[node name="hd_particles" type="GPUParticles2D" parent="." unique_id=253980727]
+modulate = Color(0.7019608, 1, 0.90588236, 1)
+self_modulate = Color(1.5720325, 1.5720325, 1.5720325, 1)
+emitting = false
+amount = 100
+speed_scale = 3.0
+trail_enabled = true
+process_material = SubResource("ParticleProcessMaterial_s1j76")
