@@ -118,7 +118,6 @@ shape = SubResource("CircleShape2D_4flbx")
 position = Vector2(17.74477, 0)
 
 [node name="particles" type="GPUParticles2D" parent="." unique_id=1534008633]
-visible = false
 self_modulate = Color(1.1638972, 1.1638972, 1.1638972, 1)
 z_index = 2
 position = Vector2(-4.436192, 0)
@@ -131,7 +130,7 @@ process_material = SubResource("ParticleProcessMaterial_dw050")
 
 [node name="somhiperdash" type="AudioStreamPlayer2D" parent="." unique_id=1205847850]
 stream = ExtResource("3_i3pqv")
-pitch_scale = 0.48
+pitch_scale = 3.25
 bus = &"Sound"
 
 [node name="somtiro" type="AudioStreamPlayer2D" parent="." unique_id=2009052138]
