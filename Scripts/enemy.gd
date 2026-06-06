@@ -3,7 +3,7 @@ extends CharacterBody2D
 @export var Deathparticle : PackedScene
 @onready var anim = $anim
 
-const SPEED = 2.0
+const SPEED = 200.0
 var hp = 3
 var dmg = 2
 
@@ -16,7 +16,7 @@ func _physics_process(delta: float) -> void:
 	
 	die()
 
-func seguir(_delta):
+func seguir(delta):
 	var players = get_tree().get_nodes_in_group("player")
 	
 	if players.size() == 0:	
@@ -26,7 +26,7 @@ func seguir(_delta):
 	
 	var direcao = (target.global_position - global_position).normalized()
 	
-	velocity += direcao * SPEED
+	velocity += direcao * SPEED * delta
 	
 	look_at(target.global_position)
 	
@@ -38,8 +38,8 @@ func die():
 		_particle.emitting = true
 		get_tree().current_scene.add_child(_particle)
 		
-		Global.Pontos += 10 + (10 * Global.Combo)
 		Global.Combo += 1 
+		Global.Pontos += 100 + (100 * (Global.Combo - 1))
 		queue_free()
 
 func tomar_dano(valor):
