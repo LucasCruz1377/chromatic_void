@@ -51,7 +51,7 @@ offset_right = 630.0
 offset_bottom = 65.0
 theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
-text = "[wave]CONFIGURAÇÕES"
+text = "[wave]SETTINGS"
 fit_content = true
 horizontal_alignment = 1
 
@@ -72,7 +72,7 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-text = "Mirar com o mouse"
+text = "Mouse Aim"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="configs_box" unique_id=1167116923]
 layout_mode = 2
@@ -80,7 +80,7 @@ size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="configs_box/HBoxContainer" unique_id=217773421]
 layout_mode = 2
-text = "Sons"
+text = "Effect"
 
 [node name="ctrl_volume_som" type="HScrollBar" parent="configs_box/HBoxContainer" unique_id=1734913157]
 layout_mode = 2
@@ -97,7 +97,7 @@ alignment = 1
 
 [node name="Label" type="Label" parent="configs_box/HBoxContainer2" unique_id=394459012]
 layout_mode = 2
-text = "Música"
+text = "Music"
 
 [node name="ctrl_volume_musica" type="HScrollBar" parent="configs_box/HBoxContainer2" unique_id=1363836232]
 layout_mode = 2
@@ -115,7 +115,7 @@ layout_mode = 0
 offset_right = 216.0
 offset_bottom = 81.0
 theme_override_font_sizes/font_size = 39
-text = "< voltar"
+text = "< Back"
 
 [node name="fx" parent="voltar" unique_id=767019499 instance=ExtResource("6_w2h0g")]
 scale_amount = Vector2(1.1, 1.1)

@@ -28,11 +28,7 @@ func _process(_delta: float) -> void:
 
 func _on_mouse_teclado_toggled(toggled_on: bool) -> void:
 	mira_mouse = toggled_on
-	
-	if mira_mouse:
-		print("usar mouse")
-	else:
-		print("usar teclado")
+	salvar_configuracoes()
 
 func _on_voltar_pressed() -> void:
 	salvar_configuracoes()
@@ -51,11 +47,11 @@ func carregar_configuracoes():
 	
 func _on_ctrl_volume_som_value_changed(value: float) -> void:
 	volume_som = value
-	print("som: " + str(volume_som))
+	salvar_configuracoes()
 
 func _on_ctrl_volume_musica_value_changed(value: float) -> void:
 	volume_musica = value
-	print("Musica: " + str(volume_musica))
+	salvar_configuracoes()
 
 func salvar_configuracoes():
 	Global.mira_mouse = mira_mouse

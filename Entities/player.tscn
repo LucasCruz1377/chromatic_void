@@ -59,10 +59,6 @@ scale_curve = SubResource("CurveTexture_1jxqw")
 color = Color(0.7019608, 1, 0.5568628, 1)
 color_ramp = SubResource("GradientTexture1D_sweqy")
 
-[sub_resource type="Curve" id="Curve_s1j76"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_s1j76"]
 particle_flag_disable_z = true
 emission_shape_offset = Vector3(-16.36, 0, 0)
@@ -111,7 +107,6 @@ scale = Vector2(1.7317743, 1.651419)
 texture = SubResource("GradientTexture2D_onrkg")
 
 [node name="colisao" type="CollisionShape2D" parent="." unique_id=694652783]
-visible = false
 shape = SubResource("CircleShape2D_4flbx")
 
 [node name="ponta" type="Marker2D" parent="." unique_id=566907530]
@@ -121,6 +116,7 @@ position = Vector2(17.74477, 0)
 self_modulate = Color(1.1638972, 1.1638972, 1.1638972, 1)
 z_index = 2
 position = Vector2(-4.436192, 0)
+emitting = false
 amount = 200
 texture = SubResource("GradientTexture2D_i3pqv")
 lifetime = 0.93
@@ -146,10 +142,6 @@ bus = &"Sound"
 [node name="death" type="AudioStreamPlayer2D" parent="." unique_id=710304148]
 stream = ExtResource("5_sweqy")
 bus = &"Sound"
-
-[node name="rastro" type="Line2D" parent="." unique_id=666547131]
-width_curve = SubResource("Curve_s1j76")
-default_color = Color(0.6666667, 1, 0.11372549, 0.40392157)
 
 [node name="hd_particles" type="GPUParticles2D" parent="." unique_id=253980727]
 modulate = Color(0.7019608, 1, 0.90588236, 1)

@@ -121,7 +121,7 @@ offset_bottom = 59.0
 grow_horizontal = 2
 theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 22
-text = "PONTOS:"
+text = "T_SCORE"
 
 [node name="Pontos" type="Label" parent="GUI" unique_id=451615583]
 anchors_preset = 5
@@ -206,12 +206,13 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 41
-text = "JOGO PAUSADO"
+text = "T_GAMEPAUSED"
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="voltarmenu" parent="GUI/caixa pause" unique_id=497244504 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
+text = "B_BACKTOMENU"
 
 [node name="tryagain3" parent="GUI/caixa pause/voltarmenu" unique_id=1456527858 instance=ExtResource("10_bd36c")]
 scale_amount = Vector2(1.1, 1.1)
@@ -219,7 +220,7 @@ dist = -40
 
 [node name="despause" parent="GUI/caixa pause" unique_id=1820316957 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
-text = "Despausar Jogo"
+text = "B_RESUMEGAME"
 
 [node name="tryagain4" parent="GUI/caixa pause/despause" unique_id=13326222 instance=ExtResource("10_bd36c")]
 scale_amount = Vector2(1.1, 1.1)

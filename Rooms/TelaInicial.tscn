@@ -102,14 +102,23 @@ alignment = 1
 
 [node name="Start" parent="CanvasLayer/CaixaMenu2" unique_id=1661321070 instance=ExtResource("2_3sat0")]
 layout_mode = 2
+text = "B_START"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Start" unique_id=767019499 instance=ExtResource("3_jstqx")]
 scale_amount = Vector2(1.2, 1.2)
 color1 = Color(1.1551381e-06, 0.8614051, 0.6311949, 1)
 
+[node name="Shop" parent="CanvasLayer/CaixaMenu2" unique_id=2034614403 instance=ExtResource("2_3sat0")]
+layout_mode = 2
+text = "B_SHOP"
+
+[node name="Start2" parent="CanvasLayer/CaixaMenu2/Shop" unique_id=1310228528 instance=ExtResource("3_jstqx")]
+scale_amount = Vector2(1.2, 1.2)
+color1 = Color(0.95738095, 0.3472328, 0.58676773, 1)
+
 [node name="Options" parent="CanvasLayer/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-text = "OPTIONS"
+text = "B_OPTIONS"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Options" unique_id=546462851 instance=ExtResource("3_jstqx")]
 scale_amount = Vector2(1.2, 1.2)
@@ -117,7 +126,7 @@ color1 = Color(1, 0.78039217, 1, 1)
 
 [node name="Credits" parent="CanvasLayer/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-text = "CREDITS"
+text = "B_CREDITS"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
 scale_amount = Vector2(1.2, 1.2)
@@ -125,7 +134,7 @@ color1 = Color(0.56078434, 0.7137255, 0.87058824, 1)
 
 [node name="Exit" parent="CanvasLayer/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
 layout_mode = 2
-text = "EXIT"
+text = "B_QUIT"
 
 [node name="Start2" parent="CanvasLayer/CaixaMenu2/Exit" unique_id=376509437 instance=ExtResource("3_jstqx")]
 scale_amount = Vector2(1.2, 1.2)
