@@ -54,7 +54,6 @@ offset_bottom = 75.0
 scale = Vector2(0.67965364, 0.67965364)
 theme_override_styles/background = SubResource("StyleBoxFlat_aeidl")
 theme_override_styles/fill = SubResource("StyleBoxFlat_1pkwq")
-max_value = 240.0
 value = 100.0
 show_percentage = false
 script = ExtResource("1_hmtgx")

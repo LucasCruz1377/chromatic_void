@@ -5,7 +5,7 @@ extends ProgressBar
 
 
 var combotarget = 0
-const max_timer = 60 * 2
+const max_timer = 3*60
 var timer = max_timer
 
 func _process(_delta: float) -> void:
@@ -33,4 +33,4 @@ func _process(_delta: float) -> void:
 		visible = true
 
 	value = timer
-	textocombo.text = "[shake level=5 rate=20.0]" + str(combotarget) + "x"
+	textocombo.text = "[shake]" + str(combotarget) + "x" + "[/shake]"

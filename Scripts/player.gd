@@ -30,6 +30,8 @@ var friction = 300.0
 var escala_base = 4.0
 
 
+
+
 func _process(delta: float) -> void:
 	
 	position.x = wrap(position.x,0,960)
@@ -98,7 +100,7 @@ func hiperdash():
 	somhiperdash.play()
 	hd_particles.emitting = true
 	velocity += transform.x * SPEED * 5
-	await get_tree().create_timer(0.15).timeout
+	await get_tree().create_timer(0.25).timeout
 	hd_particles.emitting = false
 	velocity *= 0.2
 	
@@ -107,6 +109,7 @@ func hiperdash():
 	ctrlblock = false
 	giroblock = false
 	particles.emitting = false
+	
 func die():
 	if !death.playing:
 		death.play()
