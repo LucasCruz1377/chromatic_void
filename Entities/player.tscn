@@ -5,6 +5,7 @@
 [ext_resource type="AudioStream" uid="uid://dc7dbsinjkxc0" path="res://sounds/hiperdash.wav" id="3_i3pqv"]
 [ext_resource type="PackedScene" uid="uid://bhs7gnxhqncsl" path="res://Entities/fireball.tscn" id="3_s1j76"]
 [ext_resource type="AudioStream" uid="uid://swekadacalin" path="res://sounds/somtiro.wav" id="4_2hs0m"]
+[ext_resource type="Resource" uid="uid://cgfusfsgr80sj" path="res://Habilidades/HiperDash.tres" id="4_6jj0l"]
 [ext_resource type="AudioStream" uid="uid://egkrngrl3hst" path="res://sounds/hiperprepare.wav" id="4_hqtel"]
 [ext_resource type="AudioStream" uid="uid://doj6sprilgn5b" path="res://sounds/playerdeath.wav" id="5_sweqy"]
 
@@ -74,7 +75,7 @@ radial_velocity_max = 727.04
 gravity = Vector3(0, 0, 0)
 color = Color(0.7019608, 1, 0.90588236, 1)
 
-[node name="CharacterBody2D" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
+[node name="Player" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1.0039216, 0.9999855, 0.9999855, 1)
 self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
 scale = Vector2(0.67625564, 0.67625564)
@@ -83,8 +84,9 @@ collision_mask = 13
 motion_mode = 1
 wall_min_slide_angle = 0.0
 script = ExtResource("1_4flbx")
-DeathParticle = ExtResource("2_onrkg")
-BULLET = ExtResource("3_s1j76")
+ParticulaMorte = ExtResource("2_onrkg")
+tiro = ExtResource("3_s1j76")
+HabilidadeEquipada = ExtResource("4_6jj0l")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=2090995044]
 z_index = 3
@@ -124,28 +126,33 @@ speed_scale = 5.0
 randomness = 1.0
 process_material = SubResource("ParticleProcessMaterial_dw050")
 
-[node name="somhiperdash" type="AudioStreamPlayer2D" parent="." unique_id=1205847850]
-stream = ExtResource("3_i3pqv")
-pitch_scale = 3.25
-bus = &"Sound"
-
 [node name="somtiro" type="AudioStreamPlayer2D" parent="." unique_id=2009052138]
 stream = ExtResource("4_2hs0m")
 pitch_scale = 0.31
-bus = &"Sound"
-
-[node name="hiperdashprepare" type="AudioStreamPlayer2D" parent="." unique_id=13991466]
-stream = ExtResource("4_hqtel")
-pitch_scale = 0.4
 bus = &"Sound"
 
 [node name="death" type="AudioStreamPlayer2D" parent="." unique_id=710304148]
 stream = ExtResource("5_sweqy")
 bus = &"Sound"
 
-[node name="hd_particles" type="GPUParticles2D" parent="." unique_id=253980727]
+[node name="Hiperdash" type="Node" parent="." unique_id=493684728]
+
+[node name="somhiperdash" type="AudioStreamPlayer2D" parent="Hiperdash" unique_id=1205847850]
+scale = Vector2(0.67625564, 0.67625564)
+stream = ExtResource("3_i3pqv")
+pitch_scale = 3.25
+bus = &"Sound"
+
+[node name="hiperdashprepare" type="AudioStreamPlayer2D" parent="Hiperdash" unique_id=13991466]
+scale = Vector2(0.67625564, 0.67625564)
+stream = ExtResource("4_hqtel")
+pitch_scale = 0.4
+bus = &"Sound"
+
+[node name="hd_particles" type="GPUParticles2D" parent="Hiperdash" unique_id=253980727]
 modulate = Color(0.7019608, 1, 0.90588236, 1)
 self_modulate = Color(1.5720325, 1.5720325, 1.5720325, 1)
+scale = Vector2(0.67625564, 0.67625564)
 emitting = false
 amount = 100
 speed_scale = 3.0

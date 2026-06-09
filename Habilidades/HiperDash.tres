@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="HiperDash" format=3 uid="uid://cgfusfsgr80sj"]
+
+[ext_resource type="Script" uid="uid://b72qka705e4eg" path="res://Habilidades/Hiperdash.gd" id="1_c1tim"]
+
+[resource]
+script = ExtResource("1_c1tim")
+Nome = "HiperDash"
+Cooldown = 10.0
+Dano = 100.0
+metadata/_custom_type_script = "uid://b72qka705e4eg"
