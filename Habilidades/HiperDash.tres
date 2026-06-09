@@ -4,6 +4,9 @@
 
 [resource]
 script = ExtResource("1_c1tim")
+ForcaDash = 2000.0
+DuracaoDash = 0.5
+EscalaLentidao = 0.2
 Nome = "HiperDash"
 Cooldown = 10.0
 Dano = 100.0

@@ -61,7 +61,8 @@ func _process(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	if Input.is_action_pressed("fire") and cooldown <= 0 and vivo:
 		fire()
-	
+	if Input.is_action_just_pressed("ui_accept"):
+		HabilidadeEquipada.activate(self)	
 	move_and_slide() 
 	
 func tomar_dano(corpo):
