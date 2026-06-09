@@ -51,7 +51,7 @@ offset_right = 630.0
 offset_bottom = 65.0
 theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
-text = "[wave]SETTINGS"
+text = "T_SETTINGS"
 fit_content = true
 horizontal_alignment = 1
 
@@ -72,7 +72,7 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
-text = "Mouse Aim"
+text = "TG_MOUSEAIM"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="configs_box" unique_id=1167116923]
 layout_mode = 2
@@ -80,7 +80,7 @@ size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="configs_box/HBoxContainer" unique_id=217773421]
 layout_mode = 2
-text = "Effect"
+text = "BAR_EFFECTS"
 
 [node name="ctrl_volume_som" type="HScrollBar" parent="configs_box/HBoxContainer" unique_id=1734913157]
 layout_mode = 2
@@ -97,7 +97,7 @@ alignment = 1
 
 [node name="Label" type="Label" parent="configs_box/HBoxContainer2" unique_id=394459012]
 layout_mode = 2
-text = "Music"
+text = "BAR_MUSIC"
 
 [node name="ctrl_volume_musica" type="HScrollBar" parent="configs_box/HBoxContainer2" unique_id=1363836232]
 layout_mode = 2
