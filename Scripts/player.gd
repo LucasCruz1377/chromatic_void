@@ -24,9 +24,7 @@ var giroblock = false
 var ctrlblock = false
 var friction = 300.0
 var escala_base = 4.0
-
-
-
+var UsandoHabilidade = false
 
 func _process(delta: float) -> void:
 	
@@ -50,8 +48,11 @@ func _process(delta: float) -> void:
 			rotation = rotate_toward(rotation,target_angle,TURN_SPD * delta) 
 		if !mouseaim:
 			arrowsctrl(delta)
-	if !ctrlblock and vivo:
-		particles.emitting = Input.is_action_pressed("accelerate")
+	if vivo:
+		if Input.is_action_pressed("accelerate") or UsandoHabilidade:
+			particles.emitting = true
+		else:
+			particles.emitting = false
 		if Input.is_action_pressed("accelerate"):
 			accelerate(delta)
 		if Input.is_action_pressed("brake"):
@@ -61,14 +62,14 @@ func _process(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	if Input.is_action_pressed("fire") and cooldown <= 0 and vivo:
 		fire()
-	if Input.is_action_just_pressed("ui_accept"):
+	if Input.is_action_just_pressed("ui_accept") and !UsandoHabilidade:
 		HabilidadeEquipada.activate(self)	
 	move_and_slide() 
 	
 func tomar_dano(corpo):
 	health -= corpo.dmg
 func accelerate(delta:float):
-	velocity += transform.x * SPEED * delta  
+	velocity += transform.x * SPEED * delta
 func brake(delta:float):
 	velocity -= transform.x * (SPEED/2) * delta
 func fire():
@@ -94,3 +95,17 @@ func die():
 	get_tree().current_scene.add_child(_particle)
 	await get_tree().create_timer(1.5).timeout
 	queue_free()
+
+func BloquearControle():
+	ctrlblock = true
+func BloquearGiro():
+	giroblock = true
+func DesbloquearControle():
+	ctrlblock = false
+func DesbloquearGiro():
+	giroblock = false
+
+func IniciarHabilidade():
+	UsandoHabilidade = true
+func EncerrarHabilidade():
+	UsandoHabilidade = false
