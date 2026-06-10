@@ -32,6 +32,7 @@ func seguir(delta):
 	
 func die():
 	if hp <= 0:
+		CameraShake.shake(10,1)
 		var _particle = Deathparticle.instantiate()
 		_particle.position = global_position
 		_particle.rotation = global_rotation

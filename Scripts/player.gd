@@ -12,7 +12,7 @@ extends CharacterBody2D
 const acceleration = 200.00
 const TURN_SPD = 10.00
 const SPEED = 500.00
-const CD_MAX = 0.17
+const CD_MAX = 0.16
 const MAX_HEALTH = 100.0
 
 var mira_mouse = Global.mira_mouse
@@ -75,6 +75,7 @@ func brake(delta:float):
 func fire():
 		var instance_bullet = tiro.instantiate()
 		get_tree().current_scene.add_child(instance_bullet)
+		CameraShake.shake(1,0.1)
 		somtiro.pitch_scale = 1 + randf_range(-0.1,0.1)
 		somtiro.play()
 		instance_bullet.global_position = PontaArma.global_position

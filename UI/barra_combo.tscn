@@ -46,7 +46,7 @@ _data = {
 }
 
 [node name="barra_combo" type="ProgressBar" unique_id=40295592]
-self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
+self_modulate = Color(1.1638972, 1.1638972, 1.1638972, 1)
 offset_left = 1.0
 offset_top = 65.0
 offset_right = 145.0
@@ -60,7 +60,6 @@ script = ExtResource("1_hmtgx")
 
 [node name="textocombo" type="RichTextLabel" parent="." unique_id=75949660]
 modulate = Color(1, 0, 1, 1)
-self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

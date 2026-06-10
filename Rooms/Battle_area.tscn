@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="8_kmw88"]
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="9_1s1gu"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="10_bd36c"]
+[ext_resource type="PackedScene" uid="uid://cvhvbtre63cad" path="res://Entities/Camera.tscn" id="12_1s1gu"]
 
 [sub_resource type="Gradient" id="Gradient_bd36c"]
 colors = PackedColorArray(0, 0.96862745, 0, 1, 0, 0.96862745, 0, 1)
@@ -244,6 +245,9 @@ texture = SubResource("GradientTexture2D_1s1gu")
 [node name="transition" type="AnimationPlayer" parent="." unique_id=1456092539]
 libraries/ = SubResource("AnimationLibrary_f80io")
 autoplay = &"fade_out"
+
+[node name="Camera" parent="." unique_id=142676959 instance=ExtResource("12_1s1gu")]
+position = Vector2(487, 271)
 
 [connection signal="pressed" from="GUI/caixa gameover/Tentar de novo" to="GUI" method="_on_tentar_de_novo_pressed"]
 [connection signal="pressed" from="GUI/caixa gameover/Voltarmenu2" to="GUI" method="_on_voltarmenu_2_pressed"]
