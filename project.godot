@@ -20,7 +20,6 @@ config/icon="uid://d3bgt0o17j0qy"
 [autoload]
 
 Global="*uid://syp3i6gsjtl3"
-CameraShake="*uid://cpe244q405ktm"
 
 [display]
 
@@ -30,6 +29,13 @@ window/size/mode=3
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[file_customization]
+
+folder_colors={
+"res://Rooms/": "orange",
+"res://Scripts/": "yellow"
+}
+
 [global_group]
 
 parede=""
@@ -37,6 +43,7 @@ bullets=""
 enemies=""
 player=""
 spawners=""
+camera=""
 
 [input]
 

@@ -8,6 +8,7 @@ extends CharacterBody2D
 @onready var barra_vida = $"../GUI/Barra_vida"
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
+@onready var camera : Camera2D = get_tree().get_first_node_in_group("camera")
 
 const acceleration = 200.00
 const TURN_SPD = 10.00
@@ -75,7 +76,7 @@ func brake(delta:float):
 func fire():
 		var instance_bullet = tiro.instantiate()
 		get_tree().current_scene.add_child(instance_bullet)
-		CameraShake.shake(1,0.1)
+		camera.Shake()
 		somtiro.pitch_scale = 1 + randf_range(-0.1,0.1)
 		somtiro.play()
 		instance_bullet.global_position = PontaArma.global_position

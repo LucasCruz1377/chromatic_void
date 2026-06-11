@@ -248,8 +248,6 @@ autoplay = &"fade_out"
 
 [node name="Camera" parent="." unique_id=142676959 groups=["camera"] instance=ExtResource("12_1s1gu")]
 position = Vector2(487, 271)
-ShakeMax = 1.0
-ShakeFade = 5.0
 
 [connection signal="pressed" from="GUI/caixa gameover/Tentar de novo" to="GUI" method="_on_tentar_de_novo_pressed"]
 [connection signal="pressed" from="GUI/caixa gameover/Voltarmenu2" to="GUI" method="_on_voltarmenu_2_pressed"]

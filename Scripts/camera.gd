@@ -1,27 +1,13 @@
 extends Camera2D
 
-var ForcaShake := 0.0
-var DuracaoShake := 0.0
-var DuracaoMax := 0
+@export var ShakeMax := 10.0
+@export var ShakeFade : float = 10.0
+var _ForcaShake : float = 0.0
 
-func _ready() -> void:
-	CameraShake.Camera = self
-
-func shake(forca: float, duracao: float):
-	if forca > ForcaShake:
-		ForcaShake = forca
+func Shake() -> void:
+	_ForcaShake = ShakeMax
 	
-	DuracaoShake = max(DuracaoShake,duracao)
-	DuracaoMax = max(DuracaoShake,duracao)
-	
-func _process(delta: float) -> void:
-	if DuracaoShake > 0:
-		DuracaoShake -= delta
-	
-		var tempo = DuracaoShake/ DuracaoMax 
-		
-		offset = Vector2(randf_range(-ForcaShake * tempo, ForcaShake * tempo), randf_range(-ForcaShake * tempo, ForcaShake * tempo) )
-		
-		
-	else:
-		offset = Vector2.ZERO
+func _process(delta):
+	if _ForcaShake > 0:
+		_ForcaShake = lerp(_ForcaShake, 0.0, ShakeFade * delta)
+		offset = Vector2(randf_range(-_ForcaShake,_ForcaShake),randf_range(-_ForcaShake,_ForcaShake))
