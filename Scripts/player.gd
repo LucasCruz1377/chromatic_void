@@ -29,6 +29,11 @@ var UsandoHabilidade = false
 
 func _process(delta: float) -> void:
 	
+	HabilidadeEquipada.update(self,delta)
+	
+	if vivo and Input.is_action_just_pressed("ui_accept") and vivo:
+		HabilidadeEquipada.activate(self)
+	
 	position.x = wrap(position.x,0,960)
 	position.y = wrap(position.y,0,540)
 	
@@ -58,14 +63,11 @@ func _process(delta: float) -> void:
 		if Input.is_action_pressed("brake"):
 			brake(delta)
 			
-		HabilidadeEquipada.activate(self)
 			
 	if !Input.is_action_pressed("accelerate") and !Input.is_action_pressed("brake"):
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	if Input.is_action_pressed("fire") and cooldown <= 0 and vivo:
 		fire()
-	if Input.is_action_just_pressed("ui_accept") and !UsandoHabilidade and HabilidadeEquipada:
-		HabilidadeEquipada.activate(self)	
 	move_and_slide() 
 	
 func tomar_dano(corpo):

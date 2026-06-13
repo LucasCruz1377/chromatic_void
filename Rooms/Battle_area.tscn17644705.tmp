@@ -1,0 +1,257 @@
+[gd_scene format=3 uid="uid://c6fgnmw33h312"]
+
+[ext_resource type="Script" uid="uid://c88585sg45tkn" path="res://Scripts/battle_area.gd" id="1_iop6r"]
+[ext_resource type="AudioStream" uid="uid://cosajux0ph2yg" path="res://sounds/gamemusic.mp3" id="2_sfht8"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_bd36c"]
+[ext_resource type="PackedScene" uid="uid://do2fi6mvjjoq1" path="res://Entities/player.tscn" id="3_xeyij"]
+[ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="4_1s1gu"]
+[ext_resource type="Script" uid="uid://dypv3egvdvjrh" path="res://Scripts/gui.gd" id="4_bd36c"]
+[ext_resource type="PackedScene" uid="uid://lrrmsf7mxpy7" path="res://UI/barra_combo.tscn" id="6_f80io"]
+[ext_resource type="PackedScene" uid="uid://bs0wfso1c5o1a" path="res://UI/botaomenu.tscn" id="7_hv6r0"]
+[ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="8_kmw88"]
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="9_1s1gu"]
+[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="10_bd36c"]
+[ext_resource type="PackedScene" uid="uid://cvhvbtre63cad" path="res://Entities/Camera.tscn" id="12_1s1gu"]
+
+[sub_resource type="Gradient" id="Gradient_bd36c"]
+colors = PackedColorArray(0, 0.96862745, 0, 1, 0, 0.96862745, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_1s1gu"]
+gradient = SubResource("Gradient_bd36c")
+
+[sub_resource type="Animation" id="Animation_f80io"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GUI/trans_rect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_1s1gu"]
+resource_name = "fade_in"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GUI/trans_rect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_hv6r0"]
+resource_name = "fade_in_2"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("GUI/trans_rect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.033333335, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_f80io"]
+_data = {
+&"RESET": SubResource("Animation_f80io"),
+&"fade_in": SubResource("Animation_1s1gu"),
+&"fade_out": SubResource("Animation_hv6r0")
+}
+
+[node name="Battle_area" type="Node2D" unique_id=937167224]
+script = ExtResource("1_iop6r")
+metadata/_edit_horizontal_guides_ = [540.0]
+metadata/_edit_vertical_guides_ = [960.0]
+
+[node name="tocarmusica" type="AudioStreamPlayer2D" parent="." unique_id=1753205192]
+position = Vector2(453, 257)
+scale = Vector2(1.7456002, -14.767745)
+stream = ExtResource("2_sfht8")
+volume_db = -7.0
+autoplay = true
+bus = &"Music"
+
+[node name="Shader" parent="." unique_id=996982090 instance=ExtResource("3_bd36c")]
+
+[node name="espaco" parent="." unique_id=435737775 instance=ExtResource("4_1s1gu")]
+position = Vector2(480, 270)
+
+[node name="Player" parent="." unique_id=1457330626 instance=ExtResource("3_xeyij")]
+process_mode = 1
+position = Vector2(475, 235)
+
+[node name="Node" type="Node" parent="." unique_id=159318720]
+
+[node name="spawner1" type="Marker2D" parent="Node" unique_id=1776270182 groups=["spawners"]]
+position = Vector2(29, 104)
+
+[node name="spawner2" type="Marker2D" parent="Node" unique_id=308421577 groups=["spawners"]]
+position = Vector2(916, 494)
+
+[node name="spawner3" type="Marker2D" parent="Node" unique_id=699265310 groups=["spawners"]]
+position = Vector2(931, 40)
+
+[node name="spawner4" type="Marker2D" parent="Node" unique_id=1674730259 groups=["spawners"]]
+position = Vector2(39, 509)
+
+[node name="GUI" type="CanvasLayer" parent="." unique_id=1702364142]
+process_mode = 3
+script = ExtResource("4_bd36c")
+
+[node name="ContadorPontos" type="Label" parent="GUI" unique_id=1644039224]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 207.0
+offset_top = 28.0
+offset_right = 303.0
+offset_bottom = 59.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("9_1s1gu")
+theme_override_font_sizes/font_size = 22
+text = "T_SCORE"
+
+[node name="Pontos" type="Label" parent="GUI" unique_id=451615583]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 338.0
+offset_top = 28.0
+offset_right = 407.0
+offset_bottom = 59.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("9_1s1gu")
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="barra_combo" parent="GUI" unique_id=40295592 instance=ExtResource("6_f80io")]
+process_mode = 1
+visible = false
+offset_left = 21.0
+offset_top = 502.0
+offset_right = 165.0
+offset_bottom = 512.0
+max_value = 120.0
+
+[node name="caixa gameover" type="VBoxContainer" parent="GUI" unique_id=488768928]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -284.0
+offset_top = -58.5
+offset_right = 284.0
+offset_bottom = 58.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 25
+alignment = 1
+
+[node name="Tentatdenovotext" type="Label" parent="GUI/caixa gameover" unique_id=164379993]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("9_1s1gu")
+theme_override_font_sizes/font_size = 41
+text = "VOCÊ MORREU"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Tentar de novo" parent="GUI/caixa gameover" unique_id=2034343078 instance=ExtResource("7_hv6r0")]
+layout_mode = 2
+text = "Tentar novamente"
+
+[node name="tryagain" parent="GUI/caixa gameover/Tentar de novo" unique_id=767019499 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
+[node name="Voltarmenu2" parent="GUI/caixa gameover" unique_id=787826253 instance=ExtResource("7_hv6r0")]
+layout_mode = 2
+
+[node name="tryagain2" parent="GUI/caixa gameover/Voltarmenu2" unique_id=1471391804 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
+[node name="caixa pause" type="VBoxContainer" parent="GUI" unique_id=496644049]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -284.0
+offset_top = -58.5
+offset_right = 284.0
+offset_bottom = 58.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 25
+alignment = 1
+
+[node name="jogopausado" type="Label" parent="GUI/caixa pause" unique_id=213460373]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("9_1s1gu")
+theme_override_font_sizes/font_size = 41
+text = "T_GAMEPAUSED"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="voltarmenu" parent="GUI/caixa pause" unique_id=497244504 instance=ExtResource("7_hv6r0")]
+layout_mode = 2
+text = "B_BACKTOMENU"
+
+[node name="tryagain3" parent="GUI/caixa pause/voltarmenu" unique_id=1456527858 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
+[node name="despause" parent="GUI/caixa pause" unique_id=1820316957 instance=ExtResource("7_hv6r0")]
+layout_mode = 2
+text = "B_RESUMEGAME"
+
+[node name="tryagain4" parent="GUI/caixa pause/despause" unique_id=13326222 instance=ExtResource("10_bd36c")]
+scale_amount = Vector2(1.1, 1.1)
+dist = -40
+
+[node name="trans_rect" type="ColorRect" parent="GUI" unique_id=1849737488]
+modulate = Color(1, 1, 1, 0)
+z_index = 1
+offset_right = 959.0
+offset_bottom = 541.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Barra_vida" type="Sprite2D" parent="GUI" unique_id=111638542]
+position = Vector2(453, 514.99994)
+scale = Vector2(9.84963, -0.09310111)
+texture = SubResource("GradientTexture2D_1s1gu")
+
+[node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
+
+[node name="transition" type="AnimationPlayer" parent="." unique_id=1456092539]
+libraries/ = SubResource("AnimationLibrary_f80io")
+autoplay = &"fade_out"
+
+[node name="Camera" parent="." unique_id=142676959 groups=["camera"] instance=ExtResource("12_1s1gu")]
+position = Vector2(487, 271)
+ShakeMax = 1.0
+ShakeFade = 5.0
+
+[connection signal="pressed" from="GUI/caixa gameover/Tentar de novo" to="GUI" method="_on_tentar_de_novo_pressed"]
+[connection signal="pressed" from="GUI/caixa gameover/Voltarmenu2" to="GUI" method="_on_voltarmenu_2_pressed"]
+[connection signal="pressed" from="GUI/caixa pause/voltarmenu" to="GUI" method="_on_voltarmenu_pressed"]
+[connection signal="pressed" from="GUI/caixa pause/despause" to="GUI" method="_on_despause_pressed"]
