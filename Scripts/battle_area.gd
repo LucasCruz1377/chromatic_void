@@ -5,6 +5,7 @@ extends Node2D
 @onready var player: CharacterBody2D = $Player
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
+@onready var display_skill = $GUI/DisplaySkill
 
 const ENEMY = preload("res://Entities/enemy.tscn")
 const TIMER_MAX = 5
@@ -33,6 +34,8 @@ func _ready() -> void:
 		node.queue_free()
 		
 func _process(delta: float) -> void:
+	
+	display_skill.texture = player.HabilidadeEquipada.Icone
 	tocarmusica.pitch_scale = Engine.time_scale
 	
 	var pontos_tg = Global.Pontos

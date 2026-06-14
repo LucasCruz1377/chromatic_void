@@ -240,6 +240,25 @@ position = Vector2(453, 514.99994)
 scale = Vector2(9.84963, -0.09310111)
 texture = SubResource("GradientTexture2D_1s1gu")
 
+[node name="DisplaySkill" type="TextureRect" parent="GUI" unique_id=1767237701]
+texture_filter = 1
+anchors_preset = -1
+anchor_left = 0.446
+anchor_top = 0.84400004
+anchor_right = 0.51600003
+anchor_bottom = 0.92800003
+offset_left = -0.16000366
+offset_top = 0.23999023
+offset_right = -0.3600464
+offset_bottom = -0.120025635
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_vertical = 8
+tooltip_text = "SkillDisplay"
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 
 [node name="transition" type="AnimationPlayer" parent="." unique_id=1456092539]

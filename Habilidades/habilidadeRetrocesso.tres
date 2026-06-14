@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="HabilidadeRetrocesso" format=3 uid="uid://dtg0o3a2dkeej"]
 
 [ext_resource type="Script" uid="uid://ppioxx1ytc81" path="res://Habilidades/Retrocesso.gd" id="1_356ni"]
+[ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://IconesHabilidades/RetrocessoIcon.png" id="1_s51ij"]
 
 [resource]
 script = ExtResource("1_356ni")
 intervalomemorias = 0.001
-max_memoria = 600
+max_memoria = 90
 Nome = "Retrocesso"
-Cooldown = 10.0
+Cooldown = 20.0
+Icone = ExtResource("1_s51ij")
 metadata/_custom_type_script = "uid://ppioxx1ytc81"

@@ -18,7 +18,7 @@ func activate(player):
 	rewind(player)
 
 func update(player,delta):
-	print("framesSalvos: {memoriasize}".format({"memoriasize":memoria.size()}))
+	
 	if !recordando:
 		if memoria.size() >= max_memoria:
 			memoria.pop_front()
@@ -30,7 +30,10 @@ func rewind(player):
 		recordando = false
 		return
 		
+	
 	for save in range(memoria.size() - 1,-1,-1):
+		while player.get_tree().paused:
+			await player.get_tree().process_frame	
 		
 		player.global_position = memoria[save]["posicao"]
 		player.rotation = memoria[save]["rotacao"]
