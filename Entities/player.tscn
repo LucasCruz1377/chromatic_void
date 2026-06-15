@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://b4dprqgdg4pi0" path="res://FX/player_death_parts.tscn" id="2_onrkg"]
 [ext_resource type="PackedScene" uid="uid://bhs7gnxhqncsl" path="res://Entities/fireball.tscn" id="3_s1j76"]
 [ext_resource type="AudioStream" uid="uid://swekadacalin" path="res://sounds/somtiro.wav" id="4_2hs0m"]
-[ext_resource type="Resource" uid="uid://cah4trcuntsvr" path="res://Habilidades/habilidadeHiperdash.tres" id="4_prmdv"]
+[ext_resource type="Resource" uid="uid://dtg0o3a2dkeej" path="res://Habilidades/habilidadeRetrocesso.tres" id="4_prmdv"]
 [ext_resource type="AudioStream" uid="uid://doj6sprilgn5b" path="res://sounds/playerdeath.wav" id="5_sweqy"]
 
 [sub_resource type="Gradient" id="Gradient_4flbx"]
@@ -58,8 +58,7 @@ color = Color(0.7019608, 1, 0.5568628, 1)
 color_ramp = SubResource("GradientTexture1D_sweqy")
 
 [node name="Player" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
-modulate = Color(1.0039216, 0.9999855, 0.9999855, 1)
-self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
+modulate = Color(1, 0.99607843, 1, 1)
 scale = Vector2(0.67625564, 0.67625564)
 collision_layer = 2
 collision_mask = 13
@@ -87,6 +86,7 @@ polygon = PackedVector2Array(38.333996, -16.71797, 15.171209, -39.406013, 12, -8
 uv = PackedVector2Array(34, -16, 14, -43, 12, -8)
 
 [node name="luz" type="PointLight2D" parent="." unique_id=459571741]
+visible = false
 scale = Vector2(1.7317743, 1.651419)
 texture = SubResource("GradientTexture2D_onrkg")
 

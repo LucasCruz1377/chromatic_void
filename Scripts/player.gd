@@ -9,9 +9,13 @@ extends CharacterBody2D
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
 @onready var camera : Camera2D = get_tree().get_first_node_in_group("camera")
+@onready var corpo: Polygon2D = $corpo
+@onready var corpo_2: Polygon2D = $corpo2
+
+
 
 const acceleration = 200.00
-const TURN_SPD = 10.00
+const TURN_SPD = 7.00
 const SPEED = 500.00
 const CD_MAX = 0.16
 const MAX_HEALTH = 100.0
@@ -24,7 +28,7 @@ var mouseaim = Global.mira_mouse
 var vivo = true
 var giroblock = false
 var ctrlblock = false
-var friction = 300.0
+var friction = 100.0
 var escala_base = 4.0
 var UsandoHabilidade = false
 
@@ -32,9 +36,10 @@ func _process(delta: float) -> void:
 	
 	HabilidadeEquipada.update(self,delta)
 	
-	if vivo and Input.is_action_just_pressed("ui_accept") and vivo:
+	if vivo and Input.is_action_just_pressed("ui_accept"):
 		HabilidadeEquipada.activate(self)
 	
+			
 	position.x = wrap(position.x,0,960)
 	position.y = wrap(position.y,0,540)
 	
@@ -65,11 +70,10 @@ func _process(delta: float) -> void:
 			brake(delta)
 			
 			
-	if !Input.is_action_pressed("accelerate") and !Input.is_action_pressed("brake"):
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	if Input.is_action_pressed("fire") and cooldown <= 0 and vivo:
 		fire()
-		
+	
+	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	velocity = velocity.limit_length(MAX_VELOCIDADE)
 	move_and_slide() 
 	
@@ -78,7 +82,7 @@ func tomar_dano(corpo):
 func accelerate(delta:float):
 	velocity += transform.x * SPEED * delta
 func brake(delta:float):
-	velocity -= transform.x * (SPEED/2) * delta
+	velocity -= transform.x * SPEED * 0.8 * delta
 func fire():
 		var instance_bullet = tiro.instantiate()
 		get_tree().current_scene.add_child(instance_bullet)

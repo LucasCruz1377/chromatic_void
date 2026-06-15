@@ -30,7 +30,7 @@ func rewind(player):
 		recordando = false
 		return
 		
-	
+	player.IniciarHabilidade()
 	for save in range(memoria.size() - 1,-1,-1):
 		while player.get_tree().paused:
 			await player.get_tree().process_frame	
@@ -39,7 +39,7 @@ func rewind(player):
 		player.rotation = memoria[save]["rotacao"]
 		
 		await player.get_tree().create_timer(intervalomemorias).timeout
-		
+	player.EncerrarHabilidade()
 	memoria.clear()
 	recordando = false
 	player.DesbloquearGiro()
