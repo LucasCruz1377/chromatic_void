@@ -16,6 +16,7 @@ const SPEED = 500.00
 const CD_MAX = 0.16
 const MAX_HEALTH = 100.0
 
+var MAX_VELOCIDADE = 500
 var mira_mouse = Global.mira_mouse
 var health = MAX_HEALTH
 var cooldown = CD_MAX
@@ -68,6 +69,8 @@ func _process(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	if Input.is_action_pressed("fire") and cooldown <= 0 and vivo:
 		fire()
+		
+	velocity = velocity.limit_length(MAX_VELOCIDADE)
 	move_and_slide() 
 	
 func tomar_dano(corpo):
