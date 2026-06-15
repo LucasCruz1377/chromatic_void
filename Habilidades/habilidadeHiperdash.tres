@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Hiperdash" format=3 uid="uid://cah4trcuntsvr"]
+
+[ext_resource type="Script" uid="uid://b72qka705e4eg" path="res://Habilidades/Hiperdash.gd" id="1_fq5o2"]
+
+[sub_resource type="Gradient" id="Gradient_7t4ss"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_u3l5p"]
+gradient = SubResource("Gradient_7t4ss")
+
+[resource]
+script = ExtResource("1_fq5o2")
+desaceleracao_tempo = 0.5
+intervalo = 0.2
+Nome = "Hiperdash"
+Icone = SubResource("GradientTexture2D_u3l5p")
+metadata/_custom_type_script = "uid://b72qka705e4eg"
