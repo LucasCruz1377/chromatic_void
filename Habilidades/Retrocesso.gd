@@ -3,7 +3,7 @@ class_name HabilidadeRetrocesso
 
 var memoria = []
 var recordando = false
-@export var intervalomemorias : float = 0.01
+@export var intervalomemorias : float = 0
 @export var max_memoria : int = 60
 
 
@@ -22,7 +22,7 @@ func update(player,delta):
 	if !recordando:
 		if memoria.size() >= max_memoria:
 			memoria.pop_front()
-		memoria.append({"posicao" : player.global_position , "rotacao" : player.rotation})
+		memoria.append({"posicao" : player.global_position , "rotacao" : player.rotation , "vida" : player.vida})
 	
 func rewind(player):
 	
@@ -37,6 +37,8 @@ func rewind(player):
 		
 		player.global_position = memoria[save]["posicao"]
 		player.rotation = memoria[save]["rotacao"]
+		
+		player.vida = memoria[save]["vida"] if memoria[save]["vida"] > player.vida else player.vida
 		
 		await player.get_tree().create_timer(intervalomemorias).timeout
 	player.EncerrarHabilidade()

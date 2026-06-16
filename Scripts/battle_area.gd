@@ -34,8 +34,10 @@ func _ready() -> void:
 		node.queue_free()
 		
 func _process(delta: float) -> void:
-	
-	display_skill.texture = player.HabilidadeEquipada.Icone
+	if player.HabilidadeEquipada.Icone != null:
+		display_skill.texture = player.HabilidadeEquipada.Icone
+	else:
+		display_skill.texture = null
 	tocarmusica.pitch_scale = Engine.time_scale
 	
 	var pontos_tg = Global.Pontos

@@ -14,17 +14,16 @@ extends CharacterBody2D
 
 
 
-const acceleration = 200.00
-const TURN_SPD = 7.00
+const VelocidadeVirar = 7.00
 const SPEED = 500.00
 const CD_MAX = 0.16
-const MAX_HEALTH = 100.0
+const VIDA_MAXIMA = 100.0
 
 var MAX_VELOCIDADE = 500
 var mira_mouse = Global.mira_mouse
-var health = MAX_HEALTH
+var vida = VIDA_MAXIMA
 var cooldown = CD_MAX
-var mouseaim = Global.mira_mouse
+var miramouse = Global.mira_mouse
 var vivo = true
 var giroblock = false
 var ctrlblock = false
@@ -33,10 +32,11 @@ var escala_base = 4.0
 var UsandoHabilidade = false
 
 func _process(delta: float) -> void:
+	tomar_dano(0.1)
 	
 	HabilidadeEquipada.update(self,delta)
 	
-	if vivo and Input.is_action_just_pressed("ui_accept"):
+	if vivo and Input.is_action_just_pressed("Habilidade"):
 		HabilidadeEquipada.activate(self)
 	
 			
@@ -44,42 +44,46 @@ func _process(delta: float) -> void:
 	position.y = wrap(position.y,0,540)
 	
 	
-	if health >= 0:
-		barra_vida.scale.x = escala_base * (health / MAX_HEALTH)
+	if vida >= 0:
+		barra_vida.scale.x = escala_base * (vida / VIDA_MAXIMA)
 	
 	if cooldown >= 0:
 		cooldown -= delta
 		
-	if health <= 0:
-		die()
+	if vida <= 0:
+		morrer()
 	
 	if !giroblock and vivo: #se nao dash e vivo, controla
-		if mouseaim:
+		if miramouse:
 			var target_angle = global_position.angle_to_point(get_global_mouse_position())
-			rotation = rotate_toward(rotation,target_angle,TURN_SPD * delta) 
-		if !mouseaim:
+			rotation = rotate_toward(rotation,target_angle,VelocidadeVirar * delta) 
+		if !miramouse:
 			arrowsctrl(delta)
 	if vivo:
-		if Input.is_action_pressed("accelerate") or UsandoHabilidade:
+		if Input.is_action_pressed("acelerar") or UsandoHabilidade:
 			particles.emitting = true
 		else:
 			particles.emitting = false
-		if Input.is_action_pressed("accelerate"):
-			accelerate(delta)
+		if Input.is_action_pressed("acelerar"):
+			acelerar(delta)
 		if Input.is_action_pressed("brake"):
 			brake(delta)
 			
 			
-	if Input.is_action_pressed("fire") and cooldown <= 0 and vivo:
+	if Input.is_action_pressed("atirar") and cooldown <= 0 and vivo:
 		fire()
 	
 	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 	velocity = velocity.limit_length(MAX_VELOCIDADE)
 	move_and_slide() 
 	
-func tomar_dano(corpo):
-	health -= corpo.dmg
-func accelerate(delta:float):
+func tomar_dano(valor):
+	vida -= valor
+	
+func curar(valor):
+	vida += valor
+	
+func acelerar(delta:float):
 	velocity += transform.x * SPEED * delta
 func brake(delta:float):
 	velocity -= transform.x * SPEED * 0.8 * delta
@@ -93,8 +97,8 @@ func fire():
 		instance_bullet.rotation = rotation
 		cooldown = CD_MAX
 func arrowsctrl(delta):
-	rotation += Input.get_axis("left","right") * TURN_SPD *delta	
-func die():
+	rotation += Input.get_axis("left","right") * VelocidadeVirar * delta	
+func morrer():
 	if !death.playing:
 		visible = false
 		death.play()

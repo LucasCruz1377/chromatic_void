@@ -5,7 +5,6 @@
 
 [resource]
 script = ExtResource("1_356ni")
-intervalomemorias = 0.0
 max_memoria = 90
 Nome = "Retrocesso"
 Cooldown = 20.0
