@@ -32,7 +32,6 @@ var escala_base = 4.0
 var UsandoHabilidade = false
 
 func _process(delta: float) -> void:
-	tomar_dano(0.1)
 	
 	HabilidadeEquipada.update(self,delta)
 	
@@ -74,7 +73,8 @@ func _process(delta: float) -> void:
 		fire()
 	
 	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
-	velocity = velocity.limit_length(MAX_VELOCIDADE)
+	if !UsandoHabilidade:
+		velocity = velocity.limit_length(MAX_VELOCIDADE)
 	move_and_slide() 
 	
 func tomar_dano(valor):

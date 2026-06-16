@@ -9,6 +9,7 @@ gradient = SubResource("Gradient_7t4ss")
 
 [resource]
 script = ExtResource("1_fq5o2")
+velocidade_dash = 1000
 desaceleracao_tempo = 0.5
 intervalo = 0.2
 Nome = "Hiperdash"
