@@ -19,6 +19,12 @@ colors = PackedColorArray(0, 0.96862745, 0, 1, 0, 0.96862745, 0, 1)
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_1s1gu"]
 gradient = SubResource("Gradient_bd36c")
 
+[sub_resource type="Gradient" id="Gradient_1s1gu"]
+colors = PackedColorArray(0, 1, 1, 1, 0, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_f80io"]
+gradient = SubResource("Gradient_1s1gu")
+
 [sub_resource type="Animation" id="Animation_f80io"]
 length = 0.001
 tracks/0/type = "value"
@@ -239,6 +245,15 @@ color = Color(0, 0, 0, 1)
 position = Vector2(453, 514.99994)
 scale = Vector2(9.84963, -0.09310111)
 texture = SubResource("GradientTexture2D_1s1gu")
+
+[node name="Barra_xp" type="TextureProgressBar" parent="GUI" unique_id=890827539]
+offset_left = 138.00002
+offset_top = 505.99997
+offset_right = 201.9809
+offset_bottom = 591.92773
+scale = Vector2(9.84669, -0.046550293)
+value = 100.0
+texture_progress = SubResource("GradientTexture2D_f80io")
 
 [node name="DisplaySkill" type="TextureRect" parent="GUI" unique_id=1767237701]
 texture_filter = 1

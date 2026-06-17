@@ -7,12 +7,12 @@ class_name Player
 @onready var PontaArma: Marker2D = $ponta
 @onready var particles: GPUParticles2D = $particles
 @onready var barra_vida = $"../GUI/Barra_vida"
+@onready var barra_xp: TextureProgressBar = $"../GUI/Barra_xp"
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
 @onready var camera : Camera2D = get_tree().get_first_node_in_group("camera")
 @onready var corpo: Polygon2D = $corpo
 @onready var corpo_2: Polygon2D = $corpo2
-
 
 
 const VelocidadeVirar = 7.00
@@ -38,6 +38,9 @@ var xp_necessario : int = 5
 signal subiuDeNivel(nivel)
 
 func _process(delta: float) -> void:
+	
+	barra_xp.value = xp_atual
+	barra_xp.max_value = xp_necessario
 	
 	HabilidadeEquipada.update(self,delta)
 	
