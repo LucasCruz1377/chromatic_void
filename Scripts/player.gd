@@ -1,4 +1,5 @@
 extends CharacterBody2D
+class_name Player
 
 @export var ParticulaMorte : PackedScene
 @export var tiro : PackedScene
@@ -30,6 +31,11 @@ var ctrlblock = false
 var friction = 100.0
 var escala_base = 4.0
 var UsandoHabilidade = false
+var xp_atual : float
+var nivel_atual : int = 1
+var xp_necessario : int = 5
+
+signal subiuDeNivel(nivel)
 
 func _process(delta: float) -> void:
 	
@@ -65,7 +71,7 @@ func _process(delta: float) -> void:
 			particles.emitting = false
 		if Input.is_action_pressed("acelerar"):
 			acelerar(delta)
-		if Input.is_action_pressed("brake"):
+		if Input.is_action_pressed("freio"):
 			brake(delta)
 			
 			
@@ -125,3 +131,15 @@ func IniciarHabilidade():
 	UsandoHabilidade = true
 func EncerrarHabilidade():
 	UsandoHabilidade = false
+
+func ganhar_xp(value):
+	xp_atual += value
+	print(str(xp_atual))
+	
+	if xp_atual >= xp_necessario:
+		nivel_atual += 1
+		xp_atual = 0
+		xp_necessario += 5
+		print(str(xp_atual))
+		print(str(nivel_atual))
+		subiuDeNivel.emit()
