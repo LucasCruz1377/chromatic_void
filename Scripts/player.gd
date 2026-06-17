@@ -29,7 +29,7 @@ var vivo = true
 var giroblock = false
 var ctrlblock = false
 var friction = 100.0
-var escala_base = 4.0
+var escala_base = 9.85
 var UsandoHabilidade = false
 var xp_atual : float
 var nivel_atual : int = 1
