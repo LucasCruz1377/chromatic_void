@@ -254,11 +254,11 @@ texture = SubResource("GradientTexture2D_1s1gu")
 [node name="Barra_xp" type="TextureProgressBar" parent="GUI" unique_id=795297198]
 anchors_preset = -1
 anchor_left = 0.14400001
-anchor_top = 0.94400007
+anchor_top = 0.93700004
 anchor_right = 0.8
 anchor_bottom = 0.94400007
 offset_left = -0.2400055
-offset_top = -3.7600403
+offset_top = 0.019989014
 offset_bottom = 0.23995972
 grow_horizontal = 2
 grow_vertical = 0

@@ -13,15 +13,6 @@ shader_parameter/brightness = 0.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_7xaro"]
 radius = 15.0
 
-[sub_resource type="Gradient" id="Gradient_7k104"]
-colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_4gyqm"]
-gradient = SubResource("Gradient_7k104")
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(0.88495576, 0.21238938)
-
 [sub_resource type="Animation" id="Animation_0ifcb"]
 length = 0.001
 tracks/0/type = "bezier"
@@ -63,7 +54,6 @@ streams_count = 1
 stream_0/stream = ExtResource("4_fjgg4")
 
 [node name="enemy_quadristar" type="CharacterBody2D" unique_id=1570180816 groups=["enemies"]]
-self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
 z_index = 1
 collision_layer = 4
 collision_mask = 15
@@ -71,6 +61,7 @@ script = ExtResource("1_7k104")
 Deathparticle = ExtResource("2_4gyqm")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=1427657541]
+self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
 material = SubResource("ShaderMaterial_fjgg4")
 rotation = 0.38544607
 scale = Vector2(0.99999994, 0.99999994)
@@ -80,12 +71,6 @@ polygon = PackedVector2Array(-5.263616, -12.972833, 2.7532916, -6.513017, 13.899
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1893412006]
 visible = false
 shape = SubResource("CircleShape2D_7xaro")
-
-[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1721206178]
-scale = Vector2(1.3932126, 1.4281172)
-color = Color(1, 0, 0.23137255, 1)
-energy = 1.46
-texture = SubResource("GradientTexture2D_4gyqm")
 
 [node name="anim" type="AnimationPlayer" parent="." unique_id=1699661545]
 libraries/ = SubResource("AnimationLibrary_b15b6")
