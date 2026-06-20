@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://dppfvpdc03i8o"]
+
+[sub_resource type="Gradient" id="Gradient_1yk16"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_g4v7s"]
+gradient = SubResource("Gradient_1yk16")
+
+[node name="Panel" type="Panel" unique_id=1076342746]
+offset_right = 200.0
+offset_bottom = 312.0
+
+[node name="Icone" type="TextureRect" parent="." unique_id=632361441]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -52.0
+offset_top = 32.0
+offset_right = 44.0
+offset_bottom = 128.0
+grow_horizontal = 2
+texture = SubResource("GradientTexture2D_g4v7s")
+
+[node name="Nome" type="Label" parent="." unique_id=175398999]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 136.0
+offset_right = 168.0
+offset_bottom = 176.0
+theme_override_font_sizes/font_size = 12
+text = "NOME"
+horizontal_alignment = 1
+
+[node name="Descricao" type="Label" parent="." unique_id=1216290712]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.040400006
+anchor_top = 0.5899231
+anchor_right = 0.9595001
+anchor_bottom = 0.974
+offset_left = -0.08000088
+offset_top = -0.055999756
+offset_right = 0.099990845
+offset_bottom = 0.11199951
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 2
+justification_flags = 3
+clip_text = true
+metadata/_edit_use_anchors_ = true

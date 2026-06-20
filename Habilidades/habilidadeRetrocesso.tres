@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="HabilidadeRetrocesso" format=3 uid="uid://dtg0o3a2dkeej"]
 
 [ext_resource type="Script" uid="uid://ppioxx1ytc81" path="res://Habilidades/Retrocesso.gd" id="1_356ni"]
-[ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://IconesHabilidades/RetrocessoIcon.png" id="1_s51ij"]
+[ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://Assets/RetrocessoIcon.png" id="1_s51ij"]
 
 [resource]
 script = ExtResource("1_356ni")

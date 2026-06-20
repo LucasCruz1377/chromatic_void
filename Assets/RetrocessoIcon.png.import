@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d12qxgujfv82t"
-path="res://.godot/imported/RetrocessoIcon.png-2af2d4853b17dc423b7988fe11dde33a.ctex"
+path="res://.godot/imported/RetrocessoIcon.png-c559b07fff3139e2d9c8e03d5c9316d2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://IconesHabilidades/RetrocessoIcon.png"
-dest_files=["res://.godot/imported/RetrocessoIcon.png-2af2d4853b17dc423b7988fe11dde33a.ctex"]
+source_file="res://Assets/RetrocessoIcon.png"
+dest_files=["res://.godot/imported/RetrocessoIcon.png-c559b07fff3139e2d9c8e03d5c9316d2.ctex"]
 
 [params]
 

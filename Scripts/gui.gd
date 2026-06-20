@@ -3,6 +3,9 @@ extends CanvasLayer
 @onready var caixa_pause: VBoxContainer = $"caixa pause"
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var display_skill = $DisplaySkill
+@export var quantidadeOpcoesUpgrade : int
+
+
 
 func _ready():
 	if player:
@@ -48,4 +51,5 @@ func _on_player_subiu_de_nivel():
 	MostrarUpgrades(3)
 
 func MostrarUpgrades(qtd : int):
-	pass
+	for opcao in range(quantidadeOpcoesUpgrade):
+		#pegar caixa ja desenhada e instanciar
