@@ -15,11 +15,11 @@ class_name Player
 @onready var corpo_2: Polygon2D = $corpo2
 
 
-const VelocidadeVirar = 7.00
-const SPEED = 500.00
-const CD_MAX = 0.16
-const VIDA_MAXIMA = 100.0
 
+var VelocidadeVirar = 7.00
+var SPEED = 500.00
+var VIDA_MAXIMA = 100.0
+var CD_MAX = 0.16
 var MAX_VELOCIDADE = 500
 var mira_mouse = Global.mira_mouse
 var vida = VIDA_MAXIMA
@@ -34,10 +34,14 @@ var UsandoHabilidade = false
 var xp_atual : float
 var nivel_atual : int = 1
 var xp_necessario : int = 5
+var dano = 1
 
 signal subiuDeNivel(nivel)
 
 func _process(delta: float) -> void:
+	if Input.is_key_label_pressed(KEY_G) and OS.is_debug_build():
+		ganhar_xp(1)
+	
 	
 	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
@@ -102,6 +106,7 @@ func fire():
 		camera.Shake()
 		somtiro.pitch_scale = 1 + randf_range(-0.1,0.1)
 		somtiro.play()
+		instance_bullet.dmg = dano
 		instance_bullet.global_position = PontaArma.global_position
 		instance_bullet.rotation = rotation
 		cooldown = CD_MAX
@@ -143,3 +148,23 @@ func ganhar_xp(value):
 		xp_atual = 0
 		xp_necessario += 5
 		subiuDeNivel.emit()
+
+func receber_upgrade(tipo):
+	match tipo:
+		0: 
+			print("melhorado cadencia")
+			CD_MAX -= 0.01
+		1:
+			print("melhorado vida")
+			VIDA_MAXIMA *= 1.1
+			vida = VIDA_MAXIMA
+			print(str(VIDA_MAXIMA))
+		2:
+			dano += 1
+			print("melhorado dano")
+		3:
+			MAX_VELOCIDADE *= 1.1
+			SPEED *= 1.05
+			print("melhorado velocidade")
+		4:
+			VelocidadeVirar *= 1.1

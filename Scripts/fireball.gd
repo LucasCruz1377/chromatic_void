@@ -1,7 +1,7 @@
 extends Area2D
 
 const SPEED = 1000
-var dmg = 1
+var dmg : int
 
 func _physics_process(delta: float) -> void:
 	position += transform.x * SPEED * delta

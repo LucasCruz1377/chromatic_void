@@ -39,5 +39,5 @@ func mostrar_cartas(upgrades):
 func _on_carta_clicada(tipo):
 	print("escolheu upgrade de:  ", tipo)
 	player.receber_upgrade(tipo)
-	for i in get_children():
+	for i in container.get_children():
 		i.queue_free()

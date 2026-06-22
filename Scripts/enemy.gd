@@ -12,7 +12,9 @@ var valorXp = 1
 func _physics_process(delta: float) -> void:
 	position.x = wrap(position.x,0,960)
 	position.y = wrap(position.y,0,540)
-
+	
+	velocity.limit_length(SPEED)
+	
 	seguir(delta)
 	move_and_slide()
 	
