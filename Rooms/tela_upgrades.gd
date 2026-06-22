@@ -14,7 +14,6 @@ func _ready():
 func _on_player_subiu_de_nivel():
 	var upgrades = sortear_upgrades(3)
 	mostrar_cartas(upgrades)
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 func sortear_upgrades(qtd : int) -> Array:
 	var tipos = Upgrades.Tipo.values()
@@ -22,6 +21,7 @@ func sortear_upgrades(qtd : int) -> Array:
 	return tipos.slice(0, qtd)
 	
 func mostrar_cartas(upgrades):
+	Engine.time_scale = 0.1
 	for tipo in upgrades:
 		var carta = cena_carta.instantiate()
 		container.add_child(carta)
@@ -39,5 +39,6 @@ func mostrar_cartas(upgrades):
 func _on_carta_clicada(tipo):
 	print("escolheu upgrade de:  ", tipo)
 	player.receber_upgrade(tipo)
+	Engine.time_scale = 1
 	for i in container.get_children():
 		i.queue_free()

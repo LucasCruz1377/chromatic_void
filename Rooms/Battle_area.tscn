@@ -172,6 +172,7 @@ offset_right = 284.0
 offset_bottom = 58.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
 theme_override_constants/separation = 25
 alignment = 1
 
@@ -212,6 +213,7 @@ offset_right = 284.0
 offset_bottom = 58.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
 theme_override_constants/separation = 25
 alignment = 1
 
@@ -268,6 +270,13 @@ mouse_filter = 2
 value = 100.0
 texture_progress = SubResource("GradientTexture2D_f80io")
 tint_progress = Color(0.58431375, 1, 1, 1)
+
+[node name="LvlText" type="Label" parent="GUI" unique_id=1316505404]
+offset_left = 138.0
+offset_top = 480.0
+offset_right = 178.0
+offset_bottom = 503.0
+text = "LVL"
 
 [node name="DisplaySkill" type="TextureRect" parent="GUI" unique_id=1767237701]
 texture_filter = 1

@@ -13,6 +13,8 @@ class_name Player
 @onready var camera : Camera2D = get_tree().get_first_node_in_group("camera")
 @onready var corpo: Polygon2D = $corpo
 @onready var corpo_2: Polygon2D = $corpo2
+@onready var display_skill: TextureRect = $"../GUI/DisplaySkill"
+@onready var lvl_text: Label = $"../GUI/LvlText"
 
 
 
@@ -34,7 +36,7 @@ var escala_base = 9.85
 var UsandoHabilidade = false
 var xp_atual : float
 var nivel_atual : int = 1
-var xp_necessario : int = 5
+var xp_necessario : int = 3
 var dano = 1
 var invencibilidade : bool = false
 var invencibilidade_cd : float = 0
@@ -43,6 +45,9 @@ var invencibilidade_cd_max : float = 1
 signal subiuDeNivel(nivel)
 
 func _process(delta: float) -> void:
+	lvl_text.text = "LVL: " + str(nivel_atual)
+	display_skill.texture = HabilidadeEquipada.Icone
+	
 	if Input.is_key_label_pressed(KEY_G) and OS.is_debug_build():
 		ganhar_xp(1)
 	
@@ -160,7 +165,7 @@ func ganhar_xp(value):
 	if xp_atual >= xp_necessario:
 		nivel_atual += 1
 		xp_atual = 0
-		xp_necessario += 5
+		xp_necessario += 3
 		subiuDeNivel.emit()
 
 func receber_upgrade(tipo):
@@ -184,6 +189,6 @@ func receber_upgrade(tipo):
 			VelocidadeVirar *= 1.1
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
-	if body.is_in_group("inimigo"):
+	if body.is_in_group("inimigo") and vivo:
 		print("encostou em inimigo")
 		tomar_dano(body.dano)

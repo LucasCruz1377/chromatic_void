@@ -8,10 +8,6 @@ extends CanvasLayer
 @onready var player = get_tree().get_first_node_in_group("player")
 
 func _process(_delta: float) -> void:
-	if player:
-		display_skill.texture = player.HabilidadeEquipada.Icone
-	else:
-		display_skill.texture = null
 		
 	var players = 	get_tree().get_nodes_in_group("player").size()
 	

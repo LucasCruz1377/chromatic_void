@@ -5,8 +5,8 @@ class_name Habilidade
 @export var Cooldown : float
 @export var Icone : Texture2D
 
-func activate(player):
+func activate(_player):
 	pass
 	
-func update(player,delta):
+func update(_player,_delta):
 	pass

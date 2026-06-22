@@ -8,7 +8,7 @@ extends Node2D
 @onready var display_skill = $GUI/DisplaySkill
 
 const ENEMY = preload("res://Entities/enemy.tscn")
-const TIMER_MAX = 5
+const TIMER_MAX = 3
 
 var players = []
 var timer = TIMER_MAX
