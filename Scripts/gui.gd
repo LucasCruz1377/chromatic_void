@@ -1,16 +1,12 @@
 extends CanvasLayer
 
 @onready var caixa_pause: VBoxContainer = $"caixa pause"
-@onready var player = get_tree().get_first_node_in_group("player")
+
 @onready var display_skill = $DisplaySkill
 @export var quantidadeOpcoesUpgrade : int
 
+@onready var player = get_tree().get_first_node_in_group("player")
 
-
-func _ready():
-	if player:
-		player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
-		print("player obtido")
 func _process(_delta: float) -> void:
 	if player.HabilidadeEquipada.Icone != null:
 		display_skill.texture = player.HabilidadeEquipada.Icone
@@ -44,12 +40,3 @@ func _on_voltarmenu_2_pressed() -> void:
 
 func _on_voltarmenu_pressed() -> void:
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
-
-
-func _on_player_subiu_de_nivel():
-	print("Player subiu de nivel")
-	MostrarUpgrades(3)
-
-func MostrarUpgrades(qtd : int):
-	for opcao in range(quantidadeOpcoesUpgrade):
-		#pegar caixa ja desenhada e instanciar

@@ -137,12 +137,9 @@ func EncerrarHabilidade():
 
 func ganhar_xp(value):
 	xp_atual += value
-	print(str(xp_atual))
 	
 	if xp_atual >= xp_necessario:
 		nivel_atual += 1
 		xp_atual = 0
 		xp_necessario += 5
-		print(str(xp_atual))
-		print(str(nivel_atual))
 		subiuDeNivel.emit()

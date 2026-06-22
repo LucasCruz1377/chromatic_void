@@ -123,6 +123,7 @@ position = Vector2(39, 509)
 [node name="GUI" type="CanvasLayer" parent="." unique_id=1702364142]
 process_mode = 3
 script = ExtResource("4_bd36c")
+quantidadeOpcoesUpgrade = null
 
 [node name="ContadorPontos" type="Label" parent="GUI" unique_id=1644039224]
 anchors_preset = 5
@@ -309,7 +310,6 @@ offset_right = -136.0
 offset_bottom = -65.0
 grow_horizontal = 2
 grow_vertical = 2
-alignment = 1
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 

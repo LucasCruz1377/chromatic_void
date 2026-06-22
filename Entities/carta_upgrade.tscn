@@ -1,13 +1,19 @@
 [gd_scene format=3 uid="uid://dppfvpdc03i8o"]
 
+[ext_resource type="Script" uid="uid://dpreet1jokyjm" path="res://Entities/carta_upgrade.gd" id="1_wdpba"]
+
 [sub_resource type="Gradient" id="Gradient_1yk16"]
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_g4v7s"]
 gradient = SubResource("Gradient_1yk16")
 
 [node name="Panel" type="Panel" unique_id=1076342746]
+custom_minimum_size = Vector2(200, 312)
 offset_right = 200.0
 offset_bottom = 312.0
+script = ExtResource("1_wdpba")
+metadata/_edit_vertical_guides_ = [200.0]
+metadata/_edit_horizontal_guides_ = [312.0]
 
 [node name="Icone" type="TextureRect" parent="." unique_id=632361441]
 layout_mode = 1
@@ -47,3 +53,15 @@ autowrap_mode = 2
 justification_flags = 3
 clip_text = true
 metadata/_edit_use_anchors_ = true
+
+[node name="Botao" type="Button" parent="." unique_id=1218291881]
+modulate = Color(1, 1, 0, 1)
+custom_minimum_size = Vector2(200, 312)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[connection signal="pressed" from="Botao" to="." method="_on_button_pressed"]
