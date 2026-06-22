@@ -10,8 +10,8 @@ resource_local_to_scene = true
 shader = ExtResource("3_0ifcb")
 shader_parameter/brightness = 0.0
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_7xaro"]
-radius = 15.0
+[sub_resource type="CircleShape2D" id="CircleShape2D_fjgg4"]
+radius = 16.0
 
 [sub_resource type="Animation" id="Animation_0ifcb"]
 length = 0.001
@@ -53,7 +53,7 @@ random_pitch = 1.0594631
 streams_count = 1
 stream_0/stream = ExtResource("4_fjgg4")
 
-[node name="enemy_quadristar" type="CharacterBody2D" unique_id=1570180816 groups=["enemies"]]
+[node name="enemy_quadristar" type="CharacterBody2D" unique_id=1570180816 groups=["inimigo"]]
 z_index = 1
 collision_layer = 4
 collision_mask = 15
@@ -69,8 +69,7 @@ color = Color(1, 0, 0.23137255, 1)
 polygon = PackedVector2Array(-5.263616, -12.972833, 2.7532916, -6.513017, 13.899464, -5.6395884, 6.513017, 2.7532916, 4.8876433, 12.046202, -2.7532916, 6.513017, -13.899464, 5.6395884, -6.513017, -2.7532916)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1893412006]
-visible = false
-shape = SubResource("CircleShape2D_7xaro")
+shape = SubResource("CircleShape2D_fjgg4")
 
 [node name="anim" type="AnimationPlayer" parent="." unique_id=1699661545]
 libraries/ = SubResource("AnimationLibrary_b15b6")

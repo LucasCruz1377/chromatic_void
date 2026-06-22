@@ -6,7 +6,7 @@ extends CharacterBody2D
 
 const SPEED = 200.0
 var hp = 3
-var dmg = 2
+var dano = 20
 var valorXp = 1
 
 func _physics_process(delta: float) -> void:

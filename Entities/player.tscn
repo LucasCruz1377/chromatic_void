@@ -57,11 +57,14 @@ scale_curve = SubResource("CurveTexture_1jxqw")
 color = Color(0.7019608, 1, 0.5568628, 1)
 color_ramp = SubResource("GradientTexture1D_sweqy")
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_prmdv"]
+radius = 25.181877
+
 [node name="Player" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1, 0.99607843, 1, 1)
 scale = Vector2(0.67625564, 0.67625564)
 collision_layer = 2
-collision_mask = 13
+collision_mask = 15
 motion_mode = 1
 wall_min_slide_angle = 0.0
 script = ExtResource("1_4flbx")
@@ -116,3 +119,13 @@ bus = &"Sound"
 [node name="death" type="AudioStreamPlayer2D" parent="." unique_id=710304148]
 stream = ExtResource("5_sweqy")
 bus = &"Sound"
+
+[node name="hitbox" type="Area2D" parent="." unique_id=2081382237]
+collision_layer = 2
+collision_mask = 4
+
+[node name="hitbox_shape" type="CollisionShape2D" parent="hitbox" unique_id=1266969084]
+shape = SubResource("CircleShape2D_prmdv")
+debug_color = Color(0.99278146, 0, 0.25369313, 0.41960785)
+
+[connection signal="body_entered" from="hitbox" to="." method="_on_hitbox_body_entered"]

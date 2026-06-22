@@ -38,11 +38,11 @@ folder_colors={
 [global_group]
 
 parede=""
-bullets=""
-enemies=""
 player=""
 spawners=""
 camera=""
+inimigo=""
+projeteis=""
 
 [input]
 

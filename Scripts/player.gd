@@ -16,10 +16,11 @@ class_name Player
 
 
 
-var VelocidadeVirar = 7.00
+
+var VelocidadeVirar = 6.00
 var SPEED = 500.00
 var VIDA_MAXIMA = 100.0
-var CD_MAX = 0.16
+var CD_MAX = 0.20
 var MAX_VELOCIDADE = 500
 var mira_mouse = Global.mira_mouse
 var vida = VIDA_MAXIMA
@@ -35,6 +36,9 @@ var xp_atual : float
 var nivel_atual : int = 1
 var xp_necessario : int = 5
 var dano = 1
+var invencibilidade : bool = false
+var invencibilidade_cd : float = 0
+var invencibilidade_cd_max : float = 1
 
 signal subiuDeNivel(nivel)
 
@@ -42,7 +46,11 @@ func _process(delta: float) -> void:
 	if Input.is_key_label_pressed(KEY_G) and OS.is_debug_build():
 		ganhar_xp(1)
 	
-	
+	if invencibilidade_cd > 0:
+		invencibilidade_cd -= delta
+	else:
+		invencibilidade = false
+		
 	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
 	
@@ -91,7 +99,13 @@ func _process(delta: float) -> void:
 	move_and_slide() 
 	
 func tomar_dano(valor):
+	if invencibilidade:
+		return
+	
+	print("dano tomado: ", valor)
 	vida -= valor
+	invencibilidade_cd += invencibilidade_cd_max
+	invencibilidade = true
 	
 func curar(valor):
 	vida += valor
@@ -168,3 +182,8 @@ func receber_upgrade(tipo):
 			print("melhorado velocidade")
 		4:
 			VelocidadeVirar *= 1.1
+
+func _on_hitbox_body_entered(body: Node2D) -> void:
+	if body.is_in_group("inimigo"):
+		print("encostou em inimigo")
+		tomar_dano(body.dano)
