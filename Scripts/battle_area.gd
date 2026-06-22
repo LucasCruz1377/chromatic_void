@@ -50,7 +50,6 @@ func _process(delta: float) -> void:
 		timer = randi_range(1,TIMER_MAX)
 		
 	if players.size() <= 0:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		caixa_gameover.visible = true
 		
 func spawnar_enemy():

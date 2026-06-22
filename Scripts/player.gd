@@ -104,7 +104,7 @@ func _process(delta: float) -> void:
 	move_and_slide() 
 	
 func tomar_dano(valor):
-	if invencibilidade:
+	if invencibilidade or UsandoHabilidade:
 		return
 	
 	print("dano tomado: ", valor)

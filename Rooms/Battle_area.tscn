@@ -304,6 +304,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("11_hv6r0")
 cena_carta = ExtResource("12_kmw88")
 
@@ -318,6 +319,7 @@ offset_right = -136.0
 offset_bottom = -65.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 alignment = 1
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]

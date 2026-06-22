@@ -1,22 +1,15 @@
 [gd_scene format=3 uid="uid://xojwpysblfm4"]
 
 [ext_resource type="Script" uid="uid://bfvilspuhi0jy" path="res://Scripts/aim.gd" id="1_cqfal"]
+[ext_resource type="Texture2D" uid="uid://dueoj1f58quc" path="res://Assets/cursor.png" id="2_rtreq"]
 
 [node name="aim" type="Node2D" unique_id=525751855]
 process_mode = 3
 scale = Vector2(1.396632, 1.396632)
 script = ExtResource("1_cqfal")
 
-[node name="1" type="Polygon2D" parent="." unique_id=446750183]
-rotation = 1.0360982
-scale = Vector2(0.49131072, 0.65912586)
-color = Color(1.353256, 1.353256, 1.1909814, 1)
-offset = Vector2(-32.52526, 11.846155)
-polygon = PackedVector2Array(36.17554, -10.199816, 33.24588, -12.772764, 28.874983, -13.492495, 31.80464, -10.919546)
-
-[node name="2" type="Polygon2D" parent="." unique_id=1824300900]
-rotation = 2.6179938
-scale = Vector2(0.49131095, 0.65912586)
-color = Color(1.353256, 1.353256, 1.1909814, 1)
-offset = Vector2(-32.52526, 11.846155)
-polygon = PackedVector2Array(36.17554, -10.199816, 33.24588, -12.772764, 28.874983, -13.492495, 31.80464, -10.919546)
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1664488897]
+texture_filter = 2
+position = Vector2(4.7683716e-07, -0.7160082)
+scale = Vector2(0.14039376, 0.14039376)
+texture = ExtResource("2_rtreq")

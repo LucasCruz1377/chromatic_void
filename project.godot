@@ -27,6 +27,7 @@ window/size/viewport_width=960
 window/size/viewport_height=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+mouse_cursor/tooltip_position_offset=Vector2(0, 0)
 
 [file_customization]
 
