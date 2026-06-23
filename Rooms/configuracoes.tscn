@@ -18,6 +18,9 @@ spread = 0.0
 initial_velocity_max = 50.0
 gravity = Vector3(0, 0, 0)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d4o0w"]
+bg_color = Color(1, 1, 1, 0.15686275)
+
 [node name="Configuracoes" type="Control" unique_id=1370224302]
 layout_mode = 3
 anchors_preset = 15
@@ -63,29 +66,33 @@ anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -99.0
 offset_top = 122.0
-offset_right = 99.0
+offset_right = 36.0
 offset_bottom = -332.0
 grow_horizontal = 2
 grow_vertical = 2
+alignment = 1
 
 [node name="mouse_teclado" type="CheckButton" parent="configs_box" unique_id=1033600980]
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 size_flags_vertical = 4
 text = "TG_MOUSEAIM"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="configs_box" unique_id=1167116923]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 0
 
 [node name="Label" type="Label" parent="configs_box/HBoxContainer" unique_id=217773421]
 layout_mode = 2
+size_flags_horizontal = 6
 text = "BAR_EFFECTS"
 
 [node name="ctrl_volume_som" type="HScrollBar" parent="configs_box/HBoxContainer" unique_id=1734913157]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
+size_flags_horizontal = 6
+size_flags_vertical = 4
 min_value = -80.0
 max_value = 1.0
 value = 1.0
@@ -93,19 +100,40 @@ value = 1.0
 [node name="HBoxContainer2" type="HBoxContainer" parent="configs_box" unique_id=1996028593]
 layout_mode = 2
 size_flags_vertical = 2
+theme_override_constants/separation = 0
 alignment = 1
 
 [node name="Label" type="Label" parent="configs_box/HBoxContainer2" unique_id=394459012]
 layout_mode = 2
+size_flags_horizontal = 6
 text = "BAR_MUSIC"
+vertical_alignment = 1
 
 [node name="ctrl_volume_musica" type="HScrollBar" parent="configs_box/HBoxContainer2" unique_id=1363836232]
+custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
+size_flags_horizontal = 6
+size_flags_vertical = 4
 min_value = -80.0
 max_value = 1.0
 value = 1.0
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="configs_box" unique_id=435414058]
+layout_mode = 2
+alignment = 1
+
+[node name="btn_ptbr" type="Button" parent="configs_box/HBoxContainer3" unique_id=950947244]
+custom_minimum_size = Vector2(50, 27.455)
+layout_mode = 2
+theme_override_styles/pressed = SubResource("StyleBoxFlat_d4o0w")
+toggle_mode = true
+text = "PTBR"
+
+[node name="btn_eng" type="Button" parent="configs_box/HBoxContainer3" unique_id=1842073493]
+custom_minimum_size = Vector2(50, 27.455)
+layout_mode = 2
+toggle_mode = true
+text = "ENG"
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("4_k16so")]
 position = Vector2(8.000001, 58.000008)

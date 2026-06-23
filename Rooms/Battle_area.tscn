@@ -249,6 +249,7 @@ offset_right = 959.0
 offset_bottom = 541.0
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
 
 [node name="Barra_vida" type="Sprite2D" parent="GUI" unique_id=111638542]
 position = Vector2(453, 514.99994)
@@ -307,6 +308,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("11_hv6r0")
 cena_carta = ExtResource("12_kmw88")
+metadata/_edit_lock_ = true
 
 [node name="ContainerCartas" type="HBoxContainer" parent="GUI/TelaUpgrades" unique_id=1271889881]
 layout_mode = 1
@@ -321,6 +323,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 alignment = 1
+metadata/_edit_lock_ = true
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 

@@ -9,5 +9,5 @@ func Shake() -> void:
 	
 func _process(delta):
 	if _ForcaShake > 0:
-		_ForcaShake = move_toward(_ForcaShake, 0.0, ShakeFade * delta)
+		_ForcaShake = lerp(_ForcaShake, 0.0, ShakeFade * delta)
 		offset = Vector2(randf_range(-_ForcaShake,_ForcaShake),randf_range(-_ForcaShake,_ForcaShake))
