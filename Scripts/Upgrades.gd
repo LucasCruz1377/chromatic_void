@@ -11,26 +11,26 @@ enum Tipo{
 
 static var DADOS = {
 	Tipo.CADENCIA: {
-		"nome" : "Cadencia do Tiro",
-		"descrição" : "sua arma é melhorada e você atirara mais rápido \n -0,01 pontos de cadência"
+		"nome" : "UPG_N_FR",
+		"descrição" : "UPG_D_FR"
 	},
 	
 	Tipo.VIDA: {
-		"nome" : "Blindagem",
-		"descrição" : "A sua nave é consertada e a blindagem é trocada por uma melhor \n +10% de vida máxima"
+		"nome" : "UPG_N_HP",
+		"descrição" : "UPG_D_HP"
 	},
 	
 	Tipo.DANO: {
-		"nome" : "Melhoria de dano",
-		"descrição" : "sua arma é melhorada e você causa mais dano \n +1 de Dano"
+		"nome" : "UPG_N_DMG",
+		"descrição" : "UPG_D_DMG"
 	},
 
 	Tipo.VELOCIDADE: {
-		"nome" : " Melhoria dos motores",
-		"descrição" : "sua velocidade passa a ser maior \n +10% de velocidade máxima"
+		"nome" : "UPG_N_SPD",
+		"descrição" : "UPG_D_SPD"
 	},
 	Tipo.AGILIDADE: {
-		"nome" : " Melhoria dos flaps",
-		"descrição" : "Sua nave se torna mais ágil e aerodinamica \n +10% velocidade de virada"
-	},
+		"nome" : "UPG_N_AGL",
+		"descrição" : "UPG_D_AGL"
+	}
 }

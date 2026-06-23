@@ -108,7 +108,8 @@ Habilidade={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://Language/Language.es_EN.translation", "res://Language/Language.pt_BR.translation")
+locale/translations=PackedStringArray("res://Language/Language.pt_BR.translation", "res://Language/Language.es_EN.translation")
+locale/locale_filter_mode=1
 
 [layer_names]
 
@@ -130,4 +131,3 @@ locale/translations=PackedStringArray("res://Language/Language.es_EN.translation
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
 viewport/hdr_2d=true
-anti_aliasing/quality/msaa_2d=1

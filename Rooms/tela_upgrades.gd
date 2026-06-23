@@ -8,8 +8,6 @@ extends Control
 
 func _ready():
 	player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
-	print("player obtido")
-	
 
 func _on_player_subiu_de_nivel():
 	var upgrades = sortear_upgrades(3)
@@ -29,15 +27,14 @@ func mostrar_cartas(upgrades):
 		var dados = Upgrades.DADOS[tipo]
 		carta.configurar_carta(
 			tipo,
-			dados["nome"],
-			dados["descrição"]
+			dados[tr("nome")],
+			dados[tr("descrição")]
 		)
 		
 		carta.clicou.connect(_on_carta_clicada)
 	
 	
 func _on_carta_clicada(tipo):
-	print("escolheu upgrade de:  ", tipo)
 	player.receber_upgrade(tipo)
 	Engine.time_scale = 1
 	for i in container.get_children():

@@ -34,7 +34,7 @@ offset_top = 136.0
 offset_right = 168.0
 offset_bottom = 176.0
 theme_override_font_sizes/font_size = 12
-text = "NOME"
+text = "UPG_N_SPD"
 horizontal_alignment = 1
 
 [node name="Descricao" type="Label" parent="." unique_id=1216290712]

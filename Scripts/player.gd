@@ -53,9 +53,10 @@ func _process(delta: float) -> void:
 	
 	if invencibilidade_cd > 0:
 		invencibilidade_cd -= delta
+		$anim.play("invencivel")
 	else:
 		invencibilidade = false
-		
+		$anim.play("RESET")
 	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
 	
@@ -107,7 +108,6 @@ func tomar_dano(valor):
 	if invencibilidade or UsandoHabilidade:
 		return
 	
-	print("dano tomado: ", valor)
 	vida -= valor
 	invencibilidade_cd += invencibilidade_cd_max
 	invencibilidade = true
@@ -171,20 +171,16 @@ func ganhar_xp(value):
 func receber_upgrade(tipo):
 	match tipo:
 		0: 
-			print("melhorado cadencia")
 			CD_MAX -= 0.01
 		1:
-			print("melhorado vida")
 			VIDA_MAXIMA *= 1.1
 			vida = VIDA_MAXIMA
 			print(str(VIDA_MAXIMA))
 		2:
 			dano += 1
-			print("melhorado dano")
 		3:
 			MAX_VELOCIDADE *= 1.1
 			SPEED *= 1.05
-			print("melhorado velocidade")
 		4:
 			VelocidadeVirar *= 1.1
 
@@ -192,3 +188,5 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("inimigo") and vivo:
 		print("encostou em inimigo")
 		tomar_dano(body.dano)
+		if body.has_method("die"):
+			body.die()
