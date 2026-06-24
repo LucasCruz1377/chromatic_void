@@ -2,12 +2,17 @@ extends CharacterBody2D
 
 @export var Deathparticle : PackedScene
 @onready var anim = $anim
-
+@onready var player = get_tree().get_first_node_in_group("player")
 
 const SPEED = 200.0
-var hp = 3
+var maxhp = 3
+var hp = maxhp
 var dano = 20
 var valorXp = 1
+
+func _ready() -> void:
+	hp = maxhp + (1 * int(player.nivel_atual / 5))
+	$vidatext.text = str(hp)
 
 func _physics_process(delta: float) -> void:
 	position.x = wrap(position.x,0,960)
@@ -17,6 +22,8 @@ func _physics_process(delta: float) -> void:
 	
 	seguir(delta)
 	move_and_slide()
+	
+
 	
 	if hp <= 0:
 		die()
@@ -36,7 +43,7 @@ func seguir(delta):
 	look_at(target.global_position)
 	
 func die():
-	var player = get_tree().get_first_node_in_group("player")
+	
 	
 	
 	var _particle = Deathparticle.instantiate()

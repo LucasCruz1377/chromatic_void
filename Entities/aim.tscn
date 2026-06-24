@@ -5,11 +5,13 @@
 
 [node name="aim" type="Node2D" unique_id=525751855]
 process_mode = 3
+top_level = true
+z_index = 7
 scale = Vector2(1.396632, 1.396632)
 script = ExtResource("1_cqfal")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1664488897]
 texture_filter = 2
 position = Vector2(4.7683716e-07, -0.7160082)
-scale = Vector2(0.14039376, 0.14039376)
+scale = Vector2(0.19655125, 0.19655125)
 texture = ExtResource("2_rtreq")

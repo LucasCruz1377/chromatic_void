@@ -2,6 +2,18 @@
 
 [ext_resource type="Script" uid="uid://dpreet1jokyjm" path="res://Entities/carta_upgrade.gd" id="1_wdpba"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_13qdw"]
+bg_color = Color(0.06843542, 0.052974023, 0.11477824, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1.1638972, 1.1638972, 1.1638972, 1)
+corner_radius_top_left = 17
+corner_radius_top_right = 17
+corner_radius_bottom_right = 17
+corner_radius_bottom_left = 17
+
 [sub_resource type="Gradient" id="Gradient_1yk16"]
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_g4v7s"]
@@ -11,6 +23,7 @@ gradient = SubResource("Gradient_1yk16")
 custom_minimum_size = Vector2(200, 312)
 offset_right = 200.0
 offset_bottom = 312.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_13qdw")
 script = ExtResource("1_wdpba")
 metadata/_edit_vertical_guides_ = [200.0]
 metadata/_edit_horizontal_guides_ = [312.0]
@@ -28,34 +41,35 @@ grow_horizontal = 2
 texture = SubResource("GradientTexture2D_g4v7s")
 
 [node name="Nome" type="Label" parent="." unique_id=175398999]
+self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
 layout_mode = 0
 offset_left = 24.0
 offset_top = 136.0
 offset_right = 168.0
 offset_bottom = 176.0
 theme_override_font_sizes/font_size = 12
-text = "UPG_N_SPD"
+text = "NOME"
 horizontal_alignment = 1
 
 [node name="Descricao" type="Label" parent="." unique_id=1216290712]
+self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
+custom_minimum_size = Vector2(184, 120)
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.040400006
-anchor_top = 0.5899231
-anchor_right = 0.9595001
-anchor_bottom = 0.974
-offset_left = -0.08000088
-offset_top = -0.055999756
-offset_right = 0.099990845
+anchor_left = 0.040000003
+anchor_top = 0.54800004
+anchor_right = 0.96000004
+anchor_bottom = 0.9740001
+offset_top = 0.023986816
 offset_bottom = 0.11199951
 theme_override_font_sizes/font_size = 12
+text = "DESC"
 autowrap_mode = 2
 justification_flags = 3
 clip_text = true
 metadata/_edit_use_anchors_ = true
 
 [node name="Botao" type="Button" parent="." unique_id=1218291881]
-modulate = Color(1, 1, 0, 1)
 custom_minimum_size = Vector2(200, 312)
 layout_mode = 1
 anchors_preset = 15
@@ -63,5 +77,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+toggle_mode = true
 
 [connection signal="pressed" from="Botao" to="." method="_on_button_pressed"]

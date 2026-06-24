@@ -165,7 +165,7 @@ func ganhar_xp(value):
 	if xp_atual >= xp_necessario:
 		nivel_atual += 1
 		xp_atual = 0
-		xp_necessario += 3
+		xp_necessario += 2
 		subiuDeNivel.emit()
 
 func receber_upgrade(tipo):

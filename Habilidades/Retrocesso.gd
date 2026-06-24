@@ -32,7 +32,7 @@ func rewind(player):
 		
 	player.IniciarHabilidade()
 	for save in range(memoria.size() - 1,-1,-1):
-		while player.get_tree().paused and player.vivo :
+		while player.get_tree().paused :
 			await player.get_tree().process_frame
 		
 		player.global_position = memoria[save]["posicao"]

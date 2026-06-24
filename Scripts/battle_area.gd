@@ -47,7 +47,7 @@ func _process(delta: float) -> void:
 		timer -= delta
 	else:
 		spawnar_enemy()
-		timer = randi_range(1,TIMER_MAX)
+		timer = randi_range(0.5,TIMER_MAX - int(player.nivel_atual / 5) / 10)
 		
 	if players.size() <= 0:
 		caixa_gameover.visible = true
