@@ -32,6 +32,7 @@ func _on_despause_pressed() -> void:
 	get_tree().paused = false
 
 func _on_voltarmenu_2_pressed() -> void:
+	player.queue_free()
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
 
 func _on_voltarmenu_pressed() -> void:

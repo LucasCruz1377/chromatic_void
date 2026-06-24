@@ -57,3 +57,11 @@ func salvar_configuracoes():
 	Global.mira_mouse = mira_mouse
 	Global.volume_som = volume_som 
 	Global.volume_musica = volume_musica
+
+
+func _on_btn_ptbr_button_down() -> void:
+	TranslationServer.set_locale("pt_BR")
+	
+
+func _on_btn_eng_button_down() -> void:
+	TranslationServer.set_locale("es_EN")

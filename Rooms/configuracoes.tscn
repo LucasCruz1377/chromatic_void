@@ -126,7 +126,6 @@ alignment = 1
 custom_minimum_size = Vector2(50, 27.455)
 layout_mode = 2
 theme_override_styles/pressed = SubResource("StyleBoxFlat_d4o0w")
-toggle_mode = true
 text = "PTBR"
 
 [node name="btn_eng" type="Button" parent="configs_box/HBoxContainer3" unique_id=1842073493]
@@ -167,4 +166,6 @@ grow_horizontal = 0
 [connection signal="toggled" from="configs_box/mouse_teclado" to="." method="_on_mouse_teclado_toggled"]
 [connection signal="value_changed" from="configs_box/HBoxContainer/ctrl_volume_som" to="." method="_on_ctrl_volume_som_value_changed"]
 [connection signal="value_changed" from="configs_box/HBoxContainer2/ctrl_volume_musica" to="." method="_on_ctrl_volume_musica_value_changed"]
+[connection signal="button_down" from="configs_box/HBoxContainer3/btn_ptbr" to="." method="_on_btn_ptbr_button_down"]
+[connection signal="button_down" from="configs_box/HBoxContainer3/btn_eng" to="." method="_on_btn_eng_button_down"]
 [connection signal="pressed" from="voltar" to="." method="_on_voltar_pressed"]
