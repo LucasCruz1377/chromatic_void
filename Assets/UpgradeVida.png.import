@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://2qrsst6sl885"
-path="res://.godot/imported/MenosCadencia.png-eeff7ac2b2a9df471ec972777f58d8cb.ctex"
+uid="uid://cbu1vfbjfvnl4"
+path="res://.godot/imported/UpgradeVida.png-2bd912a013f299ef38ae34cd1252685d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/MenosCadencia.png"
-dest_files=["res://.godot/imported/MenosCadencia.png-eeff7ac2b2a9df471ec972777f58d8cb.ctex"]
+source_file="res://Assets/UpgradeVida.png"
+dest_files=["res://.godot/imported/UpgradeVida.png-2bd912a013f299ef38ae34cd1252685d.ctex"]
 
 [params]
 

@@ -79,7 +79,3 @@ autoplay = &"flash-in"
 stream = SubResource("AudioStreamRandomizer_b15b6")
 volume_db = 1.0
 bus = &"Sound"
-
-[node name="vidatext" type="Label" parent="." unique_id=1301080904]
-offset_right = 40.0
-offset_bottom = 23.0

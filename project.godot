@@ -108,7 +108,7 @@ Habilidade={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://Language/Language.pt_BR.translation", "res://Language/Language.es_EN.translation")
+locale/translations=PackedStringArray("res://Language/Language.es_EN.translation", "res://Language/Language.pt_BR.translation")
 locale/locale_filter_mode=1
 
 [layer_names]

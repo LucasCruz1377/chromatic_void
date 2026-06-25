@@ -12,7 +12,6 @@ var valorXp = 1
 
 func _ready() -> void:
 	hp = maxhp + (1 * int(player.nivel_atual / 5))
-	$vidatext.text = str(hp)
 
 func _physics_process(delta: float) -> void:
 	position.x = wrap(position.x,0,960)

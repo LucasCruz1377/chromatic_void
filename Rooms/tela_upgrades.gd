@@ -28,7 +28,8 @@ func mostrar_cartas(upgrades):
 		carta.configurar_carta(
 			tipo,
 			dados[tr("nome")],
-			dados[tr("descrição")]
+			dados[tr("descrição")],
+			dados["icone"]
 		)
 		
 		carta.clicou.connect(_on_carta_clicada)

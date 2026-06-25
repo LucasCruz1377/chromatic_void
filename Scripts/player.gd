@@ -19,10 +19,10 @@ class_name Player
 
 
 
-var VelocidadeVirar = 6.00
-var SPEED = 500.00
+var VelocidadeVirar = 4.00
+var SPEED = 400.00
 var VIDA_MAXIMA = 100.0
-var CD_MAX = 0.20
+var CD_MAX = 0.22
 var MAX_VELOCIDADE = 500
 var mira_mouse = Global.mira_mouse
 var vida = VIDA_MAXIMA
@@ -171,18 +171,18 @@ func ganhar_xp(value):
 func receber_upgrade(tipo):
 	match tipo:
 		0: 
-			CD_MAX -= 0.01
+			CD_MAX -= 0.005
 		1:
-			VIDA_MAXIMA *= 1.1
+			VIDA_MAXIMA *= 1.05
 			vida = VIDA_MAXIMA
 			print(str(VIDA_MAXIMA))
 		2:
-			dano += 1
+			dano += 0.5
 		3:
 			MAX_VELOCIDADE *= 1.1
 			SPEED *= 1.05
 		4:
-			VelocidadeVirar *= 1.1
+			VelocidadeVirar *= 1.05
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("inimigo") and vivo:

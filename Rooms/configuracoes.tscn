@@ -29,6 +29,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_himc1")
+metadata/_edit_vertical_guides_ = [478.0]
 
 [node name="espaco" parent="." unique_id=435737775 instance=ExtResource("1_k7rnd")]
 position = Vector2(491.00003, 280)
@@ -64,12 +65,13 @@ anchors_preset = 13
 anchor_left = 0.5
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -99.0
-offset_top = 122.0
-offset_right = 36.0
-offset_bottom = -332.0
+offset_left = -121.0
+offset_top = 135.0
+offset_right = 42.0
+offset_bottom = -285.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(1.5, 1.5)
 alignment = 1
 
 [node name="mouse_teclado" type="CheckButton" parent="configs_box" unique_id=1033600980]
@@ -154,6 +156,7 @@ autoplay = true
 bus = &"Music"
 
 [node name="Debug_text" parent="." unique_id=740519804 instance=ExtResource("8_d4o0w")]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0

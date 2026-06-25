@@ -21,7 +21,7 @@ UPG_N_SPD,Melhoria dos motores,Engine Upgrade
 UPG_N_AGL,Melhoria dos flaps,Flaps Upgrade
 UPG_N_HP,Blindagem,Stronger shield
 UPG_D_FR,sua arma é melhorada e você atirara mais rápido,your weapon fire rate increases
-UPG_D_DMG,sua arma é melhorada e você causa mais dano \n +1 de Dano,your weapon becomes stronger \n +1 DMG
-UPG_D_SPD,sua velocidade passa a ser maior \n +10% de velocidade máxima,your speed increases \n +10% max speed
-UPG_D_AGL,sua nave se torna mais ágil e aerodinamica \n +10% velocidade de virada,your ship becomes more agile \n +10% turn speed
-UPG_D_HP,sua nave é reparada é se torna mais resistente \n +10% de vida máxima,your shield is fixed and becomes more resistent \n +10% max health
+UPG_D_DMG,sua arma é melhorada e você causa mais dano,your weapon becomes stronger
+UPG_D_SPD,sua velocidade passa a ser maior,your speed increases
+UPG_D_AGL,sua nave se torna mais ágil e aerodinamica,your ship becomes more agile
+UPG_D_HP,sua nave é reparada é se torna mais resistente,your shield is fixed and becomes more resistent
