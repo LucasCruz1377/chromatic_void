@@ -6,6 +6,7 @@ extends Node2D
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 @onready var display_skill = $GUI/DisplaySkill
+@onready var transition: AnimationPlayer = $transition
 
 const ENEMY = preload("res://Entities/enemy.tscn")
 const TIMER_MAX = 3
@@ -34,6 +35,7 @@ func _ready() -> void:
 		node.queue_free()
 		
 func _process(delta: float) -> void:
+	
 	tocarmusica.pitch_scale = Engine.time_scale
 	
 	var pontos_tg = Global.Pontos
@@ -64,3 +66,6 @@ func spawnar_enemy():
 	
 	var spawner = spawners.pick_random()
 	inimigo.global_position = spawner.global_position
+
+func fadeout_tutorial() -> void:
+	transition.play("tutorial_fadeout")
