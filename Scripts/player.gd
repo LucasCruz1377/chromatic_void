@@ -168,19 +168,19 @@ func ganhar_xp(value):
 
 func receber_upgrade(tipo):
 	match tipo:
-		0: 
-			CD_MAX -= 0.005
-		1:
-			VIDA_MAXIMA *= 1.05
+		0: ## upgrade de cadencia
+			CD_MAX -= 0.1 * CD_MAX
+		1:## upgrade de blindagem
+			VIDA_MAXIMA *= 1.1
 			vida = VIDA_MAXIMA
 			print(str(VIDA_MAXIMA))
-		2:
+		2:## upgrade de dano
 			dano += 0.5
-		3:
+		3:## upgrade de velocidade
 			MAX_VELOCIDADE *= 1.1
 			SPEED *= 1.05
-		4:
-			VelocidadeVirar *= 1.05
+		4:## upgrade de turnspd
+			VelocidadeVirar *= 1.1
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("inimigo") and vivo:

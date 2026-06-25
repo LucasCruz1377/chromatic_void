@@ -17,6 +17,8 @@ func _process(_delta: float) -> void:
 	var players = 	get_tree().get_nodes_in_group("player").size()
 	
 	if Input.is_action_just_pressed("pausar") and players > 0:
+		if tela_upgrades.visible:
+			tela_upgrades.visible = false
 		get_tree().paused = !get_tree().paused
 	
 	caixa_pause.visible = get_tree().paused
