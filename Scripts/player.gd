@@ -48,8 +48,6 @@ func _process(delta: float) -> void:
 	lvl_text.text = "LVL: " + str(nivel_atual)
 	display_skill.texture = HabilidadeEquipada.Icone
 	
-	if Input.is_key_label_pressed(KEY_G) and OS.is_debug_build():
-		ganhar_xp(1)
 	
 	if invencibilidade_cd > 0:
 		invencibilidade_cd -= delta
