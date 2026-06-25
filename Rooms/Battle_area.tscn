@@ -161,6 +161,7 @@ max_value = 120.0
 
 [node name="caixa gameover" type="VBoxContainer" parent="GUI" unique_id=488768928]
 visible = false
+z_index = 2
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -202,6 +203,7 @@ dist = -40
 
 [node name="caixa pause" type="VBoxContainer" parent="GUI" unique_id=496644049]
 visible = false
+z_index = 2
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
