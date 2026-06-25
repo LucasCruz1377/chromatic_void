@@ -38,7 +38,6 @@ func _on_despause_pressed() -> void:
 
 func _on_voltarmenu_2_pressed() -> void:
 	Engine.time_scale = 1
-	player.queue_free()
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
 
 func _on_voltarmenu_pressed() -> void:

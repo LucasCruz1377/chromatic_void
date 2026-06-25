@@ -128,7 +128,7 @@ func fire():
 		instance_bullet.rotation = rotation
 		cooldown = CD_MAX
 func arrowsctrl(delta):
-	rotation += Input.get_axis("left","right") * VelocidadeVirar * delta	
+	rotation += Input.get_axis("esquerda","direita") * VelocidadeVirar * delta	
 func morrer():
 	if !death.playing:
 		visible = false
