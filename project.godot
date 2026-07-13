@@ -13,7 +13,7 @@ config_version=5
 config/name="Chromatic Void"
 config/description="Jogo colorido inspirado em Asteroids(1979) - Atari"
 run/main_scene="uid://4n1y5b4uhay0"
-config/features=PackedStringArray("4.6", "Mobile")
+config/features=PackedStringArray("4.7", "Mobile")
 boot_splash/bg_color=Color(0, 0, 0, 1)
 config/icon="uid://d3bgt0o17j0qy"
 

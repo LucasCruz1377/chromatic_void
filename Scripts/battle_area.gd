@@ -8,7 +8,7 @@ extends Node2D
 @onready var display_skill = $GUI/DisplaySkill
 @onready var transition: AnimationPlayer = $transition
 
-const ENEMY = preload("res://Entities/enemy.tscn")
+const ENEMY = preload("res://Entities/InimigoSeguidor.tscn")
 const TIMER_MAX = 3
 
 var players = []

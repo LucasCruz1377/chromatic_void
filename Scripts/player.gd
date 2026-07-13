@@ -40,7 +40,7 @@ var xp_necessario : int = 3
 var dano = 1
 var invencibilidade : bool = false
 var invencibilidade_cd : float = 0
-var invencibilidade_cd_max : float = 1
+var invencibilidade_cd_max : float = 3
 
 signal subiuDeNivel(nivel)
 
@@ -52,7 +52,13 @@ func _process(delta: float) -> void:
 	if invencibilidade_cd > 0:
 		invencibilidade_cd -= delta
 		$anim.play("invencivel")
+		set_collision_layer_value(2,false)
+		set_collision_layer_value(3,false)
+		$hitbox.monitoring = false
 	else:
+		$hitbox.monitoring = true
+		set_collision_layer_value(2,true)
+		set_collision_mask_value(3,true)
 		invencibilidade = false
 		$anim.play("RESET")
 	barra_xp.value = xp_atual
@@ -185,6 +191,6 @@ func receber_upgrade(tipo):
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("inimigo") and vivo:
 		print("encostou em inimigo")
-		tomar_dano(body.dano)
-		if body.has_method("die"):
-			body.die()
+		tomar_dano(body.Dano)
+		if body.has_method("morrer"):
+			body.morrer()
