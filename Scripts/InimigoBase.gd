@@ -1,6 +1,7 @@
 extends CharacterBody2D
 class_name InimigoBase
 
+@export_group("Configuração")
 @export var VidaMaxima := 100
 @export var Dano := 2
 @export var ValorXP := 1
@@ -26,9 +27,7 @@ func Mover(Delta):
 	pass
 	
 func tomarDano(valor):
-	if Vida <= 0:
-		morrer()
-	Vida -= valor
+	pass
 	
 func morrer():
-	queue_free()
+	pass

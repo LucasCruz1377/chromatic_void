@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b7e1mcmiichgn" path="res://Scripts/InimigoSeguidor.gd" id="1_n3r8k"]
 [ext_resource type="Shader" uid="uid://bh3um1lk38h2l" path="res://FX/canvas_shader/enemy.gdshader" id="2_ddwlx"]
+[ext_resource type="PackedScene" uid="uid://coyynmarr6r7e" path="res://FX/ParticulasMorteInimigo.tscn" id="2_ureyi"]
 [ext_resource type="AudioStream" uid="uid://b7tdinwmt58xw" path="res://sounds/enemy_dmgtake.wav" id="3_ureyi"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fjgg4"]
@@ -57,6 +58,7 @@ z_index = 1
 collision_layer = 4
 collision_mask = 15
 script = ExtResource("1_n3r8k")
+particulas_morte = ExtResource("2_ureyi")
 VidaMaxima = 3
 Dano = 20
 Velocidade = 200
