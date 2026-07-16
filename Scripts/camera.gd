@@ -2,12 +2,20 @@ extends Camera2D
 
 @export var ShakeMax := 100.0
 @export var ShakeFade : float = 10.0
-var _ForcaShake : float = 0.0
 
-func Shake() -> void:
-	_ForcaShake = ShakeMax
+var ForcaShake := 0.0
+
+func shake(magnitude := 25.0):
+	ForcaShake = min(ForcaShake + magnitude, ShakeMax)
 	
 func _process(delta):
-	if _ForcaShake > 0:
-		_ForcaShake = lerp(_ForcaShake, 0.0, ShakeFade * delta)
-		offset = Vector2(randf_range(-_ForcaShake,_ForcaShake),randf_range(-_ForcaShake,_ForcaShake))
+	print("Força Tremer:",str(ForcaShake))
+	ForcaShake = move_toward(ForcaShake, 0.0, ShakeFade * delta)
+	
+	if ForcaShake > 0.0:
+		offset = Vector2(
+			randf_range(-ForcaShake, ForcaShake),
+			randf_range(-ForcaShake, ForcaShake)
+		)
+	else:
+		offset = Vector2.ZERO

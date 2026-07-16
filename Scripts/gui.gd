@@ -1,11 +1,17 @@
 extends CanvasLayer
 
 @onready var caixa_pause: VBoxContainer = $"caixa pause"
-
+@onready var camera = $"../Camera"
 @onready var display_skill = $DisplaySkill
 @export var quantidadeOpcoesUpgrade : int
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var tela_upgrades: Control = $TelaUpgrades
+
+func _ready():
+	player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
+	
+func _on_player_subiu_de_nivel():
+	camera.offset = Vector2.ZERO
 
 func _process(_delta: float) -> void:
 		

@@ -374,7 +374,6 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("11_hv6r0")
 cena_carta = ExtResource("12_kmw88")
-metadata/_edit_lock_ = true
 
 [node name="ContainerCartas" type="HBoxContainer" parent="GUI/TelaUpgrades" unique_id=1271889881]
 layout_mode = 1
@@ -400,8 +399,6 @@ autoplay = &"fade_out"
 
 [node name="Camera" parent="." unique_id=142676959 groups=["camera"] instance=ExtResource("12_1s1gu")]
 position = Vector2(487, 271)
-ShakeMax = 1.0
-ShakeFade = 5.0
 
 [connection signal="pressed" from="GUI/caixa gameover/Tentar de novo" to="GUI" method="_on_tentar_de_novo_pressed"]
 [connection signal="pressed" from="GUI/caixa gameover/Voltarmenu2" to="GUI" method="_on_voltarmenu_2_pressed"]

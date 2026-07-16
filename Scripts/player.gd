@@ -10,7 +10,6 @@ class_name Player
 @onready var barra_xp: TextureProgressBar = $"../GUI/Barra_xp"
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
-@onready var camera : Camera2D = get_tree().get_first_node_in_group("camera")
 @onready var corpo: Polygon2D = $corpo
 @onready var corpo_2: Polygon2D = $corpo2
 @onready var display_skill: TextureRect = $"../GUI/DisplaySkill"
@@ -45,22 +44,17 @@ var invencibilidade_cd_max : float = 3
 signal subiuDeNivel(nivel)
 
 func _process(delta: float) -> void:
+	
 	lvl_text.text = "LVL: " + str(nivel_atual)
 	display_skill.texture = HabilidadeEquipada.Icone
 	
 	
 	if invencibilidade_cd > 0:
 		invencibilidade_cd -= delta
-		$anim.play("invencivel")
-		set_collision_layer_value(2,false)
-		set_collision_layer_value(3,false)
-		$hitbox.monitoring = false
+		modulate.a = abs(sin(Time.get_ticks_msec()/100.0))
 	else:
-		$hitbox.monitoring = true
-		set_collision_layer_value(2,true)
-		set_collision_mask_value(3,true)
+		modulate.a = 1
 		invencibilidade = false
-		$anim.play("RESET")
 	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
 	
@@ -81,6 +75,7 @@ func _process(delta: float) -> void:
 		cooldown -= delta
 		
 	if vida <= 0:
+		velocity = Vector2.ZERO
 		morrer()
 	
 	if !giroblock and vivo: #se nao dash e vivo, controla
@@ -126,7 +121,6 @@ func brake(delta:float):
 func fire():
 		var instance_bullet = tiro.instantiate()
 		get_tree().current_scene.add_child(instance_bullet)
-		camera.Shake()
 		somtiro.pitch_scale = 1 + randf_range(-0.1,0.1)
 		somtiro.play()
 		instance_bullet.dmg = dano
@@ -164,6 +158,9 @@ func EncerrarHabilidade():
 	UsandoHabilidade = false
 
 func ganhar_xp(value):
+	if invencibilidade:
+		return
+	
 	xp_atual += value
 	
 	if xp_atual >= xp_necessario:

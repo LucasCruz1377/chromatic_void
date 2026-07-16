@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="6_u38va"]
 [ext_resource type="AudioStream" uid="uid://c6fawb4pnttj2" path="res://sounds/menu_click.wav" id="8_g7wv7"]
 [ext_resource type="PackedScene" uid="uid://sxsschqveb56" path="res://tool/debug_text.tscn" id="9_0lnna"]
+[ext_resource type="AudioStream" uid="uid://dcdvl7x5pcgny" path="res://sounds/menu_song(CV).mp3" id="10_asbdl"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kal6l"]
 particle_flag_disable_z = true
@@ -159,6 +160,7 @@ offset_right = 960.0
 offset_bottom = 540.0
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
+metadata/_edit_lock_ = true
 
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]
 
@@ -191,6 +193,10 @@ offset_left = 574.0
 offset_right = 959.0
 grow_horizontal = 0
 text = ""
+
+[node name="menumusica" type="AudioStreamPlayer2D" parent="." unique_id=993762537]
+stream = ExtResource("10_asbdl")
+autoplay = true
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
