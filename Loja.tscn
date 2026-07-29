@@ -19,9 +19,9 @@ script = ExtResource("1_jogn3")
 [node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=2077658694]
 layout_mode = 0
 offset_left = 411.0
-offset_top = 47.0
+offset_top = 60.0
 offset_right = 1905.0
-offset_bottom = 487.0
+offset_bottom = 500.0
 theme_override_constants/separation = 222
 
 [node name="TextureRect" type="TextureRect" parent="HBoxContainer" unique_id=418934254]
@@ -60,29 +60,25 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 texture = SubResource("GradientTexture2D_q8c8f")
 
-[node name="left" type="Button" parent="." unique_id=837707537]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=1994257223]
 layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 225.0
-offset_top = -35.0
-offset_right = 312.0
-offset_bottom = 43.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 248.0
+offset_bottom = -242.0
+grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 260
+alignment = 1
+
+[node name="left" type="Button" parent="HBoxContainer2" unique_id=837707537]
+layout_mode = 2
 text = "<"
 
-[node name="right" type="Button" parent="." unique_id=1210792751]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 596.0
-offset_top = -35.0
-offset_right = 683.0
-offset_bottom = 43.0
-grow_vertical = 2
+[node name="right" type="Button" parent="HBoxContainer2" unique_id=1210792751]
+layout_mode = 2
 text = ">"
 
-[connection signal="pressed" from="left" to="." method="_on_left_pressed"]
-[connection signal="pressed" from="right" to="." method="_on_right_pressed"]
+[connection signal="pressed" from="HBoxContainer2/left" to="." method="_on_left_pressed"]
+[connection signal="pressed" from="HBoxContainer2/right" to="." method="_on_right_pressed"]
