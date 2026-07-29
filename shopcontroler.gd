@@ -25,7 +25,7 @@ func mover():
 	tween = create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
 
-	tween.tween_property(h_box_container, "global_position", Vector2(-itemsAVenda[itematual].position.x + 175,60.0), 0.5)s
+	tween.tween_property(h_box_container, "global_position", Vector2(-itemsAVenda[itematual].position.x + 175,60.0), 0.9)
 	
 
 func _on_left_pressed() -> void:
