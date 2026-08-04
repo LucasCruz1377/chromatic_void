@@ -1,5 +1,6 @@
 extends Node
 
+var primeira_vez_jogando : bool = true
 var Pontos = 0
 var Combo : int = 0
 var mira_mouse = true

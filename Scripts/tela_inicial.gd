@@ -22,6 +22,7 @@ func _process(_delta: float) -> void:
 
 
 func _on_start_pressed() -> void:
+	Global.primeira_vez_jogando = false
 	click_som()
 	transition.play("fade_in")
 	await transition.animation_finished

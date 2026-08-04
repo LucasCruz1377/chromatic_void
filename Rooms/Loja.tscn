@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dtp7by503hvhv"]
 
-[ext_resource type="Script" uid="uid://bpqiqsvffgus3" path="res://shopcontroler.gd" id="1_jogn3"]
+[ext_resource type="Script" uid="uid://bpqiqsvffgus3" path="res://Rooms/shopcontroler.gd" id="1_jogn3"]
 
 [sub_resource type="Gradient" id="Gradient_x37rt"]
 

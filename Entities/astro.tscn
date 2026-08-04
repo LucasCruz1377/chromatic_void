@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://ck4b1aeayj01l"]
+
+[ext_resource type="Script" uid="uid://1c0sjsk1ul32" path="res://Rooms/AstroOAsteroide.gd" id="1_ahfxv"]
+[ext_resource type="Texture2D" uid="uid://cwg1sj6khdlk3" path="res://Assets/AstroAsteroide.png" id="2_mnuoh"]
+
+[node name="Astro" type="Control" unique_id=1436156404]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 881.0
+offset_top = 468.0
+offset_right = 921.0
+offset_bottom = 508.0
+script = ExtResource("1_ahfxv")
+
+[node name="SpriteAstro" type="TextureRect" parent="." unique_id=2019936445]
+layout_mode = 0
+offset_left = -68.0
+offset_top = -68.0
+offset_right = 79.0
+offset_bottom = 66.0
+texture = ExtResource("2_mnuoh")
+
+[node name="DialogoAstro" type="RichTextLabel" parent="." unique_id=1104691161]
+layout_mode = 0
+offset_left = -345.0
+offset_top = -28.0
+offset_right = -72.0
+offset_bottom = 27.0
+bbcode_enabled = true
+text = "Os criadores deste jogo estão juntos há mais de 1 ano "
+fit_content = true
+horizontal_alignment = 2
+visible_characters_behavior = 1
+
+[node name="VozAstro" type="AudioStreamPlayer2D" parent="." unique_id=2072753965]
+
+[node name="Timer" type="Timer" parent="." unique_id=641648089]
+
+[node name="NicknameAstro" type="RichTextLabel" parent="." unique_id=348481604]
+layout_mode = 0
+offset_left = -16.0
+offset_top = -65.0
+offset_right = 27.0
+offset_bottom = -42.0
+bbcode_enabled = true
+text = "[color=yellow]Astro"
+fit_content = true
