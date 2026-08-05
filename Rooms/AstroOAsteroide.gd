@@ -8,7 +8,7 @@ extends Control
 @export var tempo_espera_frase : float = 5.0
 
 var curiosidades : Array[String] = [
-	"Janeiro é Branco",
+	"T_CURIOSIDADE1",
 	"O aniversário do programador deste jogo é em fevereiro",
 	"A Co-Criadora deste jogo adora crochê",
 	"Os criadores deste jogo estão juntos há mais de 1 ano ",
@@ -57,6 +57,9 @@ func mostrar_nova_curiosidade() -> void:
 	timer_proxima.start()
 
 func _process(delta: float) -> void:
+	if Input.is_action_just_pressed("atirar"):
+		texto_label.visible_ratio = -1
+	
 	var tempo = Time.get_ticks_msec() / 1000.0
 	position.y += sin(tempo * 3.0) * 0.5
 	rotation = sin(tempo * 2.0) * 0.02

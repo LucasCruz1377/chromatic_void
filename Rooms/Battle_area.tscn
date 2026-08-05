@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://ikoej2rppm8o" path="res://Rooms/tela_upgrades.gd" id="11_hv6r0"]
 [ext_resource type="PackedScene" uid="uid://cvhvbtre63cad" path="res://Entities/Camera.tscn" id="12_1s1gu"]
 [ext_resource type="PackedScene" uid="uid://dppfvpdc03i8o" path="res://Entities/carta_upgrade.tscn" id="12_kmw88"]
+[ext_resource type="PackedScene" uid="uid://ck4b1aeayj01l" path="res://Entities/astro.tscn" id="13_kmw88"]
 
 [sub_resource type="Gradient" id="Gradient_bd36c"]
 colors = PackedColorArray(0, 0.96862745, 0, 1, 0, 0.96862745, 0, 1)
@@ -45,18 +46,6 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 0,
 "values": [Color(1, 1, 1, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("GUI/TutorialControles:modulate")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Color(1, 1, 1, 1)]
 }
 
 [sub_resource type="Animation" id="Animation_1s1gu"]
@@ -103,28 +92,11 @@ tracks/1/keys = {
 }]
 }
 
-[sub_resource type="Animation" id="Animation_kmw88"]
-resource_name = "tutorial_fadeout"
-length = 5.0
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("GUI/TutorialControles:modulate")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 4.9333334),
-"transitions": PackedFloat32Array(1, 1),
-"update": 0,
-"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
-}
-
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_f80io"]
 _data = {
 &"RESET": SubResource("Animation_f80io"),
 &"fade_in": SubResource("Animation_1s1gu"),
-&"fade_out": SubResource("Animation_hv6r0"),
-&"tutorial_fadeout": SubResource("Animation_kmw88")
+&"fade_out": SubResource("Animation_hv6r0")
 }
 
 [node name="Battle_area" type="Node2D" unique_id=937167224]
@@ -166,27 +138,6 @@ position = Vector2(39, 509)
 [node name="GUI" type="CanvasLayer" parent="." unique_id=1702364142]
 process_mode = 3
 script = ExtResource("4_bd36c")
-
-[node name="TutorialControles" type="RichTextLabel" parent="GUI" unique_id=1502853769]
-offset_left = 344.0
-offset_top = 87.0
-offset_right = 627.0
-offset_bottom = 448.0
-theme_override_font_sizes/normal_font_size = 17
-text = "TUTORIAL:
-
-MOUSE ATIVADO:
-W - Acelerar
-S - Freio e Ré
-F ou Mouse Esquerdo - Atirar
-ESPAÇO - Habilidade Especial
-
-MOUSE DESATIVADO:
-W - Acelerar
-S - Freio e Ré
-A e D - Virar Nave
-F ou Mouse Esquerdo - Atirar
-ESPAÇO - Habilidade Especial"
 
 [node name="ContadorPontos" type="Label" parent="GUI" unique_id=1644039224]
 anchors_preset = 5
@@ -374,6 +325,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("11_hv6r0")
 cena_carta = ExtResource("12_kmw88")
+metadata/_edit_use_anchors_ = true
 
 [node name="ContainerCartas" type="HBoxContainer" parent="GUI/TelaUpgrades" unique_id=1271889881]
 layout_mode = 1
@@ -390,6 +342,12 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 metadata/_edit_lock_ = true
+
+[node name="Astro" parent="GUI" unique_id=1436156404 instance=ExtResource("13_kmw88")]
+offset_left = 625.0
+offset_top = 271.0
+offset_right = 665.0
+offset_bottom = 311.0
 
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 

@@ -41,6 +41,7 @@ func morrer():
 	parts.emitting = true
 	get_tree().current_scene.add_child(parts)
 	player.ganhar_xp(ValorXP)
+	Global.kills_max += 1
 	Global.Combo += 1
 	Global.Pontos += 100 + (100 * (Global.Combo - 1))
 	queue_free()
