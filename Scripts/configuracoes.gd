@@ -4,13 +4,22 @@ var mira_mouse = Global.mira_mouse
 var volume_som = Global.volume_som
 var volume_musica = Global.volume_musica
 
-@onready var ctrl_volume_som: HScrollBar = $configs_box/HBoxContainer/ctrl_volume_som
-@onready var ctrl_volume_musica: HScrollBar = $configs_box/HBoxContainer2/ctrl_volume_musica
+@onready var ctrl_volume_som: HScrollBar = $configs_box/SliderEfeitosSonoros/ctrl_volume_som
+@onready var ctrl_volume_musica: HScrollBar = $configs_box/SliderMusica/ctrl_volume_musica
 @onready var mouse_teclado: CheckButton = $configs_box/mouse_teclado
 @onready var debug_text: Label = $Debug_text
+@onready var idiomas: OptionButton = $configs_box/HBoxContainer3/Idiomas
 
 
 func _ready() -> void:
+
+	for i in TranslationServer.get_loaded_locales():
+		idiomas.add_item(i)
+
+	var index = idiomas.get_selected_id()
+	
+	TranslationServer.set_locale(idiomas.get_item_text(index))
+	
 	carregar_configuracoes()
 	if get_tree().paused:
 		get_tree().paused = false
@@ -59,9 +68,6 @@ func salvar_configuracoes():
 	Global.volume_musica = volume_musica
 
 
-func _on_btn_ptbr_button_down() -> void:
-	TranslationServer.set_locale("pt_BR")
-	
 
-func _on_btn_eng_button_down() -> void:
-	TranslationServer.set_locale("es_EN")
+func _on_idiomas_item_selected(index: int) -> void:
+	TranslationServer.set_locale(idiomas.get_item_text(index))
