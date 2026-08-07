@@ -1,0 +1,145 @@
+[gd_scene format=3 uid="uid://dm0vqapjs8xuq"]
+
+[node name="Janela_Configurações" type="Control" unique_id=675295107]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TabContainer" type="TabContainer" parent="." unique_id=2046828148]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 106.66669
+offset_top = 60.0
+offset_right = -106.66669
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 2
+tab_alignment = 1
+current_tab = 3
+
+[node name="Idioma" type="TabBar" parent="TabContainer" unique_id=1322649832]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="ContainerIdioma" type="HBoxContainer" parent="TabContainer/Idioma" unique_id=1647410057]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 322.3333
+offset_top = 183.0
+offset_right = -322.3333
+offset_bottom = -183.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="IdiomasLabel" type="Label" parent="TabContainer/Idioma/ContainerIdioma" unique_id=685430233]
+layout_mode = 2
+text = "T_IDIOMA"
+
+[node name="Idiomas" type="OptionButton" parent="TabContainer/Idioma/ContainerIdioma" unique_id=399739124]
+layout_mode = 2
+
+[node name="Configurações de Jogo" type="TabBar" parent="TabContainer" unique_id=479649579]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="ContainerConfigucoesJogo" type="VBoxContainer" parent="TabContainer/Configurações de Jogo" unique_id=1221567211]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 246.33331
+offset_top = 29.0
+offset_right = -246.33331
+offset_bottom = -29.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = -102
+
+[node name="mouse_teclado" type="CheckButton" parent="TabContainer/Configurações de Jogo/ContainerConfigucoesJogo" unique_id=1412512613]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "TG_MOUSEAIM"
+
+[node name="Tela" type="TabBar" parent="TabContainer" unique_id=796434128]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Som" type="TabBar" parent="TabContainer" unique_id=1259493919]
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Som" unique_id=40592835]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -103.0
+offset_top = -162.5
+offset_right = 103.0
+offset_bottom = -7.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SliderEfeitosSonoros" type="HBoxContainer" parent="TabContainer/Som/VBoxContainer" unique_id=1543993652]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="Label" type="Label" parent="TabContainer/Som/VBoxContainer/SliderEfeitosSonoros" unique_id=1394782830]
+layout_mode = 2
+size_flags_horizontal = 6
+text = "BAR_EFFECTS"
+
+[node name="ctrl_volume_som" type="HScrollBar" parent="TabContainer/Som/VBoxContainer/SliderEfeitosSonoros" unique_id=222900517]
+custom_minimum_size = Vector2(106, 10)
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 4
+min_value = -80.0
+max_value = 1.0
+value = 1.0
+
+[node name="SliderMusica" type="HBoxContainer" parent="TabContainer/Som/VBoxContainer" unique_id=881727769]
+layout_mode = 2
+size_flags_vertical = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="Label" type="Label" parent="TabContainer/Som/VBoxContainer/SliderMusica" unique_id=1903947899]
+layout_mode = 2
+size_flags_horizontal = 6
+text = "BAR_MUSIC"
+vertical_alignment = 1
+
+[node name="ctrl_volume_musica" type="HScrollBar" parent="TabContainer/Som/VBoxContainer/SliderMusica" unique_id=163547068]
+custom_minimum_size = Vector2(106, 10)
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 4
+min_value = -80.0
+max_value = 1.0
+value = 1.0
+
+[node name="Controles" type="TabBar" parent="TabContainer" unique_id=1223959725]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="Gráficos" type="TabBar" parent="TabContainer" unique_id=1141697529]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 5

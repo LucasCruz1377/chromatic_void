@@ -71,63 +71,6 @@ grow_vertical = 2
 scale = Vector2(1.5, 1.5)
 alignment = 1
 
-[node name="mouse_teclado" type="CheckButton" parent="configs_box" unique_id=1033600980]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-text = "TG_MOUSEAIM"
-
-[node name="SliderEfeitosSonoros" type="HBoxContainer" parent="configs_box" unique_id=1167116923]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 0
-
-[node name="Label" type="Label" parent="configs_box/SliderEfeitosSonoros" unique_id=217773421]
-layout_mode = 2
-size_flags_horizontal = 6
-text = "BAR_EFFECTS"
-
-[node name="ctrl_volume_som" type="HScrollBar" parent="configs_box/SliderEfeitosSonoros" unique_id=1734913157]
-custom_minimum_size = Vector2(106, 10)
-layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 4
-min_value = -80.0
-max_value = 1.0
-value = 1.0
-
-[node name="SliderMusica" type="HBoxContainer" parent="configs_box" unique_id=1996028593]
-layout_mode = 2
-size_flags_vertical = 2
-theme_override_constants/separation = 0
-alignment = 1
-
-[node name="Label" type="Label" parent="configs_box/SliderMusica" unique_id=394459012]
-layout_mode = 2
-size_flags_horizontal = 6
-text = "BAR_MUSIC"
-vertical_alignment = 1
-
-[node name="ctrl_volume_musica" type="HScrollBar" parent="configs_box/SliderMusica" unique_id=1363836232]
-custom_minimum_size = Vector2(106, 10)
-layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 4
-min_value = -80.0
-max_value = 1.0
-value = 1.0
-
-[node name="HBoxContainer3" type="HBoxContainer" parent="configs_box" unique_id=435414058]
-layout_mode = 2
-alignment = 1
-
-[node name="IdiomasLabel" type="Label" parent="configs_box/HBoxContainer3" unique_id=909692484]
-layout_mode = 2
-text = "T_IDIOMA"
-
-[node name="Idiomas" type="OptionButton" parent="configs_box/HBoxContainer3" unique_id=535502092]
-layout_mode = 2
-
 [node name="aim" parent="." unique_id=525751855 instance=ExtResource("4_k16so")]
 position = Vector2(8.000001, 58.000008)
 
@@ -188,8 +131,4 @@ visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
-[connection signal="toggled" from="configs_box/mouse_teclado" to="." method="_on_mouse_teclado_toggled"]
-[connection signal="value_changed" from="configs_box/SliderEfeitosSonoros/ctrl_volume_som" to="." method="_on_ctrl_volume_som_value_changed"]
-[connection signal="value_changed" from="configs_box/SliderMusica/ctrl_volume_musica" to="." method="_on_ctrl_volume_musica_value_changed"]
-[connection signal="item_selected" from="configs_box/HBoxContainer3/Idiomas" to="." method="_on_idiomas_item_selected"]
 [connection signal="pressed" from="voltar" to="." method="_on_voltar_pressed"]
