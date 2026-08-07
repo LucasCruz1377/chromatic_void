@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="8_kmw88"]
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="9_1s1gu"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="10_bd36c"]
-[ext_resource type="Script" uid="uid://ikoej2rppm8o" path="res://Rooms/tela_upgrades.gd" id="11_hv6r0"]
+[ext_resource type="Script" uid="uid://ikoej2rppm8o" path="res://Scripts/tela_upgrades.gd" id="11_hv6r0"]
 [ext_resource type="PackedScene" uid="uid://cvhvbtre63cad" path="res://Entities/Camera.tscn" id="12_1s1gu"]
 [ext_resource type="PackedScene" uid="uid://dppfvpdc03i8o" path="res://Entities/carta_upgrade.tscn" id="12_kmw88"]
 [ext_resource type="PackedScene" uid="uid://ck4b1aeayj01l" path="res://Entities/astro.tscn" id="13_kmw88"]

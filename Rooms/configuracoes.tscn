@@ -123,7 +123,7 @@ alignment = 1
 
 [node name="IdiomasLabel" type="Label" parent="configs_box/HBoxContainer3" unique_id=909692484]
 layout_mode = 2
-text = "[T_IDIOMA]"
+text = "T_IDIOMA"
 
 [node name="Idiomas" type="OptionButton" parent="configs_box/HBoxContainer3" unique_id=535502092]
 layout_mode = 2
@@ -136,7 +136,7 @@ layout_mode = 0
 offset_right = 216.0
 offset_bottom = 81.0
 theme_override_font_sizes/font_size = 39
-text = "< Back"
+text = "B_BACK"
 
 [node name="fx" parent="voltar" unique_id=767019499 instance=ExtResource("6_w2h0g")]
 scale_amount = Vector2(1.1, 1.1)
@@ -157,6 +157,36 @@ offset_left = -224.0
 offset_right = 0.0
 offset_bottom = 169.0
 grow_horizontal = 0
+
+[node name="Configurações" type="TabContainer" parent="." unique_id=1367096388]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 81.0
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 2
+
+[node name="Básico" type="TabBar" parent="Configurações" unique_id=18046014]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Gráfico" type="TabBar" parent="Configurações" unique_id=1438305224]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Audio" type="TabBar" parent="Configurações" unique_id=1793210534]
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Tela" type="TabBar" parent="Configurações" unique_id=226915909]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
 
 [connection signal="toggled" from="configs_box/mouse_teclado" to="." method="_on_mouse_teclado_toggled"]
 [connection signal="value_changed" from="configs_box/SliderEfeitosSonoros/ctrl_volume_som" to="." method="_on_ctrl_volume_som_value_changed"]

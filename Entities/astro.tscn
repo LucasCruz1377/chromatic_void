@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ck4b1aeayj01l"]
 
-[ext_resource type="Script" uid="uid://1c0sjsk1ul32" path="res://Rooms/AstroOAsteroide.gd" id="1_ahfxv"]
+[ext_resource type="Script" uid="uid://1c0sjsk1ul32" path="res://Scripts/AstroOAsteroide.gd" id="1_ahfxv"]
 [ext_resource type="Texture2D" uid="uid://cwg1sj6khdlk3" path="res://Assets/AstroAsteroide.png" id="2_mnuoh"]
 
 [node name="Astro" type="Control" unique_id=1436156404]
