@@ -7,6 +7,16 @@ extends Control
 @export var velocidade_escrita : float = 0.03
 @export var tempo_espera_frase : float = 5.0
 
+
+var dialogo_inicial = [
+	"Olá, é sua primeira vez jogando?",
+	"Me chamo Astro, e quero te ensinar o básico sobre esse jogo",
+	"Antes de tudo, o jogo está em desenvolvimento, então pode conter erros",
+	"Para acelerar use W, para frear use S e para virar a nave para os lados você pode usar o mouse, mas nas configurações é possível mudar os controles para apenas teclado",
+	"Para atirar, aperte ou segure o botão esquero do mouse ou a tecla [color=yellow]F[/color], caso esteja jogando sem mirar com o mouse",
+	"Além desses controles você pode apertar Espaço para usar sua habilidade especial, que nesta versão por padrão é o poder do Retrocesso",
+]
+
 var curiosidades : Array[String] = [
 	"T_CURIOSIDADE1",
 	"O aniversário do programador deste jogo é em fevereiro",
@@ -58,7 +68,7 @@ func mostrar_nova_curiosidade() -> void:
 
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("atirar"):
-		texto_label.visible_ratio = -1
+		texto_label.visible_ratio += 0.1
 	
 	var tempo = Time.get_ticks_msec() / 1000.0
 	position.y += sin(tempo * 3.0) * 0.5
