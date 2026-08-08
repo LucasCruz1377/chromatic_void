@@ -1,75 +1,222 @@
 extends Control
 
-@onready var texto_label : RichTextLabel = $DialogoAstro
-@onready var som_digito : AudioStreamPlayer2D = $VozAstro
-@onready var timer_proxima : Timer = $Timer
+@onready var texto_label: RichTextLabel = $DialogoAstro
+@onready var som_digito: AudioStreamPlayer2D = $VozAstro
+@onready var timer_proxima: Timer = $Timer
 
-@export var velocidade_escrita : float = 0.03
-@export var tempo_espera_frase : float = 5.0
+@export var velocidade_escrita: float = 0.03
+@export var tempo_espera_frase: float = 5.0
 
+# ============================================================
+# DIÁLOGOS
+# ============================================================
 
-var dialogo_inicial = [
-	"Olá, é sua primeira vez jogando?",
-	"Me chamo Astro, e quero te ensinar o básico sobre esse jogo",
-	"Antes de tudo, o jogo está em desenvolvimento, então pode conter erros",
-	"Para acelerar use W, para frear use S e para virar a nave para os lados você pode usar o mouse, mas nas configurações é possível mudar os controles para apenas teclado",
-	"Para atirar, aperte ou segure o botão esquero do mouse ou a tecla [color=yellow]F[/color], caso esteja jogando sem mirar com o mouse",
-	"Além desses controles você pode apertar Espaço para usar sua habilidade especial, que nesta versão por padrão é o poder do Retrocesso",
+var apresentacao: Array[String] = [
+	"Olá! Eu sou o Astro."
 ]
 
-var curiosidades : Array[String] = [
+var dialogo_inicial: Array[String] = [
+	"Olá! Eu sou o Astro.",
+	"Vou te ensinar o básico sobre o jogo.",
+	"O jogo ainda está em desenvolvimento, então podem existir alguns erros.",
+	"Para acelerar use W e para frear use S.",
+	"Para virar a nave, use o mouse. Nas configurações você pode mudar para usar apenas o teclado.",
+	"Para atirar, use o botão esquerdo do mouse ou a tecla [color=yellow]F[/color].",
+	"Pressione Espaço para usar sua habilidade especial."
+]
+
+var curiosidades: Array[String] = [
 	"T_CURIOSIDADE1",
-	"O aniversário do programador deste jogo é em fevereiro",
-	"A Co-Criadora deste jogo adora crochê",
-	"Os criadores deste jogo estão juntos há mais de 1 ano ",
-	"Acesse também nosso site Monthly Colors"
+	"T_CURIOSIDADE2",
+	"T_CURIOSIDADE3",
+	"T_CURIOSIDADE4",
+	"T_CURIOSIDADE5",
+	"T_CURIOSIDADE6"
 ]
+
+
+# ============================================================
+# ESTADO
+# ============================================================
+
+var indice_dialogo := 0
+var escrevendo := false
+
+var tween_texto: Tween
+
+# Pode ser:
+# "apresentacao"
+# "tutorial"
+# "curiosidade"
+var modo := "curiosidade"
+
+var tutorial_terminado := false
+
+
+# ============================================================
+# READY
+# ============================================================
 
 func _ready() -> void:
-	
 
 	timer_proxima.wait_time = tempo_espera_frase
-	timer_proxima.timeout.connect(mostrar_nova_curiosidade)
-	
-	mostrar_nova_curiosidade()
 
-func mostrar_nova_curiosidade() -> void:
-	if Global.primeira_vez_jogando:
-		texto_label.text = "[wave]Olá, eu sou o [color=yellow]Astro"
-		return
-		
-	timer_proxima.stop()
+	texto_label.visible = false
+
+
+# ============================================================
+# FALAR
+# ============================================================
+
+func falar(texto: String) -> void:
+
+	if tween_texto:
+		tween_texto.kill()
+
+	texto_label.visible = true
+	texto_label.text = texto
+	texto_label.visible_ratio = 0
+
+	escrevendo = true
+
+	tween_texto = create_tween()
+
+	tween_texto.tween_property(
+		texto_label,
+		"visible_ratio",
+		1.0,
+		texto.length() * velocidade_escrita
+	)
+
+	tween_texto.finished.connect(_terminou_de_escrever)
+
+
+func _terminou_de_escrever() -> void:
+
+	escrevendo = false
+
+
+# ============================================================
+# APRESENTAÇÃO NA TELA INICIAL
+# ============================================================
+
+func apresentar() -> void:
+
+	modo = "apresentacao"
+
+	falar(apresentacao[0])
+
+
+# ============================================================
+# INICIAR TUTORIAL
+# ============================================================
+
+func iniciar_tutorial(player: Player) -> void:
+
+	modo = "tutorial"
+
+	indice_dialogo = 0
+	tutorial_terminado = false
+
+	# Bloqueia o jogador sem pausar a árvore.
+	player.BloquearControle()
+	player.BloquearGiro()
+
+	falar(dialogo_inicial[indice_dialogo])
+
+
+# ============================================================
+# PRÓXIMA FALA
+# ============================================================
+
+func proxima_fala() -> void:
+
+	if modo == "tutorial":
+
+		indice_dialogo += 1
+
+		if indice_dialogo < dialogo_inicial.size():
+
+			falar(dialogo_inicial[indice_dialogo])
+
+		else:
+
+			finalizar_tutorial()
+
+
+# ============================================================
+# FINALIZAR TUTORIAL
+# ============================================================
+
+func finalizar_tutorial() -> void:
 	
-	var chave_aleatoria = curiosidades.pick_random()
-	texto_label.text = tr(chave_aleatoria)
-	texto_label.visible_ratio = 0.0
-	
-	var total_caracteres = texto_label.get_parsed_text().length()
-	var duracao_total = total_caracteres * velocidade_escrita
-	
-	var tween = create_tween()
-	tween.tween_property(texto_label, "visible_ratio", 1.0, duracao_total).from(0.0)
-	
-	var ratio_anterior = 0.0
-	while tween.is_running():
-		var caracteres_atuais = floor(texto_label.visible_ratio * total_caracteres)
-		var caracteres_anteriores = floor(ratio_anterior * total_caracteres)
-		
-		if caracteres_atuais > caracteres_anteriores:
-			if som_digito and not som_digito.playing:
-				som_digito.pitch_scale = randf_range(0.9, 1.1)
-				som_digito.play()
-				
-		ratio_anterior = texto_label.visible_ratio
-		await get_tree().process_frame
-		
-	texto_label.visible_ratio = 1.0
+	tutorial_terminado = true
+
+	GerenciadorDeSave.salvar({"tutorialconcluido" : true})
+	texto_label.visible = false
+
+	var player = get_tree().get_first_node_in_group("player")
+
+	if player:
+
+		player.DesbloquearControle()
+		player.DesbloquearGiro()
+
+	modo = "curiosidade"
+
+
+# ============================================================
+# CURIOSIDADE
+# ============================================================
+
+func iniciar_curiosidades() -> void:
+
+	modo = "curiosidade"
+
 	timer_proxima.start()
 
-func _process(delta: float) -> void:
+
+func falar_curiosidade() -> void:
+
+	if modo != "curiosidade":
+		return
+
+	falar(curiosidades.pick_random())
+
+	timer_proxima.start()
+
+
+# ============================================================
+# TIMER
+# ============================================================
+
+func _on_timer_timeout() -> void:
+
+	if modo == "curiosidade":
+
+		falar_curiosidade()
+
+
+# ============================================================
+# INPUT
+# ============================================================
+
+func _process(_delta: float) -> void:
+
 	if Input.is_action_just_pressed("atirar"):
-		texto_label.visible_ratio += 0.1
-	
-	var tempo = Time.get_ticks_msec() / 1000.0
-	position.y += sin(tempo * 3.0) * 0.5
-	rotation = sin(tempo * 2.0) * 0.02
+
+		# Se ainda está escrevendo,
+		# completa a frase imediatamente.
+		if escrevendo:
+
+			if tween_texto:
+				tween_texto.kill()
+
+			texto_label.visible_ratio = 1.0
+			escrevendo = false
+
+		# Se terminou de escrever,
+		# avança o tutorial.
+		elif modo == "tutorial":
+
+			proxima_fala()

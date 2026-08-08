@@ -139,6 +139,8 @@ position = Vector2(39, 509)
 process_mode = 3
 script = ExtResource("4_bd36c")
 
+[node name="aim" parent="GUI" unique_id=525751855 instance=ExtResource("8_kmw88")]
+
 [node name="ContadorPontos" type="Label" parent="GUI" unique_id=1644039224]
 anchors_preset = 5
 anchor_left = 0.5
@@ -348,8 +350,6 @@ offset_left = 625.0
 offset_top = 271.0
 offset_right = 665.0
 offset_bottom = 311.0
-
-[node name="aim" parent="." unique_id=525751855 instance=ExtResource("8_kmw88")]
 
 [node name="transition" type="AnimationPlayer" parent="." unique_id=1456092539]
 libraries/ = SubResource("AnimationLibrary_f80io")

@@ -6,6 +6,8 @@ extends Node2D
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	$Astro.apresentar()
+	
 	var musicbus = AudioServer.get_bus_index("Music")
 	var soundbus = AudioServer.get_bus_index("Sound") 
 	AudioServer.set_bus_volume_db(musicbus,Global.volume_musica)
@@ -43,3 +45,7 @@ func _on_options_pressed() -> void:
 
 func click_som():
 	som.play()
+
+
+func _on_button_pressed():
+	GerenciadorDeSave.deletar_save()

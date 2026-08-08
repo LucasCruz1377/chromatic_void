@@ -16,7 +16,10 @@ var timer = TIMER_MAX
 var pontos = 0
 
 func _ready() -> void:
+	var dados = GerenciadorDeSave.carregar()
 	
+	if dados.get("tutorialconcluido", false) or null:
+		$GUI/Astro.iniciar_tutorial(player)
 	
 	get_tree().paused = false
 	
