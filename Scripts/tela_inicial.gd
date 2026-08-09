@@ -47,5 +47,6 @@ func click_som():
 	som.play()
 
 
-func _on_button_pressed():
+func _on_button_pressed() -> void:
 	GerenciadorDeSave.deletar_save()
+	print("SAVE APAGADO: o tutorial será exibido ao iniciar a batalha novamente.")

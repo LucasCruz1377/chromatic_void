@@ -1,7 +1,6 @@
 extends CharacterBody2D
 class_name Player
 
-
 # ============================================================
 # EXPORTS
 # ============================================================
@@ -102,7 +101,6 @@ func _ready() -> void:
 # ============================================================
 
 func _process(delta: float) -> void:
-
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
 	atualizar_habilidade(delta)
@@ -117,7 +115,6 @@ func _process(delta: float) -> void:
 # ============================================================
 
 func atualizar_ui() -> void:
-
 	lvl_text.text = "LVL: " + str(nivel_atual)
 
 	if HabilidadeEquipada:
@@ -128,7 +125,6 @@ func atualizar_ui() -> void:
 
 
 func atualizar_vida() -> void:
-
 	if vida > 0:
 		barra_vida.scale.x = escala_base * (vida / VIDA_MAXIMA)
 
@@ -141,9 +137,7 @@ func atualizar_vida() -> void:
 # ============================================================
 
 func atualizar_invencibilidade(delta: float) -> void:
-
 	if invencibilidade_cd > 0:
-
 		invencibilidade_cd -= delta
 
 		modulate.a = abs(
@@ -151,7 +145,6 @@ func atualizar_invencibilidade(delta: float) -> void:
 		)
 
 	else:
-
 		modulate.a = 1.0
 		invencibilidade = false
 
@@ -161,13 +154,24 @@ func atualizar_invencibilidade(delta: float) -> void:
 # ============================================================
 
 func atualizar_habilidade(delta: float) -> void:
-
 	if not HabilidadeEquipada:
 		return
 
-	HabilidadeEquipada.update(self, delta)
+	# Continua atualizando o cooldown normalmente.
+	HabilidadeEquipada.update(
+		self,
+		delta
+	)
 
-	if vivo and Input.is_action_just_pressed("Habilidade"):
+	# Se o controle estiver bloqueado,
+	# não permite ativar habilidades.
+	if ctrlblock:
+		return
+
+	if vivo and Input.is_action_just_pressed(
+		"Habilidade"
+	):
+
 		HabilidadeEquipada.activate(self)
 
 
@@ -184,7 +188,6 @@ func EncerrarHabilidade() -> void:
 # ============================================================
 
 func atualizar_movimento(delta: float) -> void:
-
 	if not vivo:
 		return
 
@@ -192,7 +195,6 @@ func atualizar_movimento(delta: float) -> void:
 	if not giroblock:
 
 		if mira_mouse:
-
 			var target_angle = global_position.angle_to_point(
 				get_global_mouse_position()
 			)
@@ -206,6 +208,7 @@ func atualizar_movimento(delta: float) -> void:
 		else:
 			arrowsctrl(delta)
 
+
 	# Controle de aceleração
 	if not ctrlblock:
 
@@ -215,11 +218,13 @@ func atualizar_movimento(delta: float) -> void:
 		if Input.is_action_pressed("freio"):
 			brake(delta)
 
+
 	# Partículas
 	if Input.is_action_pressed("acelerar") or UsandoHabilidade:
 		particles.emitting = true
 	else:
 		particles.emitting = false
+
 
 	# Redução de velocidade
 	velocity = velocity.move_toward(
@@ -227,9 +232,11 @@ func atualizar_movimento(delta: float) -> void:
 		friction * delta
 	)
 
+
 	# Limite de velocidade
 	if not UsandoHabilidade:
 		velocity = velocity.limit_length(MAX_VELOCIDADE)
+
 
 	move_and_slide()
 
@@ -243,7 +250,6 @@ func brake(delta: float) -> void:
 
 
 func arrowsctrl(delta: float) -> void:
-
 	rotation += Input.get_axis(
 		"esquerda",
 		"direita"
@@ -255,19 +261,34 @@ func arrowsctrl(delta: float) -> void:
 # ============================================================
 
 func atualizar_combate(delta: float) -> void:
-
 	cooldown -= delta
+
 
 	if cooldown < 0:
 		cooldown = 0
 
-	if vivo and Input.is_action_pressed("atirar"):
+
+	# MUITO IMPORTANTE:
+	#
+	# Durante o tutorial o Astro usa o mesmo
+	# clique esquerdo que normalmente atiraria.
+	#
+	# Como ctrlblock está ativo, não atira.
+	if ctrlblock:
+		return
+
+
+	if vivo and Input.is_action_pressed(
+		"atirar"
+	):
 
 		if cooldown <= 0:
 			fire()
 
 
 func fire() -> void:
+	if not tiro:
+		return
 
 	var instance_bullet = tiro.instantiate()
 
@@ -288,7 +309,6 @@ func fire() -> void:
 # ============================================================
 
 func tomar_dano(valor: float) -> void:
-
 	if invencibilidade:
 		return
 
@@ -305,7 +325,6 @@ func tomar_dano(valor: float) -> void:
 
 
 func curar(valor: float) -> void:
-
 	vida += valor
 
 	if vida > VIDA_MAXIMA:
@@ -317,7 +336,6 @@ func curar(valor: float) -> void:
 # ============================================================
 
 func ganhar_xp(value: float) -> void:
-
 	if invencibilidade:
 		return
 
@@ -328,7 +346,6 @@ func ganhar_xp(value: float) -> void:
 
 
 func subir_de_nivel() -> void:
-
 	nivel_atual += 1
 
 	xp_atual = 0
@@ -347,18 +364,34 @@ func receber_upgrade(tipo: Upgrade) -> void:
 	match tipo:
 
 		Upgrade.CADENCIA:
+			# Reduz o cooldown do tiro.
 			CD_MAX *= 0.9
+
+			# Reduz também o cooldown da habilidade.
+			if HabilidadeEquipada:
+				HabilidadeEquipada.cooldown_max *= 0.9
+
+				# Evita que o cooldown atual fique maior
+				# que o novo máximo.
+				HabilidadeEquipada.cooldown = min(
+					HabilidadeEquipada.cooldown,
+					HabilidadeEquipada.cooldown_max
+				)
+
 
 		Upgrade.BLINDAGEM:
 			VIDA_MAXIMA *= 1.1
 			vida = VIDA_MAXIMA
 
+
 		Upgrade.DANO:
 			dano += 0.5
+
 
 		Upgrade.VELOCIDADE:
 			MAX_VELOCIDADE *= 1.1
 			SPEED *= 1.05
+
 
 		Upgrade.TURNSPD:
 			VelocidadeVirar *= 1.1
@@ -369,7 +402,6 @@ func receber_upgrade(tipo: Upgrade) -> void:
 # ============================================================
 
 func morrer() -> void:
-
 	if not vivo:
 		return
 
@@ -419,7 +451,6 @@ func DesbloquearGiro() -> void:
 # ============================================================
 
 func atualizar_limites() -> void:
-
 	position.x = wrap(position.x, 0, 960)
 	position.y = wrap(position.y, 0, 540)
 
@@ -429,7 +460,6 @@ func atualizar_limites() -> void:
 # ============================================================
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
-
 	if not vivo:
 		return
 

@@ -5,11 +5,6 @@ extends Control
 @onready var timer_proxima: Timer = $Timer
 
 @export var velocidade_escrita: float = 0.03
-@export var tempo_espera_frase: float = 5.0
-
-# ============================================================
-# DIÁLOGOS
-# ============================================================
 
 var apresentacao: Array[String] = [
 	"Olá! Eu sou o Astro."
@@ -25,198 +20,166 @@ var dialogo_inicial: Array[String] = [
 	"Pressione Espaço para usar sua habilidade especial."
 ]
 
-var curiosidades: Array[String] = [
-	"T_CURIOSIDADE1",
-	"T_CURIOSIDADE2",
-	"T_CURIOSIDADE3",
-	"T_CURIOSIDADE4",
-	"T_CURIOSIDADE5",
-	"T_CURIOSIDADE6"
-]
-
-
-# ============================================================
-# ESTADO
-# ============================================================
-
-var indice_dialogo := 0
-var escrevendo := false
-
+var indice_dialogo: int = 0
+var escrevendo: bool = false
+var tutorial_ativo: bool = false
+var tutorial_terminado: bool = false
 var tween_texto: Tween
+var jogador: Player
 
-# Pode ser:
-# "apresentacao"
-# "tutorial"
-# "curiosidade"
-var modo := "curiosidade"
-
-var tutorial_terminado := false
-
-
-# ============================================================
-# READY
-# ============================================================
 
 func _ready() -> void:
-
-	timer_proxima.wait_time = tempo_espera_frase
-
+	# O Astro só deve aparecer quando Battle_area mandar iniciar o tutorial.
+	visible = false
 	texto_label.visible = false
+	set_process_input(false)
 
-
-# ============================================================
-# FALAR
-# ============================================================
-
-func falar(texto: String) -> void:
-
-	if tween_texto:
-		tween_texto.kill()
-
-	texto_label.visible = true
-	texto_label.text = texto
-	texto_label.visible_ratio = 0
-
-	escrevendo = true
-
-	tween_texto = create_tween()
-
-	tween_texto.tween_property(
-		texto_label,
-		"visible_ratio",
-		1.0,
-		texto.length() * velocidade_escrita
-	)
-
-	tween_texto.finished.connect(_terminou_de_escrever)
-
-
-func _terminou_de_escrever() -> void:
-
-	escrevendo = false
-
-
-# ============================================================
-# APRESENTAÇÃO NA TELA INICIAL
-# ============================================================
 
 func apresentar() -> void:
-
-	modo = "apresentacao"
-
+	# Usado apenas na TelaInicial. Não marca tutorial como concluído.
+	visible = true
+	texto_label.visible = true
+	set_process_input(false)
 	falar(apresentacao[0])
 
 
-# ============================================================
-# INICIAR TUTORIAL
-# ============================================================
-
 func iniciar_tutorial(player: Player) -> void:
+	if tutorial_ativo or tutorial_terminado:
+		return
 
-	modo = "tutorial"
+	print("ASTRO: INICIANDO TUTORIAL")
 
+	jogador = player
 	indice_dialogo = 0
+	tutorial_ativo = true
 	tutorial_terminado = false
 
-	# Bloqueia o jogador sem pausar a árvore.
-	player.BloquearControle()
-	player.BloquearGiro()
+	visible = true
+	texto_label.visible = true
+	set_process_input(true)
 
+	if is_instance_valid(jogador):
+		jogador.BloquearControle()
+		jogador.BloquearGiro()
+
+	# Garante que o primeiro texto seja mostrado já no começo do tutorial.
 	falar(dialogo_inicial[indice_dialogo])
 
 
-# ============================================================
-# PRÓXIMA FALA
-# ============================================================
+func falar(texto: String) -> void:
+	if tween_texto and tween_texto.is_valid():
+		tween_texto.kill()
 
-func proxima_fala() -> void:
+	visible = true
+	texto_label.visible = true
+	texto_label.text = texto
+	texto_label.visible_characters = 0
 
-	if modo == "tutorial":
+	escrevendo = true
 
-		indice_dialogo += 1
+	var total_caracteres: int = texto_label.get_parsed_text().length()
 
-		if indice_dialogo < dialogo_inicial.size():
+	for i in range(total_caracteres + 1):
+		# Caso outra fala tenha interrompido essa.
+		if not escrevendo:
+			return
 
-			falar(dialogo_inicial[indice_dialogo])
+		texto_label.visible_characters = i
 
-		else:
+		# Toca o som a cada caractere.
+		if i > 0 and som_digito.stream:
+			som_digito.pitch_scale = randf_range(0.95, 1.05)
+			som_digito.play()
 
-			finalizar_tutorial()
+		await get_tree().create_timer(velocidade_escrita).timeout
 
-
-# ============================================================
-# FINALIZAR TUTORIAL
-# ============================================================
-
-func finalizar_tutorial() -> void:
-	
-	tutorial_terminado = true
-
-	GerenciadorDeSave.salvar({"tutorialconcluido" : true})
-	texto_label.visible = false
-
-	var player = get_tree().get_first_node_in_group("player")
-
-	if player:
-
-		player.DesbloquearControle()
-		player.DesbloquearGiro()
-
-	modo = "curiosidade"
+	escrevendo = false
+	_on_fala_terminou()
 
 
-# ============================================================
-# CURIOSIDADE
-# ============================================================
-
-func iniciar_curiosidades() -> void:
-
-	modo = "curiosidade"
-
-	timer_proxima.start()
+func _on_fala_terminou() -> void:
+	escrevendo = false
 
 
-func falar_curiosidade() -> void:
-
-	if modo != "curiosidade":
+func completar_fala() -> void:
+	if not escrevendo:
 		return
 
-	falar(curiosidades.pick_random())
+	if tween_texto and tween_texto.is_valid():
+		tween_texto.kill()
 
-	timer_proxima.start()
-
-
-# ============================================================
-# TIMER
-# ============================================================
-
-func _on_timer_timeout() -> void:
-
-	if modo == "curiosidade":
-
-		falar_curiosidade()
+	texto_label.visible_ratio = 1.0
+	escrevendo = false
 
 
-# ============================================================
-# INPUT
-# ============================================================
+func proxima_fala() -> void:
+	if not tutorial_ativo:
+		return
 
-func _process(_delta: float) -> void:
+	indice_dialogo += 1
 
-	if Input.is_action_just_pressed("atirar"):
+	if indice_dialogo < dialogo_inicial.size():
+		falar(dialogo_inicial[indice_dialogo])
+	else:
+		terminar_tutorial()
 
-		# Se ainda está escrevendo,
-		# completa a frase imediatamente.
-		if escrevendo:
 
-			if tween_texto:
-				tween_texto.kill()
+func terminar_tutorial() -> void:
+	if tutorial_terminado:
+		return
 
-			texto_label.visible_ratio = 1.0
-			escrevendo = false
+	print("ASTRO: TUTORIAL TERMINADO")
 
-		# Se terminou de escrever,
-		# avança o tutorial.
-		elif modo == "tutorial":
+	tutorial_ativo = false
+	tutorial_terminado = true
+	set_process_input(false)
 
-			proxima_fala()
+	if tween_texto and tween_texto.is_valid():
+		tween_texto.kill()
+
+	escrevendo = false
+
+	# Marca permanentemente que o tutorial já foi visto.
+	GerenciadorDeSave.salvar({
+		"tutorialconcluido": true
+	})
+
+	# Libera completamente o jogador.
+	if is_instance_valid(jogador):
+		jogador.DesbloquearControle()
+		jogador.DesbloquearGiro()
+
+	# A Battle Area volta a rodar spawn e gameplay normal.
+	var area_batalha := get_tree().current_scene
+	if area_batalha and area_batalha.has_method("finalizar_tutorial"):
+		area_batalha.finalizar_tutorial()
+
+	# O Astro existe apenas para o tutorial.
+	queue_free()
+
+
+func _input(event: InputEvent) -> void:
+	if not tutorial_ativo:
+		return
+
+	var avancar := false
+
+	# Clique esquerdo.
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			avancar = true
+
+	# F também pode avançar porque já é um dos controles ensinados no tutorial.
+	if event.is_action_pressed("atirar"):
+		avancar = true
+
+	if not avancar:
+		return
+
+	get_viewport().set_input_as_handled()
+
+	# Um clique completa a frase; o próximo passa para a seguinte.
+	if escrevendo:
+		completar_fala()
+	else:
+		proxima_fala()

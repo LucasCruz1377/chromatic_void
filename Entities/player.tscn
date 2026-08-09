@@ -77,9 +77,9 @@ collision_mask = 15
 motion_mode = 1
 wall_min_slide_angle = 0.0
 script = ExtResource("1_4flbx")
-ParticulaMorte = ExtResource("2_onrkg")
 tiro = ExtResource("3_s1j76")
 HabilidadeEquipada = ExtResource("4_prmdv")
+ParticulaMorte = ExtResource("2_onrkg")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=2090995044]
 z_index = 3

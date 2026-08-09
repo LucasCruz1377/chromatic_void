@@ -2,6 +2,12 @@
 
 [ext_resource type="Script" uid="uid://1c0sjsk1ul32" path="res://Scripts/AstroOAsteroide.gd" id="1_ahfxv"]
 [ext_resource type="Texture2D" uid="uid://cwg1sj6khdlk3" path="res://Assets/AstroAsteroide.png" id="2_mnuoh"]
+[ext_resource type="AudioStream" uid="uid://cpai61uagbdhd" path="res://sounds/AstroVoz.wav" id="3_mnuoh"]
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_6yt77"]
+random_pitch = 1.0317428
+streams_count = 1
+stream_0/stream = ExtResource("3_mnuoh")
 
 [node name="Astro" type="Control" unique_id=1436156404]
 layout_mode = 3
@@ -11,6 +17,7 @@ offset_top = 468.0
 offset_right = 921.0
 offset_bottom = 508.0
 script = ExtResource("1_ahfxv")
+velocidade_escrita = 0.05
 
 [node name="SpriteAstro" type="TextureRect" parent="." unique_id=2019936445]
 layout_mode = 0
@@ -33,6 +40,10 @@ horizontal_alignment = 2
 visible_characters_behavior = 1
 
 [node name="VozAstro" type="AudioStreamPlayer2D" parent="." unique_id=2072753965]
+stream = SubResource("AudioStreamRandomizer_6yt77")
+volume_db = -6.442
+pitch_scale = 0.99
+bus = &"Sound"
 
 [node name="Timer" type="Timer" parent="." unique_id=641648089]
 
