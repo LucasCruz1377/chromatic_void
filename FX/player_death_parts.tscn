@@ -43,20 +43,71 @@ linear_accel_min = -2.2351742e-06
 linear_accel_max = -2.2351742e-06
 linear_accel_curve = SubResource("CurveTexture_g86f5")
 scale_curve = SubResource("CurveTexture_1dmkk")
+color = Color(0.5764706, 1, 0.101960786, 1)
 color_ramp = SubResource("GradientTexture1D_4otrb")
 turbulence_noise_strength = 12.68
 turbulence_noise_scale = 10.0
 turbulence_noise_speed_random = 3.1
+sub_emitter_mode = 2
+sub_emitter_amount_at_end = 1
+sub_emitter_keep_velocity = true
+
+[sub_resource type="Gradient" id="Gradient_omccf"]
+offsets = PackedFloat32Array(0.39903846, 0.82211536)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_a6gjk"]
+gradient = SubResource("Gradient_omccf")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.7, 0.8)
+metadata/_snap_enabled = true
+
+[sub_resource type="Curve" id="Curve_qlddy"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_n3m2x"]
+curve = SubResource("Curve_qlddy")
+
+[sub_resource type="Gradient" id="Gradient_cqc4c"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.14084508, 0.2535211, 0.3802817, 0.53521127, 0.6760563, 0.8169014, 0.9507042)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_q8c8f"]
+gradient = SubResource("Gradient_cqc4c")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rruie"]
+particle_flag_disable_z = true
+gravity = Vector3(0, 50, 0)
+color_ramp = SubResource("GradientTexture1D_q8c8f")
+alpha_curve = SubResource("CurveTexture_n3m2x")
+hue_variation_min = -0.13000003
+hue_variation_max = -2.2351742e-08
 
 [node name="PlayerDeathParts" type="GPUParticles2D" unique_id=2026184711]
-modulate = Color(0.5764706, 1, 0.101960786, 1)
 self_modulate = Color(1.8247963, 1.8247963, 1.8247963, 1)
 emitting = false
-amount = 50
+amount = 200
+sub_emitter = NodePath("sparks")
 texture = SubResource("GradientTexture2D_tm7k8")
 lifetime = 1.5
 one_shot = true
 speed_scale = 2.0
-explosiveness = 1.0
+explosiveness = 0.52
+randomness = 1.0
+trail_section_subdivisions = 38
 process_material = SubResource("ParticleProcessMaterial_lyo18")
 script = ExtResource("1_tm7k8")
+
+[node name="sparks" type="GPUParticles2D" parent="." unique_id=470304123]
+self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
+emitting = false
+amount = 200
+texture = SubResource("GradientTexture2D_a6gjk")
+one_shot = true
+speed_scale = 3.0
+explosiveness = 1.0
+randomness = 1.0
+process_material = SubResource("ParticleProcessMaterial_rruie")
