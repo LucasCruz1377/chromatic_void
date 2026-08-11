@@ -1,5 +1,5 @@
 extends Habilidade
-class_name Hiperdash
+class_name HabilidadeHiperdash
 
 @export var velocidade_dash : int = 200
 @export var desaceleracao : float = 0.2
