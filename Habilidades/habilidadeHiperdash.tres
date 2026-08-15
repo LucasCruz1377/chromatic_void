@@ -1,16 +1,30 @@
-[gd_resource type="Resource" script_class="Hiperdash" format=3 uid="uid://cah4trcuntsvr"]
+[gd_resource type="Resource" script_class="HabilidadeHiperdash" load_steps=4 format=3 uid="uid://cah4trcuntsvr"]
 
-[ext_resource type="Script" uid="uid://b72qka705e4eg" path="res://Habilidades/Hiperdash.gd" id="1_fq5o2"]
+[ext_resource type="Script" uid="uid://b72qka705e4eg" path="res://Habilidades/Hiperdash.gd" id="1_dash"]
 
-[sub_resource type="Gradient" id="Gradient_7t4ss"]
+[sub_resource type="Gradient" id="Gradient_dash"]
+colors = PackedColorArray(0, 0.7, 1, 1, 0.2, 1, 0.9, 1)
 
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_u3l5p"]
-gradient = SubResource("Gradient_7t4ss")
+[sub_resource type="GradientTexture2D" id="GradientTexture_dash"]
+gradient = SubResource("Gradient_dash")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 1)
 
 [resource]
-script = ExtResource("1_fq5o2")
-velocidade_dash = 1000
-desaceleracao_tempo = 0.5
+script = ExtResource("1_dash")
+Id = &"hiperdash"
 Nome = "Hiperdash"
-Icone = SubResource("GradientTexture2D_u3l5p")
+Descricao = "Prepara a nave e dispara um avanço veloz, invulnerável e com rastro."
+Icone = SubResource("GradientTexture_dash")
+Cooldown = 6.0
+velocidade_dash = 1100.0
+desaceleracao = 0.2
+desaceleracao_tempo = 0.5
+intervalo_preparo = 0.2
+duracao_dash = 0.25
+intervalo_rastro = 0.03
 metadata/_custom_type_script = "uid://b72qka705e4eg"
+

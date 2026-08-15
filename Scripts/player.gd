@@ -1,9 +1,9 @@
 extends CharacterBody2D
 class_name Player
 
-# ============================================================
-# EXPORTS
-# ============================================================
+
+const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
+
 
 @export_category("Combate")
 @export var tiro: PackedScene
@@ -24,10 +24,6 @@ class_name Player
 @export var ParticulaMorte: PackedScene
 
 
-# ============================================================
-# NODES
-# ============================================================
-
 @onready var PontaArma: Marker2D = $ponta
 @onready var particles: GPUParticles2D = $particles
 
@@ -39,10 +35,6 @@ class_name Player
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
 
-
-# ============================================================
-# STATUS DO PLAYER
-# ============================================================
 
 var vida: float
 var cooldown := 0.0
@@ -56,6 +48,10 @@ var ctrlblock := false
 var escala_base := 9.85
 
 var UsandoHabilidade := false
+var invulneravel_por_habilidade := false
+var multiplicador_dano_recebido := 1.0
+var multiplicador_cura_recebida := 1.0
+var multiplicador_velocidade_habilidade := 1.0
 
 var xp_atual: float = 0.0
 var nivel_atual: int = 1
@@ -68,10 +64,6 @@ var invencibilidade_cd_max := 3.0
 var save := false
 
 
-# ============================================================
-# ENUM DE UPGRADES
-# ============================================================
-
 enum Upgrade {
 	CADENCIA,
 	BLINDAGEM,
@@ -81,24 +73,18 @@ enum Upgrade {
 }
 
 
-# ============================================================
-# SIGNALS
-# ============================================================
-
 signal subiuDeNivel()
 
 
-# ============================================================
-# READY
-# ============================================================
-
 func _ready() -> void:
 	vida = VIDA_MAXIMA
+	carregar_habilidade_equipada()
 
 
-# ============================================================
-# PROCESS
-# ============================================================
+func _exit_tree() -> void:
+	if HabilidadeEquipada:
+		HabilidadeEquipada.ao_desequipar(self)
+
 
 func _process(delta: float) -> void:
 	atualizar_ui()
@@ -110,180 +96,154 @@ func _process(delta: float) -> void:
 	atualizar_vida()
 
 
-# ============================================================
-# UI
-# ============================================================
+func carregar_habilidade_equipada() -> void:
+	var dados := GerenciadorDeSave.carregar()
+	var caminho := str(dados.get("habilidade_equipada", ""))
+	var habilidade_carregada: Habilidade
+
+	if not caminho.is_empty() and ResourceLoader.exists(caminho):
+		var recurso := load(caminho)
+		if recurso is Habilidade:
+			habilidade_carregada = recurso
+
+	if not habilidade_carregada and HabilidadeEquipada:
+		habilidade_carregada = HabilidadeEquipada
+
+	if not habilidade_carregada and ResourceLoader.exists(CAMINHO_HABILIDADE_PADRAO):
+		var recurso_padrao := load(CAMINHO_HABILIDADE_PADRAO)
+		if recurso_padrao is Habilidade:
+			habilidade_carregada = recurso_padrao
+
+	if not habilidade_carregada:
+		push_warning("Nenhuma habilidade válida foi encontrada para o Player.")
+		HabilidadeEquipada = null
+		return
+
+	var copia := habilidade_carregada.duplicate(true) as Habilidade
+	if not copia:
+		push_error("Não foi possível duplicar a habilidade equipada.")
+		HabilidadeEquipada = null
+		return
+
+	HabilidadeEquipada = copia
+	HabilidadeEquipada.reiniciar_estado()
+	HabilidadeEquipada.ao_equipar(self)
+
 
 func atualizar_ui() -> void:
 	lvl_text.text = "LVL: " + str(nivel_atual)
 
 	if HabilidadeEquipada:
 		display_skill.texture = HabilidadeEquipada.Icone
+	else:
+		display_skill.texture = null
 
 	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
 
 
 func atualizar_vida() -> void:
-	if vida > 0:
-		barra_vida.scale.x = escala_base * (vida / VIDA_MAXIMA)
+	vida = clampf(vida, 0.0, VIDA_MAXIMA)
+	barra_vida.scale.x = escala_base * (vida / VIDA_MAXIMA)
 
-	if vida <= 0 and vivo:
+	if vida <= 0.0 and vivo:
 		morrer()
 
 
-# ============================================================
-# INVENCIBILIDADE
-# ============================================================
-
 func atualizar_invencibilidade(delta: float) -> void:
-	if invencibilidade_cd > 0:
-		invencibilidade_cd -= delta
-
-		modulate.a = abs(
-			sin(Time.get_ticks_msec() / 100.0)
-		)
-
+	if invencibilidade_cd > 0.0:
+		invencibilidade_cd = maxf(invencibilidade_cd - delta, 0.0)
+		modulate.a = absf(sin(Time.get_ticks_msec() / 100.0))
 	else:
 		modulate.a = 1.0
 		invencibilidade = false
 
 
-# ============================================================
-# HABILIDADE
-# ============================================================
-
 func atualizar_habilidade(delta: float) -> void:
 	if not HabilidadeEquipada:
 		return
 
-	# Continua atualizando o cooldown normalmente.
-	HabilidadeEquipada.update(
-		self,
-		delta
-	)
+	HabilidadeEquipada.update(self, delta)
 
-	# Se o controle estiver bloqueado,
-	# não permite ativar habilidades.
 	if ctrlblock:
 		return
 
-	if vivo and Input.is_action_just_pressed(
-		"Habilidade"
-	):
-
+	if vivo and Input.is_action_just_pressed("Habilidade"):
 		HabilidadeEquipada.activate(self)
 
 
-func IniciarHabilidade() -> void:
+func IniciarHabilidade(concede_invulnerabilidade := false) -> void:
 	UsandoHabilidade = true
+	invulneravel_por_habilidade = concede_invulnerabilidade
 
 
 func EncerrarHabilidade() -> void:
 	UsandoHabilidade = false
+	invulneravel_por_habilidade = false
 
-
-# ============================================================
-# MOVIMENTO
-# ============================================================
 
 func atualizar_movimento(delta: float) -> void:
 	if not vivo:
 		return
 
-	# Controle de direção
+	var fator_movimento := multiplicador_velocidade_habilidade
+
 	if not giroblock:
-
 		if mira_mouse:
-			var target_angle = global_position.angle_to_point(
-				get_global_mouse_position()
-			)
-
+			var target_angle := global_position.angle_to_point(get_global_mouse_position())
 			rotation = rotate_toward(
 				rotation,
 				target_angle,
-				VelocidadeVirar * delta
+				VelocidadeVirar * fator_movimento * delta
 			)
-
 		else:
-			arrowsctrl(delta)
+			arrowsctrl(delta, fator_movimento)
 
-
-	# Controle de aceleração
 	if not ctrlblock:
-
 		if Input.is_action_pressed("acelerar"):
-			acelerar(delta)
+			acelerar(delta, fator_movimento)
 
 		if Input.is_action_pressed("freio"):
-			brake(delta)
+			brake(delta, fator_movimento)
 
+	particles.emitting = Input.is_action_pressed("acelerar") or UsandoHabilidade
 
-	# Partículas
-	if Input.is_action_pressed("acelerar") or UsandoHabilidade:
-		particles.emitting = true
-	else:
-		particles.emitting = false
-
-
-	# Redução de velocidade
 	velocity = velocity.move_toward(
 		Vector2.ZERO,
-		friction * delta
+		friction * fator_movimento * delta
 	)
 
-
-	# Limite de velocidade
 	if not UsandoHabilidade:
-		velocity = velocity.limit_length(MAX_VELOCIDADE)
-
+		velocity = velocity.limit_length(MAX_VELOCIDADE * fator_movimento)
 
 	move_and_slide()
 
 
-func acelerar(delta: float) -> void:
-	velocity += transform.x * SPEED * delta
+func acelerar(delta: float, fator_movimento := 1.0) -> void:
+	velocity += transform.x * SPEED * fator_movimento * delta
 
 
-func brake(delta: float) -> void:
-	velocity -= transform.x * SPEED * 0.8 * delta
+func brake(delta: float, fator_movimento := 1.0) -> void:
+	velocity -= transform.x * SPEED * 0.8 * fator_movimento * delta
 
 
-func arrowsctrl(delta: float) -> void:
-	rotation += Input.get_axis(
-		"esquerda",
-		"direita"
-	) * VelocidadeVirar * delta
+func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
+	rotation += (
+		Input.get_axis("esquerda", "direita")
+		* VelocidadeVirar
+		* fator_movimento
+		* delta
+	)
 
-
-# ============================================================
-# COMBATE
-# ============================================================
 
 func atualizar_combate(delta: float) -> void:
-	cooldown -= delta
+	cooldown = maxf(cooldown - delta, 0.0)
 
-
-	if cooldown < 0:
-		cooldown = 0
-
-
-	# MUITO IMPORTANTE:
-	#
-	# Durante o tutorial o Astro usa o mesmo
-	# clique esquerdo que normalmente atiraria.
-	#
-	# Como ctrlblock está ativo, não atira.
 	if ctrlblock:
 		return
 
-
-	if vivo and Input.is_action_pressed(
-		"atirar"
-	):
-
-		if cooldown <= 0:
-			fire()
+	if vivo and Input.is_action_pressed("atirar") and cooldown <= 0.0:
+		fire()
 
 
 func fire() -> void:
@@ -291,7 +251,6 @@ func fire() -> void:
 		return
 
 	var instance_bullet = tiro.instantiate()
-
 	get_tree().current_scene.add_child(instance_bullet)
 
 	instance_bullet.dmg = dano
@@ -300,45 +259,31 @@ func fire() -> void:
 
 	somtiro.pitch_scale = randf_range(0.9, 1.1)
 	somtiro.play()
-
 	cooldown = CD_MAX
 
 
-# ============================================================
-# VIDA
-# ============================================================
-
 func tomar_dano(valor: float) -> void:
-	if invencibilidade:
+	if invencibilidade or invulneravel_por_habilidade or not vivo:
 		return
 
-	if UsandoHabilidade:
-		return
-
-	if not vivo:
-		return
-
-	vida -= valor
+	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
+	vida = maxf(vida - dano_final, 0.0)
 
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
 
 
 func curar(valor: float) -> void:
-	vida += valor
-
-	if vida > VIDA_MAXIMA:
-		vida = VIDA_MAXIMA
-
-
-# ============================================================
-# XP
-# ============================================================
-
-func ganhar_xp(value: float) -> void:
-	if invencibilidade:
+	if valor <= 0.0 or not vivo:
 		return
 
+	vida = minf(
+		vida + (valor * multiplicador_cura_recebida),
+		VIDA_MAXIMA
+	)
+
+
+func ganhar_xp(value: float) -> void:
 	xp_atual += value
 
 	if xp_atual >= xp_necessario:
@@ -347,88 +292,56 @@ func ganhar_xp(value: float) -> void:
 
 func subir_de_nivel() -> void:
 	nivel_atual += 1
-
-	xp_atual = 0
-
+	xp_atual = 0.0
 	xp_necessario += 2
-
 	subiuDeNivel.emit()
 
 
-# ============================================================
-# UPGRADES
-# ============================================================
-
 func receber_upgrade(tipo: Upgrade) -> void:
-
 	match tipo:
-
 		Upgrade.CADENCIA:
-			# Reduz o cooldown do tiro.
 			CD_MAX *= 0.9
-
-			# Reduz também o cooldown da habilidade.
 			if HabilidadeEquipada:
-				HabilidadeEquipada.cooldown_max *= 0.9
-
-				# Evita que o cooldown atual fique maior
-				# que o novo máximo.
-				HabilidadeEquipada.cooldown = min(
-					HabilidadeEquipada.cooldown,
-					HabilidadeEquipada.cooldown_max
-				)
-
+				HabilidadeEquipada.reduzir_cooldown(0.9)
 
 		Upgrade.BLINDAGEM:
 			VIDA_MAXIMA *= 1.1
 			vida = VIDA_MAXIMA
 
-
 		Upgrade.DANO:
 			dano += 0.5
-
 
 		Upgrade.VELOCIDADE:
 			MAX_VELOCIDADE *= 1.1
 			SPEED *= 1.05
 
-
 		Upgrade.TURNSPD:
 			VelocidadeVirar *= 1.1
 
-
-# ============================================================
-# MORTE
-# ============================================================
 
 func morrer() -> void:
 	if not vivo:
 		return
 
 	vivo = false
-
 	velocity = Vector2.ZERO
 
-	visible = false
+	if HabilidadeEquipada:
+		HabilidadeEquipada.ao_desequipar(self)
 
+	visible = false
 	death.play()
 
-	var particle = ParticulaMorte.instantiate()
-
-	particle.position = global_position
-	particle.rotation = global_rotation
-	particle.emitting = true
-
-	get_tree().current_scene.add_child(particle)
+	if ParticulaMorte:
+		var particle = ParticulaMorte.instantiate()
+		particle.position = global_position
+		particle.rotation = global_rotation
+		particle.emitting = true
+		get_tree().current_scene.add_child(particle)
 
 	await get_tree().create_timer(1.5).timeout
-
 	queue_free()
 
-
-# ============================================================
-# BLOQUEIOS
-# ============================================================
 
 func BloquearControle() -> void:
 	ctrlblock = true
@@ -446,28 +359,17 @@ func DesbloquearGiro() -> void:
 	giroblock = false
 
 
-# ============================================================
-# LIMITES DO MAPA
-# ============================================================
-
 func atualizar_limites() -> void:
-	position.x = wrap(position.x, 0, 960)
-	position.y = wrap(position.y, 0, 540)
+	position.x = wrapf(position.x, 0.0, 960.0)
+	position.y = wrapf(position.y, 0.0, 540.0)
 
-
-# ============================================================
-# COLISÃO
-# ============================================================
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if not vivo:
 		return
 
 	if body.is_in_group("inimigo"):
-
-		print("encostou em inimigo")
-
-		tomar_dano(body.Dano)
+		tomar_dano(float(body.Dano))
 
 		if body.has_method("morrer"):
 			body.morrer()
