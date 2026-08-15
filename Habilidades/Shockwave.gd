@@ -12,7 +12,7 @@ class_name HabilidadeShockwave
 func executar(player) -> void:
 	criar_efeito_visual(player)
 
-	var camera := player.get_tree().get_first_node_in_group("camera")
+	var camera = player.get_tree().get_first_node_in_group("camera")
 	if camera and camera.has_method("shake"):
 		camera.shake(7.0)
 
@@ -20,11 +20,11 @@ func executar(player) -> void:
 		if not is_instance_valid(inimigo):
 			continue
 
-		var distancia := player.global_position.distance_to(inimigo.global_position)
+		var distancia = player.global_position.distance_to(inimigo.global_position)
 		if distancia > raio:
 			continue
 
-		var direcao := (inimigo.global_position - player.global_position).normalized()
+		var direcao = (inimigo.global_position - player.global_position).normalized()
 		if direcao.is_zero_approx():
 			direcao = Vector2.RIGHT.rotated(randf() * TAU)
 
@@ -34,7 +34,7 @@ func executar(player) -> void:
 		if inimigo.has_method("aplicar_atordoamento"):
 			inimigo.aplicar_atordoamento(duracao_atordoamento)
 
-		var empurrao := direcao * forca_empurrao
+		var empurrao = direcao * forca_empurrao
 		if inimigo.has_method("aplicar_empurrao"):
 			inimigo.aplicar_empurrao(empurrao)
 		elif inimigo is CharacterBody2D:
