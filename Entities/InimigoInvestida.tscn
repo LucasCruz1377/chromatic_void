@@ -1,0 +1,41 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/InimigoInvestida.gd" id="1"]
+[ext_resource type="PackedScene" path="res://FX/ParticulasMorteInimigo.tscn" id="2"]
+
+[sub_resource type="CircleShape2D" id="Circle"]
+radius = 18.0
+
+[node name="InimigoInvestida" type="CharacterBody2D" groups=["inimigo"]]
+z_index = 1
+collision_layer = 4
+collision_mask = 11
+script = ExtResource("1")
+VidaMaxima = 7.0
+Dano = 32.0
+ValorXP = 2.0
+Velocidade = 150.0
+resistencia_empurrao = 0.25
+morre_ao_colidir_player = false
+pontos_base = 180
+particulas_morte = ExtResource("2")
+
+[node name="LinhaAviso" type="Line2D" parent="."]
+visible = false
+z_index = -1
+width = 3.0
+default_color = Color(1, 0.12, 0.05, 0.85)
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Corpo" type="Polygon2D" parent="Visual"]
+self_modulate = Color(1.7, 1.7, 1.7, 1)
+color = Color(1, 0.12, 0.05, 1)
+polygon = PackedVector2Array(24, 0, 3, -15, -18, -12, -8, 0, -18, 12, 3, 15)
+
+[node name="Nucleo" type="Polygon2D" parent="Visual"]
+color = Color(1, 0.88, 0.28, 1)
+polygon = PackedVector2Array(10, 0, -2, -6, -2, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Circle")

@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://ctig5iuimhmg4"]
+
+[ext_resource type="Script" uid="uid://dib4t0j7ajfgo" path="res://Scripts/BossPet0.gd" id="1"]
+
+[sub_resource type="CapsuleShape2D" id="Capsule"]
+radius = 31.0
+height = 112.0
+
+[node name="BossPet0" type="CharacterBody2D" unique_id=167804022 groups=["boss", "inimigo"]]
+z_index = 3
+collision_layer = 4
+collision_mask = 11
+script = ExtResource("1")
+VidaMaxima = 240.0
+Dano = 34.0
+ValorXP = 12.0
+Velocidade = 92.0
+multiplicador_dano_recebido = 0.6
+resistencia_empurrao = 1.0
+morre_ao_colidir_player = false
+pontos_base = 1000
+
+[node name="LinhaAviso" type="Line2D" parent="." unique_id=1194783419]
+visible = false
+z_index = -2
+width = 5.0
+default_color = Color(1, 0.12, 0.05, 0.82)
+
+[node name="Visual" type="Node2D" parent="." unique_id=1377804457]
+
+[node name="Corpo" type="Polygon2D" parent="Visual" unique_id=1275430202]
+self_modulate = Color(1.45, 1.45, 1.45, 1)
+color = Color(0.2, 0.82, 1, 0.72)
+polygon = PackedVector2Array(-55, -24, -43, -32, 29, -32, 43, -22, 52, -16, 52, 16, 43, 22, 29, 32, -43, 32, -55, 24)
+
+[node name="Gargalo" type="Polygon2D" parent="Visual" unique_id=252638109]
+color = Color(0.35, 0.95, 1, 0.85)
+polygon = PackedVector2Array(43, -20, 66, -17, 66, 17, 43, 20)
+
+[node name="Tampa" type="Polygon2D" parent="Visual" unique_id=952073705]
+self_modulate = Color(1.7, 1.7, 1.7, 1)
+color = Color(1, 0.2, 0.14, 1)
+polygon = PackedVector2Array(64, -20, 76, -20, 79, -14, 79, 14, 76, 20, 64, 20)
+
+[node name="Rotulo" type="Polygon2D" parent="Visual" unique_id=1438796606]
+color = Color(1, 0.78, 0.12, 0.94)
+polygon = PackedVector2Array(-10, -33, 18, -33, 18, 33, -10, 33)
+
+[node name="PET0" type="Label" parent="Visual" unique_id=16756242]
+offset_left = -8.0
+offset_top = -13.0
+offset_right = -8.0
+offset_bottom = -13.0
+rotation = 1.5707964
+theme_override_colors/font_color = Color(0.08, 0.2, 0.12, 1)
+theme_override_font_sizes/font_size = 12
+text = "PET-0"
+
+[node name="Brilho" type="Line2D" parent="Visual" unique_id=1169714056]
+points = PackedVector2Array(-39, -22, 25, -22, 41, -13)
+width = 3.0
+default_color = Color(0.82, 1, 1, 0.9)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=189897197]
+rotation = 1.5707964
+shape = SubResource("Capsule")

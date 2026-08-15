@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeShockwave" format=3 uid="uid://6jmf40ajuvlq"]
+
+[ext_resource type="Script" uid="uid://iak18f4l00en" path="res://Habilidades/Shockwave.gd" id="1_onda"]
+
+[sub_resource type="Gradient" id="Gradient_onda"]
+colors = PackedColorArray(1, 0.95, 0.25, 1, 1, 0.2, 0.05, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture_onda"]
+gradient = SubResource("Gradient_onda")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 1)
+
+[resource]
+script = ExtResource("1_onda")
+Id = &"onda_choque"
+Nome = "Onda de Choque"
+Descricao = "Emite uma explosão que causa dano, empurra e atordoa inimigos próximos."
+Icone = SubResource("GradientTexture_onda")
+Cooldown = 7.0

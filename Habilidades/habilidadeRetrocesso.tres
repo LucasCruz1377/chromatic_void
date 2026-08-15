@@ -1,12 +1,15 @@
 [gd_resource type="Resource" script_class="HabilidadeRetrocesso" format=3 uid="uid://dtg0o3a2dkeej"]
 
-[ext_resource type="Script" uid="uid://ppioxx1ytc81" path="res://Habilidades/Retrocesso.gd" id="1_356ni"]
-[ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://Assets/RetrocessoIcon.png" id="1_s51ij"]
+[ext_resource type="Script" uid="uid://ppioxx1ytc81" path="res://Habilidades/Retrocesso.gd" id="1_retro"]
+[ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://Assets/RetrocessoIcon.png" id="2_icone"]
+[ext_resource type="PackedScene" path="res://FX/RetrocessoTela.tscn" id="3_efeito"]
 
 [resource]
-script = ExtResource("1_356ni")
-max_memoria = 90
+script = ExtResource("1_retro")
+efeito_tela = ExtResource("3_efeito")
+Id = &"retrocesso"
 Nome = "Retrocesso"
-Cooldown = 20.0
-Icone = ExtResource("1_s51ij")
+Descricao = "Retorna pelos estados recentes da nave e recupera a vida que possuía."
+Icone = ExtResource("2_icone")
+Cooldown = 8.0
 metadata/_custom_type_script = "uid://ppioxx1ytc81"
