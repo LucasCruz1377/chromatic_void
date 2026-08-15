@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://cd3u7udjjpdxx"]
 
-[ext_resource type="Script" uid="uid://c3uvsutglrc1q" path="res://Habilidades/habilidade_onda_cena.gd" id="1_w8r4m"]
+[ext_resource type="Script" uid="uid://c3uvsutglrc1q" path="res://Habilidades/habilidade_onda_cena.gd" id="1_4rg77"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_g4v7s"]
-radius = 0.01
+radius = 0.0
 
 [node name="HabilidadeOnda" type="Area2D" unique_id=1059813534]
-script = ExtResource("1_w8r4m")
+script = ExtResource("1_4rg77")
 
 [node name="AreaDeteccao" type="CollisionShape2D" parent="." unique_id=1338123248]
 shape = SubResource("CircleShape2D_g4v7s")

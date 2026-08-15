@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="HabilidadeRetrocesso" load_steps=4 format=3 uid="uid://dtg0o3a2dkeej"]
+[gd_resource type="Resource" script_class="HabilidadeRetrocesso" format=3 uid="uid://dtg0o3a2dkeej"]
 
 [ext_resource type="Script" uid="uid://ppioxx1ytc81" path="res://Habilidades/Retrocesso.gd" id="1_retro"]
 [ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://Assets/RetrocessoIcon.png" id="2_icone"]
@@ -6,13 +6,10 @@
 
 [resource]
 script = ExtResource("1_retro")
+efeito_tela = ExtResource("3_efeito")
 Id = &"retrocesso"
 Nome = "Retrocesso"
 Descricao = "Retorna pelos estados recentes da nave e recupera a vida que possuía."
 Icone = ExtResource("2_icone")
 Cooldown = 8.0
-intervalo_memorias = 0.01
-max_memoria = 90
-intervalo_rastro_rewind = 3
-efeito_tela = ExtResource("3_efeito")
 metadata/_custom_type_script = "uid://ppioxx1ytc81"

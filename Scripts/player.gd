@@ -23,44 +23,33 @@ const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
 @export_category("Morte")
 @export var ParticulaMorte: PackedScene
 
-
 @onready var PontaArma: Marker2D = $ponta
 @onready var particles: GPUParticles2D = $particles
-
 @onready var barra_vida = $"../GUI/Barra_vida"
 @onready var barra_xp: TextureProgressBar = $"../GUI/Barra_xp"
 @onready var display_skill: TextureRect = $"../GUI/DisplaySkill"
 @onready var lvl_text: Label = $"../GUI/LvlText"
-
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
 
-
 var vida: float
 var cooldown := 0.0
-
 var mira_mouse = Global.mira_mouse
 var vivo := true
-
 var giroblock := false
 var ctrlblock := false
-
 var escala_base := 9.85
-
 var UsandoHabilidade := false
 var invulneravel_por_habilidade := false
 var multiplicador_dano_recebido := 1.0
 var multiplicador_cura_recebida := 1.0
 var multiplicador_velocidade_habilidade := 1.0
-
 var xp_atual: float = 0.0
 var nivel_atual: int = 1
 var xp_necessario: int = 3
-
 var invencibilidade := false
 var invencibilidade_cd := 0.0
 var invencibilidade_cd_max := 3.0
-
 var save := false
 
 
@@ -69,7 +58,7 @@ enum Upgrade {
 	BLINDAGEM,
 	DANO,
 	VELOCIDADE,
-	TURNSPD
+	TURNSPD,
 }
 
 
@@ -132,7 +121,6 @@ func carregar_habilidade_equipada() -> void:
 
 func atualizar_ui() -> void:
 	lvl_text.text = "LVL: " + str(nivel_atual)
-
 	if HabilidadeEquipada:
 		display_skill.texture = HabilidadeEquipada.Icone
 	else:
@@ -145,7 +133,6 @@ func atualizar_ui() -> void:
 func atualizar_vida() -> void:
 	vida = clampf(vida, 0.0, VIDA_MAXIMA)
 	barra_vida.scale.x = escala_base * (vida / VIDA_MAXIMA)
-
 	if vida <= 0.0 and vivo:
 		morrer()
 
@@ -164,7 +151,6 @@ func atualizar_habilidade(delta: float) -> void:
 		return
 
 	HabilidadeEquipada.update(self, delta)
-
 	if ctrlblock:
 		return
 
@@ -187,7 +173,6 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
-
 	if not giroblock:
 		if mira_mouse:
 			var target_angle := global_position.angle_to_point(get_global_mouse_position())
@@ -202,16 +187,11 @@ func atualizar_movimento(delta: float) -> void:
 	if not ctrlblock:
 		if Input.is_action_pressed("acelerar"):
 			acelerar(delta, fator_movimento)
-
 		if Input.is_action_pressed("freio"):
 			brake(delta, fator_movimento)
 
 	particles.emitting = Input.is_action_pressed("acelerar") or UsandoHabilidade
-
-	velocity = velocity.move_toward(
-		Vector2.ZERO,
-		friction * fator_movimento * delta
-	)
+	velocity = velocity.move_toward(Vector2.ZERO, friction * fator_movimento * delta)
 
 	if not UsandoHabilidade:
 		velocity = velocity.limit_length(MAX_VELOCIDADE * fator_movimento)
@@ -238,7 +218,6 @@ func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
 
 func atualizar_combate(delta: float) -> void:
 	cooldown = maxf(cooldown - delta, 0.0)
-
 	if ctrlblock:
 		return
 
@@ -252,11 +231,9 @@ func fire() -> void:
 
 	var instance_bullet = tiro.instantiate()
 	get_tree().current_scene.add_child(instance_bullet)
-
 	instance_bullet.dmg = dano
 	instance_bullet.global_position = PontaArma.global_position
 	instance_bullet.rotation = rotation
-
 	somtiro.pitch_scale = randf_range(0.9, 1.1)
 	somtiro.play()
 	cooldown = CD_MAX
@@ -268,7 +245,6 @@ func tomar_dano(valor: float) -> void:
 
 	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
 	vida = maxf(vida - dano_final, 0.0)
-
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
 
@@ -277,15 +253,11 @@ func curar(valor: float) -> void:
 	if valor <= 0.0 or not vivo:
 		return
 
-	vida = minf(
-		vida + (valor * multiplicador_cura_recebida),
-		VIDA_MAXIMA
-	)
+	vida = minf(vida + valor * multiplicador_cura_recebida, VIDA_MAXIMA)
 
 
 func ganhar_xp(value: float) -> void:
 	xp_atual += value
-
 	if xp_atual >= xp_necessario:
 		subir_de_nivel()
 
@@ -303,18 +275,14 @@ func receber_upgrade(tipo: Upgrade) -> void:
 			CD_MAX *= 0.9
 			if HabilidadeEquipada:
 				HabilidadeEquipada.reduzir_cooldown(0.9)
-
 		Upgrade.BLINDAGEM:
 			VIDA_MAXIMA *= 1.1
 			vida = VIDA_MAXIMA
-
 		Upgrade.DANO:
 			dano += 0.5
-
 		Upgrade.VELOCIDADE:
 			MAX_VELOCIDADE *= 1.1
 			SPEED *= 1.05
-
 		Upgrade.TURNSPD:
 			VelocidadeVirar *= 1.1
 
@@ -325,13 +293,11 @@ func morrer() -> void:
 
 	vivo = false
 	velocity = Vector2.ZERO
-
 	if HabilidadeEquipada:
 		HabilidadeEquipada.ao_desequipar(self)
 
 	visible = false
 	death.play()
-
 	if ParticulaMorte:
 		var particle = ParticulaMorte.instantiate()
 		particle.position = global_position
@@ -365,11 +331,18 @@ func atualizar_limites() -> void:
 
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
-	if not vivo:
+	if not vivo or not body.is_in_group("inimigo"):
 		return
 
-	if body.is_in_group("inimigo"):
-		tomar_dano(float(body.Dano))
+	# Os inimigos novos controlam o próprio dano de contato. Isso permite que
+	# Investida, Melee, Tanque e o boss sobrevivam ao choque quando necessário.
+	if body.has_method("ao_colidir_com_player"):
+		body.ao_colidir_com_player(self)
+		return
 
-		if body.has_method("morrer"):
-			body.morrer()
+	# Compatibilidade com qualquer inimigo antigo que não herde InimigoBase.
+	var dano_contato = body.get("Dano")
+	if dano_contato != null:
+		tomar_dano(float(dano_contato))
+	if body.has_method("morrer"):
+		body.morrer()

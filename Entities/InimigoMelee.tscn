@@ -1,0 +1,50 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/InimigoMelee.gd" id="1"]
+[ext_resource type="PackedScene" path="res://FX/ParticulasMorteInimigo.tscn" id="2"]
+
+[sub_resource type="CircleShape2D" id="Circle"]
+radius = 18.0
+
+[sub_resource type="CircleShape2D" id="GolpeCircle"]
+radius = 38.0
+
+[node name="InimigoMelee" type="CharacterBody2D" groups=["inimigo"]]
+z_index = 1
+collision_layer = 4
+collision_mask = 11
+script = ExtResource("1")
+VidaMaxima = 8.0
+Dano = 24.0
+ValorXP = 2.0
+Velocidade = 190.0
+morre_ao_colidir_player = false
+pontos_base = 190
+particulas_morte = ExtResource("2")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Corpo" type="Polygon2D" parent="Visual"]
+self_modulate = Color(1.7, 1.7, 1.7, 1)
+color = Color(1, 0.23, 0.18, 1)
+polygon = PackedVector2Array(18, 0, 8, -15, -8, -15, -18, 0, -8, 15, 8, 15)
+
+[node name="LaminaSuperior" type="Polygon2D" parent="Visual"]
+color = Color(1, 0.86, 0.46, 1)
+polygon = PackedVector2Array(3, -12, 30, -24, 16, -3)
+
+[node name="LaminaInferior" type="Polygon2D" parent="Visual"]
+color = Color(1, 0.86, 0.46, 1)
+polygon = PackedVector2Array(3, 12, 30, 24, 16, 3)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Circle")
+
+[node name="Golpe" type="Area2D" parent="."]
+position = Vector2(30, 0)
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Golpe"]
+shape = SubResource("GolpeCircle")
