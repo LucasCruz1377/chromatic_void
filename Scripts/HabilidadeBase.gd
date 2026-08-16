@@ -66,5 +66,11 @@ func reduzir_cooldown(fator: float) -> void:
 	cooldown_atual = minf(cooldown_atual, Cooldown)
 
 
+func reduzir_cooldown_atual(segundos: float) -> void:
+	if segundos <= 0.0:
+		return
+	cooldown_atual = maxf(cooldown_atual - segundos, 0.0)
+
+
 func cooldown_pronto() -> bool:
 	return cooldown_atual <= 0.0

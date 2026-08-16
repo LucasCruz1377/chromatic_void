@@ -3,6 +3,7 @@ class_name Player
 
 
 const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
+const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
 
 
 @export_category("Combate")
@@ -52,6 +53,29 @@ var invencibilidade_cd := 0.0
 var invencibilidade_cd_max := 3.0
 var save := false
 
+# Pontos não interrompem a partida. O jogador abre o menu quando quiser.
+var pontos_upgrade_pendentes := 0
+var niveis_upgrades: Dictionary = {}
+
+# Montagem dinâmica da arma.
+var projeteis_por_tiro := 1
+var dispersao_graus := 0.0
+var multiplicador_dano_projetil := 1.0
+var multiplicador_velocidade_projetil := 1.0
+var multiplicador_escala_projetil := 1.0
+var penetracao_projetil := 0
+var fragmentos_projetil := 0
+var forca_mira_gravitacional := 0.0
+var ricochetes_projetil := 0
+
+# Sinergias entre a arma e a habilidade equipada.
+var duracao_overdrive := 0.0
+var tempo_overdrive := 0.0
+var reducao_cooldown_por_impacto := 0.0
+var nivel_nova_ativacao := 0
+var duracao_escudo_fase := 0.0
+var reator_sincronizado := false
+
 
 enum Upgrade {
 	CADENCIA,
@@ -63,6 +87,8 @@ enum Upgrade {
 
 
 signal subiuDeNivel()
+signal pontos_upgrade_alterados(novo_total: int)
+signal upgrade_adquirido(id: StringName, novo_nivel: int)
 
 
 func _ready() -> void:
@@ -78,6 +104,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
+	atualizar_overdrive(delta)
 	atualizar_habilidade(delta)
 	atualizar_movimento(delta)
 	atualizar_combate(delta)
@@ -146,6 +173,11 @@ func atualizar_invencibilidade(delta: float) -> void:
 		invencibilidade = false
 
 
+func atualizar_overdrive(delta: float) -> void:
+	if tempo_overdrive > 0.0:
+		tempo_overdrive = maxf(tempo_overdrive - delta, 0.0)
+
+
 func atualizar_habilidade(delta: float) -> void:
 	if not HabilidadeEquipada:
 		return
@@ -155,7 +187,32 @@ func atualizar_habilidade(delta: float) -> void:
 		return
 
 	if vivo and Input.is_action_just_pressed("Habilidade"):
-		HabilidadeEquipada.activate(self)
+		var ativou := HabilidadeEquipada.activate(self)
+		if ativou:
+			ao_ativar_habilidade()
+
+
+func ao_ativar_habilidade() -> void:
+	if duracao_overdrive > 0.0:
+		var multiplicador_duracao := 2.0 if reator_sincronizado else 1.0
+		tempo_overdrive = duracao_overdrive * multiplicador_duracao
+
+	if duracao_escudo_fase > 0.0:
+		invencibilidade = true
+		invencibilidade_cd = maxf(invencibilidade_cd, duracao_escudo_fase)
+
+	if nivel_nova_ativacao > 0:
+		disparar_nova_de_ativacao()
+
+
+func disparar_nova_de_ativacao() -> void:
+	var quantidade := 6 + nivel_nova_ativacao * 2
+	if reator_sincronizado:
+		quantidade += 4
+
+	for indice in range(quantidade):
+		var angulo := rotation + TAU * float(indice) / float(quantidade)
+		criar_projetil(angulo, 0.45, true)
 
 
 func IniciarHabilidade(concede_invulnerabilidade := false) -> void:
@@ -229,14 +286,63 @@ func fire() -> void:
 	if not tiro:
 		return
 
-	var instance_bullet = tiro.instantiate()
-	get_tree().current_scene.add_child(instance_bullet)
-	instance_bullet.dmg = dano
-	instance_bullet.global_position = PontaArma.global_position
-	instance_bullet.rotation = rotation
+	var quantidade := maxi(projeteis_por_tiro, 1)
+	var arco := deg_to_rad(dispersao_graus)
+	for indice in range(quantidade):
+		var deslocamento := 0.0
+		if quantidade > 1:
+			deslocamento = lerpf(
+				-arco * 0.5,
+				arco * 0.5,
+				float(indice) / float(quantidade - 1)
+			)
+		criar_projetil(rotation + deslocamento)
+
 	somtiro.pitch_scale = randf_range(0.9, 1.1)
 	somtiro.play()
-	cooldown = CD_MAX
+	var fator_cadencia := 0.75 if tempo_overdrive > 0.0 else 1.0
+	cooldown = maxf(CD_MAX * fator_cadencia, 0.04)
+
+
+func criar_projetil(
+	angulo: float,
+	multiplicador_dano_extra := 1.0,
+	eh_nova := false
+) -> void:
+	var projetil = tiro.instantiate()
+	get_tree().current_scene.add_child(projetil)
+	projetil.global_position = PontaArma.global_position
+	projetil.rotation = angulo
+
+	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
+	var dano_final := (
+		dano
+		* multiplicador_dano_projetil
+		* bonus_overdrive
+		* multiplicador_dano_extra
+	)
+
+	if projetil.has_method("configurar"):
+		projetil.configurar(
+			dano_final,
+			1000.0 * multiplicador_velocidade_projetil,
+			multiplicador_escala_projetil,
+			penetracao_projetil,
+			forca_mira_gravitacional,
+			0 if eh_nova else fragmentos_projetil,
+			ricochetes_projetil,
+			self,
+			tiro,
+			false
+		)
+	else:
+		projetil.dmg = dano_final
+
+
+func registrar_acerto_projetil() -> void:
+	if reducao_cooldown_por_impacto <= 0.0 or not HabilidadeEquipada:
+		return
+	HabilidadeEquipada.reduzir_cooldown_atual(reducao_cooldown_por_impacto)
 
 
 func tomar_dano(valor: float) -> void:
@@ -256,35 +362,118 @@ func curar(valor: float) -> void:
 	vida = minf(vida + valor * multiplicador_cura_recebida, VIDA_MAXIMA)
 
 
-func ganhar_xp(value: float) -> void:
-	xp_atual += value
-	if xp_atual >= xp_necessario:
+func ganhar_xp(valor: float) -> void:
+	xp_atual += valor
+	while xp_atual >= xp_necessario:
+		xp_atual -= xp_necessario
 		subir_de_nivel()
 
 
 func subir_de_nivel() -> void:
 	nivel_atual += 1
-	xp_atual = 0.0
 	xp_necessario += 2
+	pontos_upgrade_pendentes += 1
+	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()
 
 
-func receber_upgrade(tipo: Upgrade) -> void:
-	match tipo:
-		Upgrade.CADENCIA:
-			CD_MAX *= 0.9
+func comprar_upgrade(id: StringName) -> bool:
+	if pontos_upgrade_pendentes <= 0:
+		return false
+	if not DadosUpgrades.disponivel(id, niveis_upgrades):
+		return false
+
+	var novo_nivel := DadosUpgrades.nivel(id, niveis_upgrades) + 1
+	niveis_upgrades[id] = novo_nivel
+	pontos_upgrade_pendentes -= 1
+	aplicar_upgrade(id)
+	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+	upgrade_adquirido.emit(id, novo_nivel)
+	return true
+
+
+func aplicar_upgrade(id: StringName) -> void:
+	match id:
+		&"dano_calibrado":
+			dano += 0.45
+		&"cadencia":
+			CD_MAX = maxf(CD_MAX * 0.9, 0.04)
+		&"blindagem":
+			var vida_anterior := VIDA_MAXIMA
+			VIDA_MAXIMA *= 1.12
+			vida += VIDA_MAXIMA - vida_anterior
+		&"propulsao":
+			SPEED *= 1.1
+			MAX_VELOCIDADE *= 1.1
+		&"tiro_duplo":
+			projeteis_por_tiro = 2
+			dispersao_graus = maxf(dispersao_graus, 12.0)
+			multiplicador_dano_projetil *= 0.78
+		&"tiro_triplo":
+			projeteis_por_tiro = 3
+			dispersao_graus = maxf(dispersao_graus, 18.0)
+		&"leque_prismatico":
+			projeteis_por_tiro += 1
+			dispersao_graus += 8.0
+			multiplicador_dano_projetil *= 0.92
+		&"calibre_pesado":
+			multiplicador_dano_projetil *= 1.24
+			multiplicador_escala_projetil *= 1.18
+			multiplicador_velocidade_projetil *= 0.92
+		&"perfuracao":
+			penetracao_projetil += 1
+		&"fragmentacao":
+			fragmentos_projetil += 2
+		&"mira_gravitacional":
+			forca_mira_gravitacional += 1.6
+		&"ricochete":
+			ricochetes_projetil += 1
+		&"fluxo_habilidade":
 			if HabilidadeEquipada:
 				HabilidadeEquipada.reduzir_cooldown(0.9)
+		&"overdrive_habilidade":
+			duracao_overdrive += 1.5
+		&"conversor_impacto":
+			reducao_cooldown_por_impacto += 0.06
+		&"nova_ativacao":
+			nivel_nova_ativacao += 1
+		&"escudo_fase":
+			duracao_escudo_fase += 0.35
+		&"tempestade_prismatica":
+			projeteis_por_tiro += 2
+			dispersao_graus += 12.0
+			CD_MAX = maxf(CD_MAX * 0.85, 0.04)
+			multiplicador_dano_projetil *= 0.86
+		&"singularidade":
+			multiplicador_dano_projetil *= 1.5
+			multiplicador_escala_projetil *= 1.5
+			multiplicador_velocidade_projetil *= 0.75
+			penetracao_projetil += 1
+			forca_mira_gravitacional += 2.5
+		&"reator_sincronizado":
+			reator_sincronizado = true
+
+
+# Mantém scripts antigos funcionando caso alguma cena ainda chame este método.
+func receber_upgrade(tipo: int) -> void:
+	var id: StringName
+	match tipo:
+		Upgrade.CADENCIA:
+			id = &"cadencia"
 		Upgrade.BLINDAGEM:
-			VIDA_MAXIMA *= 1.1
-			vida = VIDA_MAXIMA
+			id = &"blindagem"
 		Upgrade.DANO:
-			dano += 0.5
+			id = &"dano_calibrado"
 		Upgrade.VELOCIDADE:
-			MAX_VELOCIDADE *= 1.1
-			SPEED *= 1.05
+			id = &"propulsao"
 		Upgrade.TURNSPD:
 			VelocidadeVirar *= 1.1
+			return
+		_:
+			return
+
+	niveis_upgrades[id] = DadosUpgrades.nivel(id, niveis_upgrades) + 1
+	aplicar_upgrade(id)
 
 
 func morrer() -> void:
@@ -334,13 +523,10 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if not vivo or not body.is_in_group("inimigo"):
 		return
 
-	# Os inimigos novos controlam o próprio dano de contato. Isso permite que
-	# Investida, Melee, Tanque e o boss sobrevivam ao choque quando necessário.
 	if body.has_method("ao_colidir_com_player"):
 		body.ao_colidir_com_player(self)
 		return
 
-	# Compatibilidade com qualquer inimigo antigo que não herde InimigoBase.
 	var dano_contato = body.get("Dano")
 	if dano_contato != null:
 		tomar_dano(float(dano_contato))
