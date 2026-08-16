@@ -1,145 +1,403 @@
-[gd_scene format=3 uid="uid://dm0vqapjs8xuq"]
+[gd_scene load_steps=4 format=3 uid="uid://dm0vqapjs8xuq"]
 
-[node name="Janela_Configurações" type="Control" unique_id=675295107]
+[ext_resource type="Script" path="res://Scripts/janela_configuracoes.gd" id="1_settings"]
+
+[sub_resource type="StyleBoxFlat" id="StylePanel"]
+bg_color = Color(0.015, 0.02, 0.055, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.18, 0.86, 1, 0.9)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.08, 0.65, 1, 0.25)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleTab"]
+bg_color = Color(0.04, 0.07, 0.14, 0.96)
+border_width_bottom = 2
+border_color = Color(0.2, 0.82, 1, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+content_margin_left = 12.0
+content_margin_right = 12.0
+content_margin_top = 6.0
+content_margin_bottom = 6.0
+
+[node name="JanelaConfiguracoes" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+process_mode = 3
+script = ExtResource("1_settings")
 
-[node name="TabContainer" type="TabContainer" parent="." unique_id=2046828148]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 106.66669
-offset_top = 60.0
-offset_right = -106.66669
-offset_bottom = -60.0
-grow_horizontal = 2
-grow_vertical = 2
-tab_alignment = 1
-current_tab = 3
-
-[node name="Idioma" type="TabBar" parent="TabContainer" unique_id=1322649832]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 0
-
-[node name="ContainerIdioma" type="HBoxContainer" parent="TabContainer/Idioma" unique_id=1647410057]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 322.3333
-offset_top = 183.0
-offset_right = -322.3333
-offset_bottom = -183.0
-grow_horizontal = 2
-grow_vertical = 2
-alignment = 1
-
-[node name="IdiomasLabel" type="Label" parent="TabContainer/Idioma/ContainerIdioma" unique_id=685430233]
-layout_mode = 2
-text = "T_IDIOMA"
-
-[node name="Idiomas" type="OptionButton" parent="TabContainer/Idioma/ContainerIdioma" unique_id=399739124]
-layout_mode = 2
-
-[node name="Configurações de Jogo" type="TabBar" parent="TabContainer" unique_id=479649579]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 1
-
-[node name="ContainerConfigucoesJogo" type="VBoxContainer" parent="TabContainer/Configurações de Jogo" unique_id=1221567211]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 246.33331
-offset_top = 29.0
-offset_right = -246.33331
-offset_bottom = -29.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = -102
-
-[node name="mouse_teclado" type="CheckButton" parent="TabContainer/Configurações de Jogo/ContainerConfigucoesJogo" unique_id=1412512613]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-text = "TG_MOUSEAIM"
-
-[node name="Tela" type="TabBar" parent="TabContainer" unique_id=796434128]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 2
-
-[node name="Som" type="TabBar" parent="TabContainer" unique_id=1259493919]
-layout_mode = 2
-metadata/_tab_index = 3
-
-[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/Som" unique_id=40592835]
+[node name="Painel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(760, 454)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -103.0
-offset_top = -162.5
-offset_right = 103.0
-offset_bottom = -7.5
+offset_left = -380.0
+offset_top = -227.0
+offset_right = 380.0
+offset_bottom = 227.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StylePanel")
 
-[node name="SliderEfeitosSonoros" type="HBoxContainer" parent="TabContainer/Som/VBoxContainer" unique_id=1543993652]
+[node name="Margem" type="MarginContainer" parent="Painel"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 16
+
+[node name="Coluna" type="VBoxContainer" parent="Painel/Margem"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Titulo" type="Label" parent="Painel/Margem/Coluna"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 25
+text = "T_SETTINGS_TITLE"
+horizontal_alignment = 1
+
+[node name="DicaAbas" type="Label" parent="Painel/Margem/Coluna"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.58, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+text = "T_SETTINGS_TAB_HINT"
+horizontal_alignment = 1
+
+[node name="Abas" type="TabContainer" parent="Painel/Margem/Coluna"]
+custom_minimum_size = Vector2(716, 326)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 0
+current_tab = 0
+tab_alignment = 1
+theme_override_styles/tab_selected = SubResource("StyleTab")
 
-[node name="Label" type="Label" parent="TabContainer/Som/VBoxContainer/SliderEfeitosSonoros" unique_id=1394782830]
+[node name="JOGO" type="MarginContainer" parent="Painel/Margem/Coluna/Abas"]
 layout_mode = 2
-size_flags_horizontal = 6
-text = "BAR_EFFECTS"
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 18
 
-[node name="ctrl_volume_som" type="HScrollBar" parent="TabContainer/Som/VBoxContainer/SliderEfeitosSonoros" unique_id=222900517]
-custom_minimum_size = Vector2(106, 10)
+[node name="Conteudo" type="VBoxContainer" parent="Painel/Margem/Coluna/Abas/JOGO"]
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 4
-min_value = -80.0
-max_value = 1.0
+theme_override_constants/separation = 16
+
+[node name="Idioma" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo/Idioma"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "T_LANGUAGE"
+
+[node name="Idiomas" type="OptionButton" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo/Idioma"]
+custom_minimum_size = Vector2(210, 34)
+layout_mode = 2
+focus_mode = 2
+
+[node name="MiraMouse" type="CheckButton" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo"]
+layout_mode = 2
+text = "T_MOUSE_AIM"
+focus_mode = 2
+
+[node name="Vibracao" type="CheckButton" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo"]
+layout_mode = 2
+text = "T_CONTROLLER_VIBRATION"
+focus_mode = 2
+
+[node name="ZonaMorta" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo/ZonaMorta"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+text = "T_CONTROLLER_DEADZONE"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo/ZonaMorta"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.05
+max_value = 0.6
+step = 0.01
+value = 0.22
+focus_mode = 2
+
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/JOGO/Conteudo/ZonaMorta"]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+text = "22%"
+horizontal_alignment = 2
+
+[node name="VIDEO" type="MarginContainer" parent="Painel/Margem/Coluna/Abas"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 18
+
+[node name="Conteudo" type="VBoxContainer" parent="Painel/Margem/Coluna/Abas/VIDEO"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="TelaCheia" type="CheckButton" parent="Painel/Margem/Coluna/Abas/VIDEO/Conteudo"]
+layout_mode = 2
+text = "T_FULLSCREEN"
+focus_mode = 2
+
+[node name="VSync" type="CheckButton" parent="Painel/Margem/Coluna/Abas/VIDEO/Conteudo"]
+layout_mode = 2
+text = "T_VSYNC"
+focus_mode = 2
+
+[node name="LimiteFPS" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/VIDEO/Conteudo"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/VIDEO/Conteudo/LimiteFPS"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "T_FPS_LIMIT"
+
+[node name="Opcoes" type="OptionButton" parent="Painel/Margem/Coluna/Abas/VIDEO/Conteudo/LimiteFPS"]
+custom_minimum_size = Vector2(210, 34)
+layout_mode = 2
+focus_mode = 2
+
+[node name="NotaWeb" type="Label" parent="Painel/Margem/Coluna/Abas/VIDEO/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.58, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+text = "T_FULLSCREEN_WEB_NOTE"
+autowrap_mode = 2
+
+[node name="GRAFICOS" type="MarginContainer" parent="Painel/Margem/Coluna/Abas"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 18
+
+[node name="Conteudo" type="VBoxContainer" parent="Painel/Margem/Coluna/Abas/GRAFICOS"]
+layout_mode = 2
+theme_override_constants/separation = 19
+
+[node name="Neon" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Neon"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+text = "T_NEON_INTENSITY"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Neon"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.05
 value = 1.0
+focus_mode = 2
 
-[node name="SliderMusica" type="HBoxContainer" parent="TabContainer/Som/VBoxContainer" unique_id=881727769]
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Neon"]
+custom_minimum_size = Vector2(56, 0)
 layout_mode = 2
-size_flags_vertical = 2
-theme_override_constants/separation = 0
+text = "100%"
+horizontal_alignment = 2
+
+[node name="Bloom" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Bloom"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+text = "T_BLOOM_INTENSITY"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Bloom"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 0.5
+step = 0.01
+value = 0.12
+focus_mode = 2
+
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Bloom"]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+text = "24%"
+horizontal_alignment = 2
+
+[node name="Tremor" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Tremor"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+text = "T_SCREEN_SHAKE"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Tremor"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.05
+value = 1.0
+focus_mode = 2
+
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Tremor"]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="Descricao" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.58, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+text = "T_GRAPHICS_HINT"
+autowrap_mode = 2
+
+[node name="AUDIO" type="MarginContainer" parent="Painel/Margem/Coluna/Abas"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 18
+
+[node name="Conteudo" type="VBoxContainer" parent="Painel/Margem/Coluna/Abas/AUDIO"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Master" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Master"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "T_MASTER_VOLUME"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Master"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -80.0
+max_value = 6.0
+step = 1.0
+focus_mode = 2
+
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Master"]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+text = "0 dB"
+horizontal_alignment = 2
+
+[node name="Musica" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Musica"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "T_MUSIC_VOLUME"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Musica"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -80.0
+max_value = 6.0
+step = 1.0
+focus_mode = 2
+
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Musica"]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+text = "0 dB"
+horizontal_alignment = 2
+
+[node name="Efeitos" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Efeitos"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "T_EFFECTS_VOLUME"
+
+[node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Efeitos"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -80.0
+max_value = 6.0
+step = 1.0
+focus_mode = 2
+
+[node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Efeitos"]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+text = "0 dB"
+horizontal_alignment = 2
+
+[node name="CONTROLES" type="MarginContainer" parent="Painel/Margem/Coluna/Abas"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 16
+
+[node name="Conteudo" type="VBoxContainer" parent="Painel/Margem/Coluna/Abas/CONTROLES"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ControleDetectado" type="Label" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.78, 1)
+text = "Nenhum controle conectado."
+
+[node name="Mapeamento" type="Label" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "T_CONTROLLER_MAP"
+autowrap_mode = 2
+
+[node name="Compatibilidade" type="Label" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.58, 0.74, 1)
+theme_override_font_sizes/font_size = 11
+text = "T_CONTROLLER_SUPPORT"
+autowrap_mode = 2
+
+[node name="Rodape" type="HBoxContainer" parent="Painel/Margem/Coluna"]
+layout_mode = 2
 alignment = 1
+theme_override_constants/separation = 18
 
-[node name="Label" type="Label" parent="TabContainer/Som/VBoxContainer/SliderMusica" unique_id=1903947899]
+[node name="Restaurar" type="Button" parent="Painel/Margem/Coluna/Rodape"]
+custom_minimum_size = Vector2(190, 38)
 layout_mode = 2
-size_flags_horizontal = 6
-text = "BAR_MUSIC"
-vertical_alignment = 1
+text = "B_RESTORE_DEFAULTS"
+focus_mode = 2
 
-[node name="ctrl_volume_musica" type="HScrollBar" parent="TabContainer/Som/VBoxContainer/SliderMusica" unique_id=163547068]
-custom_minimum_size = Vector2(106, 10)
+[node name="Voltar" type="Button" parent="Painel/Margem/Coluna/Rodape"]
+custom_minimum_size = Vector2(190, 38)
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 4
-min_value = -80.0
-max_value = 1.0
-value = 1.0
-
-[node name="Controles" type="TabBar" parent="TabContainer" unique_id=1223959725]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 4
-
-[node name="Gráficos" type="TabBar" parent="TabContainer" unique_id=1141697529]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 5
+text = "B_BACK"
+focus_mode = 2

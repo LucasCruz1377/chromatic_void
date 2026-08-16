@@ -102,6 +102,7 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
+	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
 	atualizar_overdrive(delta)
@@ -231,7 +232,20 @@ func atualizar_movimento(delta: float) -> void:
 
 	var fator_movimento := multiplicador_velocidade_habilidade
 	if not giroblock:
-		if mira_mouse:
+		var direcao_mira_controle := Input.get_vector(
+			"mirar_esquerda",
+			"mirar_direita",
+			"mirar_cima",
+			"mirar_baixo",
+			Global.zona_morta_controle
+		)
+		if direcao_mira_controle.length_squared() > 0.01:
+			rotation = rotate_toward(
+				rotation,
+				direcao_mira_controle.angle(),
+				VelocidadeVirar * fator_movimento * delta
+			)
+		elif mira_mouse and Global.ultimo_dispositivo != &"controle":
 			var target_angle := global_position.angle_to_point(get_global_mouse_position())
 			rotation = rotate_toward(
 				rotation,
@@ -353,6 +367,7 @@ func tomar_dano(valor: float) -> void:
 	vida = maxf(vida - dano_final, 0.0)
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
+	Global.vibrar_controle(0.35, 0.75, 0.2)
 
 
 func curar(valor: float) -> void:

@@ -1,0 +1,38 @@
+CHROMATIC VOID — CONFIGURAÇÕES E CONTROLES
+
+INSTALAÇÃO
+1. Feche o Godot.
+2. Extraia este ZIP na raiz do projeto (onde está project.godot).
+3. Escolha substituir os arquivos existentes.
+4. Abra o projeto no Godot e aguarde a reimportação de Language.csv.
+
+O QUE FOI ADICIONADO
+- Janela de configurações com abas: Jogo, Vídeo, Gráficos, Áudio e Controles.
+- Save automático das configurações em user://save.json.
+- Idioma, mira pelo mouse, vibração e zona morta dos analógicos.
+- Tela cheia, VSync e limite de FPS.
+- Intensidade do neon, bloom e tremor de câmera.
+- Volume geral, música e efeitos.
+- Detecção de controles conectados e navegação por foco.
+- Mapeamento para Xbox/XInput, PS4, PS5 e controles genéricos reconhecidos pelo Godot.
+
+MAPEAMENTO PADRÃO
+- Analógico esquerdo: acelerar/frear e virar.
+- Analógico direito: mirar livremente.
+- RT/R2 ou RB/R1: atirar.
+- A no Xbox / X no PlayStation: habilidade.
+- Y no Xbox / Triângulo no PlayStation: abrir melhorias pendentes.
+- Menu no Xbox / Options no PlayStation: pausar.
+- B no Xbox / Círculo no PlayStation: voltar nos menus.
+- LB/RB ou Q/E: trocar de aba nas configurações.
+
+TESTE RECOMENDADO
+1. Abra Configurações pelo menu inicial e altere um valor de cada aba.
+2. Volte ao menu, reabra a tela e confirme que os valores foram mantidos.
+3. Entre na partida e teste os dois analógicos, tiro, habilidade e pausa.
+4. Suba de nível e abra as melhorias com Y/Triângulo.
+5. Feche e abra o jogo para confirmar a persistência.
+6. Teste neon e bloom também na versão Web; o resultado pode variar conforme o navegador/renderizador.
+
+OBSERVAÇÃO
+O pacote não cria PR, branch nem commit. Ele contém somente arquivos para substituição.

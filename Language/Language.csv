@@ -26,3 +26,28 @@ UPG_D_SPD,sua velocidade passa a ser maior,your speed increases
 UPG_D_AGL,sua nave se torna mais ágil e aerodinamica,your ship becomes more agile
 UPG_D_HP,sua nave é reparada é se torna mais resistente,your shield is fixed and becomes more resistent
 T_IDIOMA, Idioma, Language
+T_SETTINGS_TITLE,CONFIGURAÇÕES,SETTINGS
+T_SETTINGS_TAB_HINT,Q / E ou LB / RB troca de aba,Q / E or LB / RB changes tabs
+T_LANGUAGE,Idioma,Language
+T_MOUSE_AIM,Mirar com o mouse,Mouse aiming
+T_CONTROLLER_VIBRATION,Vibração do controle,Controller vibration
+T_CONTROLLER_DEADZONE,Zona morta dos analógicos,Stick deadzone
+T_FULLSCREEN,Tela cheia,Fullscreen
+T_VSYNC,Sincronização vertical (VSync),Vertical synchronization (VSync)
+T_FPS_LIMIT,Limite de FPS,FPS limit
+T_FULLSCREEN_WEB_NOTE,Na versão Web a tela cheia depende da permissão do navegador.,On Web fullscreen depends on browser permission.
+T_NEON_INTENSITY,Brilho do neon,Neon brightness
+T_BLOOM_INTENSITY,Espalhamento do bloom,Bloom spread
+T_SCREEN_SHAKE,Tremor de câmera,Screen shake
+T_GRAPHICS_HINT,Neon muda a intensidade luminosa; bloom controla o quanto a luz se espalha.,Neon changes light intensity; bloom controls how far it spreads.
+T_MASTER_VOLUME,Volume geral,Master volume
+T_MUSIC_VOLUME,Música,Music
+T_EFFECTS_VOLUME,Efeitos,Effects
+T_CONTROLLER_MAP,"MOVIMENTO: analógico esquerdo | MIRA: analógico direito | TIRO: RT/R2 ou RB/R1 | HABILIDADE: A/X | MELHORIAS: Y/Triângulo | PAUSA: Menu/Options","MOVE: left stick | AIM: right stick | SHOOT: RT/R2 or RB/R1 | ABILITY: A/Cross | UPGRADES: Y/Triangle | PAUSE: Menu/Options"
+T_CONTROLLER_SUPPORT,"O Godot reconhece controles Xbox/XInput, DualShock 4, DualSense e a maioria dos controles genéricos SDL.","Godot supports Xbox/XInput, DualShock 4, DualSense and most generic SDL controllers."
+B_RESTORE_DEFAULTS,Restaurar padrões,Restore defaults
+T_TAB_GAME,JOGO,GAME
+T_TAB_VIDEO,VÍDEO,VIDEO
+T_TAB_GRAPHICS,GRÁFICOS,GRAPHICS
+T_TAB_AUDIO,ÁUDIO,AUDIO
+T_TAB_CONTROLS,CONTROLES,CONTROLS
