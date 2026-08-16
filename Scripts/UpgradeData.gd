@@ -2,6 +2,11 @@ extends RefCounted
 class_name UpgradeData
 
 
+# Chance de uma rodada oferecer exatamente uma carta da habilidade equipada.
+# Valor médio: 0.50 corresponde a aproximadamente metade das rodadas.
+const CHANCE_UPGRADE_HABILIDADE_ESPECIFICA := 0.50
+
+
 # Catálogo central dos mods. Para personalizar a tela, altere aqui:
 # nome, descrição, ícone, cor, raridade, níveis, peso e requisitos.
 const DADOS: Dictionary = {
@@ -248,7 +253,11 @@ const DADOS: Dictionary = {
 }
 
 
-static func obter(id: StringName) -> Dictionary:
+static func obter(id: StringName, habilidade: Habilidade = null) -> Dictionary:
+	if is_instance_valid(habilidade):
+		var especificos := habilidade.obter_upgrades_especificos()
+		if especificos.has(id):
+			return especificos[id]
 	var dados: Dictionary = DADOS.get(id, {})
 	return dados
 
@@ -257,8 +266,12 @@ static func nivel(id: StringName, niveis: Dictionary) -> int:
 	return int(niveis.get(id, 0))
 
 
-static func requisitos_cumpridos(id: StringName, niveis: Dictionary) -> bool:
-	var dados := obter(id)
+static func requisitos_cumpridos(
+	id: StringName,
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> bool:
+	var dados := obter(id, habilidade)
 	var requisitos: Dictionary = dados.get("requisitos", {})
 	for requisito in requisitos:
 		if nivel(requisito, niveis) < int(requisitos[requisito]):
@@ -266,24 +279,35 @@ static func requisitos_cumpridos(id: StringName, niveis: Dictionary) -> bool:
 	return true
 
 
-static func disponivel(id: StringName, niveis: Dictionary) -> bool:
-	var dados := obter(id)
+static func disponivel(
+	id: StringName,
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> bool:
+	var dados := obter(id, habilidade)
 	if dados.is_empty():
 		return false
 	return (
 		nivel(id, niveis) < int(dados.get("max_nivel", 1))
-		and requisitos_cumpridos(id, niveis)
+		and requisitos_cumpridos(id, niveis, habilidade)
 	)
 
 
-static func texto_requisitos(id: StringName, niveis: Dictionary) -> String:
-	var requisitos: Dictionary = obter(id).get("requisitos", {})
+static func texto_requisitos(
+	id: StringName,
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> String:
+	var requisitos: Dictionary = obter(id, habilidade).get("requisitos", {})
 	if requisitos.is_empty():
+		var dados := obter(id, habilidade)
+		if &"habilidade_especifica" in dados.get("tags", []):
+			return "EXCLUSIVO DA HABILIDADE EQUIPADA"
 		return "SEM PRÉ-REQUISITOS"
 
 	var partes: Array[String] = []
 	for requisito in requisitos:
-		var nome := str(obter(requisito).get("nome", requisito))
+		var nome := str(obter(requisito, habilidade).get("nome", requisito))
 		partes.append("%s %d/%d" % [
 			nome,
 			nivel(requisito, niveis),
@@ -292,20 +316,50 @@ static func texto_requisitos(id: StringName, niveis: Dictionary) -> String:
 	return "REQUER: " + "  •  ".join(partes)
 
 
-static func sortear(niveis: Dictionary, quantidade := 3) -> Array[StringName]:
+static func sortear(
+	niveis: Dictionary,
+	quantidade := 3,
+	habilidade: Habilidade = null
+) -> Array[StringName]:
 	var candidatos: Array[StringName] = []
 	for id in DADOS:
-		if disponivel(id, niveis):
+		if disponivel(id, niveis, habilidade):
 			candidatos.append(id)
+	if is_instance_valid(habilidade):
+		for id in habilidade.obter_upgrades_especificos():
+			if disponivel(id, niveis, habilidade):
+				candidatos.append(id)
 
 	var resultado: Array[StringName] = []
-	_adicionar_de_categoria(resultado, candidatos, niveis, &"projetil")
-	_adicionar_de_categoria(resultado, candidatos, niveis, &"habilidade")
+	var especificos: Array[StringName] = []
+	for id in candidatos:
+		var tags: Array = obter(id, habilidade).get("tags", [])
+		if &"habilidade_especifica" in tags:
+			especificos.append(id)
+
+	# A habilidade equipada entra por chance, nunca como dupla garantida.
+	# Depois do sorteio, todas as demais específicas saem dos candidatos.
+	if (
+		not especificos.is_empty()
+		and randf() <= CHANCE_UPGRADE_HABILIDADE_ESPECIFICA
+	):
+		resultado.append(_sortear_ponderado(especificos, niveis, habilidade))
+	for id in especificos:
+		candidatos.erase(id)
+
+	_adicionar_de_categoria(resultado, candidatos, niveis, &"projetil", habilidade)
 
 	while resultado.size() < quantidade and not candidatos.is_empty():
-		var escolhido := _sortear_ponderado(candidatos, niveis)
+		var escolhido := _sortear_ponderado(candidatos, niveis, habilidade)
 		resultado.append(escolhido)
 		candidatos.erase(escolhido)
+	while resultado.size() > quantidade:
+		resultado.pop_back()
+
+	# Segurança para partidas muito longas nas quais todos os mods globais
+	# chegaram ao nível máximo: ainda oferece uma específica, mas somente uma.
+	if resultado.is_empty() and not especificos.is_empty():
+		resultado.append(_sortear_ponderado(especificos, niveis, habilidade))
 
 	resultado.shuffle()
 	return resultado
@@ -315,42 +369,50 @@ static func _adicionar_de_categoria(
 	resultado: Array[StringName],
 	candidatos: Array[StringName],
 	niveis: Dictionary,
-	tag: StringName
+	tag: StringName,
+	habilidade: Habilidade = null
 ) -> void:
+	if resultado.size() >= 3:
+		return
 	var filtrados: Array[StringName] = []
 	for id in candidatos:
-		var tags: Array = obter(id).get("tags", [])
+		var tags: Array = obter(id, habilidade).get("tags", [])
 		if tag in tags:
 			filtrados.append(id)
 
 	if filtrados.is_empty():
 		return
 
-	var escolhido := _sortear_ponderado(filtrados, niveis)
+	var escolhido := _sortear_ponderado(filtrados, niveis, habilidade)
 	resultado.append(escolhido)
 	candidatos.erase(escolhido)
 
 
 static func _sortear_ponderado(
 	candidatos: Array[StringName],
-	niveis: Dictionary
+	niveis: Dictionary,
+	habilidade: Habilidade = null
 ) -> StringName:
 	var peso_total := 0.0
 	for id in candidatos:
-		peso_total += _peso_com_sinergia(id, niveis)
+		peso_total += _peso_com_sinergia(id, niveis, habilidade)
 
 	var alvo := randf() * maxf(peso_total, 0.01)
 	var acumulado := 0.0
 	for id in candidatos:
-		acumulado += _peso_com_sinergia(id, niveis)
+		acumulado += _peso_com_sinergia(id, niveis, habilidade)
 		if alvo <= acumulado:
 			return id
 
 	return candidatos.back()
 
 
-static func _peso_com_sinergia(id: StringName, niveis: Dictionary) -> float:
-	var dados := obter(id)
+static func _peso_com_sinergia(
+	id: StringName,
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> float:
+	var dados := obter(id, habilidade)
 	var peso := float(dados.get("peso", 1.0))
 	var tags: Array = dados.get("tags", [])
 
@@ -358,7 +420,7 @@ static func _peso_com_sinergia(id: StringName, niveis: Dictionary) -> float:
 		var nivel_adquirido := int(niveis[adquirido])
 		if nivel_adquirido <= 0:
 			continue
-		var tags_adquiridas: Array = obter(adquirido).get("tags", [])
+		var tags_adquiridas: Array = obter(adquirido, habilidade).get("tags", [])
 		for tag in tags:
 			if tag in tags_adquiridas:
 				peso += 0.16 * nivel_adquirido

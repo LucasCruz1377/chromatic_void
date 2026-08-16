@@ -1,15 +1,13 @@
-[gd_scene format=3 uid="uid://pxl3qhqcn57s"]
+[gd_scene load_steps=8 format=3 uid="uid://pxl3qhqcn57s"]
 
-[ext_resource type="Script" uid="uid://cfv8folpqnrp6" path="res://Scripts/configuracoes.gd" id="1_himc1"]
-[ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="1_k7rnd"]
-[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="2_himc1"]
-[ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="4_k16so"]
-[ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="5_rxjii"]
-[ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="6_w2h0g"]
-[ext_resource type="AudioStream" uid="uid://dcdvl7x5pcgny" path="res://sounds/menu_song(CV).mp3" id="7_d4o0w"]
-[ext_resource type="PackedScene" uid="uid://sxsschqveb56" path="res://tool/debug_text.tscn" id="8_d4o0w"]
+[ext_resource type="Script" path="res://Scripts/configuracoes.gd" id="1_config"]
+[ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="2_bg"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_shader"]
+[ext_resource type="PackedScene" path="res://Janela_Configurações.tscn" id="4_window"]
+[ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="5_aim"]
+[ext_resource type="AudioStream" uid="uid://dcdvl7x5pcgny" path="res://sounds/menu_song(CV).mp3" id="6_music"]
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_k16so"]
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_bg"]
 particle_flag_disable_z = true
 emission_shape = 3
 emission_box_extents = Vector3(130.56, 1, 1)
@@ -18,117 +16,39 @@ spread = 0.0
 initial_velocity_max = 50.0
 gravity = Vector3(0, 0, 0)
 
-[node name="Configuracoes" type="Control" unique_id=1370224302]
+[node name="Configuracoes" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_himc1")
-metadata/_edit_vertical_guides_ = [478.0]
+process_mode = 3
+script = ExtResource("1_config")
 
-[node name="espaco" parent="." unique_id=435737775 instance=ExtResource("1_k7rnd")]
-position = Vector2(491.00003, 280)
+[node name="espaco" parent="." instance=ExtResource("2_bg")]
+position = Vector2(480, 270)
 
-[node name="shader" parent="." unique_id=996982090 instance=ExtResource("2_himc1")]
+[node name="shader" parent="." instance=ExtResource("3_shader")]
 
-[node name="parts_fundo" type="GPUParticles2D" parent="." unique_id=1250940586]
-position = Vector2(998.00006, -157)
-scale = Vector2(7.932918, 5.212338)
-amount = 200
+[node name="parts_fundo" type="GPUParticles2D" parent="."]
+position = Vector2(998, -157)
+scale = Vector2(7.93, 5.21)
+amount = 120
 lifetime = 10.0
 preprocess = 10.0
 trail_enabled = true
 trail_lifetime = 0.05
 trail_sections = 3
-process_material = SubResource("ParticleProcessMaterial_k16so")
+process_material = SubResource("ParticleProcessMaterial_bg")
 
-[node name="titleconfig" type="RichTextLabel" parent="." unique_id=240573768]
-layout_mode = 0
-offset_left = 330.0
-offset_top = 23.0
-offset_right = 630.0
-offset_bottom = 65.0
-theme_override_font_sizes/normal_font_size = 30
-bbcode_enabled = true
-text = "T_SETTINGS"
-fit_content = true
-horizontal_alignment = 1
+[node name="JanelaConfiguracoes" parent="." instance=ExtResource("4_window")]
 
-[node name="configs_box" type="VBoxContainer" parent="." unique_id=1333706304]
-layout_mode = 1
-anchors_preset = 13
-anchor_left = 0.5
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -121.0
-offset_top = 135.0
-offset_right = 42.0
-offset_bottom = -285.0
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(1.5, 1.5)
-alignment = 1
+[node name="aim" parent="." instance=ExtResource("5_aim")]
+position = Vector2(8, 58)
 
-[node name="aim" parent="." unique_id=525751855 instance=ExtResource("4_k16so")]
-position = Vector2(8.000001, 58.000008)
-
-[node name="voltar" parent="." unique_id=1661321070 instance=ExtResource("5_rxjii")]
-layout_mode = 0
-offset_right = 216.0
-offset_bottom = 81.0
-theme_override_font_sizes/font_size = 39
-text = "B_BACK"
-
-[node name="fx" parent="voltar" unique_id=767019499 instance=ExtResource("6_w2h0g")]
-scale_amount = Vector2(1.1, 1.1)
-dist = 40
-
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." unique_id=1898642177]
-stream = ExtResource("7_d4o0w")
+[node name="Musica" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_music")
 autoplay = true
 bus = &"Music"
 
-[node name="Debug_text" parent="." unique_id=740519804 instance=ExtResource("8_d4o0w")]
-visible = false
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -224.0
-offset_right = 0.0
-offset_bottom = 169.0
-grow_horizontal = 0
-
-[node name="Configurações" type="TabContainer" parent="." unique_id=1367096388]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 81.0
-grow_horizontal = 2
-grow_vertical = 2
-current_tab = 2
-
-[node name="Básico" type="TabBar" parent="Configurações" unique_id=18046014]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 0
-
-[node name="Gráfico" type="TabBar" parent="Configurações" unique_id=1438305224]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 1
-
-[node name="Audio" type="TabBar" parent="Configurações" unique_id=1793210534]
-layout_mode = 2
-metadata/_tab_index = 2
-
-[node name="Tela" type="TabBar" parent="Configurações" unique_id=226915909]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 3
-
-[connection signal="pressed" from="voltar" to="." method="_on_voltar_pressed"]

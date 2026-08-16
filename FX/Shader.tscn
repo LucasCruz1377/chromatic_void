@@ -15,5 +15,5 @@ glow_levels/7 = 1.5
 glow_intensity = 1.0
 glow_bloom = 0.12
 
-[node name="WorldEnvironment" type="WorldEnvironment" unique_id=996982090]
+[node name="WorldEnvironment" type="WorldEnvironment" unique_id=996982090 groups=["ambiente_global"]]
 environment = SubResource("Environment_fu4hl")

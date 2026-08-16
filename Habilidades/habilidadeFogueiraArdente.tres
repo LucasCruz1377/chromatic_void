@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeFogueiraArdente" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Habilidades/FogueiraArdente.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/fogueira_ardente.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = &"festa_junina"
+Nome = "Fogueira Ardente"
+Descricao = "Acende uma fogueira por 8 segundos que causa dano contínuo nos inimigos próximos. A página de junho do Monthly Colors usa o dourado das fogueiras, as bandeirinhas e as noites frias como identidade cultural das festas juninas; aqui essa imagem vira uma zona de fogo."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "JUNHO • FESTA JUNINA"
+MonthlyColorsContexto = "A fogueira e o tom dourado são elementos culturais destacados na página de junho."
+Cooldown = 13.0

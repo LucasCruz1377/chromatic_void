@@ -1,15 +1,16 @@
-[gd_resource type="Resource" script_class="HabilidadeRetrocesso" format=3 uid="uid://dtg0o3a2dkeej"]
+[gd_resource type="Resource" script_class="HabilidadeRetrocesso" load_steps=4 format=3 uid="uid://dtg0o3a2dkeej"]
 
-[ext_resource type="Script" uid="uid://ppioxx1ytc81" path="res://Habilidades/Retrocesso.gd" id="1_retro"]
-[ext_resource type="Texture2D" uid="uid://d12qxgujfv82t" path="res://Assets/RetrocessoIcon.png" id="2_icone"]
-[ext_resource type="PackedScene" path="res://FX/RetrocessoTela.tscn" id="3_efeito"]
+[ext_resource type="Script" path="res://Habilidades/Retrocesso.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/retrocesso.svg" id="2"]
+[ext_resource type="PackedScene" path="res://FX/RetrocessoTela.tscn" id="3"]
 
 [resource]
-script = ExtResource("1_retro")
-efeito_tela = ExtResource("3_efeito")
+script = ExtResource("1")
+efeito_tela = ExtResource("3")
 Id = &"retrocesso"
 Nome = "Retrocesso"
-Descricao = "Retorna pelos estados recentes da nave e recupera a vida que possuía."
-Icone = ExtResource("2_icone")
+Descricao = "Rebobina os estados recentes da nave e recupera a vida registrada, como uma fita VHS voltando a uma lembrança gravada. No Monthly Colors, Fevereiro Roxo dá visibilidade ao Alzheimer, ao lúpus e à fibromialgia; a habilidade se relaciona à memória como metáfora de jogo, sem representar cura ou tratamento."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "FEVEREIRO ROXO • ALZHEIMER"
+MonthlyColorsContexto = "A fita VHS guarda registros; rebobiná-la simboliza revisitar memórias. O site apresenta o Alzheimer entre as causas do Fevereiro Roxo."
 Cooldown = 8.0
-metadata/_custom_type_script = "uid://ppioxx1ytc81"

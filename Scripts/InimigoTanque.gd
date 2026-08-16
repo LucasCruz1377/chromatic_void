@@ -2,6 +2,7 @@ extends InimigoBase
 
 
 const PROJETIL := preload("res://Entities/ProjetilInimigo.tscn")
+const COR_PROJETIL_TANQUE := Color(1.0, 0.42, 0.10, 1.0)
 
 @export var aceleracao: float = 110.0
 @export var intervalo_pulso: float = 4.5
@@ -39,7 +40,7 @@ func tomarDano(valor: float) -> void:
 		armadura_quebrada = true
 		multiplicador_dano_recebido = 1.0
 		Velocidade *= 1.35
-		visual.modulate = Color(1.25, 0.65, 0.35, 1.0)
+		visual.modulate = Color(1.0, 0.65, 0.35, 1.0)
 
 
 func disparar_pulso() -> void:
@@ -56,5 +57,9 @@ func disparar_pulso() -> void:
 		get_tree().current_scene.add_child(projetil)
 		projetil.global_position = global_position
 		projetil.scale = Vector2(0.7, 0.7)
-		projetil.modulate = Color(1.0, 0.48, 0.16, 1.0)
+		projetil.modulate = Color.WHITE
+		var forma := projetil.get_node_or_null("Visual") as Polygon2D
+		if is_instance_valid(forma):
+			forma.color = COR_PROJETIL_TANQUE
+			forma.self_modulate = Color(0.95, 0.95, 0.95, 1.0)
 		projetil.configurar(Vector2.from_angle(angulo), Dano * 0.45, 185.0, 0)

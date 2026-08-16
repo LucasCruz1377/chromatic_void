@@ -122,6 +122,8 @@ func configurar(
 	botao.pressed.connect(_on_pressed)
 	botao.mouse_entered.connect(_on_mouse_entered)
 	botao.mouse_exited.connect(_on_mouse_exited)
+	botao.focus_entered.connect(_on_mouse_entered)
+	botao.focus_exited.connect(_on_mouse_exited)
 	add_child(botao)
 
 

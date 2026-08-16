@@ -65,7 +65,7 @@ func iniciar_aviso() -> void:
 		[Vector2.ZERO, direcao_investida * 720.0]
 	)
 	linha_aviso.visible = true
-	visual.modulate = Color(1.8, 0.5, 0.25, 1.0)
+	visual.modulate = Color(1.0, 0.5, 0.25, 1.0)
 
 
 func atualizar_aviso(delta: float) -> void:
@@ -109,3 +109,4 @@ func ao_colidir_com_player(alvo: Node) -> void:
 	super.ao_colidir_com_player(alvo)
 	if not morto:
 		iniciar_recuperacao()
+

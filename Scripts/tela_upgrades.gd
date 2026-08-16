@@ -122,7 +122,7 @@ func construir_interface() -> void:
 	var dica := Label.new()
 	dica.position = Vector2(120, 492)
 	dica.size = Vector2(720, 24)
-	dica.text = "Escolha um mod ou feche o menu para guardar os pontos. TAB também abre e fecha."
+	dica.text = "Escolha um mod ou feche o menu para guardar os pontos. TAB / Y abre e fecha."
 	dica.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dica.add_theme_font_size_override("font_size", 12)
 	dica.add_theme_color_override("font_color", Color(0.44, 0.54, 0.7))
@@ -158,13 +158,7 @@ func criar_estilo_botao(cor: Color, borda: Color) -> StyleBoxFlat:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventKey):
-		return
-
-	var tecla := event as InputEventKey
-	if not tecla.pressed or tecla.echo:
-		return
-	if tecla.keycode != KEY_TAB and tecla.keycode != KEY_U:
+	if not event.is_action_pressed("abrir_melhorias"):
 		return
 
 	get_viewport().set_input_as_handled()
@@ -193,7 +187,7 @@ func atualizar_indicador() -> void:
 
 	var pontos := player.pontos_upgrade_pendentes
 	indicador.visible = pontos > 0 and not menu_aberto
-	indicador.text = "◆  MELHORIAS: %d  [TAB]" % pontos
+	indicador.text = "◆  MELHORIAS: %d  [TAB / Y]" % pontos
 
 
 func pulsar_indicador() -> void:
@@ -253,18 +247,31 @@ func mostrar_opcoes() -> void:
 		return
 
 	limpar_cards()
-	var opcoes := DadosUpgrades.sortear(player.niveis_upgrades, qtd_cartas)
+	var opcoes := DadosUpgrades.sortear(
+		player.niveis_upgrades,
+		qtd_cartas,
+		player.HabilidadeEquipada
+	)
 	for id in opcoes:
-		var dados := DadosUpgrades.obter(id)
+		var dados := DadosUpgrades.obter(id, player.HabilidadeEquipada)
 		var card = CardUpgrade.new()
 		container_cards.add_child(card)
 		card.configurar(
 			id,
 			dados,
 			DadosUpgrades.nivel(id, player.niveis_upgrades),
-			DadosUpgrades.texto_requisitos(id, player.niveis_upgrades)
+			DadosUpgrades.texto_requisitos(
+				id,
+				player.niveis_upgrades,
+				player.HabilidadeEquipada
+			)
 		)
 		card.escolhido.connect(_on_upgrade_escolhido)
+
+	if container_cards.get_child_count() > 0:
+		var primeiro_card = container_cards.get_child(0)
+		if primeiro_card.botao:
+			primeiro_card.botao.call_deferred("grab_focus")
 
 
 func limpar_cards() -> void:
@@ -277,6 +284,8 @@ func _on_upgrade_escolhido(id: StringName) -> void:
 	if not player.comprar_upgrade(id):
 		mostrar_opcoes()
 		return
+
+	Global.vibrar_controle(0.18, 0.35, 0.12)
 
 	if player.pontos_upgrade_pendentes > 0:
 		atualizar_cabecalho()

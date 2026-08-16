@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeFrenesiCarnavalesco" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Habilidades/FrenesiCarnavalesco.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/frenesi_carnavalesco.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = &"fevereiro_carnaval"
+Nome = "Frenesi Carnavalesco"
+Descricao = "Aumenta velocidade, dano e cadência por alguns segundos, deixando rastros multicoloridos que ferem inimigos. No Monthly Colors, fevereiro apresenta o Carnaval como uma explosão de cor, ritmo e identidade cultural — por isso o poder vira um frenesi neon."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "FEVEREIRO • CARNAVAL"
+MonthlyColorsContexto = "O site liga o Carnaval à cor, ao ritmo e à identidade cultural brasileira."
+Cooldown = 13.0

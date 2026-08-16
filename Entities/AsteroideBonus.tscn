@@ -1,0 +1,44 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/AsteroideBonus.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="Circle"]
+radius = 18.0
+
+[node name="AsteroideBonus" type="CharacterBody2D" groups=["inimigo", "asteroide_bonus"]]
+z_index = 1
+collision_layer = 4
+collision_mask = 11
+script = ExtResource("1")
+VidaMaxima = 3.0
+Dano = 0.0
+ValorXP = 0.0
+Velocidade = 48.0
+resistencia_empurrao = 0.35
+morre_ao_colidir_player = false
+concede_recompensa = true
+pontos_base = 0
+valor_cristais = 0
+brilho_visual = 0.85
+tremor_morte = 3.0
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Corpo" type="Polygon2D" parent="Visual"]
+self_modulate = Color(0.85, 0.85, 0.85, 1)
+color = Color(0.30, 0.32, 0.42, 1)
+polygon = PackedVector2Array(-18, -8, -10, -18, 4, -20, 17, -12, 20, 1, 13, 16, 1, 20, -13, 15, -20, 3)
+
+[node name="Nucleo" type="Polygon2D" parent="Visual"]
+self_modulate = Color(0.85, 0.85, 0.85, 1)
+color = Color(0.28, 0.82, 1, 1)
+polygon = PackedVector2Array(0, -8, 7, 0, 0, 8, -7, 0)
+
+[node name="Fendas" type="Line2D" parent="Visual"]
+self_modulate = Color(0.85, 0.85, 0.85, 1)
+width = 1.5
+default_color = Color(0.62, 0.70, 0.92, 0.8)
+points = PackedVector2Array(-14, -5, -7, -2, -10, 6, -3, 10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Circle")

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeEscudoProtetor" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Habilidades/EscudoProtetor.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/escudo_protetor.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = &"marco_lilas"
+Nome = "Escudo Protetor"
+Descricao = "Cria uma barreira lilás que absorve 48 pontos de dano durante 7 segundos. No Monthly Colors, Março Lilás representa prevenção ao câncer do colo do útero por meio de informação, vacina contra HPV e exames; o escudo transforma essa ideia de prevenção em proteção direta."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "MARÇO LILÁS • PREVENÇÃO"
+MonthlyColorsContexto = "A barreira simboliza o cuidado preventivo, o exame e a vacina destacados pelo site."
+Cooldown = 12.0

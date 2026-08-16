@@ -63,7 +63,7 @@ func cercar(delta: float) -> void:
 		estado = Estado.AVISANDO
 		tempo_estado = tempo_aviso
 		direcao_golpe = ate_player
-		visual.modulate = Color(1.7, 0.35, 0.25, 1.0)
+		visual.modulate = Color(1.0, 0.35, 0.25, 1.0)
 
 
 func avisar(delta: float) -> void:
@@ -111,3 +111,4 @@ func recuperar(delta: float) -> void:
 func ao_colidir_com_player(_alvo: Node) -> void:
 	# O dano deste inimigo vem da área do golpe, não do corpo.
 	pass
+

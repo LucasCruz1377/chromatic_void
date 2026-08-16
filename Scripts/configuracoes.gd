@@ -1,73 +1,23 @@
 extends Control
 
-var mira_mouse = Global.mira_mouse
-var volume_som = Global.volume_som
-var volume_musica = Global.volume_musica
 
-@onready var ctrl_volume_som: HScrollBar = $configs_box/SliderEfeitosSonoros/ctrl_volume_som
-@onready var ctrl_volume_musica: HScrollBar = $configs_box/SliderMusica/ctrl_volume_musica
-@onready var mouse_teclado: CheckButton = $configs_box/mouse_teclado
-@onready var debug_text: Label = $Debug_text
-@onready var idiomas: OptionButton = $configs_box/HBoxContainer3/Idiomas
+@onready var janela_configuracoes: Control = $JanelaConfiguracoes
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	Global.aplicar_configuracoes()
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
-	for i in TranslationServer.get_loaded_locales():
-		idiomas.add_item(i)
+	if janela_configuracoes.has_signal("voltar_solicitado"):
+		janela_configuracoes.connect(
+			"voltar_solicitado",
+			Callable(self, "_on_voltar_solicitado")
+		)
 
-	var index = idiomas.get_selected_id()
-	
-	TranslationServer.set_locale(idiomas.get_item_text(index))
-	
-	carregar_configuracoes()
-	if get_tree().paused:
-		get_tree().paused = false
 
-func _process(_delta: float) -> void:
-	debug_text.text = "Volume Musica: {vol_mus} \n Volume Som: {vol_som} \n Usar Mouse: {mouse}\n".format({
-			"vol_mus" : snapped(Global.volume_musica,0.1),
-			"vol_som" : snapped(Global.volume_som,0.1),
-			"mouse" : Global.mira_mouse
-		})
-	var musicbus = AudioServer.get_bus_index("Music")
-	var soundbus = AudioServer.get_bus_index("Sound") 
-	AudioServer.set_bus_volume_db(musicbus,Global.volume_musica)
-	AudioServer.set_bus_volume_db(soundbus,Global.volume_som)
-
-func _on_mouse_teclado_toggled(toggled_on: bool) -> void:
-	mira_mouse = toggled_on
-	salvar_configuracoes()
-
-func _on_voltar_pressed() -> void:
-	salvar_configuracoes()
-	
+func _on_voltar_solicitado() -> void:
+	Global.salvar_configuracoes()
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
-
-func carregar_configuracoes():
-	mira_mouse = Global.mira_mouse
-	volume_som = Global.volume_som
-	volume_musica = Global.volume_musica
-	
-	ctrl_volume_musica.value = volume_musica
-	ctrl_volume_som.value = volume_som
-	mouse_teclado.button_pressed = mira_mouse
-	
-	
-func _on_ctrl_volume_som_value_changed(value: float) -> void:
-	volume_som = value
-	salvar_configuracoes()
-
-func _on_ctrl_volume_musica_value_changed(value: float) -> void:
-	volume_musica = value
-	salvar_configuracoes()
-
-func salvar_configuracoes():
-	Global.mira_mouse = mira_mouse
-	Global.volume_som = volume_som 
-	Global.volume_musica = volume_musica
-
-
-
-func _on_idiomas_item_selected(index: int) -> void:
-	TranslationServer.set_locale(idiomas.get_item_text(index))

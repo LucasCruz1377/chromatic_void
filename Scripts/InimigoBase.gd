@@ -2,6 +2,11 @@ extends CharacterBody2D
 class_name InimigoBase
 
 
+# AJUSTE GLOBAL DO BRILHO DOS INIMIGOS.
+# 1.35 recupera o neon alto antigo. Para regular, tente entre 0.80 e 1.60.
+# Também é possível sobrescrever "brilho_visual" em cada cena pelo Inspector.
+const BRILHO_INIMIGOS_PADRAO := 1.35
+
 signal vida_alterada(atual: float, maxima: float)
 signal morreu(inimigo: InimigoBase)
 
@@ -19,14 +24,20 @@ signal morreu(inimigo: InimigoBase)
 @export var morre_ao_colidir_player: bool = true
 @export var concede_recompensa: bool = true
 @export var pontos_base: int = 100
+@export_range(0, 1000, 1) var valor_cristais: int = 8
 
 @export_category("Efeitos opcionais")
 @export var particulas_morte: PackedScene
+@export_range(0.0, 1.0, 0.05) var intensidade_flash: float = 0.35
+@export_range(0.6, 2.0, 0.05) var brilho_visual: float = BRILHO_INIMIGOS_PADRAO
+@export_range(0.0, 18.0, 0.5) var tremor_morte: float = 0.0
 
 
 var Vida: float = 0.0
 var tempo_atordoado: float = 0.0
 var morto: bool = false
+var tween_impacto: Tween
+var modulacao_base := Color.WHITE
 
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
@@ -37,6 +48,15 @@ var morto: bool = false
 
 
 func _ready() -> void:
+	modulacao_base = Color(
+		minf(modulate.r, 1.0),
+		minf(modulate.g, 1.0),
+		minf(modulate.b, 1.0),
+		modulate.a
+	)
+	modulate = modulacao_base
+	normalizar_brilho_visual()
+
 	var bonus_vida := 0.0
 	if is_instance_valid(player):
 		var nivel = player.get("nivel_atual")
@@ -130,13 +150,51 @@ func reproduzir_impacto() -> void:
 		dmg_taken_audio.pitch_scale = randf_range(0.92, 1.08)
 		dmg_taken_audio.play()
 
-	if is_instance_valid(anim) and anim.has_animation("flash-in"):
-		anim.play("flash-in")
-	else:
-		var cor_original := modulate
-		modulate = Color(2.0, 2.0, 2.0, cor_original.a)
-		var tween := create_tween()
-		tween.tween_property(self, "modulate", cor_original, 0.12)
+	# O flash antigo usava HDR acima de 1.0 e somava com o bloom. Em impactos
+	# rápidos a animação recomeçava no pico, criando o clarão acumulado.
+	if is_instance_valid(anim) and anim.current_animation == "flash-in":
+		anim.stop()
+	zerar_brilho_dos_materiais()
+
+	if tween_impacto and tween_impacto.is_valid():
+		tween_impacto.kill()
+
+	var cor_impacto := modulacao_base.lerp(
+		Color(1.0, 0.48, 0.62, modulacao_base.a),
+		intensidade_flash
+	)
+	modulate = cor_impacto
+	tween_impacto = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween_impacto.tween_property(self, "modulate", modulacao_base, 0.10)
+
+
+func normalizar_brilho_visual() -> void:
+	for node in find_children("*", "CanvasItem", true, false):
+		var item := node as CanvasItem
+		if not item:
+			continue
+		# Ajusta apenas nós que realmente desenham. Modificar Node2D intermediários
+		# faria o valor se multiplicar em cascata e apagaria o inimigo.
+		if (
+			item is Polygon2D
+			or item is Line2D
+			or item is Sprite2D
+			or item is AnimatedSprite2D
+		):
+			var alpha := item.self_modulate.a
+			var intensidade := clampf(brilho_visual, 0.6, 2.0)
+			item.self_modulate = Color(intensidade, intensidade, intensidade, alpha)
+	zerar_brilho_dos_materiais()
+
+
+func zerar_brilho_dos_materiais() -> void:
+	for node in find_children("*", "CanvasItem", true, false):
+		var item := node as CanvasItem
+		if not item or not (item.material is ShaderMaterial):
+			continue
+		var shader_material := item.material as ShaderMaterial
+		if shader_material.get_shader_parameter("brightness") != null:
+			shader_material.set_shader_parameter("brightness", 0.0)
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
@@ -162,7 +220,7 @@ func morrer() -> void:
 	morreu.emit(self)
 
 	if is_instance_valid(camera) and camera.has_method("shake"):
-		camera.shake(5.0)
+		camera.shake(obter_tremor_morte())
 
 	criar_particulas_morte()
 
@@ -170,6 +228,14 @@ func morrer() -> void:
 		conceder_recompensa()
 
 	queue_free()
+
+
+func obter_tremor_morte() -> float:
+	if tremor_morte > 0.0:
+		return tremor_morte
+	# Inimigos leves fazem um toque curto; tanques e chefes usam a própria
+	# vida máxima para produzir um impacto mais forte, sem estourar a câmera.
+	return clampf(2.4 + sqrt(maxf(VidaMaxima, 1.0)) * 0.82, 3.0, 14.0)
 
 
 func criar_particulas_morte() -> void:
@@ -195,3 +261,4 @@ func conceder_recompensa() -> void:
 	Global.kills_max += 1
 	Global.Combo += 1
 	Global.Pontos += pontos_base + (pontos_base * (Global.Combo - 1))
+	Global.adicionar_cristais(valor_cristais)

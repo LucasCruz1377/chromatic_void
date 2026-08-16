@@ -129,7 +129,7 @@ func iniciar_rolamento() -> void:
 		[Vector2.ZERO, direcao_investida * 760.0]
 	)
 	linha_aviso.visible = true
-	corpo_visual.modulate = Color(1.8, 0.55, 0.28, 1.0)
+	corpo_visual.modulate = Color(1.0, 0.55, 0.28, 1.0)
 
 
 func avisar_rolamento(delta: float) -> void:
@@ -180,7 +180,7 @@ func iniciar_pressao() -> void:
 	estado = Estado.PRESSIONANDO
 	tempo_estado = 1.0
 	velocity = Vector2.ZERO
-	corpo_visual.modulate = Color(0.35, 1.8, 0.8, 1.0)
+	corpo_visual.modulate = Color(0.35, 1.0, 0.8, 1.0)
 	var tween := create_tween()
 	tween.tween_property(visual, "scale", Vector2(0.68, 1.22), 0.72)
 
@@ -310,7 +310,7 @@ func remover_rotulo() -> void:
 	multiplicador_dano_recebido = 1.25
 	aplicar_atordoamento(3.0)
 	velocity = Vector2.ZERO
-	corpo_visual.modulate = Color(0.45, 1.8, 0.65, 1.0)
+	corpo_visual.modulate = Color(0.45, 1.0, 0.65, 1.0)
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
@@ -344,3 +344,4 @@ func morrer() -> void:
 
 	Global.Pontos += 5000
 	super.morrer()
+

@@ -8,6 +8,7 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fjgg4"]
 resource_local_to_scene = true
 shader = ExtResource("2_ddwlx")
+shader_parameter/brilho_base = 0.06
 shader_parameter/brightness = 0.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_fjgg4"]
@@ -58,13 +59,13 @@ z_index = 1
 collision_layer = 4
 collision_mask = 15
 script = ExtResource("1_n3r8k")
-particulas_morte = ExtResource("2_ureyi")
 VidaMaxima = 3
 Dano = 20
 Velocidade = 200
+particulas_morte = ExtResource("2_ureyi")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=1427657541]
-self_modulate = Color(1.353256, 1.353256, 1.353256, 1)
+self_modulate = Color(1.4369954, 1.4369954, 1.4369954, 1)
 material = SubResource("ShaderMaterial_fjgg4")
 rotation = 0.38544607
 scale = Vector2(0.99999994, 0.99999994)
