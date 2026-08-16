@@ -1,27 +1,26 @@
-[gd_scene load_steps=4 format=3 uid="uid://dtp7by503hvhv"]
+[gd_scene load_steps=8 format=3 uid="uid://dtp7by503hvhv"]
 
-[ext_resource type="Script" uid="uid://bpqiqsvffgus3" path="res://Scripts/shopcontroler.gd" id="1_loja"]
+[ext_resource type="Script" path="res://Scripts/shopcontroler.gd" id="1_shop"]
+[ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="2_bg"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_shader"]
+[ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="4_aim"]
+[ext_resource type="AudioStream" uid="uid://dcdvl7x5pcgny" path="res://sounds/menu_song(CV).mp3" id="5_music"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_cartao"]
-bg_color = Color(0.035, 0.05, 0.09, 0.96)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.2, 0.9, 1, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0, 0.8, 1, 0.25)
-shadow_size = 12
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_shop"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(140, 1, 1)
+direction = Vector3(-1, 1, 0)
+spread = 5.0
+initial_velocity_min = 18.0
+initial_velocity_max = 42.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.45
+scale_max = 1.0
+color = Color(0.24, 0.55, 1.0, 0.55)
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_botao"]
-bg_color = Color(0.12, 0.48, 0.65, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+[sub_resource type="StyleBoxFlat" id="Unused_style_marker"]
+bg_color = Color(0, 0, 0, 0)
 
 [node name="Loja" type="Control"]
 layout_mode = 3
@@ -30,7 +29,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_loja")
+process_mode = 3
+script = ExtResource("1_shop")
 
 [node name="Fundo" type="ColorRect" parent="."]
 layout_mode = 1
@@ -40,123 +40,31 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.008, 0.012, 0.03, 1)
+color = Color(0.004, 0.006, 0.022, 1)
 
-[node name="Margem" type="MarginContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 48.0
-offset_top = 26.0
-offset_right = -48.0
-offset_bottom = -26.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="espaco" parent="." instance=ExtResource("2_bg")]
+position = Vector2(480, 270)
+modulate = Color(0.45, 0.55, 0.82, 0.45)
 
-[node name="Coluna" type="VBoxContainer" parent="Margem"]
-layout_mode = 2
-theme_override_constants/separation = 14
+[node name="Shader" parent="." instance=ExtResource("3_shader")]
 
-[node name="Titulo" type="Label" parent="Margem/Coluna"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 32
-text = "TERMINAL DE HABILIDADES"
-horizontal_alignment = 1
+[node name="ParticulasFundo" type="GPUParticles2D" parent="."]
+position = Vector2(988, -36)
+scale = Vector2(7.2, 5.4)
+amount = 85
+lifetime = 11.0
+preprocess = 11.0
+process_material = SubResource("ParticleProcessMaterial_shop")
 
-[node name="Subtitulo" type="Label" parent="Margem/Coluna"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.7, 0.82, 1)
-theme_override_font_sizes/font_size = 16
-text = "Escolha a habilidade ativa que será levada para a próxima partida"
-horizontal_alignment = 1
+[node name="DecoracaoSuperior" type="Polygon2D" parent="."]
+position = Vector2(480, 63)
+color = Color(0.35, 0.16, 0.72, 0.12)
+polygon = PackedVector2Array(-245, -3, -92, -3, -72, 3, 72, 3, 92, -3, 245, -3, 218, 4, 96, 4, 72, 11, -72, 11, -96, 4, -218, 4)
 
-[node name="Conteudo" type="HBoxContainer" parent="Margem/Coluna"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 24
-alignment = 1
+[node name="aim" parent="." instance=ExtResource("4_aim")]
 
-[node name="Left" type="Button" parent="Margem/Coluna/Conteudo"]
-custom_minimum_size = Vector2(70, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 34
-text = "<"
-
-[node name="Cartao" type="PanelContainer" parent="Margem/Coluna/Conteudo"]
-custom_minimum_size = Vector2(540, 345)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBox_cartao")
-
-[node name="ColunaCartao" type="VBoxContainer" parent="Margem/Coluna/Conteudo/Cartao"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="Icone" type="TextureRect" parent="Margem/Coluna/Conteudo/Cartao/ColunaCartao"]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 2
-size_flags_horizontal = 4
-expand_mode = 3
-stretch_mode = 5
-
-[node name="Nome" type="Label" parent="Margem/Coluna/Conteudo/Cartao/ColunaCartao"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.55, 1)
-theme_override_font_sizes/font_size = 26
-text = "Habilidade"
-horizontal_alignment = 1
-
-[node name="Descricao" type="Label" parent="Margem/Coluna/Conteudo/Cartao/ColunaCartao"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 17
-text = "Descrição"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="Cooldown" type="Label" parent="Margem/Coluna/Conteudo/Cartao/ColunaCartao"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
-text = "RECARGA: 0.0 s"
-horizontal_alignment = 1
-
-[node name="Estado" type="Label" parent="Margem/Coluna/Conteudo/Cartao/ColunaCartao"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 1, 0.7, 1)
-text = "DESBLOQUEADA"
-horizontal_alignment = 1
-
-[node name="Equipar" type="Button" parent="Margem/Coluna/Conteudo/Cartao/ColunaCartao"]
-custom_minimum_size = Vector2(0, 46)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBox_botao")
-text = "EQUIPAR"
-
-[node name="Right" type="Button" parent="Margem/Coluna/Conteudo"]
-custom_minimum_size = Vector2(70, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 34
-text = ">"
-
-[node name="Rodape" type="HBoxContainer" parent="Margem/Coluna"]
-layout_mode = 2
-
-[node name="Dica" type="Label" parent="Margem/Coluna/Rodape"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.55, 0.6, 0.72, 1)
-text = "Use as setas ou a roda do mouse"
-
-[node name="Voltar" type="Button" parent="Margem/Coluna/Rodape"]
-custom_minimum_size = Vector2(150, 42)
-layout_mode = 2
-text = "VOLTAR"
-
-[connection signal="pressed" from="Margem/Coluna/Conteudo/Left" to="." method="_on_left_pressed"]
-[connection signal="pressed" from="Margem/Coluna/Conteudo/Cartao/ColunaCartao/Equipar" to="." method="_on_equipar_pressed"]
-[connection signal="pressed" from="Margem/Coluna/Conteudo/Right" to="." method="_on_right_pressed"]
-[connection signal="pressed" from="Margem/Coluna/Rodape/Voltar" to="." method="_on_voltar_pressed"]
+[node name="Musica" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_music")
+autoplay = true
+bus = &"Music"
 

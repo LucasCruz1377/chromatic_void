@@ -28,14 +28,11 @@ func executar(player) -> void:
 func atualizar(player, delta: float) -> void:
 	if not ativa:
 		return
-
 	if not is_instance_valid(player):
 		ativa = false
 		return
-
 	player.curar(regeneracao_por_segundo * delta)
 	tempo_restante -= delta
-
 	if tempo_restante <= 0.0:
 		finalizar(player)
 
@@ -43,10 +40,8 @@ func atualizar(player, delta: float) -> void:
 func finalizar(player) -> void:
 	if not ativa:
 		return
-
 	ativa = false
 	tempo_restante = 0.0
-
 	if is_instance_valid(player):
 		player.multiplicador_dano_recebido = multiplicador_anterior
 		player.modulate = Color.WHITE
@@ -63,3 +58,21 @@ func reiniciar_estado() -> void:
 	tempo_restante = 0.0
 	multiplicador_anterior = 1.0
 
+
+func obter_upgrades_especificos() -> Dictionary:
+	var icone := "res://Habilidades/Icones/aura_serenidade.svg"
+	var cor := Color(0.72, 0.94, 1.0)
+	return {
+		&"aura_regeneracao": criar_carta_upgrade("RESPIRAÇÃO SERENA", "+1,5 de regeneração por segundo.", icone, cor, Nome, 3, [&"cura"]),
+		&"aura_duracao": criar_carta_upgrade("PAUSA CONSCIENTE", "+1 segundo de duração.", icone, cor, Nome, 3, [&"duracao"]),
+		&"aura_resistencia": criar_carta_upgrade("MENTE PROTEGIDA", "Recebe mais 7% de redução de dano.", icone, cor, Nome, 3, [&"defesa"]),
+	}
+
+
+func aplicar_upgrade_especifico(id: StringName, _nivel: int) -> bool:
+	match id:
+		&"aura_regeneracao": regeneracao_por_segundo += 1.5
+		&"aura_duracao": duracao += 1.0
+		&"aura_resistencia": multiplicador_dano = maxf(multiplicador_dano - 0.07, 0.25)
+		_: return false
+	return true

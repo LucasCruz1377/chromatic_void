@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeTransfusao" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Habilidades/Transfusao.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/transfusao.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = &"junho_vermelho"
+Nome = "Transfusão"
+Descricao = "Converte 25% da vida máxima em uma grande onda de dano e empurrão. No Monthly Colors, Junho Vermelho incentiva a doação regular de sangue para ajudar tratamentos, cirurgias e emergências; a mecânica usa a própria vitalidade como símbolo de entrega para proteger outras vidas."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "JUNHO VERMELHO • DOAÇÃO"
+MonthlyColorsContexto = "A vitalidade oferecida pelo jogador remete à doação de sangue apresentada pelo site."
+Cooldown = 11.0

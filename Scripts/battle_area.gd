@@ -7,12 +7,19 @@ const INIMIGO_INVESTIDA := preload("res://Entities/InimigoInvestida.tscn")
 const INIMIGO_TANQUE := preload("res://Entities/InimigoTanque.tscn")
 const INIMIGO_ATIRADOR := preload("res://Entities/InimigoAtirador.tscn")
 const BOSS_PET0 := preload("res://Entities/BossPet0.tscn")
+const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
 
 const TIMER_MAX := 3.0
 const TIMER_MIN := 0.5
 const MAX_ENEMIES := 30
 const MAX_ENEMIES_BASE := 8
 
+
+@export_category("Asteroides bônus")
+@export_range(8.0, 90.0, 1.0) var intervalo_asteroide_min: float = 18.0
+@export_range(8.0, 120.0, 1.0) var intervalo_asteroide_max: float = 32.0
+@export_range(0.0, 1.0, 0.05) var chance_asteroide: float = 0.65
+@export_range(0, 4, 1) var max_asteroides: int = 2
 
 @export_category("Boss PET-0")
 @export var ativar_boss_pet0: bool = true
@@ -29,6 +36,7 @@ var pontos: float = 0.0
 var timer: float = TIMER_MAX
 var tutorial_ativo: bool = false
 var game_over: bool = false
+var tempo_asteroide: float = 0.0
 
 var boss_invocado: bool = false
 var boss_derrotado: bool = false
@@ -49,6 +57,7 @@ func _ready() -> void:
 	pontos = 0.0
 	timer = TIMER_MAX
 	game_over = false
+	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	caixa_gameover.visible = false
 
 	if not tocarmusica.playing:
@@ -83,6 +92,8 @@ func _process(delta: float) -> void:
 
 	if tutorial_ativo:
 		return
+
+	processar_asteroides(delta)
 
 	if deve_invocar_boss():
 		invocar_boss_pet0()
@@ -173,6 +184,45 @@ func calcular_limite_inimigos() -> int:
 
 	var limite := MAX_ENEMIES_BASE + floori(player.nivel_atual / 3.0)
 	return clampi(limite, MAX_ENEMIES_BASE, MAX_ENEMIES)
+
+
+func processar_asteroides(delta: float) -> void:
+	tempo_asteroide -= delta
+	if tempo_asteroide > 0.0:
+		return
+
+	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
+	if max_asteroides <= 0 or randf() > chance_asteroide:
+		return
+	if get_tree().get_nodes_in_group("asteroide_bonus").size() >= max_asteroides:
+		return
+	spawnar_asteroide_bonus()
+
+
+func spawnar_asteroide_bonus() -> void:
+	if not is_instance_valid(player):
+		return
+
+	var spawners := get_tree().get_nodes_in_group("spawners")
+	if spawners.is_empty():
+		return
+
+	var spawner := spawners.pick_random() as Node2D
+	if not is_instance_valid(spawner):
+		return
+
+	var asteroide := ASTEROIDE_BONUS.instantiate() as InimigoBase
+	if not is_instance_valid(asteroide):
+		return
+
+	add_child(asteroide)
+	asteroide.global_position = spawner.global_position
+	if asteroide.has_method("configurar_movimento"):
+		var destino := Vector2(480.0, 270.0) + Vector2(
+			randf_range(-180.0, 180.0),
+			randf_range(-110.0, 110.0)
+		)
+		asteroide.configurar_movimento(destino)
 
 
 func deve_invocar_boss() -> bool:
@@ -300,3 +350,4 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 func fadeout_tutorial() -> void:
 	# Mantida porque a animação antiga da cena ainda chama este método.
 	pass
+

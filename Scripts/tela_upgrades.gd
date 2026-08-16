@@ -247,16 +247,24 @@ func mostrar_opcoes() -> void:
 		return
 
 	limpar_cards()
-	var opcoes := DadosUpgrades.sortear(player.niveis_upgrades, qtd_cartas)
+	var opcoes := DadosUpgrades.sortear(
+		player.niveis_upgrades,
+		qtd_cartas,
+		player.HabilidadeEquipada
+	)
 	for id in opcoes:
-		var dados := DadosUpgrades.obter(id)
+		var dados := DadosUpgrades.obter(id, player.HabilidadeEquipada)
 		var card = CardUpgrade.new()
 		container_cards.add_child(card)
 		card.configurar(
 			id,
 			dados,
 			DadosUpgrades.nivel(id, player.niveis_upgrades),
-			DadosUpgrades.texto_requisitos(id, player.niveis_upgrades)
+			DadosUpgrades.texto_requisitos(
+				id,
+				player.niveis_upgrades,
+				player.HabilidadeEquipada
+			)
 		)
 		card.escolhido.connect(_on_upgrade_escolhido)
 

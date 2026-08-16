@@ -3,6 +3,7 @@ extends Node
 
 signal dispositivo_alterado(tipo: StringName)
 signal configuracoes_alteradas
+signal cristais_alterados(total: int, alteracao: int)
 
 const CONFIG_PADRAO := {
 	"mira_mouse": true,
@@ -19,6 +20,9 @@ const CONFIG_PADRAO := {
 	"zona_morta_controle": 0.22,
 	"vibracao": true
 }
+
+const CRISTAIS_INICIAIS := 1250
+const MODO_DESENVOLVEDOR := true
 
 var primeira_vez_jogando: bool = true
 var Pontos := 0
@@ -42,6 +46,10 @@ var zona_morta_controle := 0.22
 var vibracao := true
 var ultimo_dispositivo: StringName = &"teclado_mouse"
 
+var cristais := CRISTAIS_INICIAIS
+var modo_desenvolvedor := MODO_DESENVOLVEDOR
+var _salvamento_economia_agendado := false
+
 var conquistas_disponiveis = ["ACH_10KILlS", "ACH_100KILlS", "ACH_1000KILlS"]
 var conquistas_desbloqueadas = [""]
 
@@ -49,8 +57,56 @@ var conquistas_desbloqueadas = [""]
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	carregar_configuracoes()
+	carregar_economia()
 	get_tree().node_added.connect(_on_node_adicionado)
 	call_deferred("aplicar_configuracoes")
+
+
+func carregar_economia() -> void:
+	var dados := GerenciadorDeSave.carregar()
+	cristais = maxi(int(dados.get("cristais", CRISTAIS_INICIAIS)), 0)
+
+
+func adicionar_cristais(quantidade: int, salvar_imediatamente := false) -> void:
+	if quantidade <= 0:
+		return
+	cristais += quantidade
+	cristais_alterados.emit(cristais, quantidade)
+	if salvar_imediatamente:
+		salvar_economia()
+	else:
+		_agendar_salvamento_economia()
+
+
+func pode_gastar_cristais(quantidade: int) -> bool:
+	return quantidade >= 0 and cristais >= quantidade
+
+
+func gastar_cristais(quantidade: int) -> bool:
+	if quantidade < 0 or not pode_gastar_cristais(quantidade):
+		return false
+	cristais -= quantidade
+	cristais_alterados.emit(cristais, -quantidade)
+	salvar_economia()
+	return true
+
+
+func salvar_economia() -> void:
+	_salvamento_economia_agendado = false
+	GerenciadorDeSave.salvar({"cristais": cristais})
+
+
+func _agendar_salvamento_economia() -> void:
+	if _salvamento_economia_agendado:
+		return
+	_salvamento_economia_agendado = true
+	_salvar_economia_depois()
+
+
+func _salvar_economia_depois() -> void:
+	await get_tree().create_timer(1.5, true).timeout
+	if _salvamento_economia_agendado:
+		salvar_economia()
 
 
 func _input(event: InputEvent) -> void:

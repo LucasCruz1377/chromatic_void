@@ -4,6 +4,9 @@ class_name Player
 
 const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
 const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
+const TEXTURA_COOLDOWN_RELOGIO = preload(
+	"res://Habilidades/Icones/cooldown_relogio.svg"
+)
 
 
 @export_category("Combate")
@@ -45,6 +48,15 @@ var invulneravel_por_habilidade := false
 var multiplicador_dano_recebido := 1.0
 var multiplicador_cura_recebida := 1.0
 var multiplicador_velocidade_habilidade := 1.0
+var multiplicador_dano_habilidade := 1.0
+var multiplicador_cadencia_habilidade := 1.0
+var escudo_habilidade := 0.0
+var escudo_habilidade_max := 0.0
+var tempo_escudo_habilidade := 0.0
+var cor_escudo_habilidade := Color(0.72, 0.42, 1.0, 0.82)
+var tempo_resistencia_temporaria := 0.0
+var resistencia_temporaria_multiplicador := 1.0
+var dano_colisao_habilidade := 0.0
 var xp_atual: float = 0.0
 var nivel_atual: int = 1
 var xp_necessario: int = 3
@@ -75,6 +87,7 @@ var reducao_cooldown_por_impacto := 0.0
 var nivel_nova_ativacao := 0
 var duracao_escudo_fase := 0.0
 var reator_sincronizado := false
+var barra_cooldown_habilidade: TextureProgressBar
 
 
 enum Upgrade {
@@ -94,6 +107,7 @@ signal upgrade_adquirido(id: StringName, novo_nivel: int)
 func _ready() -> void:
 	vida = VIDA_MAXIMA
 	carregar_habilidade_equipada()
+	criar_barra_cooldown_habilidade()
 
 
 func _exit_tree() -> void:
@@ -105,6 +119,7 @@ func _process(delta: float) -> void:
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
+	atualizar_efeitos_temporarios(delta)
 	atualizar_overdrive(delta)
 	atualizar_habilidade(delta)
 	atualizar_movimento(delta)
@@ -117,6 +132,15 @@ func carregar_habilidade_equipada() -> void:
 	var dados := GerenciadorDeSave.carregar()
 	var caminho := str(dados.get("habilidade_equipada", ""))
 	var habilidade_carregada: Habilidade
+
+	if not Global.modo_desenvolvedor:
+		var liberadas = dados.get(
+			"habilidades_desbloqueadas",
+			[CAMINHO_HABILIDADE_PADRAO]
+		)
+		if not (liberadas is Array) or caminho not in liberadas:
+			caminho = CAMINHO_HABILIDADE_PADRAO
+			GerenciadorDeSave.salvar({"habilidade_equipada": caminho})
 
 	if not caminho.is_empty() and ResourceLoader.exists(caminho):
 		var recurso := load(caminho)
@@ -153,9 +177,64 @@ func atualizar_ui() -> void:
 		display_skill.texture = HabilidadeEquipada.Icone
 	else:
 		display_skill.texture = null
+	atualizar_barra_cooldown_habilidade()
 
 	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
+
+
+func criar_barra_cooldown_habilidade() -> void:
+	if not is_instance_valid(display_skill):
+		return
+
+	barra_cooldown_habilidade = TextureProgressBar.new()
+	barra_cooldown_habilidade.name = "CooldownHabilidade"
+	# Tamanho fixo e âncoras no centro impedem o indicador de deslocar quando
+	# o DisplaySkill possui dimensões diferentes da textura do ícone.
+	barra_cooldown_habilidade.anchor_left = 0.5
+	barra_cooldown_habilidade.anchor_right = 0.5
+	barra_cooldown_habilidade.anchor_top = 0.5
+	barra_cooldown_habilidade.anchor_bottom = 0.5
+	barra_cooldown_habilidade.offset_left = -32.0
+	barra_cooldown_habilidade.offset_right = 32.0
+	barra_cooldown_habilidade.offset_top = -32.0
+	barra_cooldown_habilidade.offset_bottom = 32.0
+	barra_cooldown_habilidade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	barra_cooldown_habilidade.z_index = 5
+	barra_cooldown_habilidade.min_value = 0.0
+	barra_cooldown_habilidade.step = 0.01
+	barra_cooldown_habilidade.fill_mode = TextureProgressBar.FILL_CLOCKWISE
+	barra_cooldown_habilidade.radial_initial_angle = 270.0
+	barra_cooldown_habilidade.radial_fill_degrees = 360.0
+	barra_cooldown_habilidade.texture_under = null
+	barra_cooldown_habilidade.texture_progress = TEXTURA_COOLDOWN_RELOGIO
+	barra_cooldown_habilidade.tint_progress = Color(1.0, 1.0, 1.0, 0.52)
+	barra_cooldown_habilidade.hide()
+	display_skill.add_child(barra_cooldown_habilidade)
+
+
+func atualizar_barra_cooldown_habilidade() -> void:
+	if not is_instance_valid(barra_cooldown_habilidade):
+		return
+	if (
+		not HabilidadeEquipada
+		or HabilidadeEquipada.cooldown_atual <= 0.0
+	):
+		barra_cooldown_habilidade.hide()
+		return
+
+	barra_cooldown_habilidade.show()
+	barra_cooldown_habilidade.max_value = maxf(HabilidadeEquipada.Cooldown, 0.01)
+	# O disco começa cheio e esvazia no sentido horário enquanto recarrega.
+	barra_cooldown_habilidade.value = clampf(
+		HabilidadeEquipada.cooldown_atual,
+		0.0,
+		barra_cooldown_habilidade.max_value
+	)
+	barra_cooldown_habilidade.modulate = Color.WHITE
+	barra_cooldown_habilidade.tooltip_text = "Recarga: %.1f s" % [
+		HabilidadeEquipada.cooldown_atual
+	]
 
 
 func atualizar_vida() -> void:
@@ -224,6 +303,7 @@ func IniciarHabilidade(concede_invulnerabilidade := false) -> void:
 func EncerrarHabilidade() -> void:
 	UsandoHabilidade = false
 	invulneravel_por_habilidade = false
+	dano_colisao_habilidade = 0.0
 
 
 func atualizar_movimento(delta: float) -> void:
@@ -315,7 +395,10 @@ func fire() -> void:
 	somtiro.pitch_scale = randf_range(0.9, 1.1)
 	somtiro.play()
 	var fator_cadencia := 0.75 if tempo_overdrive > 0.0 else 1.0
-	cooldown = maxf(CD_MAX * fator_cadencia, 0.04)
+	cooldown = maxf(
+		CD_MAX * fator_cadencia * multiplicador_cadencia_habilidade,
+		0.04
+	)
 
 
 func criar_projetil(
@@ -332,6 +415,7 @@ func criar_projetil(
 	var dano_final := (
 		dano
 		* multiplicador_dano_projetil
+		* multiplicador_dano_habilidade
 		* bonus_overdrive
 		* multiplicador_dano_extra
 	)
@@ -363,7 +447,19 @@ func tomar_dano(valor: float) -> void:
 	if invencibilidade or invulneravel_por_habilidade or not vivo:
 		return
 
-	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
+	var dano_restante := maxf(valor, 0.0)
+	if escudo_habilidade > 0.0:
+		var absorvido := minf(escudo_habilidade, dano_restante)
+		escudo_habilidade -= absorvido
+		dano_restante -= absorvido
+		queue_redraw()
+
+	var dano_final := maxf(
+		dano_restante
+		* multiplicador_dano_recebido
+		* resistencia_temporaria_multiplicador,
+		0.0
+	)
 	vida = maxf(vida - dano_final, 0.0)
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
@@ -375,6 +471,63 @@ func curar(valor: float) -> void:
 		return
 
 	vida = minf(vida + valor * multiplicador_cura_recebida, VIDA_MAXIMA)
+
+
+func sacrificar_vida(valor: float) -> bool:
+	var custo := maxf(valor, 0.0)
+	if not vivo or custo <= 0.0 or vida <= custo + 1.0:
+		return false
+	vida -= custo
+	return true
+
+
+func ativar_escudo(valor: float, duracao: float, cor: Color) -> void:
+	escudo_habilidade = maxf(valor, 0.0)
+	escudo_habilidade_max = escudo_habilidade
+	tempo_escudo_habilidade = maxf(duracao, 0.0)
+	cor_escudo_habilidade = cor
+	queue_redraw()
+
+
+func aplicar_resistencia_temporaria(multiplicador: float, duracao: float) -> void:
+	resistencia_temporaria_multiplicador = clampf(multiplicador, 0.05, 1.0)
+	tempo_resistencia_temporaria = maxf(duracao, 0.0)
+
+
+func atualizar_efeitos_temporarios(delta: float) -> void:
+	if tempo_escudo_habilidade > 0.0:
+		tempo_escudo_habilidade = maxf(tempo_escudo_habilidade - delta, 0.0)
+		if tempo_escudo_habilidade <= 0.0:
+			escudo_habilidade = 0.0
+		queue_redraw()
+
+	if tempo_resistencia_temporaria > 0.0:
+		tempo_resistencia_temporaria = maxf(
+			tempo_resistencia_temporaria - delta,
+			0.0
+		)
+		if tempo_resistencia_temporaria <= 0.0:
+			resistencia_temporaria_multiplicador = 1.0
+
+
+func _draw() -> void:
+	if escudo_habilidade <= 0.0 or escudo_habilidade_max <= 0.0:
+		return
+
+	var proporcao := clampf(escudo_habilidade / escudo_habilidade_max, 0.0, 1.0)
+	var cor_fundo := cor_escudo_habilidade
+	cor_fundo.a = 0.10
+	draw_circle(Vector2.ZERO, 39.0, cor_fundo)
+	draw_arc(
+		Vector2.ZERO,
+		39.0,
+		-PI * 0.5,
+		-PI * 0.5 + TAU * proporcao,
+		48,
+		cor_escudo_habilidade,
+		3.0,
+		true
+	)
 
 
 func ganhar_xp(valor: float) -> void:
@@ -395,7 +548,7 @@ func subir_de_nivel() -> void:
 func comprar_upgrade(id: StringName) -> bool:
 	if pontos_upgrade_pendentes <= 0:
 		return false
-	if not DadosUpgrades.disponivel(id, niveis_upgrades):
+	if not DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada):
 		return false
 
 	var novo_nivel := DadosUpgrades.nivel(id, niveis_upgrades) + 1
@@ -467,6 +620,12 @@ func aplicar_upgrade(id: StringName) -> void:
 			forca_mira_gravitacional += 2.5
 		&"reator_sincronizado":
 			reator_sincronizado = true
+		_:
+			if HabilidadeEquipada:
+				HabilidadeEquipada.aplicar_upgrade_especifico(
+					id,
+					DadosUpgrades.nivel(id, niveis_upgrades)
+				)
 
 
 # Mantém scripts antigos funcionando caso alguma cena ainda chame este método.
@@ -537,6 +696,11 @@ func atualizar_limites() -> void:
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if not vivo or not body.is_in_group("inimigo"):
 		return
+	if UsandoHabilidade and dano_colisao_habilidade > 0.0:
+		if body.has_method("tomarDano"):
+			body.tomarDano(dano_colisao_habilidade)
+		if body.is_queued_for_deletion():
+			return
 
 	if body.has_method("ao_colidir_com_player"):
 		body.ao_colidir_com_player(self)

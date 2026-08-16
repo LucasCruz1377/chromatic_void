@@ -53,7 +53,7 @@ func iniciar_aviso(direcao: Vector2) -> void:
 	direcao_tiro = direcao
 	linha_aviso.points = PackedVector2Array([Vector2.ZERO, direcao_tiro * 520.0])
 	linha_aviso.visible = true
-	visual.modulate = Color(1.5, 0.55, 1.8, 1.0)
+	visual.modulate = Color(1.0, 0.55, 1.0, 1.0)
 
 
 func atualizar_aviso(delta: float) -> void:

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeAbracoMaterno" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Habilidades/AbracoMaterno.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/abraco_materno.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = &"dia_das_maes"
+Nome = "Abraço Materno"
+Descricao = "Recupera 32 de vida e reduz temporariamente o dano recebido. O Monthly Colors marca o Dia das Mães no calendário de maio e apresenta o mês pelas ideias de proteção e cuidado; a habilidade traduz esse acolhimento em cura e resistência."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "MAIO • DIA DAS MÃES"
+MonthlyColorsContexto = "Cura e resistência representam o acolhimento e a proteção associados a maio no site."
+Cooldown = 14.0

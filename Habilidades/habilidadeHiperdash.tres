@@ -1,22 +1,15 @@
-[gd_resource type="Resource" script_class="HabilidadeHiperdash" format=3 uid="uid://cah4trcuntsvr"]
+[gd_resource type="Resource" script_class="HabilidadeHiperdash" load_steps=3 format=3 uid="uid://cah4trcuntsvr"]
 
-[ext_resource type="Script" uid="uid://b72qka705e4eg" path="res://Habilidades/Hiperdash.gd" id="1_dash"]
-
-[sub_resource type="Gradient" id="Gradient_dash"]
-colors = PackedColorArray(0, 0.7, 1, 1, 0.2, 1, 0.9, 1)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture_dash"]
-gradient = SubResource("Gradient_dash")
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1, 1)
+[ext_resource type="Script" path="res://Habilidades/Hiperdash.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Habilidades/Icones/hiperdash.svg" id="2"]
 
 [resource]
-script = ExtResource("1_dash")
+script = ExtResource("1")
 duracao_dash = 0.5
 Id = &"hiperdash"
 Nome = "Hiperdash"
-Descricao = "Prepara a nave e dispara um avanço veloz, invulnerável e com rastro."
-Icone = SubResource("GradientTexture_dash")
+Descricao = "Prepara a nave e dispara um avanço veloz, invulnerável e com rastro. No Monthly Colors, Maio Amarelo chama atenção para a segurança no trânsito e para a redução de acidentes; no jogo, velocidade exige escolher e controlar a trajetória."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "MAIO AMARELO • ATENÇÃO"
+MonthlyColorsContexto = "O impulso veloz representa deslocamento, enquanto a direção controlada reforça a atenção defendida pelo Maio Amarelo."
 Cooldown = 6.0
-metadata/_custom_type_script = "uid://b72qka705e4eg"
