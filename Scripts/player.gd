@@ -52,6 +52,13 @@ var invencibilidade_cd := 0.0
 var invencibilidade_cd_max := 3.0
 var save := false
 
+# Progressão roguelike da partida. Esses dados não são salvos entre runs.
+var pontos_skill: int = 0
+var niveis_skill: Dictionary = {}
+var cura_ao_subir_nivel := 0.0
+var sinergia_impacto_cinetico := false
+var sinergia_simbiose_energetica := false
+
 
 enum Upgrade {
 	CADENCIA,
@@ -63,6 +70,8 @@ enum Upgrade {
 
 
 signal subiuDeNivel()
+signal pontos_skill_alterados(novo_total: int)
+signal upgrade_skill_adquirido(id: StringName, novo_nivel: int)
 
 
 func _ready() -> void:
@@ -155,7 +164,9 @@ func atualizar_habilidade(delta: float) -> void:
 		return
 
 	if vivo and Input.is_action_just_pressed("Habilidade"):
-		HabilidadeEquipada.activate(self)
+		var ativou := HabilidadeEquipada.activate(self)
+		if ativou and sinergia_simbiose_energetica:
+			curar(VIDA_MAXIMA * 0.03)
 
 
 func IniciarHabilidade(concede_invulnerabilidade := false) -> void:
@@ -231,12 +242,20 @@ func fire() -> void:
 
 	var instance_bullet = tiro.instantiate()
 	get_tree().current_scene.add_child(instance_bullet)
-	instance_bullet.dmg = dano
+	instance_bullet.dmg = dano * calcular_multiplicador_impacto()
 	instance_bullet.global_position = PontaArma.global_position
 	instance_bullet.rotation = rotation
 	somtiro.pitch_scale = randf_range(0.9, 1.1)
 	somtiro.play()
 	cooldown = CD_MAX
+
+
+func calcular_multiplicador_impacto() -> float:
+	if not sinergia_impacto_cinetico:
+		return 1.0
+
+	var proporcao := clampf(velocity.length() / maxf(MAX_VELOCIDADE, 1.0), 0.0, 1.0)
+	return lerpf(1.0, 1.5, proporcao)
 
 
 func tomar_dano(valor: float) -> void:
@@ -266,25 +285,103 @@ func subir_de_nivel() -> void:
 	nivel_atual += 1
 	xp_atual = 0.0
 	xp_necessario += 2
+	pontos_skill += 1
+
+	if cura_ao_subir_nivel > 0.0:
+		curar(VIDA_MAXIMA * cura_ao_subir_nivel)
+
+	pontos_skill_alterados.emit(pontos_skill)
 	subiuDeNivel.emit()
 
 
-func receber_upgrade(tipo: Upgrade) -> void:
-	match tipo:
-		Upgrade.CADENCIA:
-			CD_MAX *= 0.9
+func comprar_upgrade_skill(id: StringName) -> bool:
+	if pontos_skill <= 0:
+		return false
+	if not SkillTreeData.pode_comprar(id, niveis_skill):
+		return false
+
+	var novo_nivel := SkillTreeData.obter_nivel(id, niveis_skill) + 1
+	niveis_skill[id] = novo_nivel
+	pontos_skill -= 1
+	aplicar_efeito_skill(id)
+
+	pontos_skill_alterados.emit(pontos_skill)
+	upgrade_skill_adquirido.emit(id, novo_nivel)
+	return true
+
+
+func aplicar_efeito_skill(id: StringName) -> void:
+	match id:
+		SkillTreeData.ID_DANO:
+			dano += 0.4
+		SkillTreeData.ID_CADENCIA:
+			CD_MAX = maxf(CD_MAX * 0.9, 0.05)
 			if HabilidadeEquipada:
 				HabilidadeEquipada.reduzir_cooldown(0.9)
-		Upgrade.BLINDAGEM:
-			VIDA_MAXIMA *= 1.1
-			vida = VIDA_MAXIMA
-		Upgrade.DANO:
-			dano += 0.5
-		Upgrade.VELOCIDADE:
+		SkillTreeData.ID_SOBRECARGA:
+			dano *= 1.35
+			CD_MAX = maxf(CD_MAX * 0.85, 0.05)
+			VIDA_MAXIMA *= 0.9
+			vida = minf(vida, VIDA_MAXIMA)
+		SkillTreeData.ID_PROPULSAO:
 			MAX_VELOCIDADE *= 1.1
-			SPEED *= 1.05
+			SPEED *= 1.1
+		SkillTreeData.ID_GIROSCOPIO:
+			VelocidadeVirar *= 1.12
+		SkillTreeData.ID_IMPACTO:
+			sinergia_impacto_cinetico = true
+		SkillTreeData.ID_BLINDAGEM:
+			var vida_antiga := VIDA_MAXIMA
+			VIDA_MAXIMA *= 1.12
+			vida += VIDA_MAXIMA - vida_antiga
+		SkillTreeData.ID_RESILIENCIA:
+			multiplicador_dano_recebido *= 0.93
+		SkillTreeData.ID_ESCUDO:
+			multiplicador_dano_recebido *= 0.85
+			invencibilidade_cd_max += 0.35
+		SkillTreeData.ID_FLUXO:
+			if HabilidadeEquipada:
+				HabilidadeEquipada.reduzir_cooldown(0.9)
+		SkillTreeData.ID_RECICLAGEM:
+			cura_ao_subir_nivel += 0.04
+		SkillTreeData.ID_SIMBIOSE:
+			sinergia_simbiose_energetica = true
+		SkillTreeData.ID_PRISMA:
+			var vida_antiga := VIDA_MAXIMA
+			dano *= 1.2
+			MAX_VELOCIDADE *= 1.1
+			SPEED *= 1.1
+			VIDA_MAXIMA *= 1.15
+			vida += VIDA_MAXIMA - vida_antiga
+
+
+# Compatibilidade com o sistema antigo de cartas. A nova tela usa
+# comprar_upgrade_skill(), mas chamadas antigas continuam funcionando.
+func receber_upgrade(tipo: int) -> void:
+	var id: StringName
+	match tipo:
+		Upgrade.CADENCIA:
+			id = SkillTreeData.ID_CADENCIA
+		Upgrade.BLINDAGEM:
+			id = SkillTreeData.ID_BLINDAGEM
+		Upgrade.DANO:
+			id = SkillTreeData.ID_DANO
+		Upgrade.VELOCIDADE:
+			id = SkillTreeData.ID_PROPULSAO
 		Upgrade.TURNSPD:
-			VelocidadeVirar *= 1.1
+			id = SkillTreeData.ID_GIROSCOPIO
+		_:
+			return
+
+	var dados := SkillTreeData.obter_dados(id)
+	var atual := SkillTreeData.obter_nivel(id, niveis_skill)
+	var max_nivel := int(dados.get("max_nivel", 1))
+	if atual >= max_nivel:
+		return
+
+	niveis_skill[id] = atual + 1
+	aplicar_efeito_skill(id)
+	upgrade_skill_adquirido.emit(id, atual + 1)
 
 
 func morrer() -> void:
