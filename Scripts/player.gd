@@ -116,8 +116,6 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	if Input.is_action_just_pressed("switchcontrole"):
-		xp_atual += 1
 	
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
