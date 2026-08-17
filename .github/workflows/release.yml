@@ -1,0 +1,38 @@
+name: CD - Publicar Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    name: Exportar e publicar
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v5
+
+      - name: Exportar com Godot
+        id: export
+        uses: firebelley/godot-export@v8.0.0
+        with:
+          godot_executable_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz
+          relative_project_path: ./
+          archive_output: true
+          cache: true
+
+      - name: Criar GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            ${{ steps.export.outputs.archive_directory }}/* \
+            --title "Chromatic Void $GITHUB_REF_NAME" \
+            --generate-notes \
+            --prerelease
