@@ -109,6 +109,9 @@ var detalhe_stats: VBoxContainer
 var detalhe_preco: Label
 var botao_acao: Button
 var mensagem: Label
+var rolagem_grade: ScrollContainer
+var rolagem_detalhes: ScrollContainer
+var botoes_habilidades: Array[Button] = []
 
 
 func _ready() -> void:
@@ -126,10 +129,47 @@ func _ready() -> void:
 	call_deferred("_focar_primeiro_item")
 
 
+func _input(event: InputEvent) -> void:
+	# No controle, X/Cross confirma a habilidade focada. O foco já atualiza
+	# os detalhes; esta confirmação compra ou equipa, como o botão da direita.
+	if not event.is_action_pressed("ui_accept"):
+		return
+	if event is InputEventKey and event.echo:
+		return
+	var foco := get_viewport().gui_get_focus_owner()
+	if foco is Button and foco in botoes_habilidades:
+		get_viewport().set_input_as_handled()
+		_on_acao_pressed()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_on_voltar_pressed()
+	elif event.is_action_pressed("aba_anterior"):
+		get_viewport().set_input_as_handled()
+		selecionar_categoria(wrapi(categoria_atual - 1, 0, CATEGORIAS.size()))
+	elif event.is_action_pressed("proxima_aba"):
+		get_viewport().set_input_as_handled()
+		selecionar_categoria(wrapi(categoria_atual + 1, 0, CATEGORIAS.size()))
+
+
+func _process(delta: float) -> void:
+	# O direcional/analógico esquerdo continua movendo o foco. O analógico
+	# direito passa a controlar a rolagem sem tirar o foco do item atual.
+	var controles := Input.get_connected_joypads()
+	if controles.is_empty():
+		return
+	var eixo := Input.get_joy_axis(controles[0], JOY_AXIS_RIGHT_Y)
+	if absf(eixo) < Global.zona_morta_controle:
+		return
+	var foco := get_viewport().gui_get_focus_owner()
+	var alvo := rolagem_grade
+	if is_instance_valid(rolagem_detalhes) and is_instance_valid(foco):
+		if rolagem_detalhes.is_ancestor_of(foco):
+			alvo = rolagem_detalhes
+	if is_instance_valid(alvo):
+		alvo.scroll_vertical += roundi(eixo * 460.0 * delta)
 
 
 func carregar_catalogo() -> void:
@@ -147,7 +187,7 @@ func carregar_catalogo() -> void:
 
 
 func carregar_estado() -> void:
-	var dados := GerenciadorDeSave.carregar()
+	var dados: Dictionary = GerenciadorDeSave.carregar()
 	var versao := int(dados.get("versao_loja", 0))
 
 	desbloqueadas.clear()
@@ -338,23 +378,23 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	moldura_rolagem.clip_contents = true
 	esquerda.add_child(moldura_rolagem)
 
-	var rolagem := ScrollContainer.new()
-	rolagem.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	rolagem.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	rolagem.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	moldura_rolagem.add_child(rolagem)
+	rolagem_grade = ScrollContainer.new()
+	rolagem_grade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rolagem_grade.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rolagem_grade.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rolagem_grade.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	moldura_rolagem.add_child(rolagem_grade)
 
 	grade = GridContainer.new()
 	grade.columns = 3
 	grade.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grade.add_theme_constant_override("h_separation", 8)
 	grade.add_theme_constant_override("v_separation", 8)
-	rolagem.add_child(grade)
+	rolagem_grade.add_child(grade)
 
 	var dica := Label.new()
-	dica.text = "Selecione um módulo para ver detalhes • Compras ficam salvas"
+	dica.text = "L1/R1 troca abas • X compra/equipa • analógico direito rola"
 	dica.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dica.add_theme_color_override("font_color", Color(0.40, 0.50, 0.68))
 	aplicar_fonte(dica, 9)
@@ -383,7 +423,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	moldura_detalhes.clip_contents = true
 	margem.add_child(moldura_detalhes)
 
-	var rolagem_detalhes := ScrollContainer.new()
+	rolagem_detalhes = ScrollContainer.new()
 	rolagem_detalhes.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	rolagem_detalhes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rolagem_detalhes.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -507,6 +547,7 @@ func atualizar_botoes_categorias() -> void:
 
 func limpar_grade() -> void:
 	paineis_cartoes.clear()
+	botoes_habilidades.clear()
 	for filho in grade.get_children():
 		grade.remove_child(filho)
 		filho.queue_free()
@@ -594,8 +635,15 @@ func criar_cartao_habilidade(indice: int) -> void:
 		criar_estilo(Color(0, 0, 0, 0), cor, 10, 2)
 	)
 	botao.pressed.connect(selecionar_habilidade.bind(indice))
-	botao.focus_entered.connect(selecionar_habilidade.bind(indice))
+	botao.focus_entered.connect(_on_cartao_focado.bind(indice, botao))
 	wrapper.add_child(botao)
+	botoes_habilidades.append(botao)
+
+
+func _on_cartao_focado(indice: int, botao: Button) -> void:
+	selecionar_habilidade(indice)
+	if is_instance_valid(rolagem_grade):
+		rolagem_grade.call_deferred("ensure_control_visible", botao)
 
 
 func selecionar_habilidade(indice: int) -> void:
@@ -755,6 +803,9 @@ func _on_acao_pressed() -> void:
 	var dados: Dictionary = dados_habilidades[indice_selecionado]
 	var caminho := habilidade.resource_path
 	var preco := int(dados["preco"])
+	if caminho == caminho_equipado:
+		mensagem.text = "%s JÁ ESTÁ EQUIPADA" % habilidade.Nome.to_upper()
+		return
 
 	if caminho not in desbloqueadas and not Global.modo_desenvolvedor:
 		if not Global.gastar_cristais(preco):
@@ -771,6 +822,7 @@ func _on_acao_pressed() -> void:
 	Global.vibrar_controle(0.18, 0.32, 0.12)
 	reconstruir_grade_habilidades()
 	atualizar_detalhes()
+	call_deferred("_focar_habilidade_selecionada")
 
 
 func esta_liberada(caminho: String) -> bool:
@@ -813,6 +865,17 @@ func _focar_primeiro_item() -> void:
 			botoes[0].grab_focus()
 			return
 	botoes_categorias[categoria_atual].grab_focus()
+
+
+func _focar_habilidade_selecionada() -> void:
+	if (
+		categoria_atual == 0
+		and indice_selecionado >= 0
+		and indice_selecionado < botoes_habilidades.size()
+	):
+		botoes_habilidades[indice_selecionado].grab_focus()
+		return
+	_focar_primeiro_item()
 
 
 func _on_voltar_pressed() -> void:

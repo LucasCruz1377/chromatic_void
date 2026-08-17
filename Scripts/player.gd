@@ -58,7 +58,7 @@ var tempo_resistencia_temporaria := 0.0
 var resistencia_temporaria_multiplicador := 1.0
 var dano_colisao_habilidade := 0.0
 var xp_atual: float = 0.0
-var nivel_atual: int = 1
+var nivel_atual: int = 0
 var xp_necessario: int = 3
 var invencibilidade := false
 var invencibilidade_cd := 0.0
@@ -116,6 +116,9 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
+	if Input.is_action_just_pressed("switchcontrole"):
+		xp_atual += 1
+	
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
@@ -129,7 +132,7 @@ func _process(delta: float) -> void:
 
 
 func carregar_habilidade_equipada() -> void:
-	var dados := GerenciadorDeSave.carregar()
+	var dados: Dictionary = GerenciadorDeSave.carregar()
 	var caminho := str(dados.get("habilidade_equipada", ""))
 	var habilidade_carregada: Habilidade
 
