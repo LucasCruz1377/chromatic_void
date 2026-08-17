@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/BossMensal.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="Shape"]
+radius = 52.0
+
+[node name="BossFlorEquinocio" type="CharacterBody2D" groups=["boss", "inimigo"]]
+z_index = 3
+collision_layer = 4
+collision_mask = 11
+script = ExtResource("1")
+VidaMaxima = 270.0
+Dano = 30.0
+ValorXP = 15.0
+Velocidade = 88.0
+resistencia_empurrao = 1.0
+morre_ao_colidir_player = false
+pontos_base = 2400
+valor_cristais = 180
+tema = 0
+nome_exibicao = "FLOR DO EQUINÓCIO"
+selo_monthly_colors = "PRIMAVERA • SETEMBRO"
+cor_principal = Color(1, 0.3, 0.66, 1)
+cor_secundaria = Color(0.3, 1, 0.55, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape")
+

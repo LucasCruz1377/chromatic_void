@@ -1,19 +1,30 @@
 extends Node2D
 
 
-const INIMIGO_SEGUIDOR := preload("res://Entities/InimigoSeguidor.tscn")
-const INIMIGO_MELEE := preload("res://Entities/InimigoMelee.tscn")
-const INIMIGO_INVESTIDA := preload("res://Entities/InimigoInvestida.tscn")
-const INIMIGO_TANQUE := preload("res://Entities/InimigoTanque.tscn")
-const INIMIGO_ATIRADOR := preload("res://Entities/InimigoAtirador.tscn")
-const BOSS_PET0 := preload("res://Entities/BossPet0.tscn")
-const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
+const DadosSetores = preload("res://Scripts/SectorData.gd")
 
+const INIMIGOS: Dictionary = {
+	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
+	&"melee": preload("res://Entities/InimigoMelee.tscn"),
+	&"investida": preload("res://Entities/InimigoInvestida.tscn"),
+	&"tanque": preload("res://Entities/InimigoTanque.tscn"),
+	&"atirador": preload("res://Entities/InimigoAtirador.tscn"),
+}
+
+const BOSSES: Dictionary = {
+	&"pet0": preload("res://Entities/BossPet0.tscn"),
+	&"flor_equinocio": preload("res://Entities/BossFlorEquinocio.tscn"),
+	&"eclipse_colheita": preload("res://Entities/BossEclipseColheita.tscn"),
+	&"sentinela_dourada": preload("res://Entities/BossSentinelaDourada.tscn"),
+	&"ruptura_lilas": preload("res://Entities/BossRupturaLilas.tscn"),
+}
+
+const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
 const TIMER_MAX := 3.0
 const TIMER_MIN := 0.5
 const MAX_ENEMIES := 30
 const MAX_ENEMIES_BASE := 8
-
+const INTERVALO_BOSS := 10
 
 @export_category("Asteroides bônus")
 @export_range(8.0, 90.0, 1.0) var intervalo_asteroide_min: float = 18.0
@@ -21,9 +32,8 @@ const MAX_ENEMIES_BASE := 8
 @export_range(0.0, 1.0, 0.05) var chance_asteroide: float = 0.65
 @export_range(0, 4, 1) var max_asteroides: int = 2
 
-@export_category("Boss PET-0")
-@export var ativar_boss_pet0: bool = true
-@export var nivel_boss_pet0: int = 10
+@export_category("Setores e bosses")
+@export var ativar_bosses: bool = true
 @export var testar_boss_ao_iniciar: bool = false
 
 @onready var contpontos: Label = $GUI/Pontos
@@ -31,6 +41,7 @@ const MAX_ENEMIES_BASE := 8
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 @onready var astro = $GUI/Astro
+@onready var fundo_original: CanvasItem = $espaco
 
 var pontos: float = 0.0
 var timer: float = TIMER_MAX
@@ -38,20 +49,27 @@ var tutorial_ativo: bool = false
 var game_over: bool = false
 var tempo_asteroide: float = 0.0
 
-var boss_invocado: bool = false
-var boss_derrotado: bool = false
-var boss_ativo: BossPet0
+# A partida sempre começa aqui. Não existe tela de escolha antes do PET-0.
+var setor_atual: StringName = &"vazio_inicial"
+var setores_concluidos: Array[StringName] = []
+var proximo_nivel_boss: int = INTERVALO_BOSS
+var escolha_setor_ativa: bool = false
+var camada_escolha: CanvasLayer
+var fundo_setor: ColorRect
+var rotulo_setor: Label
+
+var boss_ativo: InimigoBase
+var boss_atual_id: StringName = &""
 var boss_hud: VBoxContainer
 var boss_nome: Label
 var boss_vida: ProgressBar
-var boss_reciclagem_texto: Label
-var boss_reciclagem: ProgressBar
+var boss_detalhe_texto: Label
+var boss_detalhe: ProgressBar
 
 
 func _ready() -> void:
 	get_tree().paused = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
-
 	Global.Pontos = 0
 	Global.Combo = 0
 	pontos = 0.0
@@ -59,13 +77,14 @@ func _ready() -> void:
 	game_over = false
 	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	caixa_gameover.visible = false
+	criar_visual_setor()
+	aplicar_setor(&"vazio_inicial")
 
 	if not tocarmusica.playing:
 		tocarmusica.play()
 
-	var dados := GerenciadorDeSave.carregar()
-	var tutorial_concluido = dados.get("tutorialconcluido", false) == true
-
+	var dados: Dictionary = GerenciadorDeSave.carregar()
+	var tutorial_concluido: bool = dados.get("tutorialconcluido", false) == true
 	if not tutorial_concluido:
 		tutorial_ativo = true
 		limpar_inimigos_sem_recompensa()
@@ -75,30 +94,26 @@ func _ready() -> void:
 		if is_instance_valid(astro):
 			astro.queue_free()
 
-		if testar_boss_ao_iniciar:
-			call_deferred("invocar_boss_pet0")
+	if testar_boss_ao_iniciar:
+		proximo_nivel_boss = 1
 
 
 func _process(delta: float) -> void:
-	if game_over:
+	if game_over or escolha_setor_ativa:
 		return
-
 	atualizar_pontos(delta)
-
 	if get_tree().get_nodes_in_group("player").is_empty():
 		game_over = true
 		caixa_gameover.visible = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		return
-
 	if tutorial_ativo:
 		return
 
 	processar_asteroides(delta)
-
 	if deve_invocar_boss():
-		invocar_boss_pet0()
+		invocar_boss_do_setor()
 		return
-
 	if is_instance_valid(boss_ativo):
 		return
 
@@ -130,7 +145,6 @@ func finalizar_tutorial() -> void:
 func calcular_tempo_spawn() -> float:
 	if not is_instance_valid(player):
 		return TIMER_MAX
-
 	var reducao := floori(player.nivel_atual / 5.0) * 0.15
 	return clampf(TIMER_MAX - reducao, TIMER_MIN, TIMER_MAX)
 
@@ -138,50 +152,59 @@ func calcular_tempo_spawn() -> float:
 func spawnar_enemy() -> void:
 	if tutorial_ativo or not is_instance_valid(player) or is_instance_valid(boss_ativo):
 		return
-
 	var spawners := get_tree().get_nodes_in_group("spawners")
 	if spawners.is_empty():
 		return
-
-	var inimigos := get_tree().get_nodes_in_group("inimigo")
-	if inimigos.size() >= calcular_limite_inimigos():
+	if get_tree().get_nodes_in_group("inimigo").size() >= calcular_limite_inimigos():
 		return
 
 	var cena_escolhida := escolher_tipo_inimigo(player.nivel_atual)
 	var inimigo := cena_escolhida.instantiate() as Node2D
-	if not inimigo:
-		return
 	var spawner := spawners.pick_random() as Node2D
-	if not spawner:
-		inimigo.queue_free()
+	if not is_instance_valid(inimigo) or not is_instance_valid(spawner):
+		if is_instance_valid(inimigo):
+			inimigo.queue_free()
 		return
 	add_child(inimigo)
 	inimigo.global_position = spawner.global_position
 
 
 func escolher_tipo_inimigo(nivel: int) -> PackedScene:
-	# Repetições funcionam como pesos: o Seguidor continua sendo o mais comum.
-	var opcoes: Array[PackedScene] = [INIMIGO_SEGUIDOR, INIMIGO_SEGUIDOR]
+	# O setor inicial mantém exatamente a progressão de inimigos da main.
+	if setor_atual == &"vazio_inicial":
+		var opcoes_originais: Array[PackedScene] = [
+			INIMIGOS[&"seguidor"], INIMIGOS[&"seguidor"]
+		]
+		if nivel >= 2:
+			opcoes_originais.append(INIMIGOS[&"melee"])
+		if nivel >= 3:
+			opcoes_originais.append(INIMIGOS[&"investida"])
+		if nivel >= 4:
+			opcoes_originais.append(INIMIGOS[&"tanque"])
+		if nivel >= 5:
+			opcoes_originais.append(INIMIGOS[&"atirador"])
+		if nivel >= 7:
+			opcoes_originais.append(INIMIGOS[&"atirador"])
+			opcoes_originais.append(INIMIGOS[&"investida"])
+		return opcoes_originais.pick_random()
 
-	if nivel >= 2:
-		opcoes.append(INIMIGO_MELEE)
-	if nivel >= 3:
-		opcoes.append(INIMIGO_INVESTIDA)
-	if nivel >= 4:
-		opcoes.append(INIMIGO_TANQUE)
-	if nivel >= 5:
-		opcoes.append(INIMIGO_ATIRADOR)
-	if nivel >= 7:
-		opcoes.append(INIMIGO_ATIRADOR)
-		opcoes.append(INIMIGO_INVESTIDA)
-
-	return opcoes.pick_random()
+	var composicao: Array = DadosSetores.obter(setor_atual).get("inimigos", [])
+	if composicao.is_empty():
+		return INIMIGOS[&"seguidor"]
+	var peso_total := 0.0
+	for entrada in composicao:
+		peso_total += float(entrada[1])
+	var alvo := randf() * peso_total
+	for entrada in composicao:
+		alvo -= float(entrada[1])
+		if alvo <= 0.0:
+			return INIMIGOS.get(StringName(entrada[0]), INIMIGOS[&"seguidor"])
+	return INIMIGOS[&"seguidor"]
 
 
 func calcular_limite_inimigos() -> int:
 	if not is_instance_valid(player):
 		return MAX_ENEMIES_BASE
-
 	var limite := MAX_ENEMIES_BASE + floori(player.nivel_atual / 3.0)
 	return clampi(limite, MAX_ENEMIES_BASE, MAX_ENEMIES)
 
@@ -190,31 +213,23 @@ func processar_asteroides(delta: float) -> void:
 	tempo_asteroide -= delta
 	if tempo_asteroide > 0.0:
 		return
-
 	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	if max_asteroides <= 0 or randf() > chance_asteroide:
 		return
-	if get_tree().get_nodes_in_group("asteroide_bonus").size() >= max_asteroides:
-		return
-	spawnar_asteroide_bonus()
+	if get_tree().get_nodes_in_group("asteroide_bonus").size() < max_asteroides:
+		spawnar_asteroide_bonus()
 
 
 func spawnar_asteroide_bonus() -> void:
 	if not is_instance_valid(player):
 		return
-
 	var spawners := get_tree().get_nodes_in_group("spawners")
 	if spawners.is_empty():
 		return
-
 	var spawner := spawners.pick_random() as Node2D
-	if not is_instance_valid(spawner):
-		return
-
 	var asteroide := ASTEROIDE_BONUS.instantiate() as InimigoBase
-	if not is_instance_valid(asteroide):
+	if not is_instance_valid(asteroide) or not is_instance_valid(spawner):
 		return
-
 	add_child(asteroide)
 	asteroide.global_position = spawner.global_position
 	if asteroide.has_method("configurar_movimento"):
@@ -227,56 +242,64 @@ func spawnar_asteroide_bonus() -> void:
 
 func deve_invocar_boss() -> bool:
 	return (
-		ativar_boss_pet0
-		and not boss_invocado
-		and not boss_derrotado
+		ativar_bosses
+		and setor_atual not in setores_concluidos
 		and is_instance_valid(player)
-		and player.nivel_atual >= nivel_boss_pet0
+		and not is_instance_valid(boss_ativo)
+		and player.nivel_atual >= proximo_nivel_boss
 	)
 
 
-func invocar_boss_pet0() -> void:
-	boss_invocado = true
+func invocar_boss_do_setor() -> void:
+	if is_instance_valid(boss_ativo) or setor_atual in setores_concluidos:
+		return
 	limpar_inimigos_sem_recompensa()
-
-	boss_ativo = BOSS_PET0.instantiate() as BossPet0
+	var dados_setor := DadosSetores.obter(setor_atual)
+	boss_atual_id = StringName(dados_setor.get("boss", &"pet0"))
+	var cena: PackedScene = BOSSES.get(boss_atual_id, BOSSES[&"pet0"])
+	boss_ativo = cena.instantiate() as InimigoBase
+	if not is_instance_valid(boss_ativo):
+		push_error("Não foi possível criar o boss do setor %s." % setor_atual)
+		return
 	add_child(boss_ativo)
-
 	var posicao_boss := Vector2(760.0, 270.0)
-	if is_instance_valid(player) and player.global_position.distance_to(posicao_boss) < 220.0:
+	if player.global_position.distance_to(posicao_boss) < 220.0:
 		posicao_boss = Vector2(200.0, 270.0)
 	boss_ativo.global_position = posicao_boss
+	if boss_ativo.has_method("configurar_dificuldade"):
+		boss_ativo.call("configurar_dificuldade", setores_concluidos.size() + 1)
 
 	criar_hud_boss()
 	boss_ativo.vida_alterada.connect(_on_boss_vida_alterada)
-	boss_ativo.fase_alterada.connect(_on_boss_fase_alterada)
-	boss_ativo.reciclagem_alterada.connect(_on_boss_reciclagem_alterada)
+	if boss_ativo.has_signal("fase_alterada"):
+		boss_ativo.connect("fase_alterada", _on_boss_fase_alterada)
+	if boss_ativo.has_signal("reciclagem_alterada"):
+		boss_ativo.connect("reciclagem_alterada", _on_boss_reciclagem_alterada)
 	boss_ativo.morreu.connect(_on_boss_morreu)
-
 	_on_boss_vida_alterada(boss_ativo.Vida, boss_ativo.obter_vida_maxima_atual())
-	_on_boss_fase_alterada(boss_ativo.fase)
-	_on_boss_reciclagem_alterada(
-		boss_ativo.reciclagem_atual,
-		boss_ativo.meta_reciclagem
-	)
+	_on_boss_fase_alterada(1)
+	if boss_atual_id == &"pet0":
+		var pet0 := boss_ativo as BossPet0
+		_on_boss_reciclagem_alterada(pet0.reciclagem_atual, pet0.meta_reciclagem)
 
 
 func limpar_inimigos_sem_recompensa() -> void:
 	for inimigo in get_tree().get_nodes_in_group("inimigo"):
 		if is_instance_valid(inimigo):
 			inimigo.queue_free()
-
-	for projetil in get_tree().get_nodes_in_group("projetil_inimigo"):
-		if is_instance_valid(projetil):
-			projetil.queue_free()
+	for grupo in [&"projetil_inimigo", &"residuo_pet0", &"minion_pet0"]:
+		for node in get_tree().get_nodes_in_group(grupo):
+			if is_instance_valid(node):
+				node.queue_free()
 
 
 func criar_hud_boss() -> void:
 	if is_instance_valid(boss_hud):
 		boss_hud.queue_free()
-
+	var dados_setor := DadosSetores.obter(setor_atual)
+	var cor: Color = dados_setor.get("cor_destaque", Color.WHITE)
 	boss_hud = VBoxContainer.new()
-	boss_hud.name = "HUD_BossPet0"
+	boss_hud.name = "HUD_Boss"
 	boss_hud.position = Vector2(260.0, 66.0)
 	boss_hud.size = Vector2(440.0, 88.0)
 	boss_hud.add_theme_constant_override("separation", 3)
@@ -284,70 +307,238 @@ func criar_hud_boss() -> void:
 
 	boss_nome = Label.new()
 	boss_nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	boss_nome.add_theme_color_override("font_color", Color(0.35, 1.0, 0.65, 1.0))
+	boss_nome.add_theme_color_override("font_color", cor)
 	boss_nome.add_theme_font_size_override("font_size", 17)
 	boss_hud.add_child(boss_nome)
-
 	boss_vida = ProgressBar.new()
 	boss_vida.custom_minimum_size = Vector2(440.0, 18.0)
 	boss_vida.show_percentage = false
-	boss_vida.modulate = Color(0.25, 1.0, 0.62, 1.0)
+	boss_vida.modulate = cor
 	boss_hud.add_child(boss_vida)
-
-	boss_reciclagem_texto = Label.new()
-	boss_reciclagem_texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	boss_reciclagem_texto.add_theme_font_size_override("font_size", 12)
-	boss_hud.add_child(boss_reciclagem_texto)
-
-	boss_reciclagem = ProgressBar.new()
-	boss_reciclagem.custom_minimum_size = Vector2(440.0, 10.0)
-	boss_reciclagem.show_percentage = false
-	boss_reciclagem.modulate = Color(1.0, 0.82, 0.18, 1.0)
-	boss_hud.add_child(boss_reciclagem)
+	boss_detalhe_texto = Label.new()
+	boss_detalhe_texto.text = str(dados_setor.get("subtitulo", ""))
+	boss_detalhe_texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_detalhe_texto.add_theme_font_size_override("font_size", 11)
+	boss_hud.add_child(boss_detalhe_texto)
+	boss_detalhe = ProgressBar.new()
+	boss_detalhe.custom_minimum_size = Vector2(440.0, 10.0)
+	boss_detalhe.show_percentage = false
+	boss_detalhe.visible = boss_atual_id == &"pet0"
+	boss_detalhe.modulate = Color(1.0, 0.82, 0.18, 1.0)
+	boss_hud.add_child(boss_detalhe)
 
 
 func _on_boss_vida_alterada(atual: float, maxima: float) -> void:
-	if not is_instance_valid(boss_vida):
-		return
-	boss_vida.max_value = maxima
-	boss_vida.value = atual
+	if is_instance_valid(boss_vida):
+		boss_vida.max_value = maxima
+		boss_vida.value = atual
 
 
 func _on_boss_fase_alterada(fase: int) -> void:
-	if is_instance_valid(boss_nome):
-		boss_nome.text = "PET-0: O RESÍDUO ETERNO — FASE %d" % fase
+	if not is_instance_valid(boss_nome):
+		return
+	var nome := "PET-0: O RESÍDUO ETERNO"
+	if is_instance_valid(boss_ativo) and boss_ativo.has_method("obter_nome_boss"):
+		nome = str(boss_ativo.call("obter_nome_boss"))
+	boss_nome.text = "%s — FASE %d" % [nome, fase]
 
 
 func _on_boss_reciclagem_alterada(atual: int, meta: int) -> void:
-	if not is_instance_valid(boss_reciclagem):
+	if not is_instance_valid(boss_detalhe):
 		return
-
-	boss_reciclagem.max_value = meta
-	boss_reciclagem.value = atual
-	if atual >= meta:
-		boss_reciclagem_texto.text = "RÓTULO RECICLADO — NÚCLEO EXPOSTO!"
-	else:
-		boss_reciclagem_texto.text = "RECICLE OS FRAGMENTOS: %d/%d" % [atual, meta]
+	boss_detalhe.visible = true
+	boss_detalhe.max_value = meta
+	boss_detalhe.value = atual
+	boss_detalhe_texto.text = (
+		"RÓTULO RECICLADO — NÚCLEO EXPOSTO!"
+		if atual >= meta
+		else "RECICLE OS FRAGMENTOS: %d/%d" % [atual, meta]
+	)
 
 
 func _on_boss_morreu(_inimigo: InimigoBase) -> void:
-	boss_derrotado = true
+	if setor_atual not in setores_concluidos:
+		setores_concluidos.append(setor_atual)
 	boss_ativo = null
+	proximo_nivel_boss += INTERVALO_BOSS
 	timer = TIMER_MAX
-
 	if is_instance_valid(boss_nome):
-		boss_nome.text = "PET-0 RECICLADO!"
-	if is_instance_valid(boss_reciclagem_texto):
-		boss_reciclagem_texto.text = "DIA DA MÃE TERRA — 22 DE ABRIL"
-
+		boss_nome.text = "SETOR CONCLUÍDO"
+	if is_instance_valid(boss_detalhe_texto):
+		boss_detalhe_texto.text = str(DadosSetores.obter(setor_atual).get("nome", ""))
 	if is_instance_valid(boss_hud):
 		var tween := create_tween()
-		tween.tween_interval(1.5)
-		tween.tween_property(boss_hud, "modulate:a", 0.0, 0.5)
+		tween.tween_interval(0.9)
+		tween.tween_property(boss_hud, "modulate:a", 0.0, 0.35)
 		tween.tween_callback(boss_hud.queue_free)
+	await get_tree().create_timer(1.1).timeout
+	if game_over:
+		return
+	var opcoes := DadosSetores.sortear_opcoes(setores_concluidos, setor_atual, 2)
+	if opcoes.is_empty():
+		mostrar_vitoria()
+	else:
+		mostrar_escolha_setor(opcoes)
+
+
+func criar_visual_setor() -> void:
+	var camada := CanvasLayer.new()
+	camada.layer = -100
+	add_child(camada)
+	fundo_setor = ColorRect.new()
+	fundo_setor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fundo_setor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fundo_setor.visible = false
+	camada.add_child(fundo_setor)
+	rotulo_setor = Label.new()
+	rotulo_setor.position = Vector2(24.0, 76.0)
+	rotulo_setor.add_theme_font_size_override("font_size", 11)
+	rotulo_setor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$GUI.add_child(rotulo_setor)
+
+
+func aplicar_setor(id: StringName) -> void:
+	setor_atual = id
+	var dados := DadosSetores.obter(id)
+	var usar_original := bool(dados.get("usar_fundo_original", false))
+	fundo_original.visible = usar_original
+	fundo_setor.visible = not usar_original
+	rotulo_setor.visible = not usar_original
+	fundo_setor.color = dados.get("cor_fundo", Color(0.004, 0.006, 0.022))
+	rotulo_setor.text = "%s  •  PRÓXIMO BOSS: LVL %d" % [
+		dados.get("nome", "SETOR"), proximo_nivel_boss
+	]
+	var cor: Color = dados.get("cor_destaque", Color.WHITE)
+	cor.a = 0.76
+	rotulo_setor.add_theme_color_override("font_color", cor)
+	timer = 0.8
+
+
+func mostrar_escolha_setor(opcoes: Array[StringName]) -> void:
+	var linha := iniciar_painel_escolha(
+		"ESCOLHA O PRÓXIMO SETOR",
+		"O primeiro setor foi concluído. A próxima escolha define inimigos, paleta e boss."
+	)
+	for id in opcoes:
+		var dados := DadosSetores.obter(id)
+		var botao := criar_cartao_setor(linha, dados)
+		botao.pressed.connect(_on_setor_escolhido.bind(id))
+	focar_primeiro_botao(linha)
+
+
+func iniciar_painel_escolha(titulo: String, subtitulo: String) -> HBoxContainer:
+	escolha_setor_ativa = true
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	camada_escolha = CanvasLayer.new()
+	camada_escolha.layer = 80
+	camada_escolha.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(camada_escolha)
+	var fundo := ColorRect.new()
+	fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fundo.color = Color(0.004, 0.006, 0.020, 0.94)
+	camada_escolha.add_child(fundo)
+	var coluna := VBoxContainer.new()
+	coluna.set_anchors_preset(Control.PRESET_CENTER)
+	coluna.position = Vector2(-390.0, -180.0)
+	coluna.size = Vector2(780.0, 360.0)
+	coluna.add_theme_constant_override("separation", 12)
+	fundo.add_child(coluna)
+	var titulo_label := Label.new()
+	titulo_label.text = titulo
+	titulo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo_label.add_theme_font_size_override("font_size", 25)
+	titulo_label.add_theme_color_override("font_color", Color(0.68, 0.94, 1.0))
+	coluna.add_child(titulo_label)
+	var subtitulo_label := Label.new()
+	subtitulo_label.text = subtitulo
+	subtitulo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitulo_label.add_theme_font_size_override("font_size", 11)
+	subtitulo_label.add_theme_color_override("font_color", Color(0.58, 0.66, 0.80))
+	coluna.add_child(subtitulo_label)
+	var linha := HBoxContainer.new()
+	linha.custom_minimum_size = Vector2(780.0, 278.0)
+	linha.alignment = BoxContainer.ALIGNMENT_CENTER
+	linha.add_theme_constant_override("separation", 18)
+	coluna.add_child(linha)
+	return linha
+
+
+func criar_cartao_setor(pai: HBoxContainer, dados: Dictionary) -> Button:
+	var cor: Color = dados.get("cor_destaque", Color.WHITE)
+	var botao := Button.new()
+	botao.custom_minimum_size = Vector2(300.0, 260.0)
+	botao.text = "%s\n\n%s\n\n%s" % [
+		dados.get("nome", "SETOR"),
+		dados.get("subtitulo", ""),
+		dados.get("descricao", "")
+	]
+	botao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	botao.add_theme_font_size_override("font_size", 13)
+	botao.add_theme_color_override("font_color", Color(0.84, 0.90, 1.0))
+	botao.add_theme_color_override("font_hover_color", cor)
+	botao.add_theme_color_override("font_focus_color", cor)
+	for estado in [&"normal", &"hover", &"pressed", &"focus"]:
+		var estilo := StyleBoxFlat.new()
+		estilo.bg_color = Color(0.018, 0.027, 0.070, 0.96)
+		if estado != &"normal":
+			estilo.bg_color = Color(0.035, 0.052, 0.12, 1.0)
+		estilo.border_color = Color(cor, 0.48) if estado == &"normal" else cor
+		estilo.set_border_width_all(2)
+		estilo.set_corner_radius_all(12)
+		estilo.content_margin_left = 18.0
+		estilo.content_margin_right = 18.0
+		estilo.content_margin_top = 20.0
+		estilo.content_margin_bottom = 20.0
+		botao.add_theme_stylebox_override(estado, estilo)
+	pai.add_child(botao)
+	return botao
+
+
+func focar_primeiro_botao(linha: HBoxContainer) -> void:
+	for child in linha.get_children():
+		if child is Button:
+			(child as Button).call_deferred("grab_focus")
+			return
+
+
+func _on_setor_escolhido(id: StringName) -> void:
+	encerrar_escolha_setor()
+	aplicar_setor(id)
+
+
+func encerrar_escolha_setor() -> void:
+	escolha_setor_ativa = false
+	get_tree().paused = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	if is_instance_valid(camada_escolha):
+		camada_escolha.queue_free()
+	camada_escolha = null
+
+
+func mostrar_vitoria() -> void:
+	game_over = true
+	var linha := iniciar_painel_escolha(
+		"CICLO DE SETORES CONCLUÍDO",
+		"Todos os cinco bosses foram derrotados sem repetir setores."
+	)
+	var botao := criar_cartao_setor(linha, {
+		"nome": "VOLTAR AO MENU",
+		"subtitulo": "PONTUAÇÃO %s" % str(int(Global.Pontos)).pad_zeros(8),
+		"descricao": "A tentativa foi concluída.",
+		"cor_destaque": Color(0.42, 1.0, 0.68)
+	})
+	botao.pressed.connect(_on_vitoria_menu)
+	botao.call_deferred("grab_focus")
+
+
+func _on_vitoria_menu() -> void:
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
 
 
 func fadeout_tutorial() -> void:
 	# Mantida porque a animação antiga da cena ainda chama este método.
 	pass
-

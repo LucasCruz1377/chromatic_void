@@ -63,7 +63,7 @@ func _ready() -> void:
 
 
 func carregar_economia() -> void:
-	var dados := GerenciadorDeSave.carregar()
+	var dados: Dictionary = GerenciadorDeSave.carregar()
 	cristais = maxi(int(dados.get("cristais", CRISTAIS_INICIAIS)), 0)
 
 
@@ -126,7 +126,7 @@ func _input(event: InputEvent) -> void:
 
 
 func carregar_configuracoes() -> void:
-	var dados := GerenciadorDeSave.carregar()
+	var dados: Dictionary = GerenciadorDeSave.carregar()
 	var config: Dictionary = {}
 	var config_salva = dados.get("configuracoes", {})
 	if config_salva is Dictionary:

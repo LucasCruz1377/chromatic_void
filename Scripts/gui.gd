@@ -23,8 +23,13 @@ func _on_player_subiu_de_nivel() -> void:
 
 func _process(_delta: float) -> void:
 	var players := get_tree().get_nodes_in_group("player").size()
+	var batalha := get_parent()
+	var escolhendo_setor := (
+		batalha != null
+		and bool(batalha.get("escolha_setor_ativa"))
+	)
 
-	if Input.is_action_just_pressed("pausar") and players > 0:
+	if Input.is_action_just_pressed("pausar") and players > 0 and not escolhendo_setor:
 		if tela_upgrades.has_method("esta_aberta") and bool(
 			tela_upgrades.call("esta_aberta")
 		):
@@ -37,11 +42,11 @@ func _process(_delta: float) -> void:
 			else:
 				Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
-	caixa_pause.visible = get_tree().paused
+	caixa_pause.visible = get_tree().paused and not escolhendo_setor
 	if get_tree().paused != pausa_anterior:
 		pausa_anterior = get_tree().paused
 
-	if Input.is_action_just_pressed("reset"):
+	if Input.is_action_just_pressed("reset") and not escolhendo_setor:
 		preparar_troca_de_cena()
 		Global.Pontos = 0
 		Global.Combo = 0
