@@ -25,4 +25,5 @@ theme_override_font_sizes/font_size = 29
 theme_override_styles/normal = ExtResource("1_n7h0m")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_p5xam")
 theme_override_styles/hover = ExtResource("1_n7h0m")
+theme_override_styles/focus = ExtResource("1_n7h0m")
 text = "Voltar pro menu inicial"

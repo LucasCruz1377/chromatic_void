@@ -331,7 +331,7 @@ func criar_projetil(
 	var forma := projetil.get_node_or_null("Visual") as Polygon2D
 	if is_instance_valid(forma):
 		forma.color = cor_principal.lerp(cor_secundaria, randf_range(0.0, 0.75))
-		forma.self_modulate = Color(1.45, 1.45, 1.45, 1.0)
+	projetil.aplicar_glow()
 
 
 func tomarDano(valor: float) -> void:

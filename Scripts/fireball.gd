@@ -1,6 +1,12 @@
 extends Area2D
 
 
+const BRILHO_PROJETEIS_PADRAO := 1.65
+
+@export_category("Neon")
+@export_range(0.6, 3.0, 0.05) var brilho_visual: float = BRILHO_PROJETEIS_PADRAO
+@export_range(0.0, 4.0, 0.05) var energia_luz: float = 1.15
+
 var dmg := 1.0
 var velocidade := 1000.0
 var tempo_vida := 5.0
@@ -12,6 +18,21 @@ var dono_player: Node
 var cena_origem: PackedScene
 var eh_fragmento := false
 var alvo_homing: Node2D
+
+@onready var visual: Polygon2D = $Polygon2D
+@onready var luz: PointLight2D = $PointLight2D
+
+
+func _ready() -> void:
+	aplicar_glow()
+
+
+func aplicar_glow() -> void:
+	var intensidade := clampf(brilho_visual, 0.6, 3.0)
+	if is_instance_valid(visual):
+		visual.self_modulate = Color(intensidade, intensidade, intensidade, 1.0)
+	if is_instance_valid(luz):
+		luz.energy = maxf(energia_luz, 0.0)
 
 
 func configurar(
@@ -38,7 +59,9 @@ func configurar(
 	eh_fragmento = fragmento
 
 	if eh_fragmento:
-		self_modulate = Color(2.2, 0.55, 1.8, 1.0)
+		visual.color = Color(0.92, 0.20, 1.0, 1.0)
+		luz.color = Color(0.95, 0.30, 1.0, 1.0)
+		aplicar_glow()
 
 
 func _physics_process(delta: float) -> void:
