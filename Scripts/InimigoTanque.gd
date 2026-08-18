@@ -61,5 +61,5 @@ func disparar_pulso() -> void:
 		var forma := projetil.get_node_or_null("Visual") as Polygon2D
 		if is_instance_valid(forma):
 			forma.color = COR_PROJETIL_TANQUE
-			forma.self_modulate = Color(0.95, 0.95, 0.95, 1.0)
+		projetil.aplicar_glow()
 		projetil.configurar(Vector2.from_angle(angulo), Dano * 0.45, 185.0, 0)

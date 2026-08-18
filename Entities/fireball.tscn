@@ -15,11 +15,12 @@ fill_to = Vector2(0.9117647, 0.13529412)
 size = Vector2(11, 6)
 
 [node name="fireball" type="Area2D" unique_id=1865514222 groups=["bullets"]]
-self_modulate = Color(4.415934, 4.415934, 4.415934, 1)
 light_mask = 2
 collision_layer = 8
 collision_mask = 5
 script = ExtResource("1_sf4mh")
+brilho_visual = 1.65
+energia_luz = 1.15
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=354221910]
 position = Vector2(0, -1.7881393e-07)

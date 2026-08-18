@@ -2,6 +2,12 @@ extends Area2D
 class_name ProjetilInimigo
 
 
+const BRILHO_PROJETEIS_PADRAO := 1.45
+
+@export_category("Neon")
+@export_range(0.6, 3.0, 0.05) var brilho_visual: float = BRILHO_PROJETEIS_PADRAO
+
+@export_category("Movimento e dano")
 @export var velocidade: float = 330.0
 @export var dano: float = 10.0
 @export var tempo_vida: float = 5.0
@@ -14,6 +20,22 @@ var rebotes: int = 0
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	aplicar_glow()
+
+
+func aplicar_glow() -> void:
+	var intensidade := clampf(brilho_visual, 0.6, 3.0)
+	for node in find_children("*", "CanvasItem", true, false):
+		var item := node as CanvasItem
+		if (
+			item is Polygon2D
+			or item is Line2D
+			or item is Sprite2D
+			or item is AnimatedSprite2D
+		):
+			item.self_modulate = Color(
+				intensidade, intensidade, intensidade, item.self_modulate.a
+			)
 
 
 func configurar(

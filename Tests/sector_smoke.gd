@@ -78,6 +78,56 @@ func _ready() -> void:
 			boss.queue_free()
 			await get_tree().process_frame
 
+	var cena_projetil_inimigo := load("res://Entities/ProjetilInimigo.tscn") as PackedScene
+	var projetil_inimigo := cena_projetil_inimigo.instantiate()
+	batalha.add_child(projetil_inimigo)
+	projetil_inimigo.position = Vector2(100.0, 100.0)
+	await get_tree().process_frame
+	var visual_inimigo := projetil_inimigo.get_node("Visual") as Polygon2D
+	verificar(visual_inimigo.self_modulate.r > 1.0, "o projétil inimigo não recebeu glow")
+	verificar(projetil_inimigo.brilho_visual > 1.0, "o glow inimigo não está ajustável")
+	projetil_inimigo.queue_free()
+
+	var cena_projetil_player := load("res://Entities/fireball.tscn") as PackedScene
+	var projetil_player := cena_projetil_player.instantiate()
+	batalha.add_child(projetil_player)
+	projetil_player.position = Vector2(100.0, 140.0)
+	await get_tree().process_frame
+	var visual_player := projetil_player.get_node("Polygon2D") as Polygon2D
+	verificar(visual_player.self_modulate.r > 1.0, "o projétil do jogador não recebeu glow")
+	verificar(projetil_player.brilho_visual > 1.0, "o glow do jogador não está ajustável")
+	projetil_player.queue_free()
+
+	batalha.player.nivel_atual = 4
+	batalha.player.xp_necessario = 1000
+	batalha.player.xp_atual = 0.0
+	batalha.player.niveis_upgrades[&"blindagem"] = 3
+	batalha.player.vida = 20.0
+	var cena_asteroide := load("res://Entities/AsteroideBonus.tscn") as PackedScene
+	var asteroide := cena_asteroide.instantiate()
+	batalha.add_child(asteroide)
+	await get_tree().process_frame
+	verificar(asteroide.calcular_cura() > asteroide.cura_base, "blindagem não aumenta a cura bônus")
+	verificar(asteroide.calcular_xp() > asteroide.xp_base, "o nível do jogador não aumenta o XP bônus")
+	var vida_antes: float = batalha.player.vida
+	var xp_antes: float = batalha.player.xp_atual
+	asteroide.conceder_recompensa()
+	verificar(batalha.player.vida > vida_antes, "o asteroide não concedeu Vida")
+	verificar(batalha.player.xp_atual > xp_antes, "o asteroide não concedeu XP")
+	var formas_asteroide := asteroide.find_children("*", "Polygon2D", true, false)
+	verificar(formas_asteroide.size() == 1, "o asteroide bônus não está visualmente sólido")
+	asteroide.queue_free()
+	await get_tree().process_frame
+
+	batalha.caixa_gameover.visible = true
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var botao_gameover := batalha.get_node("GUI/caixa gameover/Tentar de novo") as Button
+	verificar(
+		get_viewport().gui_get_focus_owner() == botao_gameover,
+		"o Game Over não focou o botão para o controle"
+	)
+
 	batalha.queue_free()
 	await get_tree().process_frame
 
@@ -114,7 +164,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 
 	if falhas.is_empty():
-		print("TESTE OK: setor inicial, PET-0, rotas e controle da loja")
+		print("TESTE OK: setores, projéteis, asteroide, Game Over e loja")
 		get_tree().quit(0)
 	else:
 		print("TESTE FALHOU: %d problema(s)" % falhas.size())
