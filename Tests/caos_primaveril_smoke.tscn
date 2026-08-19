@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dv1rewoysdfxi"]
+
+[ext_resource type="Script" uid="uid://1idvihpdemmy" path="res://Tests/caos_primaveril_smoke.gd" id="1_script"]
+
+[node name="CaosPrimaverilSmoke" type="Node" unique_id=241514063]
+script = ExtResource("1_script")

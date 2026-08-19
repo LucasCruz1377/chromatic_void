@@ -1,0 +1,20 @@
+<svg width="232" height="232" viewBox="0 0 232 232" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="espinho_base">
+<path d="M157.787 42.5035L153.494 60.6131L144.249 55.2756L157.787 42.5035Z" fill="#BEFF9F"/>
+</g>
+<use xlink:href="#espinho_base" transform="translate(157.899 -42.3089) rotate(60)"/>
+<use xlink:href="#espinho_base" transform="translate(273.489 73.2811) rotate(120)"/>
+<use xlink:href="#espinho_base" transform="translate(231.18 231.18) rotate(-180)"/>
+<use xlink:href="#espinho_base" transform="translate(73.2811 273.489) rotate(-120)"/>
+<use xlink:href="#espinho_base" transform="translate(-42.3089 157.899) rotate(-60)"/>
+<g id="petala_base">
+<path d="M82.4094 57.4094C82.4094 38.9079 97.4079 23.9094 115.909 23.9094H149.409V66.4094C149.409 84.9109 134.411 99.9094 115.909 99.9094C97.4079 99.9094 82.4094 84.9109 82.4094 66.4094V57.4094Z" fill="#EFADFF"/>
+</g>
+<use xlink:href="#petala_base" transform="translate(158.335 -42.4258) rotate(60)"/>
+<use xlink:href="#petala_base" transform="translate(274.245 73.4836) rotate(120)"/>
+<use xlink:href="#petala_base" transform="translate(231.819 231.819) rotate(-180)"/>
+<use xlink:href="#petala_base" transform="translate(73.4836 274.245) rotate(-120)"/>
+<use xlink:href="#petala_base" transform="translate(-42.4258 158.335) rotate(-60)"/>
+<circle cx="115.5" cy="115.5" r="40.5" fill="#FFD900"/>
+<circle cx="115.5" cy="115.5" r="19.5" fill="#FFEF92"/>
+</svg>

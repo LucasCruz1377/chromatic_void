@@ -1,29 +1,153 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://Scripts/BossMensal.gd" id="1"]
+[ext_resource type="Script" path="res://Scripts/BossCaosPrimaveril.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/miolo.svg" id="2_miolo"]
+[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/petala.svg" id="3_petala"]
+[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/espinho.svg" id="4_espinho"]
+[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/polen.svg" id="5_polen"]
 
-[sub_resource type="CircleShape2D" id="Shape"]
-radius = 52.0
+[sub_resource type="CircleShape2D" id="BossShape"]
+radius = 44.0
+
+[sub_resource type="ParticleProcessMaterial" id="PollenMaterial"]
+particle_flag_disable_z = true
+emission_shape = 6
+emission_ring_axis = Vector3(0, 0, 1)
+emission_ring_height = 1.0
+emission_ring_radius = 76.0
+emission_ring_inner_radius = 68.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.45
+scale_max = 0.9
 
 [node name="BossFlorEquinocio" type="CharacterBody2D" groups=["boss", "inimigo"]]
 z_index = 3
 collision_layer = 4
 collision_mask = 11
-script = ExtResource("1")
-VidaMaxima = 270.0
+script = ExtResource("1_script")
+VidaMaxima = 285.0
 Dano = 30.0
-ValorXP = 15.0
-Velocidade = 88.0
+ValorXP = 17.0
+Velocidade = 82.0
 resistencia_empurrao = 1.0
+usa_wrap = false
 morre_ao_colidir_player = false
-pontos_base = 2400
-valor_cristais = 180
-tema = 0
-nome_exibicao = "FLOR DO EQUINÓCIO"
-selo_monthly_colors = "PRIMAVERA • SETEMBRO"
-cor_principal = Color(1, 0.3, 0.66, 1)
-cor_secundaria = Color(0.3, 1, 0.55, 1)
+pontos_base = 2600
+valor_cristais = 190
+brilho_visual = 1.25
+tremor_morte = 12.0
+
+[node name="Visual" type="Node2D" parent="."]
+texture_filter = 2
+scale = Vector2(0.68, 0.68)
+
+[node name="Espinhos" type="Node2D" parent="Visual"]
+
+[node name="Espinho0" type="Sprite2D" parent="Visual/Espinhos"]
+position = Vector2(35.5, -64.5)
+texture = ExtResource("4_espinho")
+
+[node name="Espinho1" type="Sprite2D" parent="Visual/Espinhos"]
+position = Vector2(73.61, -1.51)
+rotation = 1.0471976
+texture = ExtResource("4_espinho")
+
+[node name="Espinho2" type="Sprite2D" parent="Visual/Espinhos"]
+position = Vector2(38.11, 62.99)
+rotation = 2.0943952
+texture = ExtResource("4_espinho")
+
+[node name="Espinho3" type="Sprite2D" parent="Visual/Espinhos"]
+position = Vector2(-35.5, 64.5)
+rotation = 3.1415927
+texture = ExtResource("4_espinho")
+
+[node name="Espinho4" type="Sprite2D" parent="Visual/Espinhos"]
+position = Vector2(-73.61, 1.51)
+rotation = 4.1887903
+texture = ExtResource("4_espinho")
+
+[node name="Espinho5" type="Sprite2D" parent="Visual/Espinhos"]
+position = Vector2(-38.11, -62.99)
+rotation = 5.2359877
+texture = ExtResource("4_espinho")
+
+[node name="Petalas" type="Node2D" parent="Visual"]
+
+[node name="Petala0" type="Sprite2D" parent="Visual/Petalas"]
+position = Vector2(0, -54)
+texture = ExtResource("3_petala")
+
+[node name="Petala1" type="Sprite2D" parent="Visual/Petalas"]
+position = Vector2(46.765, -27)
+rotation = 1.0471976
+texture = ExtResource("3_petala")
+
+[node name="Petala2" type="Sprite2D" parent="Visual/Petalas"]
+position = Vector2(46.765, 27)
+rotation = 2.0943952
+texture = ExtResource("3_petala")
+
+[node name="Petala3" type="Sprite2D" parent="Visual/Petalas"]
+position = Vector2(0, 54)
+rotation = 3.1415927
+texture = ExtResource("3_petala")
+
+[node name="Petala4" type="Sprite2D" parent="Visual/Petalas"]
+position = Vector2(-46.765, 27)
+rotation = 4.1887903
+texture = ExtResource("3_petala")
+
+[node name="Petala5" type="Sprite2D" parent="Visual/Petalas"]
+position = Vector2(-46.765, -27)
+rotation = 5.2359877
+texture = ExtResource("3_petala")
+
+[node name="Miolo" type="Sprite2D" parent="Visual"]
+texture = ExtResource("2_miolo")
+
+[node name="Polen" type="GPUParticles2D" parent="."]
+z_index = 2
+amount = 44
+lifetime = 1.5
+preprocess = 1.5
+visibility_rect = Rect2(-110, -110, 220, 220)
+local_coords = true
+process_material = SubResource("PollenMaterial")
+texture = ExtResource("5_polen")
+
+[node name="AvisoEspinhos" type="Line2D" parent="."]
+visible = false
+z_index = -1
+width = 3.0
+default_color = Color(0.75, 1, 0.55, 0.82)
+
+[node name="AvisoVinhas" type="Node2D" parent="."]
+visible = false
+z_index = -2
+
+[node name="Direita" type="Line2D" parent="AvisoVinhas"]
+points = PackedVector2Array(0, 0, 480, 0)
+width = 3.0
+default_color = Color(0.75, 1, 0.55, 0.72)
+
+[node name="Baixo" type="Line2D" parent="AvisoVinhas"]
+points = PackedVector2Array(0, 0, 0, 270)
+width = 3.0
+default_color = Color(0.75, 1, 0.55, 0.72)
+
+[node name="Esquerda" type="Line2D" parent="AvisoVinhas"]
+points = PackedVector2Array(0, 0, -480, 0)
+width = 3.0
+default_color = Color(0.75, 1, 0.55, 0.72)
+
+[node name="Cima" type="Line2D" parent="AvisoVinhas"]
+points = PackedVector2Array(0, 0, 0, -270)
+width = 3.0
+default_color = Color(0.75, 1, 0.55, 0.72)
+
+[node name="VinhasPivot" type="Node2D" parent="."]
+z_index = -1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("Shape")
-
+shape = SubResource("BossShape")
