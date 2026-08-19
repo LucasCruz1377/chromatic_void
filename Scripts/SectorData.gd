@@ -21,7 +21,7 @@ const DADOS: Dictionary = {
 	&"florescimento": {
 		"nome": "FLORESCIMENTO",
 		"subtitulo": "PRIMAVERA • SETEMBRO",
-		"descricao": "Investidas e formações rápidas cercam a arena.",
+		"descricao": "Espinhos, pétalas e vinhas transformam a arena em uma dança.",
 		"usar_fundo_original": false,
 		"cor_fundo": Color(0.008, 0.030, 0.025, 1.0),
 		"cor_destaque": Color(1.0, 0.32, 0.68, 1.0),

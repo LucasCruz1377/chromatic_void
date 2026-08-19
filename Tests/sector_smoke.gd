@@ -60,6 +60,7 @@ func _ready() -> void:
 	batalha.invocar_boss_do_setor()
 	await get_tree().process_frame
 	verificar(batalha.boss_atual_id == &"flor_equinocio", "o segundo setor não criou seu próprio boss")
+	verificar(batalha.boss_ativo is BossCaosPrimaveril, "o setor floral não criou o Caos Primaveril")
 	verificar(not (batalha.boss_ativo is BossPet0), "o PET-0 foi repetido no segundo setor")
 
 	for caminho in [
@@ -164,7 +165,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 
 	if falhas.is_empty():
-		print("TESTE OK: setores, projéteis, asteroide, Game Over e loja")
+		print("TESTE OK: setores, Caos Primaveril, projéteis, asteroide, Game Over e loja")
 		get_tree().quit(0)
 	else:
 		print("TESTE FALHOU: %d problema(s)" % falhas.size())

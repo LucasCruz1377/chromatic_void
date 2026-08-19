@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/ProjetilInimigo.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/espinho.svg" id="2_texture"]
+
+[sub_resource type="CircleShape2D" id="Shape"]
+radius = 7.0
+
+[node name="EspinhoPrimaveril" type="Area2D" groups=["projetil_inimigo", "projetil_primaveril"]]
+z_index = 2
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+tempo_vida = 6.0
+brilho_visual = 1.5
+
+[node name="Visual" type="Sprite2D" parent="."]
+texture_filter = 2
+rotation = 1.0471976
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape")
