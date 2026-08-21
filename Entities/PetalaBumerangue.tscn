@@ -1,21 +1,21 @@
-[gd_scene format=3 uid="uid://d57mui2gks5o"]
+[gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" uid="uid://bk6sgxvlfg680" path="res://Scripts/PetalaBumerangue.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bl20pf1or5kut" path="res://Assets/Bosses/CaosPrimaveril/petala.svg" id="2_texture"]
+[ext_resource type="Script" path="res://Scripts/PetalaBumerangue.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/petala.svg" id="2_texture"]
 
 [sub_resource type="RectangleShape2D" id="Shape"]
 size = Vector2(42, 50)
 
-[node name="PetalaBumerangue" type="Area2D" unique_id=1185379766 groups=["projetil_inimigo", "projetil_primaveril"]]
+[node name="PetalaBumerangue" type="Area2D" groups=["projetil_inimigo", "projetil_primaveril"]]
 z_index = 3
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_script")
 
-[node name="Visual" type="Sprite2D" parent="." unique_id=253379905]
+[node name="Visual" type="Sprite2D" parent="."]
 texture_filter = 2
 scale = Vector2(0.68, 0.68)
 texture = ExtResource("2_texture")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1710419094]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Shape")

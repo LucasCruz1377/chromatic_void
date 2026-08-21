@@ -116,7 +116,6 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)

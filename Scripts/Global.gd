@@ -21,6 +21,22 @@ const CONFIG_PADRAO := {
 	"vibracao": true
 }
 
+const MAX_SLOTS_CONTROLE := 3
+const ACOES_REMAPEAVEIS := {
+	&"acelerar": "T_BIND_ACCELERATE",
+	&"freio": "T_BIND_BRAKE",
+	&"esquerda": "T_BIND_TURN_LEFT",
+	&"direita": "T_BIND_TURN_RIGHT",
+	&"atirar": "T_BIND_SHOOT",
+	&"Habilidade": "T_BIND_ABILITY",
+	&"abrir_melhorias": "T_BIND_UPGRADES",
+	&"pausar": "T_BIND_PAUSE",
+	&"mirar_esquerda": "T_BIND_AIM_LEFT",
+	&"mirar_direita": "T_BIND_AIM_RIGHT",
+	&"mirar_cima": "T_BIND_AIM_UP",
+	&"mirar_baixo": "T_BIND_AIM_DOWN",
+}
+
 const CRISTAIS_INICIAIS := 1250
 const MODO_DESENVOLVEDOR := true
 
@@ -45,6 +61,8 @@ var tremor_tela := 1.0
 var zona_morta_controle := 0.22
 var vibracao := true
 var ultimo_dispositivo: StringName = &"teclado_mouse"
+var mapeamentos_controles: Dictionary = {}
+var _mapeamentos_padrao: Dictionary = {}
 
 var cristais := CRISTAIS_INICIAIS
 var modo_desenvolvedor := MODO_DESENVOLVEDOR
@@ -56,6 +74,7 @@ var conquistas_desbloqueadas = [""]
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_capturar_mapeamentos_padrao()
 	carregar_configuracoes()
 	carregar_economia()
 	get_tree().node_added.connect(_on_node_adicionado)
@@ -149,6 +168,12 @@ func carregar_configuracoes() -> void:
 	zona_morta_controle = clampf(float(config["zona_morta_controle"]), 0.05, 0.6)
 	vibracao = bool(config["vibracao"])
 
+	var mapeamentos_salvos = config.get("mapeamentos_controles", {})
+	if mapeamentos_salvos is Dictionary and not mapeamentos_salvos.is_empty():
+		mapeamentos_controles = _normalizar_mapeamentos(mapeamentos_salvos)
+	else:
+		mapeamentos_controles = _mapeamentos_padrao.duplicate(true)
+
 
 func salvar_configuracoes() -> void:
 	GerenciadorDeSave.salvar({"configuracoes": obter_configuracoes()})
@@ -170,7 +195,8 @@ func obter_configuracoes() -> Dictionary:
 		"bloom": bloom,
 		"tremor_tela": tremor_tela,
 		"zona_morta_controle": zona_morta_controle,
-		"vibracao": vibracao
+		"vibracao": vibracao,
+		"mapeamentos_controles": mapeamentos_controles.duplicate(true),
 	}
 
 
@@ -189,10 +215,12 @@ func restaurar_configuracoes_padrao() -> void:
 	tremor_tela = float(config["tremor_tela"])
 	zona_morta_controle = float(config["zona_morta_controle"])
 	vibracao = bool(config["vibracao"])
+	mapeamentos_controles = _mapeamentos_padrao.duplicate(true)
 	salvar_configuracoes()
 
 
 func aplicar_configuracoes() -> void:
+	_aplicar_mapeamentos_controles()
 	_aplicar_volume("Master", volume_master)
 	_aplicar_volume("Music", volume_musica)
 	_aplicar_volume("Sound", volume_som)
@@ -253,3 +281,198 @@ func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:
 		return
 	for dispositivo in Input.get_connected_joypads():
 		Input.start_joy_vibration(dispositivo, fraco, forte, duracao)
+
+
+func obter_acoes_remapeaveis() -> Dictionary:
+	return ACOES_REMAPEAVEIS
+
+
+func obter_evento_mapeado(acao: StringName, slot: int) -> InputEvent:
+	var slots := _obter_slots(acao)
+	if slot < 0 or slot >= slots.size():
+		return null
+	var dados = slots[slot]
+	if not (dados is Dictionary) or dados.is_empty():
+		return null
+	return _desserializar_evento(dados)
+
+
+func definir_mapeamento(acao: StringName, slot: int, evento: InputEvent) -> void:
+	if not ACOES_REMAPEAVEIS.has(acao) or slot < 0 or slot >= MAX_SLOTS_CONTROLE:
+		return
+	var dados := _serializar_evento(evento)
+	if dados.is_empty():
+		return
+
+	# Um mesmo comando em duas ações pode disparar comportamentos simultâneos.
+	# Ao realocar a entrada, o vínculo anterior é removido automaticamente.
+	for outra_acao in ACOES_REMAPEAVEIS:
+		var slots_outra := _obter_slots(outra_acao)
+		for indice in slots_outra.size():
+			if outra_acao == acao and indice == slot:
+				continue
+			if _eventos_serializados_iguais(slots_outra[indice], dados):
+				slots_outra[indice] = {}
+		mapeamentos_controles[str(outra_acao)] = slots_outra
+
+	var slots := _obter_slots(acao)
+	slots[slot] = dados
+	mapeamentos_controles[str(acao)] = slots
+	_aplicar_mapeamentos_controles()
+	salvar_configuracoes()
+
+
+func limpar_mapeamento(acao: StringName, slot: int) -> void:
+	if not ACOES_REMAPEAVEIS.has(acao) or slot < 0 or slot >= MAX_SLOTS_CONTROLE:
+		return
+	var slots := _obter_slots(acao)
+	slots[slot] = {}
+	mapeamentos_controles[str(acao)] = slots
+	_aplicar_mapeamentos_controles()
+	salvar_configuracoes()
+
+
+func restaurar_mapeamentos_padrao() -> void:
+	mapeamentos_controles = _mapeamentos_padrao.duplicate(true)
+	_aplicar_mapeamentos_controles()
+	salvar_configuracoes()
+
+
+func _capturar_mapeamentos_padrao() -> void:
+	_mapeamentos_padrao.clear()
+	for acao in ACOES_REMAPEAVEIS:
+		var eventos: Array[InputEvent] = []
+		if InputMap.has_action(acao):
+			eventos.assign(InputMap.action_get_events(acao))
+
+		# O gatilho direito é o padrão mais natural para tiro em controles.
+		# Ele ganha prioridade sobre RB/R1 quando existem mais de três vínculos.
+		if acao == &"atirar":
+			eventos.sort_custom(func(a: InputEvent, b: InputEvent) -> bool:
+				var prioridade_a := 1 if a is InputEventJoypadButton else 0
+				var prioridade_b := 1 if b is InputEventJoypadButton else 0
+				return prioridade_a < prioridade_b
+			)
+
+		var slots: Array = []
+		for evento in eventos:
+			var dados := _serializar_evento(evento)
+			if not dados.is_empty() and slots.size() < MAX_SLOTS_CONTROLE:
+				slots.append(dados)
+		while slots.size() < MAX_SLOTS_CONTROLE:
+			slots.append({})
+		_mapeamentos_padrao[str(acao)] = slots
+
+
+func _normalizar_mapeamentos(origem: Dictionary) -> Dictionary:
+	var resultado := _mapeamentos_padrao.duplicate(true)
+	for acao in ACOES_REMAPEAVEIS:
+		var chave := str(acao)
+		var origem_slots = origem.get(chave, [])
+		if not (origem_slots is Array):
+			continue
+		var slots: Array = [{}, {}, {}]
+		for indice in mini(origem_slots.size(), MAX_SLOTS_CONTROLE):
+			var dados = origem_slots[indice]
+			if dados is Dictionary and not _desserializar_evento(dados) == null:
+				slots[indice] = dados.duplicate(true)
+		resultado[chave] = slots
+	return resultado
+
+
+func _obter_slots(acao: StringName) -> Array:
+	var chave := str(acao)
+	var slots = mapeamentos_controles.get(chave, [{}, {}, {}])
+	if not (slots is Array):
+		slots = [{}, {}, {}]
+	else:
+		slots = slots.duplicate(true)
+	while slots.size() < MAX_SLOTS_CONTROLE:
+		slots.append({})
+	if slots.size() > MAX_SLOTS_CONTROLE:
+		slots.resize(MAX_SLOTS_CONTROLE)
+	return slots
+
+
+func _aplicar_mapeamentos_controles() -> void:
+	for acao in ACOES_REMAPEAVEIS:
+		if not InputMap.has_action(acao):
+			continue
+		InputMap.action_erase_events(acao)
+		for dados in _obter_slots(acao):
+			if not (dados is Dictionary) or dados.is_empty():
+				continue
+			var evento := _desserializar_evento(dados)
+			if evento:
+				InputMap.action_add_event(acao, evento)
+
+
+func _serializar_evento(evento: InputEvent) -> Dictionary:
+	if evento is InputEventKey:
+		var tecla := evento as InputEventKey
+		var codigo := tecla.physical_keycode if tecla.physical_keycode != 0 else tecla.keycode
+		if codigo == 0:
+			return {}
+		return {
+			"tipo": "tecla",
+			"codigo": int(codigo),
+			"fisica": tecla.physical_keycode != 0,
+			"alt": tecla.alt_pressed,
+			"shift": tecla.shift_pressed,
+			"ctrl": tecla.ctrl_pressed,
+			"meta": tecla.meta_pressed,
+		}
+	if evento is InputEventMouseButton:
+		var mouse := evento as InputEventMouseButton
+		return {"tipo": "mouse", "botao": int(mouse.button_index)}
+	if evento is InputEventJoypadButton:
+		var botao := evento as InputEventJoypadButton
+		return {"tipo": "botao_controle", "botao": botao.button_index}
+	if evento is InputEventJoypadMotion:
+		var eixo := evento as InputEventJoypadMotion
+		if absf(eixo.axis_value) < 0.5:
+			return {}
+		return {
+			"tipo": "eixo_controle",
+			"eixo": eixo.axis,
+			"direcao": 1.0 if eixo.axis_value > 0.0 else -1.0,
+		}
+	return {}
+
+
+func _desserializar_evento(dados: Dictionary) -> InputEvent:
+	match str(dados.get("tipo", "")):
+		"tecla":
+			var tecla := InputEventKey.new()
+			var codigo := int(dados.get("codigo", 0))
+			if codigo == 0:
+				return null
+			if bool(dados.get("fisica", true)):
+				tecla.physical_keycode = codigo
+			else:
+				tecla.keycode = codigo
+			tecla.alt_pressed = bool(dados.get("alt", false))
+			tecla.shift_pressed = bool(dados.get("shift", false))
+			tecla.ctrl_pressed = bool(dados.get("ctrl", false))
+			tecla.meta_pressed = bool(dados.get("meta", false))
+			return tecla
+		"mouse":
+			var mouse := InputEventMouseButton.new()
+			mouse.button_index = int(dados.get("botao", 0))
+			return mouse if mouse.button_index != MOUSE_BUTTON_NONE else null
+		"botao_controle":
+			var botao := InputEventJoypadButton.new()
+			botao.device = -1
+			botao.button_index = int(dados.get("botao", -1))
+			return botao if botao.button_index >= 0 else null
+		"eixo_controle":
+			var eixo := InputEventJoypadMotion.new()
+			eixo.device = -1
+			eixo.axis = int(dados.get("eixo", -1))
+			eixo.axis_value = float(dados.get("direcao", 0.0))
+			return eixo if eixo.axis >= 0 and not is_zero_approx(eixo.axis_value) else null
+	return null
+
+
+func _eventos_serializados_iguais(a, b) -> bool:
+	return a is Dictionary and b is Dictionary and not a.is_empty() and a == b

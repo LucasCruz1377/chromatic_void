@@ -30,24 +30,78 @@ signal voltar_solicitado
 @onready var valor_som: Label = $Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Efeitos/Valor
 
 @onready var controle_detectado: Label = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/ControleDetectado
+@onready var instrucao_mapeamento: Label = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/Instrucao
+@onready var restaurar_controles: Button = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/RestaurarControles
+@onready var lista_mapeamentos: VBoxContainer = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem/ListaMapeamentos
 @onready var restaurar: Button = $Painel/Margem/Coluna/Rodape/Restaurar
 @onready var voltar: Button = $Painel/Margem/Coluna/Rodape/Voltar
 
 var carregando := false
 var fps_disponiveis := [0, 30, 60, 120, 144, 240]
+var botoes_mapeamento: Dictionary = {}
+var capturando_entrada := false
+var acao_capturada: StringName
+var slot_capturado := -1
+var botao_capturado: Button
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process_input(true)
+	set_process_unhandled_input(true)
 	_configurar_opcoes()
 	_conectar_sinais()
+	_criar_lista_mapeamentos()
 	carregar_interface()
 	_atualizar_titulos_abas()
 	atualizar_controles_detectados()
 	call_deferred("_focar_primeiro_controle")
 
 
+func _input(event: InputEvent) -> void:
+	if not capturando_entrada:
+		return
+	if event is InputEventKey and (not event.pressed or event.echo):
+		return
+	if event is InputEventMouseButton and not event.pressed:
+		return
+	if event is InputEventJoypadButton and not event.pressed:
+		return
+	if event is InputEventJoypadMotion:
+		var minimo := maxf(Global.zona_morta_controle + 0.2, 0.65)
+		if absf(event.axis_value) < minimo:
+			return
+
+	if event is InputEventKey and event.keycode == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()
+		_cancelar_captura()
+		return
+
+	# Modificar o InputMap enquanto o próprio evento está sendo distribuído pode
+	# fazer alguns controles perderem a entrada. A cópia é aplicada no próximo
+	# ciclo, depois que o Godot conclui a propagação do botão atual.
+	get_viewport().set_input_as_handled()
+	var evento_capturado := event.duplicate(true) as InputEvent
+	var acao_confirmada := acao_capturada
+	var slot_confirmado := slot_capturado
+	capturando_entrada = false
+	if is_instance_valid(botao_capturado):
+		botao_capturado.text = "[ OK ]"
+	call_deferred(
+		"_confirmar_mapeamento",
+		acao_confirmada,
+		slot_confirmado,
+		evento_capturado
+	)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if capturando_entrada:
+		return
+	if _solicitou_limpar_slot(event):
+		get_viewport().set_input_as_handled()
+		_limpar_slot_focado()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_on_voltar_pressed()
@@ -99,6 +153,7 @@ func _conectar_sinais() -> void:
 	volume_musica.drag_ended.connect(_on_slider_finalizado)
 	volume_som.drag_ended.connect(_on_slider_finalizado)
 
+	restaurar_controles.pressed.connect(_on_restaurar_controles_pressed)
 	restaurar.pressed.connect(_on_restaurar_pressed)
 	voltar.pressed.connect(_on_voltar_pressed)
 	abas.tab_changed.connect(_on_aba_alterada)
@@ -250,12 +305,14 @@ func atualizar_controles_detectados() -> void:
 	var controles := Input.get_connected_joypads()
 	if controles.is_empty():
 		controle_detectado.text = "Nenhum controle conectado. Conecte-o antes ou durante o jogo."
+		_atualizar_textos_mapeamentos()
 		return
 
 	var nomes: Array[String] = []
 	for dispositivo in controles:
 		nomes.append(Input.get_joy_name(dispositivo))
 	controle_detectado.text = "Detectado: " + ", ".join(nomes)
+	_atualizar_textos_mapeamentos()
 
 
 func _on_conexao_controle_alterada(_dispositivo: int, _conectado: bool) -> void:
@@ -263,8 +320,16 @@ func _on_conexao_controle_alterada(_dispositivo: int, _conectado: bool) -> void:
 
 
 func _on_restaurar_pressed() -> void:
+	_cancelar_captura()
 	Global.restaurar_configuracoes_padrao()
 	carregar_interface()
+	_atualizar_textos_mapeamentos()
+
+
+func _on_restaurar_controles_pressed() -> void:
+	_cancelar_captura()
+	Global.restaurar_mapeamentos_padrao()
+	_atualizar_textos_mapeamentos()
 
 
 func _on_voltar_pressed() -> void:
@@ -273,6 +338,7 @@ func _on_voltar_pressed() -> void:
 
 
 func _on_aba_alterada(_indice: int) -> void:
+	_cancelar_captura()
 	call_deferred("_focar_primeiro_controle")
 
 
@@ -297,3 +363,217 @@ func _atualizar_titulos_abas() -> void:
 	]
 	for indice in mini(abas.get_tab_count(), chaves.size()):
 		abas.set_tab_title(indice, tr(chaves[indice]))
+	_atualizar_rotulos_acoes()
+
+
+func _criar_lista_mapeamentos() -> void:
+	for child in lista_mapeamentos.get_children():
+		child.queue_free()
+	botoes_mapeamento.clear()
+
+	_criar_cabecalho_mapeamentos()
+	for acao in Global.obter_acoes_remapeaveis():
+		var linha := HBoxContainer.new()
+		linha.name = "Acao_" + str(acao)
+		linha.add_theme_constant_override("separation", 8)
+		lista_mapeamentos.add_child(linha)
+
+		var rotulo := Label.new()
+		rotulo.name = "Rotulo"
+		rotulo.custom_minimum_size = Vector2(160.0, 42.0)
+		rotulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		rotulo.add_theme_font_size_override("font_size", 12)
+		rotulo.set_meta("chave_traducao", Global.obter_acoes_remapeaveis()[acao])
+		linha.add_child(rotulo)
+
+		for slot in Global.MAX_SLOTS_CONTROLE:
+			var botao := _criar_botao_mapeamento()
+			botao.set_meta("acao", acao)
+			botao.set_meta("slot", slot)
+			botao.pressed.connect(_on_slot_mapeamento_pressed.bind(acao, slot, botao))
+			linha.add_child(botao)
+			botoes_mapeamento[_chave_slot(acao, slot)] = botao
+
+	_atualizar_rotulos_acoes()
+	_atualizar_textos_mapeamentos()
+
+
+func _criar_cabecalho_mapeamentos() -> void:
+	var cabecalho := HBoxContainer.new()
+	cabecalho.name = "Cabecalho"
+	cabecalho.add_theme_constant_override("separation", 8)
+	lista_mapeamentos.add_child(cabecalho)
+	for texto in ["AÇÃO", "SLOT 1", "SLOT 2", "SLOT 3"]:
+		var rotulo := Label.new()
+		rotulo.custom_minimum_size = Vector2(160.0, 24.0) if texto == "AÇÃO" else Vector2(142.0, 24.0)
+		rotulo.text = texto
+		rotulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		rotulo.add_theme_color_override("font_color", Color(0.38, 0.78, 0.94, 1.0))
+		rotulo.add_theme_font_size_override("font_size", 10)
+		cabecalho.add_child(rotulo)
+
+
+func _criar_botao_mapeamento() -> Button:
+	var botao := Button.new()
+	botao.custom_minimum_size = Vector2(142.0, 42.0)
+	botao.focus_mode = Control.FOCUS_ALL
+	botao.clip_text = true
+	botao.add_theme_font_size_override("font_size", 10)
+	botao.add_theme_color_override("font_color", Color(0.72, 0.94, 1.0, 1.0))
+	botao.add_theme_color_override("font_focus_color", Color.WHITE)
+	botao.add_theme_stylebox_override("normal", _estilo_slot(Color(0.035, 0.075, 0.12, 0.96), Color(0.16, 0.56, 0.72, 0.8)))
+	botao.add_theme_stylebox_override("hover", _estilo_slot(Color(0.05, 0.12, 0.18, 1.0), Color(0.28, 0.86, 1.0, 1.0)))
+	botao.add_theme_stylebox_override("focus", _estilo_slot(Color(0.06, 0.16, 0.22, 1.0), Color(0.48, 1.0, 0.82, 1.0)))
+	botao.add_theme_stylebox_override("pressed", _estilo_slot(Color(0.08, 0.2, 0.25, 1.0), Color(0.65, 1.0, 0.88, 1.0)))
+	return botao
+
+
+func _estilo_slot(fundo: Color, borda: Color) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = fundo
+	estilo.border_color = borda
+	estilo.set_border_width_all(1)
+	estilo.set_corner_radius_all(5)
+	estilo.content_margin_left = 7.0
+	estilo.content_margin_right = 7.0
+	return estilo
+
+
+func _on_slot_mapeamento_pressed(acao: StringName, slot: int, botao: Button) -> void:
+	if capturando_entrada:
+		_cancelar_captura()
+	capturando_entrada = true
+	acao_capturada = acao
+	slot_capturado = slot
+	botao_capturado = botao
+	botao.text = "[ ... ]"
+	instrucao_mapeamento.text = tr("T_BIND_WAITING")
+
+
+func _finalizar_captura() -> void:
+	capturando_entrada = false
+	acao_capturada = &""
+	slot_capturado = -1
+	botao_capturado = null
+	instrucao_mapeamento.text = tr("T_BIND_INSTRUCTION")
+	_atualizar_textos_mapeamentos()
+
+
+func _confirmar_mapeamento(
+	acao: StringName,
+	slot: int,
+	evento: InputEvent
+) -> void:
+	Global.definir_mapeamento(acao, slot, evento)
+	_finalizar_captura()
+
+
+func _cancelar_captura() -> void:
+	if not capturando_entrada:
+		return
+	_finalizar_captura()
+
+
+func _solicitou_limpar_slot(event: InputEvent) -> bool:
+	if event is InputEventKey and event.pressed and not event.echo:
+		return event.keycode in [KEY_DELETE, KEY_BACKSPACE]
+	if event is InputEventJoypadButton and event.pressed:
+		return event.button_index == JOY_BUTTON_X
+	return false
+
+
+func _limpar_slot_focado() -> void:
+	var foco := get_viewport().gui_get_focus_owner()
+	if not foco or not foco.has_meta("acao") or not foco.has_meta("slot"):
+		return
+	Global.limpar_mapeamento(
+		StringName(str(foco.get_meta("acao"))),
+		int(foco.get_meta("slot"))
+	)
+	_atualizar_textos_mapeamentos()
+
+
+func _atualizar_rotulos_acoes() -> void:
+	if not is_instance_valid(lista_mapeamentos):
+		return
+	for rotulo in lista_mapeamentos.find_children("Rotulo", "Label", true, false):
+		rotulo.text = tr(str(rotulo.get_meta("chave_traducao", "")))
+	restaurar_controles.text = tr("B_RESTORE_CONTROLS")
+	if not capturando_entrada:
+		instrucao_mapeamento.text = tr("T_BIND_INSTRUCTION")
+
+
+func _atualizar_textos_mapeamentos() -> void:
+	for acao in Global.obter_acoes_remapeaveis():
+		for slot in Global.MAX_SLOTS_CONTROLE:
+			var botao = botoes_mapeamento.get(_chave_slot(acao, slot)) as Button
+			if not is_instance_valid(botao):
+				continue
+			if capturando_entrada and botao == botao_capturado:
+				continue
+			var evento := Global.obter_evento_mapeado(acao, slot)
+			botao.text = _nome_evento(evento)
+			botao.tooltip_text = tr("T_BIND_EMPTY") if evento == null else botao.text
+
+
+func _nome_evento(evento: InputEvent) -> String:
+	if evento == null:
+		return tr("T_BIND_EMPTY")
+	if evento is InputEventKey:
+		var tecla := evento as InputEventKey
+		var codigo := tecla.physical_keycode if tecla.physical_keycode != 0 else tecla.keycode
+		var partes: Array[String] = []
+		if tecla.ctrl_pressed:
+			partes.append("CTRL")
+		if tecla.alt_pressed:
+			partes.append("ALT")
+		if tecla.shift_pressed:
+			partes.append("SHIFT")
+		if tecla.meta_pressed:
+			partes.append("META")
+		partes.append(OS.get_keycode_string(codigo).to_upper())
+		return "+".join(partes)
+	if evento is InputEventMouseButton:
+		var nomes_mouse := {
+			MOUSE_BUTTON_LEFT: "MOUSE 1",
+			MOUSE_BUTTON_RIGHT: "MOUSE 2",
+			MOUSE_BUTTON_MIDDLE: "MOUSE 3",
+			MOUSE_BUTTON_WHEEL_UP: "RODA ↑",
+			MOUSE_BUTTON_WHEEL_DOWN: "RODA ↓",
+		}
+		return nomes_mouse.get(evento.button_index, "MOUSE %d" % evento.button_index)
+	if evento is InputEventJoypadButton:
+		return _nome_botao_controle(evento.button_index)
+	if evento is InputEventJoypadMotion:
+		return _nome_eixo_controle(evento.axis, evento.axis_value)
+	return evento.as_text()
+
+
+func _nome_botao_controle(indice: int) -> String:
+	var playstation := _controle_conectado_e_playstation()
+	var nomes_xbox := ["A", "B", "X", "Y", "VIEW", "HOME", "MENU", "L3", "R3", "LB", "RB", "D-PAD ↑", "D-PAD ↓", "D-PAD ←", "D-PAD →"]
+	var nomes_ps := ["X", "CÍRCULO", "QUADRADO", "TRIÂNGULO", "SHARE", "PS", "OPTIONS", "L3", "R3", "L1", "R1", "D-PAD ↑", "D-PAD ↓", "D-PAD ←", "D-PAD →"]
+	var nomes := nomes_ps if playstation else nomes_xbox
+	return nomes[indice] if indice >= 0 and indice < nomes.size() else "BOTÃO %d" % (indice + 1)
+
+
+func _nome_eixo_controle(eixo: int, valor: float) -> String:
+	var direcao := "+" if valor > 0.0 else "−"
+	var nomes := ["LS X", "LS Y", "RS X", "RS Y", "LT / L2", "RT / R2"]
+	if eixo == JOY_AXIS_TRIGGER_LEFT:
+		return "LT / L2"
+	if eixo == JOY_AXIS_TRIGGER_RIGHT:
+		return "RT / R2"
+	return (nomes[eixo] if eixo >= 0 and eixo < nomes.size() else "EIXO %d" % eixo) + " " + direcao
+
+
+func _controle_conectado_e_playstation() -> bool:
+	var controles := Input.get_connected_joypads()
+	if controles.is_empty():
+		return false
+	var nome := Input.get_joy_name(controles[0]).to_lower()
+	return "playstation" in nome or "dualshock" in nome or "dualsense" in nome or "sony" in nome
+
+
+func _chave_slot(acao: StringName, slot: int) -> String:
+	return "%s:%d" % [acao, slot]

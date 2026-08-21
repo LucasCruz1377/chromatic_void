@@ -51,3 +51,19 @@ T_TAB_VIDEO,VÍDEO,VIDEO
 T_TAB_GRAPHICS,GRÁFICOS,GRAPHICS
 T_TAB_AUDIO,ÁUDIO,AUDIO
 T_TAB_CONTROLS,CONTROLES,CONTROLS
+T_BIND_INSTRUCTION,"Selecione um slot para remapear. Delete ou X/Quadrado limpa o slot.","Select a slot to remap. Delete or X/Square clears it."
+T_BIND_WAITING,"Pressione uma tecla, botão, gatilho ou direção do analógico. Esc cancela.","Press a key, button, trigger or stick direction. Esc cancels."
+T_BIND_EMPTY,VAZIO,EMPTY
+B_RESTORE_CONTROLS,Restaurar controles,Restore controls
+T_BIND_ACCELERATE,Acelerar,Accelerate
+T_BIND_BRAKE,Frear / Ré,Brake / Reverse
+T_BIND_TURN_LEFT,Virar à esquerda,Turn left
+T_BIND_TURN_RIGHT,Virar à direita,Turn right
+T_BIND_SHOOT,Atirar,Shoot
+T_BIND_ABILITY,Habilidade especial,Special ability
+T_BIND_UPGRADES,Abrir melhorias,Open upgrades
+T_BIND_PAUSE,Pausar,Pause
+T_BIND_AIM_LEFT,Mira à esquerda,Aim left
+T_BIND_AIM_RIGHT,Mira à direita,Aim right
+T_BIND_AIM_UP,Mira para cima,Aim up
+T_BIND_AIM_DOWN,Mira para baixo,Aim down
