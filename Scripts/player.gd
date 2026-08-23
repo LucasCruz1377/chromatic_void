@@ -20,6 +20,7 @@ const TEXTURA_COOLDOWN_RELOGIO = preload(
 @export var SPEED := 400.0
 @export var MAX_VELOCIDADE := 500.0
 @export var friction := 100.0
+@export_range(1.0, 4.0, 0.1) var resposta_controle_simplificado := 2.0
 
 @export_category("Vida")
 @export var VIDA_MAXIMA := 100.0
@@ -116,7 +117,6 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
@@ -312,7 +312,34 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
-	if not giroblock:
+	var usando_controle_simplificado := (
+		not Global.controle_avancado
+		and Global.ultimo_dispositivo == &"controle"
+	)
+	var direcao_simplificada := Vector2.ZERO
+	var intensidade_re := 0.0
+	if usando_controle_simplificado:
+		direcao_simplificada = _obter_analogico_esquerdo()
+		intensidade_re = _obter_intensidade_l2()
+	var acelerando := false
+
+	if usando_controle_simplificado:
+		if not giroblock and direcao_simplificada.length_squared() > 0.0:
+			rotation = rotate_toward(
+				rotation,
+				direcao_simplificada.angle(),
+				VelocidadeVirar * fator_movimento * resposta_controle_simplificado * delta
+			)
+		if not ctrlblock:
+			# L2 tem prioridade para a ré não disputar força com a aceleração
+			# automática do analógico esquerdo.
+			if intensidade_re > 0.0:
+				brake(delta, fator_movimento * intensidade_re)
+			elif direcao_simplificada.length_squared() > 0.0:
+				var intensidade := clampf(direcao_simplificada.length(), 0.0, 1.0)
+				acelerar(delta, fator_movimento * intensidade)
+				acelerando = true
+	elif not giroblock:
 		var direcao_mira_controle := Input.get_vector(
 			"mirar_esquerda",
 			"mirar_direita",
@@ -336,19 +363,62 @@ func atualizar_movimento(delta: float) -> void:
 		else:
 			arrowsctrl(delta, fator_movimento)
 
-	if not ctrlblock:
+	if not usando_controle_simplificado and not ctrlblock:
 		if Input.is_action_pressed("acelerar"):
 			acelerar(delta, fator_movimento)
+			acelerando = true
 		if Input.is_action_pressed("freio"):
 			brake(delta, fator_movimento)
 
-	particles.emitting = Input.is_action_pressed("acelerar") or UsandoHabilidade
+	particles.emitting = acelerando or UsandoHabilidade
 	velocity = velocity.move_toward(Vector2.ZERO, friction * fator_movimento * delta)
 
 	if not UsandoHabilidade:
 		velocity = velocity.limit_length(MAX_VELOCIDADE * fator_movimento)
 
 	move_and_slide()
+
+
+func _obter_controle_ativo() -> int:
+	var controles := Input.get_connected_joypads()
+	if controles.is_empty():
+		return -1
+	if controles.has(Global.ultimo_controle_id):
+		return Global.ultimo_controle_id
+	return controles[0]
+
+
+func _obter_analogico_esquerdo() -> Vector2:
+	var controle := _obter_controle_ativo()
+	if controle < 0:
+		return Vector2.ZERO
+	var direcao := Vector2(
+		Input.get_joy_axis(controle, JOY_AXIS_LEFT_X),
+		Input.get_joy_axis(controle, JOY_AXIS_LEFT_Y)
+	)
+	var intensidade := direcao.length()
+	if intensidade <= Global.zona_morta_controle:
+		return Vector2.ZERO
+	# Reescala a área após a zona morta para preservar controle analógico fino.
+	var intensidade_util := inverse_lerp(
+		Global.zona_morta_controle,
+		1.0,
+		minf(intensidade, 1.0)
+	)
+	return direcao.normalized() * intensidade_util
+
+
+func _obter_intensidade_l2() -> float:
+	var controle := _obter_controle_ativo()
+	if controle < 0:
+		return 0.0
+	var valor := maxf(
+		Input.get_joy_axis(controle, JOY_AXIS_TRIGGER_LEFT),
+		0.0
+	)
+	if valor <= Global.zona_morta_controle:
+		return 0.0
+	return inverse_lerp(Global.zona_morta_controle, 1.0, minf(valor, 1.0))
 
 
 func acelerar(delta: float, fator_movimento := 1.0) -> void:

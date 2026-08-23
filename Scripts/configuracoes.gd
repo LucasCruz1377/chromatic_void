@@ -9,7 +9,9 @@ func _ready() -> void:
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	Global.aplicar_configuracoes()
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	# A tela de configurações é interativa e precisa manter o cursor disponível,
+	# principalmente para selecionar os slots de remapeamento.
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	if janela_configuracoes.has_signal("voltar_solicitado"):
 		janela_configuracoes.connect(
