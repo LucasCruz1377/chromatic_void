@@ -18,7 +18,8 @@ const CONFIG_PADRAO := {
 	"bloom": 0.12,
 	"tremor_tela": 1.0,
 	"zona_morta_controle": 0.22,
-	"vibracao": true
+	"vibracao": true,
+	"controle_avancado": false
 }
 
 const MAX_SLOTS_CONTROLE := 3
@@ -60,7 +61,9 @@ var bloom := 0.12
 var tremor_tela := 1.0
 var zona_morta_controle := 0.22
 var vibracao := true
+var controle_avancado := false
 var ultimo_dispositivo: StringName = &"teclado_mouse"
+var ultimo_controle_id := -1
 var mapeamentos_controles: Dictionary = {}
 var _mapeamentos_padrao: Dictionary = {}
 
@@ -133,6 +136,8 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
 		if event is InputEventJoypadMotion and absf(event.axis_value) < zona_morta_controle:
 			return
+		if event.device >= 0:
+			ultimo_controle_id = event.device
 		novo_tipo = &"controle"
 	elif event is InputEventMouseButton or event is InputEventMouseMotion:
 		novo_tipo = &"teclado_mouse"
@@ -167,6 +172,7 @@ func carregar_configuracoes() -> void:
 	tremor_tela = clampf(float(config["tremor_tela"]), 0.0, 1.0)
 	zona_morta_controle = clampf(float(config["zona_morta_controle"]), 0.05, 0.6)
 	vibracao = bool(config["vibracao"])
+	controle_avancado = bool(config["controle_avancado"])
 
 	var mapeamentos_salvos = config.get("mapeamentos_controles", {})
 	if mapeamentos_salvos is Dictionary and not mapeamentos_salvos.is_empty():
@@ -196,6 +202,7 @@ func obter_configuracoes() -> Dictionary:
 		"tremor_tela": tremor_tela,
 		"zona_morta_controle": zona_morta_controle,
 		"vibracao": vibracao,
+		"controle_avancado": controle_avancado,
 		"mapeamentos_controles": mapeamentos_controles.duplicate(true),
 	}
 
@@ -215,6 +222,7 @@ func restaurar_configuracoes_padrao() -> void:
 	tremor_tela = float(config["tremor_tela"])
 	zona_morta_controle = float(config["zona_morta_controle"])
 	vibracao = bool(config["vibracao"])
+	controle_avancado = bool(config["controle_avancado"])
 	mapeamentos_controles = _mapeamentos_padrao.duplicate(true)
 	salvar_configuracoes()
 

@@ -30,6 +30,7 @@ signal voltar_solicitado
 @onready var valor_som: Label = $Painel/Margem/Coluna/Abas/AUDIO/Conteudo/Efeitos/Valor
 
 @onready var controle_detectado: Label = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/ControleDetectado
+@onready var controle_avancado: CheckButton = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/ControleAvancado
 @onready var instrucao_mapeamento: Label = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/Instrucao
 @onready var restaurar_controles: Button = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/RestaurarControles
 @onready var lista_mapeamentos: VBoxContainer = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem/ListaMapeamentos
@@ -40,6 +41,7 @@ var carregando := false
 var fps_disponiveis := [0, 30, 60, 120, 144, 240]
 var botoes_mapeamento: Dictionary = {}
 var capturando_entrada := false
+var captura_pronta := false
 var acao_capturada: StringName
 var slot_capturado := -1
 var botao_capturado: Button
@@ -59,7 +61,17 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not capturando_entrada:
+	if not capturando_entrada or not captura_pronta:
+		return
+	# MouseMotion (gerado ao tirar o cursor do slot), gestos e outros eventos
+	# não representam comandos remapeáveis. Antes, qualquer um deles encerrava a
+	# espera imediatamente e fazia o botão voltar ao vínculo anterior.
+	if not (
+		event is InputEventKey
+		or event is InputEventMouseButton
+		or event is InputEventJoypadButton
+		or event is InputEventJoypadMotion
+	):
 		return
 	if event is InputEventKey and (not event.pressed or event.echo):
 		return
@@ -85,6 +97,7 @@ func _input(event: InputEvent) -> void:
 	var acao_confirmada := acao_capturada
 	var slot_confirmado := slot_capturado
 	capturando_entrada = false
+	captura_pronta = false
 	if is_instance_valid(botao_capturado):
 		botao_capturado.text = "[ OK ]"
 	call_deferred(
@@ -153,6 +166,7 @@ func _conectar_sinais() -> void:
 	volume_musica.drag_ended.connect(_on_slider_finalizado)
 	volume_som.drag_ended.connect(_on_slider_finalizado)
 
+	controle_avancado.toggled.connect(_on_controle_avancado_toggled)
 	restaurar_controles.pressed.connect(_on_restaurar_controles_pressed)
 	restaurar.pressed.connect(_on_restaurar_pressed)
 	voltar.pressed.connect(_on_voltar_pressed)
@@ -175,6 +189,7 @@ func carregar_interface() -> void:
 	volume_master.value = Global.volume_master
 	volume_musica.value = Global.volume_musica
 	volume_som.value = Global.volume_som
+	controle_avancado.button_pressed = Global.controle_avancado
 	_atualizar_valores()
 	carregando = false
 
@@ -225,6 +240,11 @@ func _on_vibracao_toggled(valor: bool) -> void:
 	_salvar()
 	if valor:
 		Global.vibrar_controle()
+
+
+func _on_controle_avancado_toggled(valor: bool) -> void:
+	Global.controle_avancado = valor
+	_salvar()
 
 
 func _on_zona_morta_alterada(valor: float) -> void:
@@ -443,15 +463,27 @@ func _on_slot_mapeamento_pressed(acao: StringName, slot: int, botao: Button) -> 
 	if capturando_entrada:
 		_cancelar_captura()
 	capturando_entrada = true
+	captura_pronta = false
 	acao_capturada = acao
 	slot_capturado = slot
 	botao_capturado = botao
 	botao.text = "[ ... ]"
 	instrucao_mapeamento.text = tr("T_BIND_WAITING")
+	# O clique/acionamento que selecionou este botão ainda está sendo propagado.
+	# A captura começa no próximo ciclo para ele nunca virar o novo vínculo.
+	call_deferred("_armar_captura", acao, slot)
+
+
+func _armar_captura(acao: StringName, slot: int) -> void:
+	# A verificação evita que um deferred antigo arme outro slot caso o jogador
+	# mude de seleção ou cancele muito rapidamente.
+	if capturando_entrada and acao_capturada == acao and slot_capturado == slot:
+		captura_pronta = true
 
 
 func _finalizar_captura() -> void:
 	capturando_entrada = false
+	captura_pronta = false
 	acao_capturada = &""
 	slot_capturado = -1
 	botao_capturado = null

@@ -51,6 +51,8 @@ T_TAB_VIDEO,VÍDEO,VIDEO
 T_TAB_GRAPHICS,GRÁFICOS,GRAPHICS
 T_TAB_AUDIO,ÁUDIO,AUDIO
 T_TAB_CONTROLS,CONTROLES,CONTROLS
+T_ADVANCED_CONTROLLER,Controle avançado,Advanced controls
+T_ADVANCED_CONTROLLER_HINT,"Desligado: analógico esquerdo aponta e acelera; L2 aplica ré. Ligado: mantém o controle clássico com movimento e mira separados.","Off: left stick aims and accelerates; L2 reverses. On: keeps classic controls with separate movement and aiming."
 T_BIND_INSTRUCTION,"Selecione um slot para remapear. Delete ou X/Quadrado limpa o slot.","Select a slot to remap. Delete or X/Square clears it."
 T_BIND_WAITING,"Pressione uma tecla, botão, gatilho ou direção do analógico. Esc cancela.","Press a key, button, trigger or stick direction. Esc cancels."
 T_BIND_EMPTY,VAZIO,EMPTY

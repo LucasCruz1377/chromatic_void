@@ -373,6 +373,19 @@ theme_override_colors/font_color = Color(0.4, 1, 0.78, 1)
 theme_override_font_sizes/font_size = 11
 text = "Nenhum controle conectado."
 
+[node name="ControleAvancado" type="CheckButton" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo"]
+layout_mode = 2
+tooltip_text = "T_ADVANCED_CONTROLLER_HINT"
+text = "T_ADVANCED_CONTROLLER"
+focus_mode = 2
+
+[node name="DicaControle" type="Label" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.66, 0.78, 1)
+theme_override_font_sizes/font_size = 10
+text = "T_ADVANCED_CONTROLLER_HINT"
+autowrap_mode = 2
+
 [node name="BarraControles" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo"]
 layout_mode = 2
 theme_override_constants/separation = 10
