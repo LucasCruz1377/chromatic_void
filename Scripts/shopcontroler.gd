@@ -178,10 +178,11 @@ func _atualizar_dica_controles() -> void:
 
 func _adicionar_icone_dica(textura: Texture2D) -> void:
 	var icone := TextureRect.new()
-	icone.custom_minimum_size = Vector2(28, 20)
+	icone.custom_minimum_size = Vector2(24, 18)
 	icone.texture = textura
 	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dica_controles.add_child(icone)
 

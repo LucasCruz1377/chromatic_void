@@ -320,10 +320,11 @@ stretch_mode = 5
 [node name="IndicadorBotao" type="TextureRect" parent="GUI/DisplaySkill"]
 layout_mode = 0
 offset_left = 47.0
-offset_top = -7.0
-offset_right = 73.0
-offset_bottom = 19.0
+offset_top = -6.0
+offset_right = 71.0
+offset_bottom = 12.0
 mouse_filter = 2
+texture_filter = 2
 expand_mode = 1
 stretch_mode = 5
 

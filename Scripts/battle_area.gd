@@ -42,6 +42,7 @@ const INTERVALO_BOSS := 10
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
 @onready var astro = $GUI/Astro
 @onready var fundo_original: CanvasItem = $espaco
+@onready var tela_upgrades: Control = $GUI/TelaUpgrades
 
 var pontos: float = 0.0
 var timer: float = TIMER_MAX
@@ -77,6 +78,8 @@ func _ready() -> void:
 	game_over = false
 	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	caixa_gameover.visible = false
+	if tela_upgrades.has_signal("estado_alterado"):
+		tela_upgrades.connect("estado_alterado", _on_menu_upgrades_estado_alterado)
 	criar_visual_setor()
 	aplicar_setor(&"vazio_inicial")
 
@@ -304,6 +307,10 @@ func criar_hud_boss() -> void:
 	boss_hud.size = Vector2(440.0, 88.0)
 	boss_hud.add_theme_constant_override("separation", 3)
 	$GUI.add_child(boss_hud)
+	boss_hud.visible = not (
+		tela_upgrades.has_method("esta_aberta")
+		and bool(tela_upgrades.call("esta_aberta"))
+	)
 
 	boss_nome = Label.new()
 	boss_nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -326,6 +333,11 @@ func criar_hud_boss() -> void:
 	boss_detalhe.visible = boss_atual_id == &"pet0"
 	boss_detalhe.modulate = Color(1.0, 0.82, 0.18, 1.0)
 	boss_hud.add_child(boss_detalhe)
+
+
+func _on_menu_upgrades_estado_alterado(aberto: bool) -> void:
+	if is_instance_valid(boss_hud):
+		boss_hud.visible = not aberto
 
 
 func _on_boss_vida_alterada(atual: float, maxima: float) -> void:

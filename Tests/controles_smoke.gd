@@ -1,6 +1,8 @@
 extends Node
 
 
+const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
+
 var falhas: Array[String] = []
 var janela: Control
 var tela_configuracoes: Control
@@ -26,6 +28,19 @@ func _ready() -> void:
 	await get_tree().process_frame
 	janela = tela_configuracoes.get_node("JanelaConfiguracoes")
 	verificar(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "a tela de configurações ocultou o cursor")
+	verificar(janela.controle_avancado != null, "a opção de controle avançado não foi criada")
+	verificar(
+		janela.controle_avancado.button_pressed == Global.controle_avancado,
+		"a opção de controle avançado não carregou o valor salvo"
+	)
+	for arquivo in [
+		"A.svg", "B.svg", "X.svg", "Y.svg", "LB.svg", "LT.svg", "RB.svg", "RT.svg",
+		"xis.svg", "bola.svg", "quad.svg", "tri.svg", "L1.svg", "L2.svg", "R1.svg", "R2.svg"
+	]:
+		verificar(
+			ResourceLoader.exists("res://Assets/UI/IndicadoresControle/" + arquivo),
+			"o indicador %s não foi incluído" % arquivo
+		)
 
 	var acoes := Global.obter_acoes_remapeaveis()
 	verificar(acoes.size() == 12, "a lista não contém as doze ações jogáveis")
@@ -35,6 +50,12 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var rolagem := janela.get_node("Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem") as ScrollContainer
 	verificar(janela.lista_mapeamentos.size.x <= rolagem.size.x, "as três caixas ultrapassam a largura da janela")
+	verificar(rolagem.follow_focus, "a rolagem não acompanha o slot focado pelo controle")
+	var ultimo_slot = janela.botoes_mapeamento["mirar_baixo:2"] as Button
+	ultimo_slot.grab_focus()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	verificar(rolagem.scroll_vertical > 0, "o foco do controle não rolou até o último slot")
 
 	var tecla_g := InputEventKey.new()
 	tecla_g.physical_keycode = KEY_G
@@ -52,6 +73,14 @@ func _ready() -> void:
 	var botao_habilidade = janela.botoes_mapeamento["Habilidade:2"] as Button
 	botao_habilidade.pressed.emit()
 	await get_tree().process_frame
+	var movimento_mouse := InputEventMouseMotion.new()
+	movimento_mouse.relative = Vector2(3.0, 2.0)
+	Input.parse_input_event(movimento_mouse)
+	await get_tree().process_frame
+	verificar(
+		janela.capturando_entrada,
+		"mover o mouse após clicar encerrou a espera pelo próximo comando"
+	)
 	var gatilho := InputEventJoypadMotion.new()
 	gatilho.device = 4
 	gatilho.axis = JOY_AXIS_TRIGGER_RIGHT
@@ -103,6 +132,9 @@ func _ready() -> void:
 	Global.definir_mapeamento(&"abrir_melhorias", 2, botao_controle)
 	var evento_botao := Global.obter_evento_mapeado(&"abrir_melhorias", 2) as InputEventJoypadButton
 	verificar(evento_botao != null and evento_botao.device == -1, "um botão ficou preso ao controle usado na captura")
+	janela._atualizar_textos_mapeamentos()
+	var slot_com_icone = janela.botoes_mapeamento["abrir_melhorias:2"] as Button
+	verificar(slot_com_icone.icon != null, "um botão compatível não recebeu seu indicador SVG")
 
 	var mouse := InputEventMouseButton.new()
 	mouse.button_index = MOUSE_BUTTON_RIGHT
@@ -112,6 +144,13 @@ func _ready() -> void:
 	var dados := GerenciadorDeSave.carregar()
 	var config = dados.get("configuracoes", {})
 	verificar(config is Dictionary and config.has("mapeamentos_controles"), "os controles não foram persistidos no save")
+	Global.controle_avancado = true
+	Global.salvar_configuracoes()
+	Global.controle_avancado = false
+	Global.carregar_configuracoes()
+	verificar(Global.controle_avancado, "a opção de controle avançado não foi persistida")
+	Global.controle_avancado = false
+	Global.salvar_configuracoes()
 	Global.mapeamentos_controles = {}
 	Global.carregar_configuracoes()
 	Global.aplicar_configuracoes()

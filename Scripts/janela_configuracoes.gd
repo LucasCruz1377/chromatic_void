@@ -4,6 +4,7 @@ extends Control
 signal voltar_solicitado
 
 const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
+const VELOCIDADE_ROLAGEM_CONTROLE := 480.0
 
 @onready var abas: TabContainer = $Painel/Margem/Coluna/Abas
 
@@ -35,6 +36,7 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 @onready var controle_avancado: CheckButton = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/ControleAvancado
 @onready var instrucao_mapeamento: Label = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/Instrucao
 @onready var restaurar_controles: Button = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/RestaurarControles
+@onready var rolagem_mapeamentos: ScrollContainer = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem
 @onready var lista_mapeamentos: VBoxContainer = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem/ListaMapeamentos
 @onready var restaurar: Button = $Painel/Margem/Coluna/Rodape/Restaurar
 @onready var voltar: Button = $Painel/Margem/Coluna/Rodape/Voltar
@@ -60,6 +62,23 @@ func _ready() -> void:
 	_atualizar_titulos_abas()
 	atualizar_controles_detectados()
 	call_deferred("_focar_primeiro_controle")
+
+
+func _process(delta: float) -> void:
+	if capturando_entrada or abas.get_current_tab_control().name != &"CONTROLES":
+		return
+	var controles := Input.get_connected_joypads()
+	if controles.is_empty():
+		return
+	var dispositivo: int = controles[0]
+	if controles.has(Global.ultimo_controle_id):
+		dispositivo = Global.ultimo_controle_id
+	var eixo := Input.get_joy_axis(dispositivo, JOY_AXIS_RIGHT_Y)
+	if absf(eixo) <= Global.zona_morta_controle:
+		return
+	rolagem_mapeamentos.scroll_vertical += roundi(
+		eixo * VELOCIDADE_ROLAGEM_CONTROLE * delta
+	)
 
 
 func _input(event: InputEvent) -> void:
@@ -413,6 +432,7 @@ func _criar_lista_mapeamentos() -> void:
 			botao.set_meta("acao", acao)
 			botao.set_meta("slot", slot)
 			botao.pressed.connect(_on_slot_mapeamento_pressed.bind(acao, slot, botao))
+			botao.focus_entered.connect(_on_slot_focado.bind(botao))
 			linha.add_child(botao)
 			botoes_mapeamento[_chave_slot(acao, slot)] = botao
 
@@ -440,9 +460,9 @@ func _criar_botao_mapeamento() -> Button:
 	botao.custom_minimum_size = Vector2(142.0, 42.0)
 	botao.focus_mode = Control.FOCUS_ALL
 	botao.clip_text = true
-	botao.expand_icon = true
-	botao.icon_max_width = 30
+	botao.expand_icon = false
 	botao.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	botao.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	botao.add_theme_font_size_override("font_size", 10)
 	botao.add_theme_color_override("font_color", Color(0.72, 0.94, 1.0, 1.0))
 	botao.add_theme_color_override("font_focus_color", Color.WHITE)
@@ -451,6 +471,15 @@ func _criar_botao_mapeamento() -> Button:
 	botao.add_theme_stylebox_override("focus", _estilo_slot(Color(0.06, 0.16, 0.22, 1.0), Color(0.48, 1.0, 0.82, 1.0)))
 	botao.add_theme_stylebox_override("pressed", _estilo_slot(Color(0.08, 0.2, 0.25, 1.0), Color(0.65, 1.0, 0.88, 1.0)))
 	return botao
+
+
+func _on_slot_focado(botao: Button) -> void:
+	call_deferred("_garantir_slot_visivel", botao)
+
+
+func _garantir_slot_visivel(botao: Button) -> void:
+	if is_instance_valid(botao) and rolagem_mapeamentos.is_ancestor_of(botao):
+		rolagem_mapeamentos.ensure_control_visible(botao)
 
 
 func _estilo_slot(fundo: Color, borda: Color) -> StyleBoxFlat:

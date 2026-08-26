@@ -11,6 +11,7 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var tela_upgrades: Control = $TelaUpgrades
 @onready var botao_despause: Button = $"caixa pause/despause"
+@onready var botao_voltar_pause: Button = $"caixa pause/voltarmenu"
 @onready var caixa_gameover: VBoxContainer = $"caixa gameover"
 @onready var botao_tentar_novamente: Button = $"caixa gameover/Tentar de novo"
 @onready var botao_voltar_gameover: Button = $"caixa gameover/Voltarmenu2"
@@ -28,6 +29,24 @@ func _ready() -> void:
 	)
 	botao_voltar_gameover.focus_neighbor_top = (
 		botao_voltar_gameover.get_path_to(botao_tentar_novamente)
+	)
+	botao_tentar_novamente.focus_neighbor_top = (
+		botao_tentar_novamente.get_path_to(botao_voltar_gameover)
+	)
+	botao_voltar_gameover.focus_neighbor_bottom = (
+		botao_voltar_gameover.get_path_to(botao_tentar_novamente)
+	)
+	botao_voltar_pause.focus_neighbor_top = (
+		botao_voltar_pause.get_path_to(botao_despause)
+	)
+	botao_voltar_pause.focus_neighbor_bottom = (
+		botao_voltar_pause.get_path_to(botao_despause)
+	)
+	botao_despause.focus_neighbor_top = (
+		botao_despause.get_path_to(botao_voltar_pause)
+	)
+	botao_despause.focus_neighbor_bottom = (
+		botao_despause.get_path_to(botao_voltar_pause)
 	)
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	Global.configuracoes_alteradas.connect(_atualizar_indicador_habilidade)

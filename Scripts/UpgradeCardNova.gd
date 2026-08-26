@@ -4,6 +4,8 @@ class_name UpgradeCardNova
 
 signal escolhido(id: StringName)
 
+const TAMANHO_CARD := Vector2(260, 336)
+
 var upgrade_id: StringName
 var cor_destaque := Color.WHITE
 var botao: Button
@@ -17,34 +19,39 @@ func configurar(
 ) -> void:
 	upgrade_id = id
 	cor_destaque = Color(dados.get("cor", Color.WHITE))
-	custom_minimum_size = Vector2(252, 332)
-	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	custom_minimum_size = TAMANHO_CARD
+	size_flags_horizontal = Control.SIZE_FILL
+	size_flags_vertical = Control.SIZE_FILL
+	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	pivot_offset = custom_minimum_size * 0.5
+	pivot_offset = TAMANHO_CARD * 0.5
 
 	add_theme_stylebox_override("panel", criar_estilo_painel())
 	criar_poligonos_decorativos()
 
 	var margem := MarginContainer.new()
-	margem.add_theme_constant_override("margin_left", 18)
-	margem.add_theme_constant_override("margin_top", 16)
-	margem.add_theme_constant_override("margin_right", 18)
-	margem.add_theme_constant_override("margin_bottom", 16)
+	margem.add_theme_constant_override("margin_left", 16)
+	margem.add_theme_constant_override("margin_top", 14)
+	margem.add_theme_constant_override("margin_right", 16)
+	margem.add_theme_constant_override("margin_bottom", 14)
 	margem.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(margem)
 
 	var coluna := VBoxContainer.new()
-	coluna.add_theme_constant_override("separation", 8)
+	coluna.add_theme_constant_override("separation", 6)
 	coluna.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margem.add_child(coluna)
 
 	var topo := HBoxContainer.new()
+	topo.custom_minimum_size = Vector2(0, 18)
 	topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coluna.add_child(topo)
 
 	var categoria := Label.new()
 	categoria.text = str(dados.get("categoria", "MOD"))
 	categoria.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	categoria.clip_text = true
+	categoria.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	categoria.add_theme_font_size_override("font_size", 11)
 	categoria.add_theme_color_override("font_color", cor_destaque)
 	categoria.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -52,14 +59,17 @@ func configurar(
 
 	var raridade := Label.new()
 	raridade.text = str(dados.get("raridade", "COMUM"))
+	raridade.custom_minimum_size = Vector2(72, 18)
 	raridade.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	raridade.clip_text = true
+	raridade.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	raridade.add_theme_font_size_override("font_size", 10)
 	raridade.add_theme_color_override("font_color", cor_destaque.lightened(0.18))
 	raridade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	topo.add_child(raridade)
 
 	var icone := TextureRect.new()
-	icone.custom_minimum_size = Vector2(82, 82)
+	icone.custom_minimum_size = Vector2(70, 70)
 	icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	icone.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -72,8 +82,12 @@ func configurar(
 
 	var nome := Label.new()
 	nome.text = str(dados.get("nome", id))
+	nome.custom_minimum_size = Vector2(0, 42)
 	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nome.max_lines_visible = 2
+	nome.clip_text = true
 	nome.add_theme_font_size_override("font_size", 18)
 	nome.add_theme_color_override("font_color", Color(0.95, 0.97, 1.0))
 	nome.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -82,6 +96,7 @@ func configurar(
 	var nivel := Label.new()
 	var max_nivel := int(dados.get("max_nivel", 1))
 	nivel.text = "NÍVEL %d  →  %d/%d" % [nivel_atual, nivel_atual + 1, max_nivel]
+	nivel.custom_minimum_size = Vector2(0, 18)
 	nivel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nivel.add_theme_font_size_override("font_size", 11)
 	nivel.add_theme_color_override("font_color", cor_destaque)
@@ -90,11 +105,13 @@ func configurar(
 
 	var descricao := Label.new()
 	descricao.text = str(dados.get("descricao", ""))
-	descricao.custom_minimum_size = Vector2(0, 70)
+	descricao.custom_minimum_size = Vector2(0, 64)
 	descricao.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	descricao.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	descricao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	descricao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	descricao.max_lines_visible = 5
+	descricao.clip_text = true
 	descricao.add_theme_font_size_override("font_size", 13)
 	descricao.add_theme_color_override("font_color", Color(0.76, 0.8, 0.9))
 	descricao.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -102,10 +119,12 @@ func configurar(
 
 	var requisitos := Label.new()
 	requisitos.text = texto_requisitos
-	requisitos.custom_minimum_size = Vector2(0, 32)
+	requisitos.custom_minimum_size = Vector2(0, 30)
 	requisitos.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	requisitos.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	requisitos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	requisitos.max_lines_visible = 2
+	requisitos.clip_text = true
 	requisitos.add_theme_font_size_override("font_size", 9)
 	requisitos.add_theme_color_override("font_color", Color(0.46, 0.55, 0.7))
 	requisitos.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -119,6 +138,7 @@ func configurar(
 	botao.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 	botao.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
 	botao.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	botao.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	botao.pressed.connect(_on_pressed)
 	botao.mouse_entered.connect(_on_mouse_entered)
 	botao.mouse_exited.connect(_on_mouse_exited)
@@ -141,15 +161,15 @@ func criar_estilo_painel() -> StyleBoxFlat:
 func criar_poligonos_decorativos() -> void:
 	var canto_superior := Polygon2D.new()
 	canto_superior.polygon = PackedVector2Array([
-		Vector2(0, 0), Vector2(72, 0), Vector2(0, 72)
+		Vector2(16, 16), Vector2(64, 16), Vector2(16, 64)
 	])
 	canto_superior.color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.13)
 	add_child(canto_superior)
 
 	var losango := Polygon2D.new()
-	losango.position = Vector2(226, 302)
+	losango.position = TAMANHO_CARD - Vector2(30, 30)
 	losango.polygon = PackedVector2Array([
-		Vector2(0, -18), Vector2(18, 0), Vector2(0, 18), Vector2(-18, 0)
+		Vector2(0, -12), Vector2(12, 0), Vector2(0, 12), Vector2(-12, 0)
 	])
 	losango.color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.28)
 	add_child(losango)
