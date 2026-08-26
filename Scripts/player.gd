@@ -109,6 +109,15 @@ func _ready() -> void:
 	vida = VIDA_MAXIMA
 	carregar_habilidade_equipada()
 	criar_barra_cooldown_habilidade()
+	var menu := get_node_or_null("../GUI/TelaUpgrades")
+	if (
+		is_instance_valid(menu)
+		and menu.has_signal("estado_alterado")
+		and not menu.is_connected(
+			"estado_alterado", _on_menu_melhorias_estado_alterado
+		)
+	):
+		menu.connect("estado_alterado", _on_menu_melhorias_estado_alterado)
 
 
 func _exit_tree() -> void:
@@ -117,6 +126,9 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
+	if Input.is_action_just_pressed("switchcontrole"):
+		ganhar_xp(10)
+	
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
@@ -218,7 +230,9 @@ func atualizar_barra_cooldown_habilidade() -> void:
 	if not is_instance_valid(barra_cooldown_habilidade):
 		return
 	if (
-		not HabilidadeEquipada
+		not vivo
+		or _menu_melhorias_aberto()
+		or not HabilidadeEquipada
 		or HabilidadeEquipada.cooldown_atual <= 0.0
 	):
 		barra_cooldown_habilidade.hide()
@@ -236,6 +250,23 @@ func atualizar_barra_cooldown_habilidade() -> void:
 	barra_cooldown_habilidade.tooltip_text = "Recarga: %.1f s" % [
 		HabilidadeEquipada.cooldown_atual
 	]
+
+
+func _menu_melhorias_aberto() -> bool:
+	var menu := get_node_or_null("../GUI/TelaUpgrades")
+	return (
+		is_instance_valid(menu)
+		and menu.has_method("esta_aberta")
+		and bool(menu.call("esta_aberta"))
+	)
+
+
+func _on_menu_melhorias_estado_alterado(aberto: bool) -> void:
+	if aberto:
+		if is_instance_valid(barra_cooldown_habilidade):
+			barra_cooldown_habilidade.hide()
+		return
+	atualizar_barra_cooldown_habilidade()
 
 
 func atualizar_vida() -> void:
@@ -726,6 +757,8 @@ func morrer() -> void:
 		return
 
 	vivo = false
+	if is_instance_valid(barra_cooldown_habilidade):
+		barra_cooldown_habilidade.hide()
 	velocity = Vector2.ZERO
 	if HabilidadeEquipada:
 		HabilidadeEquipada.ao_desequipar(self)

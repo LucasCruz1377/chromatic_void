@@ -410,6 +410,7 @@ layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 2
+follow_focus = true
 
 [node name="ListaMapeamentos" type="VBoxContainer" parent="Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem"]
 layout_mode = 2

@@ -4,6 +4,7 @@ extends Control
 const VERSAO_LOJA := 3
 const HABILIDADE_INICIAL := "res://Habilidades/habilidadeRetrocesso.tres"
 const CristalIcone = preload("res://Scripts/CristalMoedaIcone.gd")
+const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 
 const CATALOGO := [
 	{
@@ -112,6 +113,7 @@ var mensagem: Label
 var rolagem_grade: ScrollContainer
 var rolagem_detalhes: ScrollContainer
 var botoes_habilidades: Array[Button] = []
+var dica_controles: HBoxContainer
 
 
 func _ready() -> void:
@@ -124,9 +126,75 @@ func _ready() -> void:
 	carregar_estado()
 	construir_interface()
 	Global.cristais_alterados.connect(_on_cristais_alterados)
+	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
+	Global.configuracoes_alteradas.connect(_atualizar_dica_controles)
+	Input.joy_connection_changed.connect(_on_controle_conectado)
 	atualizar_saldo()
+	_atualizar_dica_controles()
 	selecionar_categoria(0)
 	call_deferred("_focar_primeiro_item")
+
+
+func _on_dispositivo_alterado(_tipo: StringName) -> void:
+	_atualizar_dica_controles()
+
+
+func _on_controle_conectado(_dispositivo: int, _conectado: bool) -> void:
+	_atualizar_dica_controles()
+
+
+func _atualizar_dica_controles() -> void:
+	if not is_instance_valid(dica_controles):
+		return
+	for filho in dica_controles.get_children():
+		dica_controles.remove_child(filho)
+		filho.queue_free()
+
+	if (
+		Global.ultimo_dispositivo != &"controle"
+		or Input.get_connected_joypads().is_empty()
+	):
+		_adicionar_texto_dica(
+			"Q / E troca abas • ENTER compra/equipa • roda do mouse rola"
+		)
+		return
+
+	var anterior := IconesControle.textura_para_acao(&"aba_anterior")
+	var proxima := IconesControle.textura_para_acao(&"proxima_aba")
+	var aceitar := IconesControle.textura_para_acao(&"ui_accept")
+	if anterior == null or proxima == null or aceitar == null:
+		_adicionar_texto_dica(
+			"LB / RB troca abas • A confirma • analógico direito rola"
+		)
+		return
+
+	_adicionar_icone_dica(anterior)
+	_adicionar_texto_dica("/")
+	_adicionar_icone_dica(proxima)
+	_adicionar_texto_dica(" troca abas  •  ")
+	_adicionar_icone_dica(aceitar)
+	_adicionar_texto_dica(" compra/equipa  •  analógico direito rola")
+
+
+func _adicionar_icone_dica(textura: Texture2D) -> void:
+	var icone := TextureRect.new()
+	icone.custom_minimum_size = Vector2(24, 18)
+	icone.texture = textura
+	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dica_controles.add_child(icone)
+
+
+func _adicionar_texto_dica(texto: String) -> void:
+	var rotulo := Label.new()
+	rotulo.text = texto
+	rotulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rotulo.add_theme_color_override("font_color", Color(0.40, 0.50, 0.68))
+	aplicar_fonte(rotulo, 9)
+	rotulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dica_controles.add_child(rotulo)
 
 
 func _input(event: InputEvent) -> void:
@@ -393,12 +461,11 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	grade.add_theme_constant_override("v_separation", 8)
 	rolagem_grade.add_child(grade)
 
-	var dica := Label.new()
-	dica.text = "L1/R1 troca abas • X compra/equipa • analógico direito rola"
-	dica.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	dica.add_theme_color_override("font_color", Color(0.40, 0.50, 0.68))
-	aplicar_fonte(dica, 9)
-	esquerda.add_child(dica)
+	dica_controles = HBoxContainer.new()
+	dica_controles.custom_minimum_size = Vector2(0, 22)
+	dica_controles.alignment = BoxContainer.ALIGNMENT_CENTER
+	dica_controles.add_theme_constant_override("separation", 4)
+	esquerda.add_child(dica_controles)
 
 	painel_detalhes = PanelContainer.new()
 	painel_detalhes.custom_minimum_size = Vector2(278, 0)

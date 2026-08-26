@@ -5,6 +5,13 @@ extends Node2D
 @onready var som: AudioStreamPlayer2D = $som
 @onready var botao_loja: Button = $CanvasLayer/CaixaMenu2/Shop
 @onready var botao_iniciar: Button = $CanvasLayer/CaixaMenu2/Start
+@onready var botoes_menu: Array[Button] = [
+	$CanvasLayer/CaixaMenu2/Start as Button,
+	$CanvasLayer/CaixaMenu2/Shop as Button,
+	$CanvasLayer/CaixaMenu2/Options as Button,
+	$CanvasLayer/CaixaMenu2/Credits as Button,
+	$CanvasLayer/CaixaMenu2/Exit as Button,
+]
 
 
 func _ready() -> void:
@@ -12,11 +19,20 @@ func _ready() -> void:
 	Global.aplicar_configuracoes()
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
-	if Global.ultimo_dispositivo == &"controle":
-		botao_iniciar.call_deferred("grab_focus")
+	_configurar_navegacao_menu()
+	botao_iniciar.call_deferred("grab_focus")
 
 	if not botao_loja.pressed.is_connected(_on_shop_pressed):
 		botao_loja.pressed.connect(_on_shop_pressed)
+
+
+func _configurar_navegacao_menu() -> void:
+	for indice in botoes_menu.size():
+		var botao := botoes_menu[indice]
+		var anterior := botoes_menu[wrapi(indice - 1, 0, botoes_menu.size())]
+		var proximo := botoes_menu[(indice + 1) % botoes_menu.size()]
+		botao.focus_neighbor_top = botao.get_path_to(anterior)
+		botao.focus_neighbor_bottom = botao.get_path_to(proximo)
 
 
 func _process(_delta: float) -> void:
