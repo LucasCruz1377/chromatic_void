@@ -1,9 +1,12 @@
 extends CanvasLayer
 
 
+const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
+
 @onready var caixa_pause: VBoxContainer = $"caixa pause"
 @onready var camera = $"../Camera"
 @onready var display_skill = $DisplaySkill
+@onready var indicador_habilidade: TextureRect = $DisplaySkill/IndicadorBotao
 @export var quantidadeOpcoesUpgrade: int
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var tela_upgrades: Control = $TelaUpgrades
@@ -25,6 +28,28 @@ func _ready() -> void:
 	)
 	botao_voltar_gameover.focus_neighbor_top = (
 		botao_voltar_gameover.get_path_to(botao_tentar_novamente)
+	)
+	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
+	Global.configuracoes_alteradas.connect(_atualizar_indicador_habilidade)
+	Input.joy_connection_changed.connect(_on_controle_conectado)
+	_atualizar_indicador_habilidade()
+
+
+func _on_dispositivo_alterado(_tipo: StringName) -> void:
+	_atualizar_indicador_habilidade()
+
+
+func _on_controle_conectado(_dispositivo: int, _conectado: bool) -> void:
+	_atualizar_indicador_habilidade()
+
+
+func _atualizar_indicador_habilidade() -> void:
+	var textura := IconesControle.textura_para_acao(&"Habilidade")
+	indicador_habilidade.texture = textura
+	indicador_habilidade.visible = (
+		Global.ultimo_dispositivo == &"controle"
+		and not Input.get_connected_joypads().is_empty()
+		and textura != null
 	)
 
 

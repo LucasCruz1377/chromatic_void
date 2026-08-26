@@ -3,6 +3,8 @@ extends Control
 
 signal voltar_solicitado
 
+const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
+
 @onready var abas: TabContainer = $Painel/Margem/Coluna/Abas
 
 @onready var idiomas: OptionButton = $Painel/Margem/Coluna/Abas/JOGO/Conteudo/Idioma/Idiomas
@@ -438,6 +440,9 @@ func _criar_botao_mapeamento() -> Button:
 	botao.custom_minimum_size = Vector2(142.0, 42.0)
 	botao.focus_mode = Control.FOCUS_ALL
 	botao.clip_text = true
+	botao.expand_icon = true
+	botao.icon_max_width = 30
+	botao.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	botao.add_theme_font_size_override("font_size", 10)
 	botao.add_theme_color_override("font_color", Color(0.72, 0.94, 1.0, 1.0))
 	botao.add_theme_color_override("font_focus_color", Color.WHITE)
@@ -467,6 +472,7 @@ func _on_slot_mapeamento_pressed(acao: StringName, slot: int, botao: Button) -> 
 	acao_capturada = acao
 	slot_capturado = slot
 	botao_capturado = botao
+	botao.icon = null
 	botao.text = "[ ... ]"
 	instrucao_mapeamento.text = tr("T_BIND_WAITING")
 	# O clique/acionamento que selecionou este botão ainda está sendo propagado.
@@ -544,8 +550,11 @@ func _atualizar_textos_mapeamentos() -> void:
 			if capturando_entrada and botao == botao_capturado:
 				continue
 			var evento := Global.obter_evento_mapeado(acao, slot)
-			botao.text = _nome_evento(evento)
-			botao.tooltip_text = tr("T_BIND_EMPTY") if evento == null else botao.text
+			var nome_evento := _nome_evento(evento)
+			var icone := IconesControle.textura_para_evento(evento)
+			botao.icon = icone
+			botao.text = "" if icone != null else nome_evento
+			botao.tooltip_text = nome_evento
 
 
 func _nome_evento(evento: InputEvent) -> String:
