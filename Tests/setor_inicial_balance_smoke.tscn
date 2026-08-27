@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Tests/setor_inicial_balance_smoke.gd" id="1_script"]
+
+[node name="SetorInicialBalanceSmoke" type="Node"]
+script = ExtResource("1_script")

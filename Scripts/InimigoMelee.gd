@@ -64,6 +64,17 @@ func cercar(delta: float) -> void:
 		tempo_estado = tempo_aviso
 		direcao_golpe = ate_player
 		visual.modulate = Color(1.0, 0.35, 0.25, 1.0)
+		var tween := create_tween().set_loops(2)
+		tween.tween_property(visual, "scale", Vector2(1.14, 0.86), tempo_aviso / 4.0)
+		tween.tween_property(visual, "scale", Vector2.ONE, tempo_aviso / 4.0)
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position,
+			EfeitoCombate.Tipo.AVISO,
+			Color(1.0, 0.28, 0.24),
+			0.75,
+			direcao_golpe
+		)
 
 
 func avisar(delta: float) -> void:
@@ -76,6 +87,15 @@ func avisar(delta: float) -> void:
 		dano_aplicado = false
 		golpe.monitoring = true
 		velocity = direcao_golpe * velocidade_golpe
+		visual.scale = Vector2(1.22, 0.78)
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position,
+			EfeitoCombate.Tipo.RASTRO,
+			Color(1.0, 0.22, 0.32),
+			0.9,
+			direcao_golpe
+		)
 
 
 func golpear(delta: float) -> void:
@@ -97,6 +117,7 @@ func golpear(delta: float) -> void:
 		estado = Estado.RECUPERANDO
 		tempo_estado = tempo_recuperacao
 		visual.modulate = Color(0.65, 0.65, 0.65, 1.0)
+		visual.scale = Vector2(0.9, 1.1)
 
 
 func recuperar(delta: float) -> void:
@@ -105,10 +126,10 @@ func recuperar(delta: float) -> void:
 	if tempo_estado <= 0.0:
 		estado = Estado.CERCANDO
 		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
 		lado_orbita *= -1.0
 
 
 func ao_colidir_com_player(_alvo: Node) -> void:
 	# O dano deste inimigo vem da área do golpe, não do corpo.
 	pass
-

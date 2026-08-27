@@ -19,7 +19,11 @@ var container_cards: HBoxContainer
 var indicador: Button
 var texto_pontos: Label
 var texto_habilidade: Label
+var texto_rotas: Label
 var dica_menu: HBoxContainer
+var botao_fechar: Button
+var botao_rerrolar: Button
+var opcoes_atuais: Array[StringName] = []
 var menu_aberto := false
 var time_scale_anterior := 1.0
 var mouse_mode_anterior := Input.MOUSE_MODE_HIDDEN
@@ -89,7 +93,7 @@ func construir_interface() -> void:
 
 	var faixa_topo := ColorRect.new()
 	faixa_topo.position = Vector2(0, 0)
-	faixa_topo.size = Vector2(960, 67)
+	faixa_topo.size = Vector2(960, 82)
 	faixa_topo.color = Color(0.025, 0.045, 0.095, 0.96)
 	faixa_topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(faixa_topo)
@@ -97,7 +101,7 @@ func construir_interface() -> void:
 	var titulo := Label.new()
 	titulo.position = Vector2(32, 12)
 	titulo.size = Vector2(400, 34)
-	titulo.text = "MATRIZ DE MODIFICAÇÕES"
+	titulo.text = "MATRIZ DE EVOLUÇÃO DA NAVE"
 	titulo.add_theme_font_size_override("font_size", 25)
 	titulo.add_theme_color_override("font_color", Color(0.58, 0.94, 1.0))
 	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -111,6 +115,15 @@ func construir_interface() -> void:
 	texto_habilidade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(texto_habilidade)
 
+	texto_rotas = Label.new()
+	texto_rotas.position = Vector2(32, 64)
+	texto_rotas.size = Vector2(896, 16)
+	texto_rotas.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	texto_rotas.add_theme_font_size_override("font_size", 10)
+	texto_rotas.add_theme_color_override("font_color", Color(0.46, 0.75, 0.92))
+	texto_rotas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(texto_rotas)
+
 	texto_pontos = Label.new()
 	texto_pontos.position = Vector2(590, 17)
 	texto_pontos.size = Vector2(220, 34)
@@ -120,45 +133,45 @@ func construir_interface() -> void:
 	texto_pontos.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(texto_pontos)
 
-	var fechar := Button.new()
-	fechar.position = Vector2(830, 15)
-	fechar.size = Vector2(98, 38)
-	fechar.text = "FECHAR"
-	fechar.pressed.connect(fechar_menu)
-	fechar.add_theme_stylebox_override(
+	botao_fechar = Button.new()
+	botao_fechar.position = Vector2(830, 15)
+	botao_fechar.size = Vector2(98, 38)
+	botao_fechar.text = "FECHAR"
+	botao_fechar.pressed.connect(fechar_menu)
+	botao_fechar.add_theme_stylebox_override(
 		"normal", criar_estilo_botao(Color(0.08, 0.1, 0.18), Color(0.34, 0.44, 0.65))
 	)
-	fechar.add_theme_stylebox_override(
+	botao_fechar.add_theme_stylebox_override(
 		"hover", criar_estilo_botao(Color(0.13, 0.16, 0.27), Color(0.55, 0.8, 1.0))
 	)
-	fechar.add_theme_stylebox_override(
+	botao_fechar.add_theme_stylebox_override(
 		"focus", criar_estilo_botao(Color(0.11, 0.14, 0.24), Color(0.48, 0.76, 1.0))
 	)
-	overlay.add_child(fechar)
+	overlay.add_child(botao_fechar)
 
 	container_cards = HBoxContainer.new()
-	container_cards.position = Vector2(70, 82)
+	container_cards.position = Vector2(70, 88)
 	container_cards.size = Vector2(820, 336)
 	container_cards.add_theme_constant_override("separation", 20)
 	container_cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	container_cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(container_cards)
 
-	var rerrolar := Button.new()
-	rerrolar.position = Vector2(382, 440)
-	rerrolar.size = Vector2(196, 40)
-	rerrolar.text = "RECALCULAR OPÇÕES"
-	rerrolar.pressed.connect(mostrar_opcoes)
-	rerrolar.add_theme_stylebox_override(
+	botao_rerrolar = Button.new()
+	botao_rerrolar.position = Vector2(382, 438)
+	botao_rerrolar.size = Vector2(196, 40)
+	botao_rerrolar.text = "RECALCULAR OPÇÕES"
+	botao_rerrolar.pressed.connect(_on_rerrolar_pressed)
+	botao_rerrolar.add_theme_stylebox_override(
 		"normal", criar_estilo_botao(Color(0.06, 0.15, 0.22), Color(0.2, 0.75, 1.0))
 	)
-	rerrolar.add_theme_stylebox_override(
+	botao_rerrolar.add_theme_stylebox_override(
 		"hover", criar_estilo_botao(Color(0.09, 0.25, 0.34), Color(0.55, 0.94, 1.0))
 	)
-	rerrolar.add_theme_stylebox_override(
+	botao_rerrolar.add_theme_stylebox_override(
 		"focus", criar_estilo_botao(Color(0.08, 0.21, 0.30), Color(0.48, 0.9, 1.0))
 	)
-	overlay.add_child(rerrolar)
+	overlay.add_child(botao_rerrolar)
 
 	dica_menu = HBoxContainer.new()
 	dica_menu.position = Vector2(120, 492)
@@ -241,6 +254,10 @@ func _atualizar_dica_menu() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if menu_aberto and event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		fechar_menu()
+		return
 	if not event.is_action_pressed("abrir_melhorias"):
 		return
 
@@ -355,20 +372,29 @@ func atualizar_cabecalho() -> void:
 	var nome_habilidade := "NENHUMA"
 	if player.HabilidadeEquipada:
 		nome_habilidade = player.HabilidadeEquipada.Nome
-	texto_habilidade.text = "HABILIDADE EQUIPADA: " + nome_habilidade.to_upper()
+	texto_habilidade.text = (
+		"HABILIDADE: %s   •   CADA ROTA MUDA A FORMA DE PILOTAR" %
+		nome_habilidade.to_upper()
+	)
+	texto_rotas.text = "ROTAS ATIVAS   •   " + DadosUpgrades.resumo_rotas(
+		player.niveis_upgrades,
+		player.HabilidadeEquipada
+	)
+	_atualizar_botao_rerrolar()
 
 
-func mostrar_opcoes() -> void:
+func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 	if not menu_aberto or not is_instance_valid(player):
 		return
 
 	limpar_cards()
-	var opcoes := DadosUpgrades.sortear(
+	opcoes_atuais = DadosUpgrades.sortear(
 		player.niveis_upgrades,
 		qtd_cartas,
-		player.HabilidadeEquipada
+		player.HabilidadeEquipada,
+		evitar
 	)
-	for id in opcoes:
+	for id in opcoes_atuais:
 		var dados := DadosUpgrades.obter(id, player.HabilidadeEquipada)
 		var card = CardUpgrade.new()
 		card.configurar(
@@ -384,16 +410,69 @@ func mostrar_opcoes() -> void:
 		card.escolhido.connect(_on_upgrade_escolhido)
 		container_cards.add_child(card)
 
+	configurar_navegacao_controle()
+
 	if container_cards.get_child_count() > 0:
 		var primeiro_card = container_cards.get_child(0)
 		if primeiro_card.botao:
 			primeiro_card.botao.call_deferred("grab_focus")
 
 
+func _on_rerrolar_pressed() -> void:
+	if not menu_aberto or not is_instance_valid(player):
+		return
+	if not player.gastar_reroll_upgrade():
+		_atualizar_botao_rerrolar()
+		return
+	var anteriores: Array[StringName] = opcoes_atuais.duplicate()
+	_atualizar_botao_rerrolar()
+	mostrar_opcoes(anteriores)
+
+
+func _atualizar_botao_rerrolar() -> void:
+	if not is_instance_valid(botao_rerrolar) or not is_instance_valid(player):
+		return
+	var restantes: int = player.rerolls_upgrades_restantes
+	botao_rerrolar.text = "RECALCULAR (%d)" % restantes
+	botao_rerrolar.disabled = restantes <= 0
+	botao_rerrolar.focus_mode = (
+		Control.FOCUS_NONE if botao_rerrolar.disabled else Control.FOCUS_ALL
+	)
+
+
+func configurar_navegacao_controle() -> void:
+	var botoes: Array[Button] = []
+	for card in container_cards.get_children():
+		if card.botao is Button:
+			botoes.append(card.botao as Button)
+	if botoes.is_empty():
+		botao_fechar.call_deferred("grab_focus")
+		return
+
+	var destino_inferior: Button = (
+		botao_rerrolar if not botao_rerrolar.disabled else botao_fechar
+	)
+	for indice in range(botoes.size()):
+		var botao := botoes[indice]
+		var anterior := botoes[(indice - 1 + botoes.size()) % botoes.size()]
+		var proximo := botoes[(indice + 1) % botoes.size()]
+		botao.focus_neighbor_left = botao.get_path_to(anterior)
+		botao.focus_neighbor_right = botao.get_path_to(proximo)
+		botao.focus_neighbor_top = botao.get_path_to(botao_fechar)
+		botao.focus_neighbor_bottom = botao.get_path_to(destino_inferior)
+
+	botao_fechar.focus_neighbor_bottom = botao_fechar.get_path_to(botoes[0])
+	botao_fechar.focus_neighbor_top = botao_fechar.get_path_to(destino_inferior)
+	if not botao_rerrolar.disabled:
+		botao_rerrolar.focus_neighbor_top = botao_rerrolar.get_path_to(botoes[0])
+		botao_rerrolar.focus_neighbor_bottom = botao_rerrolar.get_path_to(botao_fechar)
+
+
 func limpar_cards() -> void:
 	for filho in container_cards.get_children():
 		container_cards.remove_child(filho)
 		filho.queue_free()
+	opcoes_atuais.clear()
 
 
 func _on_upgrade_escolhido(id: StringName) -> void:

@@ -10,6 +10,8 @@ const COR_PROJETIL_TANQUE := Color(1.0, 0.42, 0.10, 1.0)
 
 var tempo_pulso: float = 2.5
 var armadura_quebrada: bool = false
+var avisando_pulso := false
+var tempo_aviso_pulso := 0.0
 
 @onready var visual: Node2D = $Visual
 
@@ -22,10 +24,34 @@ func Mover(delta: float) -> void:
 	var direcao := global_position.direction_to(player.global_position)
 	velocity = velocity.move_toward(direcao * Velocidade, aceleracao * delta)
 
+	if avisando_pulso:
+		tempo_aviso_pulso -= delta
+		velocity *= 0.94
+		if tempo_aviso_pulso <= 0.0:
+			avisando_pulso = false
+			disparar_pulso()
+		return
+
 	tempo_pulso -= delta
 	if tempo_pulso <= 0.0:
 		tempo_pulso = intervalo_pulso
-		disparar_pulso()
+		iniciar_aviso_pulso()
+
+
+func iniciar_aviso_pulso() -> void:
+	avisando_pulso = true
+	tempo_aviso_pulso = 0.62
+	var tween := create_tween().set_loops(2)
+	tween.tween_property(visual, "scale", Vector2(1.18, 1.18), 0.155)
+	tween.tween_property(visual, "scale", Vector2.ONE, 0.155)
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position,
+		EfeitoCombate.Tipo.AVISO,
+		COR_PROJETIL_TANQUE,
+		1.35,
+		Vector2.RIGHT
+	)
 
 
 func tomarDano(valor: float) -> void:
@@ -50,6 +76,14 @@ func disparar_pulso() -> void:
 	var tween := create_tween()
 	tween.tween_property(visual, "scale", Vector2(1.22, 1.22), 0.18)
 	tween.tween_property(visual, "scale", Vector2.ONE, 0.18)
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position,
+		EfeitoCombate.Tipo.MORTE,
+		COR_PROJETIL_TANQUE,
+		1.1,
+		Vector2.RIGHT
+	)
 
 	for indice in quantidade_projeteis_pulso:
 		var angulo := TAU * float(indice) / float(quantidade_projeteis_pulso)

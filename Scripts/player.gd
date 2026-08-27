@@ -4,15 +4,26 @@ class_name Player
 
 const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
 const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
+const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const TEXTURA_COOLDOWN_RELOGIO = preload(
 	"res://Habilidades/Icones/cooldown_relogio.svg"
 )
+const REROLLS_UPGRADES_INICIAIS := 3
+const BONUS_DANO_POR_NIVEL := [0.25, 0.18, 0.14, 0.10, 0.08]
+const FATOR_CADENCIA_POR_NIVEL := [0.85, 0.88, 0.91, 0.94, 0.96]
+const BONUS_VIDA_POR_NIVEL := [0.20, 0.15, 0.12, 0.10, 0.08]
+const BONUS_PROPULSAO_POR_NIVEL := [0.15, 0.10, 0.08, 0.06, 0.05]
+const FATOR_FLUXO_POR_NIVEL := [0.85, 0.90, 0.93, 0.95]
+const REDUCAO_IMPACTO_POR_NIVEL := [0.025, 0.020, 0.015]
+const FORCA_HOMING_POR_NIVEL := [1.55, 2.15, 2.70]
+const BONUS_CALIBRE_POR_NIVEL := [0.22, 0.16, 0.12]
+const XP_PROGRESSAO_INICIAL := [2, 3, 4, 6, 8, 11, 14, 18, 23]
 
 
 @export_category("Combate")
 @export var tiro: PackedScene
 @export var HabilidadeEquipada: Habilidade
-@export var dano := 1.0
+@export var dano := 1.25
 @export var CD_MAX := 0.22
 
 @export_category("Movimento")
@@ -60,26 +71,45 @@ var resistencia_temporaria_multiplicador := 1.0
 var dano_colisao_habilidade := 0.0
 var xp_atual: float = 0.0
 var nivel_atual: int = 1
-var xp_necessario: int = 3
+var xp_necessario: int = 2
 var invencibilidade := false
 var invencibilidade_cd := 0.0
-var invencibilidade_cd_max := 3.0
+var invencibilidade_cd_max := 1.15
 var save := false
 
 # Pontos não interrompem a partida. O jogador abre o menu quando quiser.
 var pontos_upgrade_pendentes := 0
 var niveis_upgrades: Dictionary = {}
+var rerolls_upgrades_restantes := REROLLS_UPGRADES_INICIAIS
 
 # Montagem dinâmica da arma.
 var projeteis_por_tiro := 1
 var dispersao_graus := 0.0
 var multiplicador_dano_projetil := 1.0
+var multiplicador_dano_forma := 1.0
+var multiplicador_dano_mira := 1.0
 var multiplicador_velocidade_projetil := 1.0
 var multiplicador_escala_projetil := 1.0
 var penetracao_projetil := 0
 var fragmentos_projetil := 0
 var forca_mira_gravitacional := 0.0
 var ricochetes_projetil := 0
+var bonus_dano_ricochete := 0.0
+var dano_explosao_impacto := 0.0
+var raio_explosao_impacto := 0.0
+var multiplicador_fragmentos := 0.28
+var formacao_convergente := false
+
+# Passivos que mudam decisões durante a pilotagem.
+var bonus_vetor_ofensivo := 0.0
+var regeneracao_casco_por_segundo := 0.0
+var tempo_sem_dano := 0.0
+var nivel_capacitor_cinetico := 0
+var impactos_capacitor := 0
+var capacitor_pronto := false
+var bonus_cadencia_reacao := 0.0
+var tempo_reacao := 0.0
+var tween_dano_visual: Tween
 
 # Sinergias entre a arma e a habilidade equipada.
 var duracao_overdrive := 0.0
@@ -126,13 +156,11 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	if Input.is_action_just_pressed("switchcontrole"):
-		ganhar_xp(10)
-	
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
 	atualizar_efeitos_temporarios(delta)
+	atualizar_passivos(delta)
 	atualizar_overdrive(delta)
 	atualizar_habilidade(delta)
 	atualizar_movimento(delta)
@@ -279,7 +307,7 @@ func atualizar_vida() -> void:
 func atualizar_invencibilidade(delta: float) -> void:
 	if invencibilidade_cd > 0.0:
 		invencibilidade_cd = maxf(invencibilidade_cd - delta, 0.0)
-		modulate.a = absf(sin(Time.get_ticks_msec() / 100.0))
+		modulate.a = 0.48 + absf(sin(Time.get_ticks_msec() / 90.0)) * 0.52
 	else:
 		modulate.a = 1.0
 		invencibilidade = false
@@ -483,7 +511,20 @@ func fire() -> void:
 		return
 
 	var quantidade := maxi(projeteis_por_tiro, 1)
-	var arco := deg_to_rad(dispersao_graus)
+	var dispersao_efetiva := dispersao_graus * (0.58 if formacao_convergente else 1.0)
+	var arco := deg_to_rad(dispersao_efetiva)
+	var alvos_guiados := obter_alvos_para_multitiro(quantidade)
+	var bonus_capacitor := 1.0
+	if capacitor_pronto:
+		bonus_capacitor = 1.45 + float(nivel_capacitor_cinetico) * 0.15
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			PontaArma.global_position,
+			EfeitoCombate.Tipo.AVISO,
+			Color(0.25, 0.95, 1.0),
+			0.75,
+			transform.x
+		)
 	for indice in range(quantidade):
 		var deslocamento := 0.0
 		if quantidade > 1:
@@ -492,11 +533,24 @@ func fire() -> void:
 				arco * 0.5,
 				float(indice) / float(quantidade - 1)
 			)
-		criar_projetil(rotation + deslocamento)
+		var alvo_preferido: Node2D
+		if not alvos_guiados.is_empty():
+			alvo_preferido = alvos_guiados[indice % alvos_guiados.size()]
+		criar_projetil(
+			rotation + deslocamento,
+			bonus_capacitor,
+			false,
+			alvo_preferido
+		)
+	if capacitor_pronto:
+		capacitor_pronto = false
+		impactos_capacitor = 0
 
 	somtiro.pitch_scale = randf_range(0.9, 1.1)
 	somtiro.play()
 	var fator_cadencia := 0.75 if tempo_overdrive > 0.0 else 1.0
+	if tempo_reacao > 0.0:
+		fator_cadencia *= 1.0 - bonus_cadencia_reacao
 	cooldown = maxf(
 		CD_MAX * fator_cadencia * multiplicador_cadencia_habilidade,
 		0.04
@@ -506,7 +560,8 @@ func fire() -> void:
 func criar_projetil(
 	angulo: float,
 	multiplicador_dano_extra := 1.0,
-	eh_nova := false
+	eh_nova := false,
+	alvo_homing_preferido: Node2D = null
 ) -> void:
 	var projetil = tiro.instantiate()
 	get_tree().current_scene.add_child(projetil)
@@ -514,11 +569,20 @@ func criar_projetil(
 	projetil.rotation = angulo
 
 	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
+	var velocidade_relativa := clampf(
+		velocity.length() / maxf(MAX_VELOCIDADE, 1.0),
+		0.0,
+		1.0
+	)
+	var bonus_movimento := 1.0 + bonus_vetor_ofensivo * velocidade_relativa
 	var dano_final := (
 		dano
 		* multiplicador_dano_projetil
+		* multiplicador_dano_forma
+		* multiplicador_dano_mira
 		* multiplicador_dano_habilidade
 		* bonus_overdrive
+		* bonus_movimento
 		* multiplicador_dano_extra
 	)
 
@@ -533,16 +597,71 @@ func criar_projetil(
 			ricochetes_projetil,
 			self,
 			tiro,
-			false
+			false,
+			multiplicador_fragmentos,
+			dano_explosao_impacto,
+			raio_explosao_impacto,
+			bonus_dano_ricochete,
+			obter_estilo_projetil()
 		)
+		if (
+			is_instance_valid(alvo_homing_preferido)
+			and projetil.has_method("definir_alvo_homing")
+		):
+			projetil.definir_alvo_homing(alvo_homing_preferido)
 	else:
 		projetil.dmg = dano_final
 
 
+func obter_estilo_projetil() -> StringName:
+	if dano_explosao_impacto > 0.0:
+		return &"impacto"
+	if multiplicador_escala_projetil > 1.05:
+		return &"pesado"
+	if fragmentos_projetil > 0:
+		return &"fragmentacao"
+	if forca_mira_gravitacional > 0.0:
+		return &"gravitacional"
+	if ricochetes_projetil > 0:
+		return &"ricochete"
+	if projeteis_por_tiro > 1:
+		return &"multitiro"
+	return &"padrao"
+
+
+func obter_alvos_para_multitiro(quantidade: int) -> Array[Node2D]:
+	var alvos: Array[Node2D] = []
+	if forca_mira_gravitacional <= 0.0:
+		return alvos
+	for inimigo in get_tree().get_nodes_in_group("inimigo"):
+		if not is_instance_valid(inimigo) or not (inimigo is Node2D):
+			continue
+		var alvo := inimigo as Node2D
+		if global_position.distance_squared_to(alvo.global_position) > 270400.0:
+			continue
+		alvos.append(alvo)
+		if alvos.size() >= quantidade:
+			break
+	return alvos
+
+
 func registrar_acerto_projetil() -> void:
-	if reducao_cooldown_por_impacto <= 0.0 or not HabilidadeEquipada:
+	if reducao_cooldown_por_impacto > 0.0 and HabilidadeEquipada:
+		HabilidadeEquipada.reduzir_cooldown_atual(reducao_cooldown_por_impacto)
+	if nivel_capacitor_cinetico <= 0 or capacitor_pronto:
 		return
-	HabilidadeEquipada.reduzir_cooldown_atual(reducao_cooldown_por_impacto)
+	impactos_capacitor += 1
+	var impactos_necessarios := maxi(11 - nivel_capacitor_cinetico * 2, 5)
+	if impactos_capacitor >= impactos_necessarios:
+		capacitor_pronto = true
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position,
+			EfeitoCombate.Tipo.AVISO,
+			Color(0.25, 0.95, 1.0),
+			1.0,
+			transform.x
+		)
 
 
 func tomar_dano(valor: float) -> void:
@@ -563,9 +682,34 @@ func tomar_dano(valor: float) -> void:
 		0.0
 	)
 	vida = maxf(vida - dano_final, 0.0)
+	tempo_sem_dano = 0.0
+	if bonus_cadencia_reacao > 0.0:
+		tempo_reacao = 2.4
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
 	Global.vibrar_controle(0.35, 0.75, 0.2)
+	reproduzir_feedback_dano(dano_final)
+
+
+func reproduzir_feedback_dano(dano_recebido: float) -> void:
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(
+			cena,
+			global_position,
+			EfeitoCombate.Tipo.DANO_PLAYER,
+			Color(1.0, 0.22, 0.38),
+			clampf(0.85 + dano_recebido / 45.0, 0.9, 1.45),
+			-transform.x
+		)
+	var camera := get_tree().get_first_node_in_group("camera") as Camera2D
+	if is_instance_valid(camera) and camera.has_method("shake"):
+		camera.shake(clampf(2.5 + dano_recebido * 0.12, 3.0, 7.0))
+	if tween_dano_visual and tween_dano_visual.is_valid():
+		tween_dano_visual.kill()
+	modulate = Color(1.0, 0.32, 0.42, 1.0)
+	tween_dano_visual = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween_dano_visual.tween_property(self, "modulate", Color.WHITE, 0.18)
 
 
 func curar(valor: float) -> void:
@@ -612,6 +756,18 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 			resistencia_temporaria_multiplicador = 1.0
 
 
+func atualizar_passivos(delta: float) -> void:
+	tempo_sem_dano += delta
+	if tempo_reacao > 0.0:
+		tempo_reacao = maxf(tempo_reacao - delta, 0.0)
+	if (
+		regeneracao_casco_por_segundo > 0.0
+		and tempo_sem_dano >= 5.0
+		and vida < VIDA_MAXIMA
+	):
+		curar(regeneracao_casco_por_segundo * delta)
+
+
 func _draw() -> void:
 	if escudo_habilidade <= 0.0 or escudo_habilidade_max <= 0.0:
 		return
@@ -641,10 +797,18 @@ func ganhar_xp(valor: float) -> void:
 
 func subir_de_nivel() -> void:
 	nivel_atual += 1
-	xp_necessario += 2
+	xp_necessario = calcular_xp_proximo_nivel(nivel_atual)
 	pontos_upgrade_pendentes += 1
 	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()
+
+
+func calcular_xp_proximo_nivel(nivel: int) -> int:
+	var indice := maxi(nivel - 1, 0)
+	if indice < XP_PROGRESSAO_INICIAL.size():
+		return int(XP_PROGRESSAO_INICIAL[indice])
+	var niveis_apos_dez := indice - XP_PROGRESSAO_INICIAL.size() + 1
+	return 23 + niveis_apos_dez * 5 + int(niveis_apos_dez * niveis_apos_dez / 5.0)
 
 
 func comprar_upgrade(id: StringName) -> bool:
@@ -662,66 +826,146 @@ func comprar_upgrade(id: StringName) -> bool:
 	return true
 
 
+func gastar_reroll_upgrade() -> bool:
+	if rerolls_upgrades_restantes <= 0:
+		return false
+	rerolls_upgrades_restantes -= 1
+	return true
+
+
+func _valor_tabela(tabela: Array, nivel: int, padrao: float) -> float:
+	var indice := nivel - 1
+	if indice < 0 or indice >= tabela.size():
+		return padrao
+	return float(tabela[indice])
+
+
+func atualizar_multiplicador_forma() -> void:
+	match projeteis_por_tiro:
+		1: multiplicador_dano_forma = 1.0
+		2: multiplicador_dano_forma = 0.68
+		3: multiplicador_dano_forma = 0.48
+		4: multiplicador_dano_forma = 0.37
+		5: multiplicador_dano_forma = 0.30
+		6: multiplicador_dano_forma = 0.255
+		_:
+			multiplicador_dano_forma = 1.55 / float(maxi(projeteis_por_tiro, 1))
+
+
 func aplicar_upgrade(id: StringName) -> void:
+	var nivel_atual_upgrade := DadosUpgrades.nivel(id, niveis_upgrades)
 	match id:
 		&"dano_calibrado":
-			dano += 0.45
+			dano *= 1.0 + _valor_tabela(
+				BONUS_DANO_POR_NIVEL, nivel_atual_upgrade, 0.04
+			)
 		&"cadencia":
-			CD_MAX = maxf(CD_MAX * 0.9, 0.04)
+			CD_MAX = maxf(
+				CD_MAX * _valor_tabela(
+					FATOR_CADENCIA_POR_NIVEL, nivel_atual_upgrade, 0.97
+				),
+				0.07
+			)
 		&"blindagem":
 			var vida_anterior := VIDA_MAXIMA
-			VIDA_MAXIMA *= 1.12
+			VIDA_MAXIMA *= 1.0 + _valor_tabela(
+				BONUS_VIDA_POR_NIVEL, nivel_atual_upgrade, 0.05
+			)
 			vida += VIDA_MAXIMA - vida_anterior
 		&"propulsao":
-			SPEED *= 1.1
-			MAX_VELOCIDADE *= 1.1
+			var bonus_propulsao := _valor_tabela(
+				BONUS_PROPULSAO_POR_NIVEL, nivel_atual_upgrade, 0.03
+			)
+			SPEED *= 1.0 + bonus_propulsao
+			MAX_VELOCIDADE *= 1.0 + bonus_propulsao
 		&"tiro_duplo":
 			projeteis_por_tiro = 2
 			dispersao_graus = maxf(dispersao_graus, 12.0)
-			multiplicador_dano_projetil *= 0.78
+			atualizar_multiplicador_forma()
 		&"tiro_triplo":
 			projeteis_por_tiro = 3
 			dispersao_graus = maxf(dispersao_graus, 18.0)
+			atualizar_multiplicador_forma()
 		&"leque_prismatico":
 			projeteis_por_tiro += 1
 			dispersao_graus += 8.0
-			multiplicador_dano_projetil *= 0.92
+			atualizar_multiplicador_forma()
 		&"calibre_pesado":
-			multiplicador_dano_projetil *= 1.24
-			multiplicador_escala_projetil *= 1.18
-			multiplicador_velocidade_projetil *= 0.92
+			multiplicador_dano_projetil *= 1.0 + _valor_tabela(
+				BONUS_CALIBRE_POR_NIVEL, nivel_atual_upgrade, 0.10
+			)
+			multiplicador_escala_projetil *= 1.14
+			multiplicador_velocidade_projetil *= 0.90
 		&"perfuracao":
 			penetracao_projetil += 1
 		&"fragmentacao":
 			fragmentos_projetil += 2
 		&"mira_gravitacional":
-			forca_mira_gravitacional += 1.6
+			multiplicador_dano_mira = 0.88
+			forca_mira_gravitacional = _valor_tabela(
+				FORCA_HOMING_POR_NIVEL, nivel_atual_upgrade, 2.70
+			)
 		&"ricochete":
 			ricochetes_projetil += 1
+		&"formacao_convergente":
+			formacao_convergente = true
+			multiplicador_dano_forma *= 1.08
+		&"onda_impacto":
+			dano_explosao_impacto += 0.30
+			raio_explosao_impacto += 54.0
+		&"ressonancia_borda":
+			bonus_dano_ricochete += 0.28
+		&"predacao_gravitacional":
+			forca_mira_gravitacional += 0.75
+			multiplicador_dano_mira = minf(multiplicador_dano_mira + 0.06, 1.0)
+		&"estilhacos_predadores":
+			multiplicador_fragmentos += 0.08
+			forca_mira_gravitacional += 0.25
+		&"vetor_ofensivo":
+			bonus_vetor_ofensivo += 0.16
+		&"casco_regenerativo":
+			regeneracao_casco_por_segundo += 1.25
+		&"capacitor_cinetico":
+			nivel_capacitor_cinetico += 1
+		&"reacao_adrenal":
+			bonus_cadencia_reacao += 0.12
 		&"fluxo_habilidade":
 			if HabilidadeEquipada:
-				HabilidadeEquipada.reduzir_cooldown(0.9)
+				HabilidadeEquipada.reduzir_cooldown(
+					_valor_tabela(
+						FATOR_FLUXO_POR_NIVEL, nivel_atual_upgrade, 0.96
+					)
+				)
 		&"overdrive_habilidade":
-			duracao_overdrive += 1.5
+			duracao_overdrive += 1.25
 		&"conversor_impacto":
-			reducao_cooldown_por_impacto += 0.06
+			reducao_cooldown_por_impacto += _valor_tabela(
+				REDUCAO_IMPACTO_POR_NIVEL, nivel_atual_upgrade, 0.01
+			)
 		&"nova_ativacao":
 			nivel_nova_ativacao += 1
 		&"escudo_fase":
 			duracao_escudo_fase += 0.35
 		&"tempestade_prismatica":
-			projeteis_por_tiro += 2
-			dispersao_graus += 12.0
-			CD_MAX = maxf(CD_MAX * 0.85, 0.04)
-			multiplicador_dano_projetil *= 0.86
+			projeteis_por_tiro += 1
+			dispersao_graus += 10.0
+			atualizar_multiplicador_forma()
+			CD_MAX = maxf(CD_MAX / 1.10, 0.07)
+			multiplicador_velocidade_projetil *= 0.85
 		&"singularidade":
-			multiplicador_dano_projetil *= 1.5
-			multiplicador_escala_projetil *= 1.5
+			multiplicador_dano_projetil *= 1.25
+			multiplicador_escala_projetil *= 1.35
 			multiplicador_velocidade_projetil *= 0.75
 			penetracao_projetil += 1
-			forca_mira_gravitacional += 2.5
+			forca_mira_gravitacional += 0.8
 		&"reator_sincronizado":
 			reator_sincronizado = true
+			if HabilidadeEquipada:
+				HabilidadeEquipada.Cooldown *= 1.15
+				HabilidadeEquipada.cooldown_atual = minf(
+					HabilidadeEquipada.cooldown_atual,
+					HabilidadeEquipada.Cooldown
+				)
 		_:
 			if HabilidadeEquipada:
 				HabilidadeEquipada.aplicar_upgrade_especifico(

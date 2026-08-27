@@ -3,8 +3,18 @@ class_name UpgradeData
 
 
 # Chance de uma rodada oferecer exatamente uma carta da habilidade equipada.
-# Valor médio: 0.50 corresponde a aproximadamente metade das rodadas.
-const CHANCE_UPGRADE_HABILIDADE_ESPECIFICA := 0.50
+# Mantém as cartas específicas presentes sem dominar todas as ofertas.
+const CHANCE_UPGRADE_HABILIDADE_ESPECIFICA := 0.42
+
+const TIPO_BASICA: StringName = &"basica"
+const TIPO_ESTRUTURAL: StringName = &"estrutural"
+const TIPO_SINERGIA: StringName = &"sinergia"
+const TIPO_SUPERMOD: StringName = &"supermod"
+
+const SLOT_FORMA: StringName = &"forma"
+const SLOT_TRAJETORIA: StringName = &"trajetoria"
+const SLOT_CARGA: StringName = &"carga"
+const SLOT_SUPERMOD: StringName = &"supermod"
 
 
 # Catálogo central dos mods. Para personalizar a tela, altere aqui:
@@ -12,97 +22,113 @@ const CHANCE_UPGRADE_HABILIDADE_ESPECIFICA := 0.50
 const DADOS: Dictionary = {
 	&"dano_calibrado": {
 		"nome": "DANO CALIBRADO",
-		"descricao": "+0,45 de dano base por nível.",
+		"descricao": "Aumenta o dano em +25%, +18%, +14%, +10% e +8%. Forte cedo, controlado depois.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ARMA",
 		"raridade": "COMUM",
 		"cor": Color(1.0, 0.35, 0.28),
 		"max_nivel": 5,
 		"peso": 1.2,
+		"tipo": TIPO_BASICA,
 		"requisitos": {},
 		"tags": [&"arma", &"dano"]
 	},
 	&"cadencia": {
 		"nome": "CÂMARA ACELERADA",
-		"descricao": "+10% de cadência por nível.",
+		"descricao": "Aumenta muito a cadência nos primeiros níveis, com retornos decrescentes.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "ARMA",
 		"raridade": "COMUM",
 		"cor": Color(1.0, 0.72, 0.2),
 		"max_nivel": 5,
 		"peso": 1.1,
+		"tipo": TIPO_BASICA,
 		"requisitos": {},
 		"tags": [&"arma", &"cadencia"]
 	},
 	&"blindagem": {
 		"nome": "BLINDAGEM VIVA",
-		"descricao": "+12% de vida máxima e recupera a vida adicionada.",
+		"descricao": "Aumenta bastante a vida máxima e recupera somente a vida adicionada.",
 		"icone": "res://Assets/UpgradeVida.png",
 		"categoria": "CASCO",
 		"raridade": "COMUM",
 		"cor": Color(0.35, 1.0, 0.58),
 		"max_nivel": 5,
 		"peso": 0.9,
+		"tipo": TIPO_BASICA,
 		"requisitos": {},
 		"tags": [&"casco", &"vida"]
 	},
 	&"propulsao": {
 		"nome": "PROPULSÃO VETORIAL",
-		"descricao": "+10% de aceleração e velocidade máxima.",
+		"descricao": "Aumenta aceleração e velocidade; o primeiro nível concede +15%.",
 		"icone": "res://Assets/UpgradeVelocidade.png",
 		"categoria": "MOBILIDADE",
 		"raridade": "COMUM",
 		"cor": Color(0.3, 0.86, 1.0),
 		"max_nivel": 5,
 		"peso": 0.9,
+		"tipo": TIPO_BASICA,
 		"requisitos": {},
 		"tags": [&"movimento"]
 	},
 	&"tiro_duplo": {
 		"nome": "TIRO DUPLO",
-		"descricao": "Dispara 2 projéteis com pequena abertura. Cada projétil causa 78% do dano.",
+		"descricao": "Dispara 2 projéteis com pequena abertura. Cada projétil causa 68% do dano.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "FORMA",
 		"raridade": "INCOMUM",
 		"cor": Color(1.0, 0.38, 0.7),
 		"max_nivel": 1,
 		"peso": 1.0,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_FORMA,
+		"rota_estrutural": &"multitiro",
 		"requisitos": {},
 		"tags": [&"projetil", &"multitiro"]
 	},
 	&"tiro_triplo": {
 		"nome": "FORMAÇÃO TRIDENTE",
-		"descricao": "Transforma o tiro duplo em 3 projéteis e amplia levemente o arco.",
+		"descricao": "Transforma o tiro duplo em 3 projéteis de 48% do dano e amplia o arco.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "FORMA",
 		"raridade": "RARA",
 		"cor": Color(0.82, 0.38, 1.0),
 		"max_nivel": 1,
 		"peso": 0.72,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_FORMA,
+		"rota_estrutural": &"multitiro",
 		"requisitos": {&"tiro_duplo": 1},
 		"tags": [&"projetil", &"multitiro"]
 	},
 	&"leque_prismatico": {
 		"nome": "LEQUE PRISMÁTICO",
-		"descricao": "+1 projétil e +8° de dispersão por nível.",
+		"descricao": "+1 projétil e +8° de dispersão; o dano individual se ajusta para preservar o DPS.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "FORMA",
 		"raridade": "RARA",
 		"cor": Color(0.65, 0.3, 1.0),
 		"max_nivel": 2,
 		"peso": 0.6,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_FORMA,
+		"rota_estrutural": &"multitiro",
 		"requisitos": {&"tiro_triplo": 1},
 		"tags": [&"projetil", &"multitiro"]
 	},
 	&"calibre_pesado": {
 		"nome": "CALIBRE PESADO",
-		"descricao": "+24% de dano e +18% de tamanho, mas -8% de velocidade do projétil.",
+		"descricao": "+22%, +16% e +12% de dano; projétil maior, pesado e 10% mais lento por nível.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "CARGA",
 		"raridade": "INCOMUM",
 		"cor": Color(1.0, 0.5, 0.22),
 		"max_nivel": 3,
 		"peso": 0.9,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_CARGA,
+		"rota_estrutural": &"impacto_pesado",
 		"requisitos": {},
 		"tags": [&"projetil", &"dano", &"pesado"]
 	},
@@ -110,35 +136,44 @@ const DADOS: Dictionary = {
 		"nome": "PONTA PERFURANTE",
 		"descricao": "O projétil atravessa +1 inimigo por nível.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "CARGA",
 		"raridade": "INCOMUM",
 		"cor": Color(1.0, 0.64, 0.2),
 		"max_nivel": 3,
 		"peso": 0.72,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_CARGA,
+		"rota_estrutural": &"impacto_pesado",
 		"requisitos": {&"calibre_pesado": 1},
 		"tags": [&"projetil", &"pesado"]
 	},
 	&"fragmentacao": {
 		"nome": "FRAGMENTAÇÃO",
-		"descricao": "Ao atingir um inimigo, gera +2 estilhaços por nível.",
+		"descricao": "Ao atingir, gera +2 estilhaços de 28% do dano por nível; fragmentos não se replicam.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "CARGA",
 		"raridade": "RARA",
 		"cor": Color(1.0, 0.24, 0.45),
 		"max_nivel": 2,
 		"peso": 0.48,
-		"requisitos": {&"perfuracao": 1, &"tiro_duplo": 1},
-		"tags": [&"projetil", &"multitiro", &"pesado"]
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_CARGA,
+		"rota_estrutural": &"fragmentacao",
+		"requisitos": {&"tiro_duplo": 1},
+		"tags": [&"projetil", &"multitiro", &"fragmentacao"]
 	},
 	&"mira_gravitacional": {
 		"nome": "MIRA GRAVITACIONAL",
-		"descricao": "Projéteis corrigem a trajetória em direção ao inimigo mais próximo.",
+		"descricao": "Projéteis causam 88% do dano e perseguem alvos próximos com correção progressiva.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "TRAJETÓRIA",
 		"raridade": "RARA",
 		"cor": Color(0.42, 0.72, 1.0),
 		"max_nivel": 3,
 		"peso": 0.62,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_TRAJETORIA,
+		"rota_estrutural": &"gravitacional",
 		"requisitos": {&"propulsao": 1},
 		"tags": [&"projetil", &"movimento", &"homing"]
 	},
@@ -146,23 +181,154 @@ const DADOS: Dictionary = {
 		"nome": "RICOCHETE DE BORDA",
 		"descricao": "Projéteis rebatem nas bordas da arena +1 vez por nível.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
-		"categoria": "PROJÉTIL",
+		"categoria": "TRAJETÓRIA",
 		"raridade": "INCOMUM",
 		"cor": Color(0.28, 1.0, 0.92),
 		"max_nivel": 2,
 		"peso": 0.68,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_TRAJETORIA,
+		"rota_estrutural": &"ricochete",
 		"requisitos": {&"propulsao": 1},
 		"tags": [&"projetil", &"movimento"]
 	},
+	&"formacao_convergente": {
+		"nome": "FORMAÇÃO CONVERGENTE",
+		"descricao": "Comprime o arco do multitiro e aumenta 8% o dano individual. Melhor contra alvos resistentes.",
+		"icone": "res://Assets/UpgradeDano.png",
+		"categoria": "FORMA • EVOLUÇÃO",
+		"raridade": "RARA",
+		"cor": Color(1.0, 0.34, 0.76),
+		"max_nivel": 1,
+		"peso": 0.58,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_FORMA,
+		"rota_estrutural": &"multitiro",
+		"requisitos": {&"tiro_triplo": 1},
+		"tags": [&"projetil", &"multitiro", &"evolucao"]
+	},
+	&"onda_impacto": {
+		"nome": "ONDA DE IMPACTO",
+		"descricao": "Projéteis pesados explodem ao acertar, causando dano em área. Cada nível amplia dano e raio.",
+		"icone": "res://Assets/UpgradeDano.png",
+		"categoria": "CARGA • EVOLUÇÃO",
+		"raridade": "RARA",
+		"cor": Color(1.0, 0.55, 0.18),
+		"max_nivel": 2,
+		"peso": 0.52,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_CARGA,
+		"rota_estrutural": &"impacto_pesado",
+		"requisitos": {&"calibre_pesado": 2},
+		"tags": [&"projetil", &"pesado", &"area", &"evolucao"]
+	},
+	&"ressonancia_borda": {
+		"nome": "RESSONÂNCIA DE BORDA",
+		"descricao": "Cada ricochete aumenta em 28% o dano restante do projétil e produz um pulso neon.",
+		"icone": "res://Assets/UpgradeAgilidade.png",
+		"categoria": "TRAJETÓRIA • EVOLUÇÃO",
+		"raridade": "RARA",
+		"cor": Color(0.22, 1.0, 0.88),
+		"max_nivel": 2,
+		"peso": 0.54,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_TRAJETORIA,
+		"rota_estrutural": &"ricochete",
+		"requisitos": {&"ricochete": 1},
+		"tags": [&"projetil", &"ricochete", &"evolucao"]
+	},
+	&"predacao_gravitacional": {
+		"nome": "PREDAÇÃO GRAVITACIONAL",
+		"descricao": "A mira corrige com mais força e recupera parte da penalidade de dano dos projéteis guiados.",
+		"icone": "res://Assets/UpgradeAgilidade.png",
+		"categoria": "TRAJETÓRIA • EVOLUÇÃO",
+		"raridade": "RARA",
+		"cor": Color(0.38, 0.66, 1.0),
+		"max_nivel": 2,
+		"peso": 0.50,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_TRAJETORIA,
+		"rota_estrutural": &"gravitacional",
+		"requisitos": {&"mira_gravitacional": 1},
+		"tags": [&"projetil", &"homing", &"evolucao"]
+	},
+	&"estilhacos_predadores": {
+		"nome": "ESTILHAÇOS PREDADORES",
+		"descricao": "Fragmentos causam +8% do dano-base e recebem uma correção gravitacional leve.",
+		"icone": "res://Assets/UpgradeDano.png",
+		"categoria": "CARGA • EVOLUÇÃO",
+		"raridade": "RARA",
+		"cor": Color(1.0, 0.24, 0.58),
+		"max_nivel": 2,
+		"peso": 0.48,
+		"tipo": TIPO_ESTRUTURAL,
+		"slot_estrutural": SLOT_CARGA,
+		"rota_estrutural": &"fragmentacao",
+		"requisitos": {&"fragmentacao": 1},
+		"tags": [&"projetil", &"fragmentacao", &"evolucao"]
+	},
+	&"vetor_ofensivo": {
+		"nome": "VETOR OFENSIVO",
+		"descricao": "Quanto mais rápido a nave se move, maior o dano: até +16% por nível.",
+		"icone": "res://Assets/UpgradeVelocidade.png",
+		"categoria": "PASSIVO • PILOTAGEM",
+		"raridade": "INCOMUM",
+		"cor": Color(0.22, 0.9, 1.0),
+		"max_nivel": 2,
+		"peso": 0.72,
+		"tipo": TIPO_SINERGIA,
+		"requisitos": {&"propulsao": 1},
+		"tags": [&"passivo", &"movimento", &"dano"]
+	},
+	&"casco_regenerativo": {
+		"nome": "CASCO REGENERATIVO",
+		"descricao": "Após 5 s sem sofrer dano, recupera 1,25 de vida por segundo por nível.",
+		"icone": "res://Assets/UpgradeVida.png",
+		"categoria": "PASSIVO • CASCO",
+		"raridade": "INCOMUM",
+		"cor": Color(0.34, 1.0, 0.62),
+		"max_nivel": 2,
+		"peso": 0.62,
+		"tipo": TIPO_SINERGIA,
+		"requisitos": {&"blindagem": 1},
+		"tags": [&"passivo", &"casco", &"cura"]
+	},
+	&"capacitor_cinetico": {
+		"nome": "CAPACITOR CINÉTICO",
+		"descricao": "Acertos carregam o reator. Quando completo, a próxima salva causa dano massivo.",
+		"icone": "res://Assets/UpgradeCadencia.png",
+		"categoria": "PASSIVO • ARMA",
+		"raridade": "RARA",
+		"cor": Color(0.25, 0.95, 1.0),
+		"max_nivel": 3,
+		"peso": 0.56,
+		"tipo": TIPO_SINERGIA,
+		"requisitos": {&"cadencia": 1},
+		"tags": [&"passivo", &"arma", &"impacto"]
+	},
+	&"reacao_adrenal": {
+		"nome": "REAÇÃO ADRENAL",
+		"descricao": "Ao sofrer dano, ganha +12% de cadência por nível durante 2,4 segundos.",
+		"icone": "res://Assets/UpgradeAgilidade.png",
+		"categoria": "PASSIVO • DEFESA",
+		"raridade": "INCOMUM",
+		"cor": Color(1.0, 0.35, 0.48),
+		"max_nivel": 2,
+		"peso": 0.64,
+		"tipo": TIPO_SINERGIA,
+		"requisitos": {&"blindagem": 1},
+		"tags": [&"passivo", &"casco", &"cadencia"]
+	},
 	&"fluxo_habilidade": {
 		"nome": "FLUXO DA HABILIDADE",
-		"descricao": "A habilidade equipada recarrega 10% mais rápido por nível.",
+		"descricao": "A habilidade recarrega mais rápido, com bônus menor a cada nível.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "HABILIDADE",
 		"raridade": "COMUM",
 		"cor": Color(0.35, 0.72, 1.0),
 		"max_nivel": 4,
 		"peso": 1.0,
+		"tipo": TIPO_BASICA,
 		"requisitos": {},
 		"tags": [&"habilidade", &"cooldown"]
 	},
@@ -175,18 +341,20 @@ const DADOS: Dictionary = {
 		"cor": Color(0.25, 0.82, 1.0),
 		"max_nivel": 3,
 		"peso": 0.7,
+		"tipo": TIPO_SINERGIA,
 		"requisitos": {&"fluxo_habilidade": 1},
 		"tags": [&"habilidade", &"arma", &"sinergia"]
 	},
 	&"conversor_impacto": {
 		"nome": "CONVERSOR DE IMPACTO",
-		"descricao": "Cada acerto reduz a recarga atual da habilidade em 0,06 s.",
+		"descricao": "Acertos reduzem a recarga em até 0,06 s no total; níveis posteriores rendem menos.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "HABILIDADE + PROJÉTIL",
 		"raridade": "INCOMUM",
 		"cor": Color(0.24, 0.92, 1.0),
 		"max_nivel": 3,
 		"peso": 0.78,
+		"tipo": TIPO_SINERGIA,
 		"requisitos": {&"fluxo_habilidade": 1},
 		"tags": [&"habilidade", &"projetil", &"sinergia"]
 	},
@@ -194,11 +362,12 @@ const DADOS: Dictionary = {
 		"nome": "NOVA DE ATIVAÇÃO",
 		"descricao": "Ao usar a habilidade, dispara uma explosão circular de projéteis.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "SUPERMOD",
-		"raridade": "SUPERMOD",
+		"categoria": "HABILIDADE + PROJÉTIL",
+		"raridade": "RARA",
 		"cor": Color(0.95, 0.38, 1.0),
 		"max_nivel": 2,
 		"peso": 0.34,
+		"tipo": TIPO_SINERGIA,
 		"requisitos": {&"fluxo_habilidade": 2, &"tiro_duplo": 1},
 		"tags": [&"habilidade", &"projetil", &"sinergia"]
 	},
@@ -211,42 +380,52 @@ const DADOS: Dictionary = {
 		"cor": Color(0.35, 1.0, 0.8),
 		"max_nivel": 2,
 		"peso": 0.58,
+		"tipo": TIPO_SINERGIA,
 		"requisitos": {&"fluxo_habilidade": 1, &"blindagem": 1},
 		"tags": [&"habilidade", &"casco", &"sinergia"]
 	},
 	&"tempestade_prismatica": {
 		"nome": "TEMPESTADE PRISMÁTICA",
-		"descricao": "SUPERMOD: +2 projéteis, arco maior e +15% de cadência.",
+		"descricao": "SUPERMOD: +1 projétil e +10% de cadência, mas -15% de velocidade dos projéteis.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
 		"cor": Color(1.0, 0.25, 0.82),
 		"max_nivel": 1,
 		"peso": 0.28,
+		"tipo": TIPO_SUPERMOD,
+		"slot_estrutural": SLOT_SUPERMOD,
+		"rota_estrutural": &"tempestade_prismatica",
 		"requisitos": {&"leque_prismatico": 1, &"cadencia": 3},
 		"tags": [&"projetil", &"multitiro", &"cadencia"]
 	},
 	&"singularidade": {
 		"nome": "SINGULARIDADE GUIADA",
-		"descricao": "SUPERMOD: projéteis enormes, perfurantes e fortemente teleguiados.",
+		"descricao": "SUPERMOD: +25% de dano, tamanho e perfuração, mas -25% de velocidade do projétil.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
 		"cor": Color(0.45, 0.35, 1.0),
 		"max_nivel": 1,
 		"peso": 0.25,
+		"tipo": TIPO_SUPERMOD,
+		"slot_estrutural": SLOT_SUPERMOD,
+		"rota_estrutural": &"singularidade",
 		"requisitos": {&"calibre_pesado": 2, &"mira_gravitacional": 2},
 		"tags": [&"projetil", &"pesado", &"homing"]
 	},
 	&"reator_sincronizado": {
 		"nome": "REATOR SINCRONIZADO",
-		"descricao": "SUPERMOD: a Nova dispara mais projéteis e o overdrive dura o dobro.",
+		"descricao": "SUPERMOD: a Nova dispara mais projéteis e o overdrive dura o dobro, mas a habilidade recarrega 15% mais devagar.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
 		"cor": Color(0.25, 0.95, 1.0),
 		"max_nivel": 1,
 		"peso": 0.22,
+		"tipo": TIPO_SUPERMOD,
+		"slot_estrutural": SLOT_SUPERMOD,
+		"rota_estrutural": &"reator_sincronizado",
 		"requisitos": {&"overdrive_habilidade": 2, &"nova_ativacao": 1},
 		"tags": [&"habilidade", &"projetil", &"sinergia"]
 	}
@@ -279,6 +458,91 @@ static func requisitos_cumpridos(
 	return true
 
 
+static func conflito_estrutural(
+	id: StringName,
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> bool:
+	var dados := obter(id, habilidade)
+	var slot: StringName = dados.get("slot_estrutural", &"")
+	var rota: StringName = dados.get("rota_estrutural", &"")
+	if slot == &"" or rota == &"":
+		return false
+
+	for adquirido in niveis:
+		if int(niveis[adquirido]) <= 0:
+			continue
+		var dados_adquiridos := obter(adquirido, habilidade)
+		var slot_adquirido: StringName = dados_adquiridos.get(
+			"slot_estrutural", &""
+		)
+		if slot_adquirido != slot:
+			continue
+		var rota_adquirida: StringName = dados_adquiridos.get(
+			"rota_estrutural", &""
+		)
+		if rota_adquirida != &"" and rota_adquirida != rota:
+			return true
+	return false
+
+
+static func rotas_ativas(
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> Dictionary:
+	var rotas := {
+		SLOT_FORMA: &"",
+		SLOT_TRAJETORIA: &"",
+		SLOT_CARGA: &"",
+		SLOT_SUPERMOD: &"",
+	}
+	for adquirido in niveis:
+		if int(niveis[adquirido]) <= 0:
+			continue
+		var dados := obter(adquirido, habilidade)
+		var slot: StringName = dados.get("slot_estrutural", &"")
+		var rota: StringName = dados.get("rota_estrutural", &"")
+		if slot in rotas and rota != &"":
+			rotas[slot] = rota
+	return rotas
+
+
+static func nome_slot(slot: StringName) -> String:
+	match slot:
+		SLOT_FORMA: return "FORMA"
+		SLOT_TRAJETORIA: return "TRAJETÓRIA"
+		SLOT_CARGA: return "CARGA"
+		SLOT_SUPERMOD: return "SUPERMOD"
+		_: return str(slot).to_upper()
+
+
+static func nome_rota(rota: StringName) -> String:
+	match rota:
+		&"multitiro": return "MULTITIRO"
+		&"gravitacional": return "GRAVITACIONAL"
+		&"ricochete": return "RICOCHETE"
+		&"impacto_pesado": return "IMPACTO"
+		&"fragmentacao": return "FRAGMENTAÇÃO"
+		&"tempestade_prismatica": return "TEMPESTADE"
+		&"singularidade": return "SINGULARIDADE"
+		&"reator_sincronizado": return "REATOR"
+		&"": return "LIVRE"
+		_: return str(rota).replace("_", " ").to_upper()
+
+
+static func resumo_rotas(
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> String:
+	var rotas := rotas_ativas(niveis, habilidade)
+	return "FORMA: %s   •   TRAJETÓRIA: %s   •   CARGA: %s   •   SUPERMOD: %s" % [
+		nome_rota(rotas[SLOT_FORMA]),
+		nome_rota(rotas[SLOT_TRAJETORIA]),
+		nome_rota(rotas[SLOT_CARGA]),
+		nome_rota(rotas[SLOT_SUPERMOD]),
+	]
+
+
 static func disponivel(
 	id: StringName,
 	niveis: Dictionary,
@@ -290,6 +554,7 @@ static func disponivel(
 	return (
 		nivel(id, niveis) < int(dados.get("max_nivel", 1))
 		and requisitos_cumpridos(id, niveis, habilidade)
+		and not conflito_estrutural(id, niveis, habilidade)
 	)
 
 
@@ -298,11 +563,19 @@ static func texto_requisitos(
 	niveis: Dictionary,
 	habilidade: Habilidade = null
 ) -> String:
-	var requisitos: Dictionary = obter(id, habilidade).get("requisitos", {})
+	var dados := obter(id, habilidade)
+	var requisitos: Dictionary = dados.get("requisitos", {})
+	var slot: StringName = dados.get("slot_estrutural", &"")
+	var rota: StringName = dados.get("rota_estrutural", &"")
+	var texto_rota := ""
+	if slot != &"" and rota != &"":
+		texto_rota = "ROTA: %s • %s" % [nome_slot(slot), nome_rota(rota)]
+
 	if requisitos.is_empty():
-		var dados := obter(id, habilidade)
 		if &"habilidade_especifica" in dados.get("tags", []):
 			return "EXCLUSIVO DA HABILIDADE EQUIPADA"
+		if not texto_rota.is_empty():
+			return texto_rota
 		return "SEM PRÉ-REQUISITOS"
 
 	var partes: Array[String] = []
@@ -313,13 +586,17 @@ static func texto_requisitos(
 			nivel(requisito, niveis),
 			int(requisitos[requisito])
 		])
-	return "REQUER: " + "  •  ".join(partes)
+	var texto_requisito := "REQUER: " + "  •  ".join(partes)
+	if texto_rota.is_empty():
+		return texto_requisito
+	return texto_rota + "\n" + texto_requisito
 
 
 static func sortear(
 	niveis: Dictionary,
 	quantidade := 3,
-	habilidade: Habilidade = null
+	habilidade: Habilidade = null,
+	evitar: Array[StringName] = []
 ) -> Array[StringName]:
 	var candidatos: Array[StringName] = []
 	for id in DADOS:
@@ -329,6 +606,12 @@ static func sortear(
 		for id in habilidade.obter_upgrades_especificos():
 			if disponivel(id, niveis, habilidade):
 				candidatos.append(id)
+
+	# Um reroll tenta não repetir imediatamente as mesmas cartas. Se o catálogo
+	# disponível estiver pequeno, preserva candidatos suficientes para a oferta.
+	for id in evitar:
+		if candidatos.size() > quantidade:
+			candidatos.erase(id)
 
 	var resultado: Array[StringName] = []
 	var especificos: Array[StringName] = []
@@ -347,7 +630,24 @@ static func sortear(
 	for id in especificos:
 		candidatos.erase(id)
 
-	_adicionar_de_categoria(resultado, candidatos, niveis, &"projetil", habilidade)
+	if niveis.is_empty():
+		_adicionar_de_tipo(
+			resultado,
+			candidatos,
+			niveis,
+			TIPO_ESTRUTURAL,
+			habilidade
+		)
+	else:
+		_adicionar_relacionado(resultado, candidatos, niveis, habilidade)
+
+	_adicionar_de_tipo(
+		resultado,
+		candidatos,
+		niveis,
+		TIPO_BASICA,
+		habilidade
+	)
 
 	while resultado.size() < quantidade and not candidatos.is_empty():
 		var escolhido := _sortear_ponderado(candidatos, niveis, habilidade)
@@ -388,6 +688,56 @@ static func _adicionar_de_categoria(
 	candidatos.erase(escolhido)
 
 
+static func _adicionar_de_tipo(
+	resultado: Array[StringName],
+	candidatos: Array[StringName],
+	niveis: Dictionary,
+	tipo: StringName,
+	habilidade: Habilidade = null
+) -> void:
+	if resultado.size() >= 3:
+		return
+	var filtrados: Array[StringName] = []
+	for id in candidatos:
+		var tipo_candidato: StringName = obter(id, habilidade).get("tipo", &"")
+		if tipo_candidato == tipo:
+			filtrados.append(id)
+	if filtrados.is_empty():
+		return
+	var escolhido := _sortear_ponderado(filtrados, niveis, habilidade)
+	resultado.append(escolhido)
+	candidatos.erase(escolhido)
+
+
+static func _adicionar_relacionado(
+	resultado: Array[StringName],
+	candidatos: Array[StringName],
+	niveis: Dictionary,
+	habilidade: Habilidade = null
+) -> void:
+	if resultado.size() >= 3:
+		return
+	var tags_ativas: Array = []
+	for adquirido in niveis:
+		if int(niveis[adquirido]) <= 0:
+			continue
+		for tag in obter(adquirido, habilidade).get("tags", []):
+			if tag not in tags_ativas:
+				tags_ativas.append(tag)
+
+	var relacionados: Array[StringName] = []
+	for id in candidatos:
+		for tag in obter(id, habilidade).get("tags", []):
+			if tag in tags_ativas:
+				relacionados.append(id)
+				break
+	if relacionados.is_empty():
+		return
+	var escolhido := _sortear_ponderado(relacionados, niveis, habilidade)
+	resultado.append(escolhido)
+	candidatos.erase(escolhido)
+
+
 static func _sortear_ponderado(
 	candidatos: Array[StringName],
 	niveis: Dictionary,
@@ -424,5 +774,11 @@ static func _peso_com_sinergia(
 		for tag in tags:
 			if tag in tags_adquiridas:
 				peso += 0.16 * nivel_adquirido
+
+	# Supermods continuam desejáveis quando os requisitos são cumpridos, mas
+	# não se tornam uma conclusão garantida de toda construção compatível.
+	var tipo: StringName = dados.get("tipo", &"")
+	if tipo == TIPO_SUPERMOD:
+		peso *= 0.55
 
 	return maxf(peso, 0.05)

@@ -2,6 +2,8 @@ extends CharacterBody2D
 class_name InimigoBase
 
 
+const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
+
 # AJUSTE GLOBAL DO BRILHO DOS INIMIGOS.
 # 1.35 recupera o neon alto antigo. Para regular, tente entre 0.80 e 1.60.
 # Também é possível sobrescrever "brilho_visual" em cada cena pelo Inspector.
@@ -165,7 +167,20 @@ func reproduzir_impacto() -> void:
 	)
 	modulate = cor_impacto
 	tween_impacto = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween_impacto.set_parallel(true)
 	tween_impacto.tween_property(self, "modulate", modulacao_base, 0.10)
+	tween_impacto.tween_property(self, "scale", scale * 1.055, 0.045)
+	tween_impacto.chain().tween_property(self, "scale", scale, 0.075)
+
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(
+			cena,
+			global_position,
+			EfeitoCombate.Tipo.ACERTO,
+			obter_cor_feedback(),
+			clampf(0.72 + sqrt(maxf(VidaMaxima, 1.0)) * 0.035, 0.8, 1.45)
+		)
 
 
 func normalizar_brilho_visual() -> void:
@@ -222,12 +237,31 @@ func morrer() -> void:
 	if is_instance_valid(camera) and camera.has_method("shake"):
 		camera.shake(obter_tremor_morte())
 
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(
+			cena,
+			global_position,
+			EfeitoCombate.Tipo.MORTE,
+			obter_cor_feedback(),
+			clampf(0.75 + sqrt(maxf(VidaMaxima, 1.0)) * 0.05, 0.9, 2.1),
+			velocity.normalized()
+		)
+
 	criar_particulas_morte()
 
 	if concede_recompensa:
 		conceder_recompensa()
 
 	queue_free()
+
+
+func obter_cor_feedback() -> Color:
+	for node in find_children("*", "Polygon2D", true, false):
+		var poligono := node as Polygon2D
+		if is_instance_valid(poligono):
+			return poligono.color.lightened(0.18)
+	return Color(0.55, 0.9, 1.0)
 
 
 func obter_tremor_morte() -> float:

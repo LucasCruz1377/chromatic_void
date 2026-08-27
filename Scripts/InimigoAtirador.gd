@@ -54,6 +54,17 @@ func iniciar_aviso(direcao: Vector2) -> void:
 	linha_aviso.points = PackedVector2Array([Vector2.ZERO, direcao_tiro * 520.0])
 	linha_aviso.visible = true
 	visual.modulate = Color(1.0, 0.55, 1.0, 1.0)
+	var tween := create_tween()
+	tween.tween_property(visual, "scale", Vector2(1.16, 1.16), tempo_aviso * 0.55)
+	tween.tween_property(visual, "scale", Vector2.ONE, tempo_aviso * 0.45)
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position,
+		EfeitoCombate.Tipo.AVISO,
+		Color(1.0, 0.25, 0.88),
+		0.8,
+		direcao_tiro
+	)
 
 
 func atualizar_aviso(delta: float) -> void:
@@ -69,6 +80,14 @@ func atualizar_aviso(delta: float) -> void:
 
 
 func disparar() -> void:
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position + direcao_tiro * 20.0,
+		EfeitoCombate.Tipo.ACERTO,
+		Color(1.0, 0.25, 0.88),
+		0.85,
+		direcao_tiro
+	)
 	var projetil := PROJETIL.instantiate() as ProjetilInimigo
 	get_tree().current_scene.add_child(projetil)
 	projetil.global_position = global_position + direcao_tiro * 24.0

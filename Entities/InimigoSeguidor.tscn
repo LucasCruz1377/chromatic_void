@@ -59,9 +59,9 @@ z_index = 1
 collision_layer = 4
 collision_mask = 15
 script = ExtResource("1_n3r8k")
-VidaMaxima = 3
-Dano = 20
-Velocidade = 200
+VidaMaxima = 2.5
+Dano = 12
+Velocidade = 178
 particulas_morte = ExtResource("2_ureyi")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=1427657541]

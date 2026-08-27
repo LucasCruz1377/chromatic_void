@@ -26,7 +26,7 @@ func configurar(
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	pivot_offset = TAMANHO_CARD * 0.5
 
-	add_theme_stylebox_override("panel", criar_estilo_painel())
+	add_theme_stylebox_override("panel", criar_estilo_painel(false))
 	criar_poligonos_decorativos()
 
 	var margem := MarginContainer.new()
@@ -103,9 +103,20 @@ func configurar(
 	nivel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coluna.add_child(nivel)
 
+	var papel := Label.new()
+	papel.text = "◆  " + obter_papel(dados)
+	papel.custom_minimum_size = Vector2(0, 20)
+	papel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	papel.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	papel.add_theme_font_size_override("font_size", 10)
+	papel.add_theme_color_override("font_color", cor_destaque.lightened(0.12))
+	papel.add_theme_stylebox_override("normal", criar_estilo_faixa())
+	papel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coluna.add_child(papel)
+
 	var descricao := Label.new()
 	descricao.text = str(dados.get("descricao", ""))
-	descricao.custom_minimum_size = Vector2(0, 64)
+	descricao.custom_minimum_size = Vector2(0, 50)
 	descricao.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	descricao.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	descricao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -147,15 +158,54 @@ func configurar(
 	add_child(botao)
 
 
-func criar_estilo_painel() -> StyleBoxFlat:
+func criar_estilo_painel(destacado: bool) -> StyleBoxFlat:
 	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(0.025, 0.035, 0.075, 0.98)
-	estilo.border_color = cor_destaque.darkened(0.08)
-	estilo.set_border_width_all(2)
+	estilo.bg_color = (
+		Color(0.04, 0.055, 0.105, 0.99)
+		if destacado
+		else Color(0.025, 0.035, 0.075, 0.98)
+	)
+	estilo.border_color = (
+		cor_destaque.lightened(0.22) if destacado else cor_destaque.darkened(0.08)
+	)
+	estilo.set_border_width_all(3 if destacado else 2)
 	estilo.set_corner_radius_all(16)
 	estilo.shadow_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.22)
 	estilo.shadow_size = 10
 	return estilo
+
+
+func criar_estilo_faixa() -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.09)
+	estilo.border_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.28)
+	estilo.border_width_bottom = 1
+	estilo.border_width_top = 1
+	estilo.set_corner_radius_all(6)
+	return estilo
+
+
+func obter_papel(dados: Dictionary) -> String:
+	var tags: Array = dados.get("tags", [])
+	if &"passivo" in tags:
+		if &"movimento" in tags:
+			return "PASSIVO DE PILOTAGEM"
+		if &"casco" in tags:
+			return "PASSIVO DE SOBREVIVÊNCIA"
+		return "PASSIVO DA NAVE"
+	if &"multitiro" in tags:
+		return "COBERTURA E CONTROLE"
+	if &"pesado" in tags:
+		return "IMPACTO CONCENTRADO"
+	if &"fragmentacao" in tags:
+		return "LIMPEZA DE GRUPOS"
+	if &"homing" in tags:
+		return "PRECISÃO GUIADA"
+	if &"ricochete" in tags:
+		return "POSICIONAMENTO"
+	if &"habilidade" in tags:
+		return "SINERGIA DE HABILIDADE"
+	return "MÓDULO DA NAVE"
 
 
 func criar_poligonos_decorativos() -> void:
@@ -183,9 +233,11 @@ func _on_mouse_entered() -> void:
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", Vector2(1.035, 1.035), 0.12)
 	self_modulate = cor_destaque.lightened(0.08)
+	add_theme_stylebox_override("panel", criar_estilo_painel(true))
 
 
 func _on_mouse_exited() -> void:
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", Vector2.ONE, 0.12)
 	self_modulate = Color.WHITE
+	add_theme_stylebox_override("panel", criar_estilo_painel(false))

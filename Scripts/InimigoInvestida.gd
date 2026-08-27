@@ -1,6 +1,7 @@
 extends InimigoBase
 
 
+
 enum Estado {
 	PERSEGUINDO,
 	AVISANDO,
@@ -19,6 +20,7 @@ var estado := Estado.PERSEGUINDO
 var tempo_estado: float = 0.0
 var espera_investida: float = 1.2
 var direcao_investida := Vector2.RIGHT
+var tempo_rastro := 0.0
 
 @onready var linha_aviso: Line2D = $LinhaAviso
 @onready var visual: Node2D = $Visual
@@ -66,6 +68,17 @@ func iniciar_aviso() -> void:
 	)
 	linha_aviso.visible = true
 	visual.modulate = Color(1.0, 0.5, 0.25, 1.0)
+	var tween := create_tween().set_loops(3)
+	tween.tween_property(visual, "scale", Vector2(1.18, 0.82), tempo_aviso / 6.0)
+	tween.tween_property(visual, "scale", Vector2.ONE, tempo_aviso / 6.0)
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position,
+		EfeitoCombate.Tipo.AVISO,
+		Color(1.0, 0.4, 0.12),
+		1.0,
+		direcao_investida
+	)
 
 
 func atualizar_aviso(delta: float) -> void:
@@ -78,11 +91,32 @@ func atualizar_aviso(delta: float) -> void:
 		tempo_estado = duracao_investida
 		linha_aviso.visible = false
 		velocity = direcao_investida * velocidade_investida
+		tempo_rastro = 0.0
+		visual.scale = Vector2(1.26, 0.74)
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position,
+			EfeitoCombate.Tipo.MORTE,
+			Color(1.0, 0.48, 0.14),
+			0.72,
+			direcao_investida
+		)
 
 
 func atualizar_investida(delta: float) -> void:
 	tempo_estado -= delta
 	velocity = direcao_investida * velocidade_investida
+	tempo_rastro -= delta
+	if tempo_rastro <= 0.0:
+		tempo_rastro = 0.055
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position - direcao_investida * 10.0,
+			EfeitoCombate.Tipo.RASTRO,
+			Color(1.0, 0.34, 0.10),
+			1.0,
+			direcao_investida
+		)
 	if tempo_estado <= 0.0:
 		iniciar_recuperacao()
 
@@ -94,6 +128,7 @@ func atualizar_recuperacao(delta: float) -> void:
 		estado = Estado.PERSEGUINDO
 		espera_investida = intervalo_investida
 		visual.modulate = Color.WHITE
+		visual.scale = Vector2.ONE
 
 
 func iniciar_recuperacao() -> void:
@@ -101,6 +136,7 @@ func iniciar_recuperacao() -> void:
 	tempo_estado = tempo_recuperacao
 	linha_aviso.visible = false
 	visual.modulate = Color(0.55, 0.55, 0.55, 1.0)
+	visual.scale = Vector2(0.92, 1.08)
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
@@ -109,4 +145,3 @@ func ao_colidir_com_player(alvo: Node) -> void:
 	super.ao_colidir_com_player(alvo)
 	if not morto:
 		iniciar_recuperacao()
-

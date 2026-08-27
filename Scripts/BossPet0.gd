@@ -38,6 +38,7 @@ var tempo_ataque: float = 1.4
 var direcao_investida := Vector2.RIGHT
 var reciclagem_atual: int = 0
 var rotulo_removido: bool = false
+var tempo_rastro_rolamento := 0.0
 
 @onready var visual: Node2D = $Visual
 @onready var corpo_visual: Polygon2D = $Visual/Corpo
@@ -130,6 +131,14 @@ func iniciar_rolamento() -> void:
 	)
 	linha_aviso.visible = true
 	corpo_visual.modulate = Color(1.0, 0.55, 0.28, 1.0)
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position,
+		EfeitoCombate.Tipo.AVISO,
+		Color(1.0, 0.52, 0.18),
+		1.8,
+		direcao_investida
+	)
 
 
 func avisar_rolamento(delta: float) -> void:
@@ -144,12 +153,32 @@ func avisar_rolamento(delta: float) -> void:
 		linha_aviso.visible = false
 		visual.scale = Vector2.ONE
 		velocity = direcao_investida * obter_velocidade_maxima()
+		tempo_rastro_rolamento = 0.0
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position,
+			EfeitoCombate.Tipo.MORTE,
+			Color(1.0, 0.42, 0.12),
+			1.35,
+			direcao_investida
+		)
 
 
 func rolar(delta: float) -> void:
 	tempo_estado -= delta
 	visual.rotation += delta * (9.0 + fase * 1.5)
 	velocity = direcao_investida * obter_velocidade_maxima()
+	tempo_rastro_rolamento -= delta
+	if tempo_rastro_rolamento <= 0.0:
+		tempo_rastro_rolamento = 0.075
+		EfeitoCombateCena.criar(
+			get_tree().current_scene,
+			global_position - direcao_investida * 28.0,
+			EfeitoCombate.Tipo.RASTRO,
+			Color(1.0, 0.34, 0.1),
+			1.55,
+			direcao_investida
+		)
 
 	if tempo_estado <= 0.0:
 		iniciar_recuperacao(0.8)
@@ -344,4 +373,3 @@ func morrer() -> void:
 
 	Global.Pontos += 5000
 	super.morrer()
-

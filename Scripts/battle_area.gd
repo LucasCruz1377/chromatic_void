@@ -20,10 +20,10 @@ const BOSSES: Dictionary = {
 }
 
 const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
-const TIMER_MAX := 3.0
-const TIMER_MIN := 0.5
-const MAX_ENEMIES := 30
-const MAX_ENEMIES_BASE := 8
+const TIMER_MAX := 2.4
+const TIMER_MIN := 0.72
+const MAX_ENEMIES := 26
+const MAX_ENEMIES_BASE := 5
 const INTERVALO_BOSS := 10
 
 @export_category("Asteroides bônus")
@@ -148,7 +148,7 @@ func finalizar_tutorial() -> void:
 func calcular_tempo_spawn() -> float:
 	if not is_instance_valid(player):
 		return TIMER_MAX
-	var reducao := floori(player.nivel_atual / 5.0) * 0.15
+	var reducao := floori(maxi(player.nivel_atual - 1, 0) / 3.0) * 0.12
 	return clampf(TIMER_MAX - reducao, TIMER_MIN, TIMER_MAX)
 
 
@@ -173,20 +173,23 @@ func spawnar_enemy() -> void:
 
 
 func escolher_tipo_inimigo(nivel: int) -> PackedScene:
-	# O setor inicial mantém exatamente a progressão de inimigos da main.
+	# O setor inicial ensina uma ameaça por vez. Inimigos simples aparecem em
+	# maior frequência para a primeira evolução chegar cedo sem lotar a arena.
 	if setor_atual == &"vazio_inicial":
 		var opcoes_originais: Array[PackedScene] = [
-			INIMIGOS[&"seguidor"], INIMIGOS[&"seguidor"]
+			INIMIGOS[&"seguidor"],
+			INIMIGOS[&"seguidor"],
+			INIMIGOS[&"seguidor"]
 		]
-		if nivel >= 2:
-			opcoes_originais.append(INIMIGOS[&"melee"])
 		if nivel >= 3:
-			opcoes_originais.append(INIMIGOS[&"investida"])
-		if nivel >= 4:
-			opcoes_originais.append(INIMIGOS[&"tanque"])
+			opcoes_originais.append(INIMIGOS[&"melee"])
 		if nivel >= 5:
+			opcoes_originais.append(INIMIGOS[&"investida"])
+		if nivel >= 6:
 			opcoes_originais.append(INIMIGOS[&"atirador"])
 		if nivel >= 7:
+			opcoes_originais.append(INIMIGOS[&"tanque"])
+		if nivel >= 8:
 			opcoes_originais.append(INIMIGOS[&"atirador"])
 			opcoes_originais.append(INIMIGOS[&"investida"])
 		return opcoes_originais.pick_random()
@@ -208,7 +211,7 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 func calcular_limite_inimigos() -> int:
 	if not is_instance_valid(player):
 		return MAX_ENEMIES_BASE
-	var limite := MAX_ENEMIES_BASE + floori(player.nivel_atual / 3.0)
+	var limite := MAX_ENEMIES_BASE + floori(maxi(player.nivel_atual - 1, 0) / 3.0)
 	return clampi(limite, MAX_ENEMIES_BASE, MAX_ENEMIES)
 
 
