@@ -31,9 +31,9 @@ enum Estado {
 @export var selo_monthly_colors := "PRIMAVERA • SETEMBRO"
 
 @export_category("Ritmo")
-@export_range(0.5, 5.0, 0.1) var intervalo_ataques := 1.8
-@export_range(0.4, 2.0, 0.1) var tempo_aviso_espinhos := 0.9
-@export_range(0.5, 2.5, 0.1) var tempo_aviso_vinhas := 1.2
+@export_range(0.5, 5.0, 0.1) var intervalo_ataques := 1.55
+@export_range(0.4, 2.0, 0.1) var tempo_aviso_espinhos := 0.78
+@export_range(0.5, 2.5, 0.1) var tempo_aviso_vinhas := 1.0
 
 var fase := 1
 var estado := Estado.MOVENDO
@@ -131,9 +131,11 @@ func mover_livre(delta: float) -> void:
 
 
 func iniciar_proximo_ataque() -> void:
-	var opcoes: Array[int] = [Ataque.ONDA_ESPINHOS, Ataque.PETALA_BUMERANGUE]
-	if fase >= 2:
-		opcoes.append(Ataque.DANCA_CAULES)
+	var opcoes: Array[int] = [
+		Ataque.ONDA_ESPINHOS,
+		Ataque.PETALA_BUMERANGUE,
+		Ataque.DANCA_CAULES,
+	]
 	if opcoes.size() > 1:
 		opcoes.erase(ultimo_ataque)
 	var ataque := int(opcoes.pick_random())
@@ -186,7 +188,7 @@ func processar_onda_espinhos(delta: float) -> void:
 
 
 func disparar_anel_espinhos() -> void:
-	var quantidade := 4 + fase * 2
+	var quantidade := 5 + fase * 2
 	var deslocamento := petalas.rotation
 	for indice in quantidade:
 		var angulo := deslocamento + TAU * float(indice) / float(quantidade)
@@ -196,8 +198,8 @@ func disparar_anel_espinhos() -> void:
 		espinho.global_position = global_position + direcao * 54.0
 		espinho.configurar(
 			direcao,
-			Dano * 0.38,
-			220.0 + fase * 28.0,
+			Dano * 0.42,
+			235.0 + fase * 30.0,
 			0
 		)
 
@@ -209,13 +211,15 @@ func iniciar_petalas_bumerangue() -> void:
 	ativar_escudo(false)
 	petalas_em_voo = 0
 	petalas_lancadas.clear()
-	var quantidade := mini(fase, 3)
+	var quantidade := mini(fase + 1, 4)
 	var indice_alvo := obter_petala_na_direcao_do_player()
 	var indices: Array[int] = [indice_alvo]
 	if quantidade >= 2:
 		indices.append(posmod(indice_alvo + 2, 6))
 	if quantidade >= 3:
 		indices.append(posmod(indice_alvo - 2, 6))
+	if quantidade >= 4:
+		indices.append(posmod(indice_alvo + 3, 6))
 	for indice in indices:
 		lancar_petala(indice)
 
@@ -248,9 +252,9 @@ func lancar_petala(indice: int) -> void:
 	petala.configurar(
 		global_position + direcao * 38.0,
 		direcao,
-		Dano * 0.48,
-		290.0 + fase * 28.0,
-		285.0 + fase * 20.0,
+		Dano * 0.54,
+		305.0 + fase * 30.0,
+		305.0 + fase * 22.0,
 		indice,
 		self
 	)
@@ -330,8 +334,8 @@ func criar_vinhas() -> void:
 		var vinha := VINHA.instantiate() as VinhaEspinhosa
 		vinhas_pivot.add_child(vinha)
 		vinha.rotation = float(indice) * PI * 0.5
-		vinha.configurar(comprimentos[indice], Dano * 0.52)
-		vinha.iniciar_crescimento(0.78)
+		vinha.configurar(comprimentos[indice], Dano * 0.58)
+		vinha.iniciar_crescimento(0.70)
 		vinhas_ativas.append(vinha)
 
 
@@ -343,12 +347,12 @@ func crescer_vinhas(delta: float) -> void:
 			if is_instance_valid(vinha):
 				vinha.ativar_dano()
 		estado = Estado.DANCA_VINHAS
-		tempo_estado = 3.8 + fase * 0.45
+		tempo_estado = 4.0 + fase * 0.5
 
 
 func processar_danca_vinhas(delta: float) -> void:
 	velocity = Vector2.ZERO
-	var velocidade_rotacao := (0.28 + fase * 0.08) * sentido_rotacao
+	var velocidade_rotacao := (0.34 + fase * 0.10) * sentido_rotacao
 	visual.rotation += velocidade_rotacao * delta
 	vinhas_pivot.rotation += velocidade_rotacao * delta
 	tempo_estado -= delta
@@ -390,7 +394,7 @@ func processar_recuperacao(delta: float) -> void:
 	if tempo_estado <= 0.0:
 		ativar_escudo(true)
 		estado = Estado.MOVENDO
-		tempo_ataque = maxf(intervalo_ataques - fase * 0.12, 1.05)
+		tempo_ataque = maxf(intervalo_ataques - fase * 0.13, 0.95)
 
 
 func ativar_escudo(ativar: bool) -> void:

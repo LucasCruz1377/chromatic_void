@@ -4,6 +4,8 @@ class_name PetalaBumerangue
 
 signal retornou(indice_petala: int)
 
+const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
+
 @export_range(100.0, 700.0, 10.0) var velocidade: float = 310.0
 @export_range(100.0, 600.0, 10.0) var distancia_maxima: float = 330.0
 @export_range(0.6, 3.0, 0.05) var brilho_visual: float = 1.45
@@ -15,6 +17,7 @@ var distancia_percorrida := 0.0
 var voltando := false
 var indice_petala := 0
 var boss_origem: Node2D
+var tempo_rastro := 0.0
 
 @onready var visual: Sprite2D = $Visual
 
@@ -55,6 +58,7 @@ func _physics_process(delta: float) -> void:
 		var passo := velocidade * delta
 		global_position += direcao * passo
 		distancia_percorrida += passo
+		emitir_rastro(delta, direcao)
 		if distancia_percorrida >= distancia_maxima:
 			voltando = true
 		return
@@ -63,7 +67,9 @@ func _physics_process(delta: float) -> void:
 	if is_instance_valid(boss_origem):
 		alvo = boss_origem.global_position + direcao * 38.0
 	var distancia := global_position.distance_to(alvo)
+	var direcao_retorno := global_position.direction_to(alvo)
 	global_position = global_position.move_toward(alvo, velocidade * delta)
+	emitir_rastro(delta, direcao_retorno)
 	visual.rotation = lerp_angle(
 		visual.rotation,
 		0.0,
@@ -72,6 +78,24 @@ func _physics_process(delta: float) -> void:
 	if global_position.distance_to(alvo) <= 8.0:
 		retornou.emit(indice_petala)
 		queue_free()
+
+
+func emitir_rastro(delta: float, direcao_movimento: Vector2) -> void:
+	tempo_rastro -= delta
+	if tempo_rastro > 0.0 or direcao_movimento.length_squared() <= 0.0:
+		return
+	tempo_rastro = 0.052
+	var cena := get_tree().current_scene
+	if not is_instance_valid(cena):
+		return
+	EfeitoCombateCena.criar(
+		cena,
+		global_position - direcao_movimento * 14.0,
+		EfeitoCombate.Tipo.RASTRO,
+		Color(0.68, 1.0, 0.40, 0.92),
+		0.72,
+		direcao_movimento
+	)
 
 
 func _on_body_entered(body: Node2D) -> void:
