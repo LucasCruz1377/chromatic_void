@@ -26,6 +26,7 @@ const TIMER_MIN := 0.72
 const MAX_ENEMIES := 26
 const MAX_ENEMIES_BASE := 5
 const INTERVALO_BOSS := 10
+const CAMINHO_LOTUS_DANCE := "res:/" + "/OST/LotusDance.mp3"
 
 @export_category("Asteroides bônus")
 @export_range(8.0, 90.0, 1.0) var intervalo_asteroide_min: float = 18.0
@@ -70,6 +71,8 @@ var boss_detalhe: ProgressBar
 var spawns_pausados_desenvolvedor := false
 var boss_em_teste := false
 var painel_desenvolvedor: PainelDesenvolvedor
+var musica_partida_padrao: AudioStream
+var musica_boss_ativa := false
 
 
 func _ready() -> void:
@@ -92,6 +95,7 @@ func _ready() -> void:
 		add_child(painel_desenvolvedor)
 		painel_desenvolvedor.configurar(self, player)
 
+	musica_partida_padrao = tocarmusica.stream
 	if not tocarmusica.playing:
 		tocarmusica.play()
 
@@ -302,16 +306,21 @@ func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
 	boss_ativo.global_position = posicao_boss
 	if boss_ativo.has_method("configurar_dificuldade"):
 		boss_ativo.call("configurar_dificuldade", dificuldade)
+	aplicar_musica_boss(id)
 
 	criar_hud_boss()
 	boss_ativo.vida_alterada.connect(_on_boss_vida_alterada)
 	if boss_ativo.has_signal("fase_alterada"):
 		boss_ativo.connect("fase_alterada", _on_boss_fase_alterada)
+	if boss_ativo.has_signal("subtitulo_alterado"):
+		boss_ativo.connect("subtitulo_alterado", _on_boss_subtitulo_alterado)
 	if boss_ativo.has_signal("reciclagem_alterada"):
 		boss_ativo.connect("reciclagem_alterada", _on_boss_reciclagem_alterada)
 	boss_ativo.morreu.connect(_on_boss_morreu)
 	_on_boss_vida_alterada(boss_ativo.Vida, boss_ativo.obter_vida_maxima_atual())
 	_on_boss_fase_alterada(1)
+	if boss_ativo.has_method("obter_subtitulo_boss"):
+		_on_boss_subtitulo_alterado(str(boss_ativo.call("obter_subtitulo_boss")))
 	if boss_atual_id == &"pet0":
 		var pet0 := boss_ativo as BossPet0
 		_on_boss_reciclagem_alterada(pet0.reciclagem_atual, pet0.meta_reciclagem)
@@ -337,6 +346,35 @@ func limpar_arena_teste() -> void:
 		boss_hud.queue_free()
 	boss_hud = null
 	timer = TIMER_MAX
+	restaurar_musica_partida()
+
+
+func aplicar_musica_boss(id: StringName) -> void:
+	if id != &"flor_equinocio":
+		restaurar_musica_partida()
+		return
+	if not ResourceLoader.exists(CAMINHO_LOTUS_DANCE):
+		push_warning("LotusDance.mp3 não foi encontrado na pasta OST.")
+		return
+	var faixa := load(CAMINHO_LOTUS_DANCE) as AudioStream
+	if not is_instance_valid(faixa):
+		return
+	if faixa is AudioStreamMP3:
+		(faixa as AudioStreamMP3).loop = true
+	tocarmusica.stop()
+	tocarmusica.stream = faixa
+	tocarmusica.play()
+	musica_boss_ativa = true
+
+
+func restaurar_musica_partida() -> void:
+	if not musica_boss_ativa or not is_instance_valid(tocarmusica):
+		return
+	tocarmusica.stop()
+	tocarmusica.stream = musica_partida_padrao
+	if is_instance_valid(musica_partida_padrao):
+		tocarmusica.play()
+	musica_boss_ativa = false
 
 
 func alternar_spawns_teste() -> bool:
@@ -424,6 +462,13 @@ func _on_boss_fase_alterada(fase: int) -> void:
 	if is_instance_valid(boss_ativo) and boss_ativo.has_method("obter_nome_boss"):
 		nome = str(boss_ativo.call("obter_nome_boss"))
 	boss_nome.text = "%s — FASE %d" % [nome, fase]
+	if is_instance_valid(boss_vida) and is_instance_valid(boss_ativo) and boss_ativo.has_method("obter_cor_fase"):
+		boss_vida.modulate = boss_ativo.call("obter_cor_fase")
+
+
+func _on_boss_subtitulo_alterado(texto: String) -> void:
+	if is_instance_valid(boss_detalhe_texto):
+		boss_detalhe_texto.text = texto
 
 
 func _on_boss_reciclagem_alterada(atual: int, meta: int) -> void:
@@ -440,6 +485,7 @@ func _on_boss_reciclagem_alterada(atual: int, meta: int) -> void:
 
 
 func _on_boss_morreu(_inimigo: InimigoBase) -> void:
+	restaurar_musica_partida()
 	if boss_em_teste:
 		boss_em_teste = false
 		boss_ativo = null

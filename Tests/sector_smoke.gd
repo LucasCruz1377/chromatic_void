@@ -62,9 +62,29 @@ func _ready() -> void:
 	verificar(batalha.boss_atual_id == &"flor_equinocio", "o segundo setor não criou seu próprio boss")
 	verificar(batalha.boss_ativo is BossCaosPrimaveril, "o setor floral não criou o Caos Primaveril")
 	verificar(not (batalha.boss_ativo is BossPet0), "o PET-0 foi repetido no segundo setor")
+	if ResourceLoader.exists(batalha.CAMINHO_LOTUS_DANCE):
+		verificar(
+			batalha.tocarmusica.stream.resource_path.ends_with("OST/LotusDance.mp3"),
+			"LotusDance não começou na luta do Florecimento"
+		)
+	else:
+		verificar(
+			batalha.tocarmusica.stream == batalha.musica_partida_padrao,
+			"a ausência opcional de LotusDance removeu a música padrão"
+		)
+
+	var cena_sizigia := load("res://Entities/BossEclipseColheita.tscn") as PackedScene
+	verificar(cena_sizigia != null, "a cena da Sizígia Eterna não carregou")
+	if cena_sizigia != null:
+		var sizigia := cena_sizigia.instantiate()
+		batalha.add_child(sizigia)
+		await get_tree().process_frame
+		verificar(sizigia is BossSizigiaEterna, "o Eclipse antigo não foi substituído pela Sizígia Eterna")
+		verificar(sizigia.obter_vida_maxima_atual() >= 330.0, "a Lua começou sem a vida de boss principal")
+		sizigia.queue_free()
+		await get_tree().process_frame
 
 	for caminho in [
-		"res://Entities/BossEclipseColheita.tscn",
 		"res://Entities/BossSentinelaDourada.tscn",
 		"res://Entities/BossRupturaLilas.tscn",
 	]:

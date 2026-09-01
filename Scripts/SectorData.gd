@@ -32,9 +32,9 @@ const DADOS: Dictionary = {
 		]
 	},
 	&"lua_colheita": {
-		"nome": "ÓRBITA DA COLHEITA",
-		"subtitulo": "LUA DA COLHEITA",
-		"descricao": "Atiradores e investidas exigem movimento constante.",
+		"nome": "ÓRBITA DA SIZÍGIA",
+		"subtitulo": "SOL • LUA • ECLIPSE ABSOLUTO",
+		"descricao": "A rota mais longa culmina na união dos dois astros.",
 		"usar_fundo_original": false,
 		"cor_fundo": Color(0.008, 0.010, 0.038, 1.0),
 		"cor_destaque": Color(0.56, 0.64, 1.0, 1.0),

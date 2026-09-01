@@ -12,6 +12,7 @@ const FRAGMENTO := preload("res://Entities/FragmentoReciclavel.tscn")
 const EFEITO_RECICLAGEM := preload("res://Entities/EfeitoReciclagem.tscn")
 
 
+
 enum Estado {
 	LIVRE,
 	AVISANDO_ROLAMENTO,
