@@ -169,9 +169,13 @@ func criar_estilo_painel(destacado: bool) -> StyleBoxFlat:
 		cor_destaque.lightened(0.22) if destacado else cor_destaque.darkened(0.08)
 	)
 	estilo.set_border_width_all(3 if destacado else 2)
-	estilo.set_corner_radius_all(16)
+	estilo.set_corner_radius_all(22)
+	estilo.corner_detail = 12
+	estilo.anti_aliasing = true
+	estilo.anti_aliasing_size = 1.5
+	estilo.border_blend = true
 	estilo.shadow_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.22)
-	estilo.shadow_size = 10
+	estilo.shadow_size = 8
 	return estilo
 
 
@@ -211,7 +215,7 @@ func obter_papel(dados: Dictionary) -> String:
 func criar_poligonos_decorativos() -> void:
 	var canto_superior := Polygon2D.new()
 	canto_superior.polygon = PackedVector2Array([
-		Vector2(16, 16), Vector2(64, 16), Vector2(16, 64)
+		Vector2(26, 26), Vector2(72, 26), Vector2(26, 72)
 	])
 	canto_superior.color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.13)
 	add_child(canto_superior)

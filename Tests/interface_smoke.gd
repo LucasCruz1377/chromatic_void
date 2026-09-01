@@ -99,6 +99,17 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var foco_upgrade := get_viewport().gui_get_focus_owner()
 	verificar(foco_upgrade is Button, "os cards de melhoria não receberam foco do controle")
+	if menu_upgrades.container_cards.get_child_count() > 0:
+		var card := menu_upgrades.container_cards.get_child(0) as PanelContainer
+		var estilo_card := card.get_theme_stylebox("panel") as StyleBoxFlat
+		verificar(
+			is_instance_valid(estilo_card)
+			and estilo_card.corner_radius_top_left >= 20
+			and estilo_card.corner_radius_top_right >= 20
+			and estilo_card.corner_radius_bottom_left >= 20
+			and estilo_card.corner_radius_bottom_right >= 20,
+			"os cards de melhoria não mantiveram as quatro bordas arredondadas"
+		)
 	verificar(
 		is_instance_valid(menu_upgrades.botao_rerrolar)
 		and menu_upgrades.botao_rerrolar.focus_mode == Control.FOCUS_ALL,

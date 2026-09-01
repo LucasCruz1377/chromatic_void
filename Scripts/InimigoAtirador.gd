@@ -3,6 +3,7 @@ extends InimigoBase
 
 const PROJETIL := preload("res://Entities/ProjetilInimigo.tscn")
 
+
 @export var aceleracao: float = 220.0
 @export var distancia_ideal: float = 310.0
 @export var margem_distancia: float = 55.0

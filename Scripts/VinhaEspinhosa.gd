@@ -17,6 +17,7 @@ var progresso_crescimento := 0.0
 var crescendo := false
 var dano_ativo := false
 var atingidos: Dictionary = {}
+var particulas: GPUParticles2D
 
 @onready var corpo: Polygon2D = $Corpo
 @onready var brilho: Line2D = $Brilho
@@ -27,6 +28,7 @@ var atingidos: Dictionary = {}
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	colisao.disabled = true
+	criar_particulas_vinha()
 
 
 func configurar(novo_comprimento: float, novo_dano: float) -> void:
@@ -45,8 +47,49 @@ func configurar(novo_comprimento: float, novo_dano: float) -> void:
 	forma.size = Vector2(comprimento, 18.0)
 	colisao.shape = forma
 	colisao.position = Vector2(comprimento * 0.5, 0.0)
+	atualizar_area_particulas()
 	criar_espinhos()
 	aplicar_glow()
+
+
+func criar_particulas_vinha() -> void:
+	particulas = GPUParticles2D.new()
+	particulas.name = "ParticulasFolhas"
+	particulas.z_index = 2
+	particulas.amount = 52
+	particulas.lifetime = 0.82
+	particulas.randomness = 0.72
+	particulas.preprocess = 0.35
+	particulas.local_coords = true
+	particulas.texture = TEXTURA_ESPINHO
+	particulas.emitting = false
+	var material := ParticleProcessMaterial.new()
+	material.particle_flag_disable_z = true
+	material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	material.emission_box_extents = Vector3(comprimento * 0.5, 9.0, 1.0)
+	material.direction = Vector3(0.0, -1.0, 0.0)
+	material.spread = 80.0
+	material.initial_velocity_min = 12.0
+	material.initial_velocity_max = 34.0
+	material.gravity = Vector3(0.0, 18.0, 0.0)
+	material.scale_min = 0.12
+	material.scale_max = 0.28
+	material.color = Color(0.62, 1.0, 0.38, 0.72)
+	particulas.process_material = material
+	add_child(particulas)
+	atualizar_area_particulas()
+
+
+func atualizar_area_particulas() -> void:
+	if not is_instance_valid(particulas):
+		return
+	particulas.position = Vector2(comprimento * 0.5, 0.0)
+	particulas.visibility_rect = Rect2(
+		-comprimento * 0.55, -48.0, comprimento * 1.1, 96.0
+	)
+	var material := particulas.process_material as ParticleProcessMaterial
+	if is_instance_valid(material):
+		material.emission_box_extents = Vector3(comprimento * 0.5, 9.0, 1.0)
 
 
 func criar_espinhos() -> void:
@@ -80,6 +123,9 @@ func iniciar_crescimento(duracao: float) -> void:
 	progresso_crescimento = 0.0
 	crescendo = true
 	scale.x = 0.01
+	if is_instance_valid(particulas):
+		particulas.emitting = true
+		particulas.restart()
 
 
 func _physics_process(delta: float) -> void:
@@ -105,6 +151,8 @@ func ativar_dano() -> void:
 func desativar_dano() -> void:
 	dano_ativo = false
 	colisao.set_deferred("disabled", true)
+	if is_instance_valid(particulas):
+		particulas.emitting = false
 
 
 func _on_body_entered(body: Node2D) -> void:

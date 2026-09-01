@@ -2,6 +2,7 @@ extends InimigoBase
 
 
 
+
 enum Estado {
 	CERCANDO,
 	AVISANDO,

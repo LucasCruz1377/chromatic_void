@@ -170,13 +170,13 @@ func rolar(delta: float) -> void:
 	velocity = direcao_investida * obter_velocidade_maxima()
 	tempo_rastro_rolamento -= delta
 	if tempo_rastro_rolamento <= 0.0:
-		tempo_rastro_rolamento = 0.075
+		tempo_rastro_rolamento = 0.045
 		EfeitoCombateCena.criar(
 			get_tree().current_scene,
-			global_position - direcao_investida * 28.0,
+			global_position - direcao_investida * 42.0,
 			EfeitoCombate.Tipo.RASTRO,
-			Color(1.0, 0.34, 0.1),
-			1.55,
+			Color(0.22, 0.88, 1.0, 0.96),
+			1.9,
 			direcao_investida
 		)
 

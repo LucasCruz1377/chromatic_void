@@ -40,6 +40,7 @@ var tempo_atordoado: float = 0.0
 var morto: bool = false
 var tween_impacto: Tween
 var modulacao_base := Color.WHITE
+var escala_base_impacto := Vector2.ONE
 
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
@@ -50,6 +51,7 @@ var modulacao_base := Color.WHITE
 
 
 func _ready() -> void:
+	escala_base_impacto = scale
 	modulacao_base = Color(
 		minf(modulate.r, 1.0),
 		minf(modulate.g, 1.0),
@@ -160,6 +162,9 @@ func reproduzir_impacto() -> void:
 
 	if tween_impacto and tween_impacto.is_valid():
 		tween_impacto.kill()
+	# Um tween interrompido podia deixar a escala ampliada como ponto inicial
+	# do próximo impacto, fazendo bosses crescerem a cada tiro recebido.
+	scale = escala_base_impacto
 
 	var cor_impacto := modulacao_base.lerp(
 		Color(1.0, 0.48, 0.62, modulacao_base.a),
@@ -169,8 +174,15 @@ func reproduzir_impacto() -> void:
 	tween_impacto = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween_impacto.set_parallel(true)
 	tween_impacto.tween_property(self, "modulate", modulacao_base, 0.10)
-	tween_impacto.tween_property(self, "scale", scale * 1.055, 0.045)
-	tween_impacto.chain().tween_property(self, "scale", scale, 0.075)
+	# Bosses já possuem silhuetas e animações próprias; o feedback de acerto não
+	# altera seu tamanho. Inimigos comuns conservam uma pulsação leve e limitada.
+	if not is_in_group("boss"):
+		tween_impacto.tween_property(
+			self, "scale", escala_base_impacto * 1.035, 0.04
+		)
+		tween_impacto.chain().tween_property(
+			self, "scale", escala_base_impacto, 0.065
+		)
 
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
