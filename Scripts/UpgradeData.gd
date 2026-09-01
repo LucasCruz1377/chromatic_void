@@ -74,7 +74,7 @@ const DADOS: Dictionary = {
 	},
 	&"tiro_duplo": {
 		"nome": "TIRO DUPLO",
-		"descricao": "Dispara 2 projéteis com pequena abertura. Cada projétil causa 68% do dano.",
+		"descricao": "Dispara duas linhas paralelas. Cada projétil causa 62% do dano.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "FORMA",
 		"raridade": "INCOMUM",
@@ -89,7 +89,7 @@ const DADOS: Dictionary = {
 	},
 	&"tiro_triplo": {
 		"nome": "FORMAÇÃO TRIDENTE",
-		"descricao": "Transforma o tiro duplo em 3 projéteis de 48% do dano e amplia o arco.",
+		"descricao": "Cria um tiro central e dois laterais a 7°. Cada projétil causa 42% do dano.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "FORMA",
 		"raridade": "RARA",
@@ -104,7 +104,7 @@ const DADOS: Dictionary = {
 	},
 	&"leque_prismatico": {
 		"nome": "LEQUE PRISMÁTICO",
-		"descricao": "+1 projétil e +8° de dispersão; o dano individual se ajusta para preservar o DPS.",
+		"descricao": "+1 projétil e +8° de cobertura; o dano total permanece próximo de 125%.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "FORMA",
 		"raridade": "RARA",
@@ -194,7 +194,7 @@ const DADOS: Dictionary = {
 	},
 	&"formacao_convergente": {
 		"nome": "FORMAÇÃO CONVERGENTE",
-		"descricao": "Comprime o arco do multitiro e aumenta 8% o dano individual. Melhor contra alvos resistentes.",
+		"descricao": "Os projéteis partem separados e convergem à frente. Concentra dano sem bônus oculto.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "FORMA • EVOLUÇÃO",
 		"raridade": "RARA",

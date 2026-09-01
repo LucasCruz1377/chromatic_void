@@ -55,8 +55,7 @@ func configurar(
 	multiplicador_fragmento := 0.28,
 	dano_explosao_configurado := 0.0,
 	raio_explosao_configurado := 0.0,
-	bonus_ricochete_configurado := 0.0,
-	estilo_projetil: StringName = &"padrao"
+	bonus_ricochete_configurado := 0.0
 ) -> void:
 	dmg = dano_configurado
 	velocidade = velocidade_configurada
@@ -73,44 +72,11 @@ func configurar(
 	dano_explosao = maxf(dano_explosao_configurado, 0.0)
 	raio_explosao = maxf(raio_explosao_configurado, 0.0)
 	bonus_dano_por_ricochete = maxf(bonus_ricochete_configurado, 0.0)
-	aplicar_estilo_visual(&"fragmento" if eh_fragmento else estilo_projetil)
 
 	if eh_fragmento:
 		visual.color = Color(0.92, 0.20, 1.0, 1.0)
 		luz.color = Color(0.95, 0.30, 1.0, 1.0)
 		aplicar_glow()
-
-
-func aplicar_estilo_visual(estilo: StringName) -> void:
-	if not is_instance_valid(visual) or not is_instance_valid(luz):
-		return
-	match estilo:
-		&"multitiro":
-			visual.color = Color(1.0, 0.28, 0.72)
-			luz.color = Color(1.0, 0.22, 0.78)
-			visual.scale.y *= 0.82
-		&"pesado":
-			visual.color = Color(1.0, 0.48, 0.10)
-			luz.color = Color(1.0, 0.62, 0.16)
-			visual.scale.y *= 1.45
-		&"impacto":
-			visual.color = Color(1.0, 0.72, 0.16)
-			luz.color = Color(1.0, 0.38, 0.08)
-			visual.scale.y *= 1.65
-		&"fragmentacao", &"fragmento":
-			visual.color = Color(0.95, 0.18, 1.0)
-			luz.color = Color(1.0, 0.25, 0.82)
-		&"gravitacional":
-			visual.color = Color(0.28, 0.62, 1.0)
-			luz.color = Color(0.22, 0.82, 1.0)
-		&"ricochete":
-			visual.color = Color(0.20, 1.0, 0.82)
-			luz.color = Color(0.16, 1.0, 0.95)
-		_:
-			visual.color = Color(0.72, 1.0, 0.22)
-			luz.color = Color(0.58, 1.0, 0.18)
-	aplicar_glow()
-
 
 func definir_alvo_homing(alvo: Node2D) -> void:
 	if forca_homing <= 0.0 or not is_instance_valid(alvo):
@@ -290,8 +256,7 @@ func criar_fragmentos() -> void:
 				multiplicador_dano_fragmento,
 				0.0,
 				0.0,
-				bonus_dano_por_ricochete * 0.5,
-				&"fragmento"
+				bonus_dano_por_ricochete * 0.5
 			)
 
 

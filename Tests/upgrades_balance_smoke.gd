@@ -17,6 +17,7 @@ func _ready() -> void:
 	testar_rotas_exclusivas()
 	testar_supermod_unico()
 	testar_orcamento_de_dano()
+	testar_geometria_multitiro()
 	testar_evolucoes_de_estilo()
 	testar_passivos_de_pilotagem()
 	testar_curva_de_xp()
@@ -66,16 +67,16 @@ func testar_orcamento_de_dano() -> void:
 	player.aplicar_upgrade(&"tiro_duplo")
 	verificar(player.projeteis_por_tiro == 2, "Tiro Duplo não criou 2 projéteis")
 	verificar(
-		is_equal_approx(player.multiplicador_dano_forma, 0.68),
-		"Tiro Duplo não aplicou 68% de dano por projétil"
+		is_equal_approx(player.multiplicador_dano_forma, 0.62),
+		"Tiro Duplo não aplicou 62% de dano por projétil"
 	)
 
 	player.niveis_upgrades[&"tiro_triplo"] = 1
 	player.aplicar_upgrade(&"tiro_triplo")
 	verificar(player.projeteis_por_tiro == 3, "Tiro Triplo não criou 3 projéteis")
 	verificar(
-		is_equal_approx(player.multiplicador_dano_forma, 0.48),
-		"Tiro Triplo não aplicou 48% de dano por projétil"
+		is_equal_approx(player.multiplicador_dano_forma, 0.42),
+		"Tiro Triplo não aplicou 42% de dano por projétil"
 	)
 
 	player.niveis_upgrades[&"mira_gravitacional"] = 1
@@ -90,8 +91,41 @@ func testar_orcamento_de_dano() -> void:
 		* player.multiplicador_dano_mira
 	)
 	verificar(
-		dps_teorico <= 1.28,
+		dps_teorico <= 1.12,
 		"Tiro Triplo com gravidade ultrapassou o orçamento inicial previsto"
+	)
+	player.free()
+
+
+func testar_geometria_multitiro() -> void:
+	var player := Player.new()
+	var duplo_esquerdo := player.calcular_padrao_multitiro(0, 2)
+	var duplo_direito := player.calcular_padrao_multitiro(1, 2)
+	verificar(
+		is_zero_approx(duplo_esquerdo.x) and is_zero_approx(duplo_direito.x),
+		"o Tiro Duplo deixou de viajar em paralelo"
+	)
+	verificar(
+		duplo_esquerdo.y < 0.0 and duplo_direito.y > 0.0,
+		"o Tiro Duplo não separou as duas linhas na origem"
+	)
+
+	var tridente_esquerdo := player.calcular_padrao_multitiro(0, 3)
+	var tridente_centro := player.calcular_padrao_multitiro(1, 3)
+	var tridente_direito := player.calcular_padrao_multitiro(2, 3)
+	verificar(
+		tridente_esquerdo.x < 0.0
+		and is_zero_approx(tridente_centro.x)
+		and tridente_direito.x > 0.0,
+		"a Formação Tridente perdeu o centro e os dois laterais"
+	)
+
+	player.formacao_convergente = true
+	var convergente_esquerdo := player.calcular_padrao_multitiro(0, 3)
+	var convergente_direito := player.calcular_padrao_multitiro(2, 3)
+	verificar(
+		convergente_esquerdo.x > 0.0 and convergente_direito.x < 0.0,
+		"a Formação Convergente não cruza as trajetórias à frente"
 	)
 	player.free()
 

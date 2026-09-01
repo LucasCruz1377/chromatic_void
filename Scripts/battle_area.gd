@@ -2,6 +2,7 @@ extends Node2D
 
 
 const DadosSetores = preload("res://Scripts/SectorData.gd")
+const PainelDesenvolvedorCena = preload("res://Scripts/PainelDesenvolvedor.gd")
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
@@ -66,6 +67,9 @@ var boss_nome: Label
 var boss_vida: ProgressBar
 var boss_detalhe_texto: Label
 var boss_detalhe: ProgressBar
+var spawns_pausados_desenvolvedor := false
+var boss_em_teste := false
+var painel_desenvolvedor: PainelDesenvolvedor
 
 
 func _ready() -> void:
@@ -82,6 +86,11 @@ func _ready() -> void:
 		tela_upgrades.connect("estado_alterado", _on_menu_upgrades_estado_alterado)
 	criar_visual_setor()
 	aplicar_setor(&"vazio_inicial")
+	if Global.modo_desenvolvedor:
+		painel_desenvolvedor = PainelDesenvolvedorCena.new()
+		painel_desenvolvedor.name = "PainelDesenvolvedor"
+		add_child(painel_desenvolvedor)
+		painel_desenvolvedor.configurar(self, player)
 
 	if not tocarmusica.playing:
 		tocarmusica.play()
@@ -111,6 +120,8 @@ func _process(delta: float) -> void:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		return
 	if tutorial_ativo:
+		return
+	if spawns_pausados_desenvolvedor:
 		return
 
 	processar_asteroides(delta)
@@ -261,11 +272,28 @@ func invocar_boss_do_setor() -> void:
 		return
 	limpar_inimigos_sem_recompensa()
 	var dados_setor := DadosSetores.obter(setor_atual)
-	boss_atual_id = StringName(dados_setor.get("boss", &"pet0"))
+	_criar_boss(
+		StringName(dados_setor.get("boss", &"pet0")),
+		setores_concluidos.size() + 1,
+		false
+	)
+
+
+func invocar_boss_teste(id: StringName) -> void:
+	if not Global.modo_desenvolvedor or not BOSSES.has(id):
+		return
+	limpar_arena_teste()
+	_criar_boss(id, 1, true)
+
+
+func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
+	boss_atual_id = id
+	boss_em_teste = em_teste
 	var cena: PackedScene = BOSSES.get(boss_atual_id, BOSSES[&"pet0"])
 	boss_ativo = cena.instantiate() as InimigoBase
 	if not is_instance_valid(boss_ativo):
-		push_error("Não foi possível criar o boss do setor %s." % setor_atual)
+		boss_em_teste = false
+		push_error("Não foi possível criar o boss %s." % boss_atual_id)
 		return
 	add_child(boss_ativo)
 	var posicao_boss := Vector2(760.0, 270.0)
@@ -273,7 +301,7 @@ func invocar_boss_do_setor() -> void:
 		posicao_boss = Vector2(200.0, 270.0)
 	boss_ativo.global_position = posicao_boss
 	if boss_ativo.has_method("configurar_dificuldade"):
-		boss_ativo.call("configurar_dificuldade", setores_concluidos.size() + 1)
+		boss_ativo.call("configurar_dificuldade", dificuldade)
 
 	criar_hud_boss()
 	boss_ativo.vida_alterada.connect(_on_boss_vida_alterada)
@@ -297,6 +325,46 @@ func limpar_inimigos_sem_recompensa() -> void:
 		for node in get_tree().get_nodes_in_group(grupo):
 			if is_instance_valid(node):
 				node.queue_free()
+
+
+func limpar_arena_teste() -> void:
+	if not Global.modo_desenvolvedor:
+		return
+	limpar_inimigos_sem_recompensa()
+	boss_ativo = null
+	boss_em_teste = false
+	if is_instance_valid(boss_hud):
+		boss_hud.queue_free()
+	boss_hud = null
+	timer = TIMER_MAX
+
+
+func alternar_spawns_teste() -> bool:
+	if not Global.modo_desenvolvedor:
+		return false
+	spawns_pausados_desenvolvedor = not spawns_pausados_desenvolvedor
+	return spawns_pausados_desenvolvedor
+
+
+func spawns_teste_estao_pausados() -> bool:
+	return spawns_pausados_desenvolvedor
+
+
+func pode_abrir_painel_desenvolvedor() -> bool:
+	return (
+		Global.modo_desenvolvedor
+		and not game_over
+		and not tutorial_ativo
+		and not escolha_setor_ativa
+		and is_instance_valid(player)
+		and player.vivo
+		and player.vida > 0.0
+		and not player.UsandoHabilidade
+		and not (
+			tela_upgrades.has_method("esta_aberta")
+			and bool(tela_upgrades.call("esta_aberta"))
+		)
+	)
 
 
 func criar_hud_boss() -> void:
@@ -372,6 +440,20 @@ func _on_boss_reciclagem_alterada(atual: int, meta: int) -> void:
 
 
 func _on_boss_morreu(_inimigo: InimigoBase) -> void:
+	if boss_em_teste:
+		boss_em_teste = false
+		boss_ativo = null
+		timer = TIMER_MAX
+		if is_instance_valid(boss_nome):
+			boss_nome.text = "TESTE CONCLUÍDO"
+		if is_instance_valid(boss_detalhe_texto):
+			boss_detalhe_texto.text = "PROGRESSÃO DA PARTIDA PRESERVADA"
+		if is_instance_valid(boss_hud):
+			var tween_teste := create_tween()
+			tween_teste.tween_interval(0.65)
+			tween_teste.tween_property(boss_hud, "modulate:a", 0.0, 0.25)
+			tween_teste.tween_callback(boss_hud.queue_free)
+		return
 	if setor_atual not in setores_concluidos:
 		setores_concluidos.append(setor_atual)
 	boss_ativo = null

@@ -1,7 +1,6 @@
 extends InimigoBase
 
 
-
 enum Estado {
 	PERSEGUINDO,
 	AVISANDO,

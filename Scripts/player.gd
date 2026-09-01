@@ -57,6 +57,7 @@ var ctrlblock := false
 var escala_base := 9.85
 var UsandoHabilidade := false
 var invulneravel_por_habilidade := false
+var invulneravel_desenvolvedor := false
 var multiplicador_dano_recebido := 1.0
 var multiplicador_cura_recebida := 1.0
 var multiplicador_velocidade_habilidade := 1.0
@@ -511,8 +512,6 @@ func fire() -> void:
 		return
 
 	var quantidade := maxi(projeteis_por_tiro, 1)
-	var dispersao_efetiva := dispersao_graus * (0.58 if formacao_convergente else 1.0)
-	var arco := deg_to_rad(dispersao_efetiva)
 	var alvos_guiados := obter_alvos_para_multitiro(quantidade)
 	var bonus_capacitor := 1.0
 	if capacitor_pronto:
@@ -526,21 +525,16 @@ func fire() -> void:
 			transform.x
 		)
 	for indice in range(quantidade):
-		var deslocamento := 0.0
-		if quantidade > 1:
-			deslocamento = lerpf(
-				-arco * 0.5,
-				arco * 0.5,
-				float(indice) / float(quantidade - 1)
-			)
+		var padrao := calcular_padrao_multitiro(indice, quantidade)
 		var alvo_preferido: Node2D
 		if not alvos_guiados.is_empty():
 			alvo_preferido = alvos_guiados[indice % alvos_guiados.size()]
 		criar_projetil(
-			rotation + deslocamento,
+			rotation + padrao.x,
 			bonus_capacitor,
 			false,
-			alvo_preferido
+			alvo_preferido,
+			padrao.y
 		)
 	if capacitor_pronto:
 		capacitor_pronto = false
@@ -557,15 +551,46 @@ func fire() -> void:
 	)
 
 
+func calcular_padrao_multitiro(indice: int, quantidade: int) -> Vector2:
+	if quantidade <= 1:
+		return Vector2.ZERO
+	var centro := float(indice) - float(quantidade - 1) * 0.5
+	var separacao_lateral := 14.0 if quantidade == 2 else 9.0
+	var deslocamento_lateral := centro * separacao_lateral
+	var deslocamento_angular := 0.0
+
+	# O tiro duplo viaja em paralelo. O tridente abre pouco e o leque só passa
+	# a cobrir uma área grande quando existem quatro ou mais projéteis.
+	if quantidade == 3:
+		deslocamento_angular = deg_to_rad(centro * 7.0)
+	elif quantidade >= 4:
+		var progresso := float(indice) / float(quantidade - 1)
+		deslocamento_angular = lerpf(
+			-deg_to_rad(dispersao_graus) * 0.5,
+			deg_to_rad(dispersao_graus) * 0.5,
+			progresso
+		)
+
+	if formacao_convergente:
+		# As linhas partem separadas e se encontram aproximadamente 300 px à
+		# frente. É uma mudança de geometria, não um bônus escondido de dano.
+		deslocamento_angular = atan2(-deslocamento_lateral, 300.0)
+	return Vector2(deslocamento_angular, deslocamento_lateral)
+
+
 func criar_projetil(
 	angulo: float,
 	multiplicador_dano_extra := 1.0,
 	eh_nova := false,
-	alvo_homing_preferido: Node2D = null
+	alvo_homing_preferido: Node2D = null,
+	deslocamento_lateral := 0.0
 ) -> void:
 	var projetil = tiro.instantiate()
 	get_tree().current_scene.add_child(projetil)
-	projetil.global_position = PontaArma.global_position
+	projetil.global_position = (
+		PontaArma.global_position
+		+ global_transform.y.normalized() * deslocamento_lateral
+	)
 	projetil.rotation = angulo
 
 	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
@@ -601,8 +626,7 @@ func criar_projetil(
 			multiplicador_fragmentos,
 			dano_explosao_impacto,
 			raio_explosao_impacto,
-			bonus_dano_ricochete,
-			obter_estilo_projetil()
+			bonus_dano_ricochete
 		)
 		if (
 			is_instance_valid(alvo_homing_preferido)
@@ -611,23 +635,6 @@ func criar_projetil(
 			projetil.definir_alvo_homing(alvo_homing_preferido)
 	else:
 		projetil.dmg = dano_final
-
-
-func obter_estilo_projetil() -> StringName:
-	if dano_explosao_impacto > 0.0:
-		return &"impacto"
-	if multiplicador_escala_projetil > 1.05:
-		return &"pesado"
-	if fragmentos_projetil > 0:
-		return &"fragmentacao"
-	if forca_mira_gravitacional > 0.0:
-		return &"gravitacional"
-	if ricochetes_projetil > 0:
-		return &"ricochete"
-	if projeteis_por_tiro > 1:
-		return &"multitiro"
-	return &"padrao"
-
 
 func obter_alvos_para_multitiro(quantidade: int) -> Array[Node2D]:
 	var alvos: Array[Node2D] = []
@@ -665,7 +672,12 @@ func registrar_acerto_projetil() -> void:
 
 
 func tomar_dano(valor: float) -> void:
-	if invencibilidade or invulneravel_por_habilidade or not vivo:
+	if (
+		invencibilidade
+		or invulneravel_por_habilidade
+		or invulneravel_desenvolvedor
+		or not vivo
+	):
 		return
 
 	var dano_restante := maxf(valor, 0.0)
@@ -843,13 +855,13 @@ func _valor_tabela(tabela: Array, nivel: int, padrao: float) -> float:
 func atualizar_multiplicador_forma() -> void:
 	match projeteis_por_tiro:
 		1: multiplicador_dano_forma = 1.0
-		2: multiplicador_dano_forma = 0.68
-		3: multiplicador_dano_forma = 0.48
-		4: multiplicador_dano_forma = 0.37
-		5: multiplicador_dano_forma = 0.30
-		6: multiplicador_dano_forma = 0.255
+		2: multiplicador_dano_forma = 0.62
+		3: multiplicador_dano_forma = 0.42
+		4: multiplicador_dano_forma = 0.31
+		5: multiplicador_dano_forma = 0.25
+		6: multiplicador_dano_forma = 0.21
 		_:
-			multiplicador_dano_forma = 1.55 / float(maxi(projeteis_por_tiro, 1))
+			multiplicador_dano_forma = 1.25 / float(maxi(projeteis_por_tiro, 1))
 
 
 func aplicar_upgrade(id: StringName) -> void:
@@ -880,11 +892,11 @@ func aplicar_upgrade(id: StringName) -> void:
 			MAX_VELOCIDADE *= 1.0 + bonus_propulsao
 		&"tiro_duplo":
 			projeteis_por_tiro = 2
-			dispersao_graus = maxf(dispersao_graus, 12.0)
+			dispersao_graus = 0.0
 			atualizar_multiplicador_forma()
 		&"tiro_triplo":
 			projeteis_por_tiro = 3
-			dispersao_graus = maxf(dispersao_graus, 18.0)
+			dispersao_graus = 14.0
 			atualizar_multiplicador_forma()
 		&"leque_prismatico":
 			projeteis_por_tiro += 1
@@ -909,7 +921,6 @@ func aplicar_upgrade(id: StringName) -> void:
 			ricochetes_projetil += 1
 		&"formacao_convergente":
 			formacao_convergente = true
-			multiplicador_dano_forma *= 1.08
 		&"onda_impacto":
 			dano_explosao_impacto += 0.30
 			raio_explosao_impacto += 54.0

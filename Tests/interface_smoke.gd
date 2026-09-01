@@ -30,6 +30,55 @@ func _ready() -> void:
 	player = batalha.get_node("Player") as Player
 	menu_upgrades = batalha.get_node("GUI/TelaUpgrades") as Control
 	batalha.tutorial_ativo = false
+	var painel_dev := batalha.get_node_or_null("PainelDesenvolvedor")
+	if Global.modo_desenvolvedor:
+		verificar(
+			painel_dev is PainelDesenvolvedor,
+			"o laboratório de testes não foi criado no modo desenvolvedor"
+		)
+		if painel_dev is PainelDesenvolvedor:
+			var nivel_antes: int = player.nivel_atual
+			var pontos_antes: int = player.pontos_upgrade_pendentes
+			painel_dev.abrir()
+			verificar(painel_dev.aberto, "o laboratório de testes não abriu")
+			verificar(get_tree().paused, "o laboratório não pausou a batalha")
+			painel_dev._subir_niveis(1)
+			verificar(
+				player.nivel_atual == nivel_antes + 1
+				and player.pontos_upgrade_pendentes == pontos_antes + 1,
+				"o atalho de nível do laboratório não ajustou a progressão"
+			)
+			painel_dev._alternar_invulnerabilidade()
+			verificar(
+				player.invulneravel_desenvolvedor,
+				"a invulnerabilidade de desenvolvimento não foi ativada"
+			)
+			painel_dev._alternar_spawns()
+			verificar(
+				batalha.spawns_pausados_desenvolvedor,
+				"a pausa de spawns do laboratório não foi ativada"
+			)
+			painel_dev._alternar_spawns()
+			painel_dev._alternar_invulnerabilidade()
+			painel_dev.fechar()
+			verificar(not get_tree().paused, "o laboratório não devolveu a partida")
+
+			var setores_antes := batalha.setores_concluidos.duplicate()
+			var proximo_boss_antes: int = batalha.proximo_nivel_boss
+			batalha.invocar_boss_teste(&"pet0")
+			verificar(
+				is_instance_valid(batalha.boss_ativo) and batalha.boss_em_teste,
+				"o seletor não invocou o boss em modo de teste"
+			)
+			batalha._on_boss_morreu(batalha.boss_ativo)
+			verificar(
+				batalha.setores_concluidos == setores_antes
+				and batalha.proximo_nivel_boss == proximo_boss_antes,
+				"um boss de teste alterou a progressão da partida"
+			)
+			batalha.limpar_arena_teste()
+	else:
+		verificar(painel_dev == null, "o laboratório apareceu fora do modo desenvolvedor")
 	player.pontos_upgrade_pendentes = 1
 
 	player.UsandoHabilidade = true
