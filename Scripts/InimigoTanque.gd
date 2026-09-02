@@ -2,7 +2,7 @@ extends InimigoBase
 
 
 const PROJETIL := preload("res://Entities/ProjetilInimigo.tscn")
-
+const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const COR_PROJETIL_TANQUE := Color(1.0, 0.42, 0.10, 1.0)
 
 @export var aceleracao: float = 110.0

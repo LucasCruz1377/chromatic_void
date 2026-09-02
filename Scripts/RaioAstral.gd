@@ -18,6 +18,10 @@ var queimadura_total := 0.0
 var duracao_queimadura := 0.0
 var ativo := false
 var atingiu := false
+var desaparecendo := false
+var alpha_raio := 1.0
+var tempo_trava_direcao := 0.34
+var tween_saida: Tween
 
 
 func _ready() -> void:
@@ -63,21 +67,47 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player") as Node2D
 
+	if desaparecendo:
+		queue_redraw()
+		return
+
 	if not ativo:
-		if rastrear_antes_de_disparar and is_instance_valid(player):
+		# A mira acompanha o jogador durante a maior parte da carga, mas trava
+		# antes do disparo para que exista uma janela real de esquiva.
+		if (
+			rastrear_antes_de_disparar
+			and tempo_aviso > tempo_trava_direcao
+			and is_instance_valid(player)
+		):
 			direcao = global_position.direction_to(player.global_position)
 		tempo_aviso -= delta
 		if tempo_aviso <= 0.0:
-			ativo = true
-			Global.vibrar_controle(0.65, 0.9, 0.16)
+			iniciar_disparo()
 	else:
-		if velocidade_varredura != 0.0:
-			direcao = direcao.rotated(velocidade_varredura * delta)
-		verificar_acerto()
 		tempo_ativo -= delta
 		if tempo_ativo <= 0.0:
-			queue_free()
+			iniciar_desaparecimento()
 	queue_redraw()
+
+
+func iniciar_disparo() -> void:
+	ativo = true
+	# O dano é resolvido uma única vez no instante do disparo. O restante da
+	# duração existe apenas para leitura visual e para o desaparecimento suave.
+	verificar_acerto()
+	Global.vibrar_controle(0.82, 1.0, 0.22)
+	var camera := get_tree().get_first_node_in_group("camera") as Camera2D
+	if is_instance_valid(camera) and camera.has_method("shake"):
+		camera.shake(16.0 if largura >= 36.0 else 13.0)
+
+
+func iniciar_desaparecimento() -> void:
+	if desaparecendo:
+		return
+	desaparecendo = true
+	tween_saida = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween_saida.tween_property(self, "alpha_raio", 0.0, 0.38)
+	tween_saida.tween_callback(queue_free)
 
 
 func verificar_acerto() -> void:
@@ -97,11 +127,10 @@ func verificar_acerto() -> void:
 func _draw() -> void:
 	var fim := direcao * comprimento
 	if ativo:
-		var halo := cor
-		halo.a = 0.22
+		var halo := Color(cor.r, cor.g, cor.b, 0.22 * alpha_raio)
 		draw_line(Vector2.ZERO, fim, halo, largura * 1.8, true)
-		draw_line(Vector2.ZERO, fim, cor, largura, true)
-		draw_line(Vector2.ZERO, fim, Color(1.0, 0.98, 0.82), largura * 0.24, true)
+		draw_line(Vector2.ZERO, fim, Color(cor.r, cor.g, cor.b, alpha_raio), largura, true)
+		draw_line(Vector2.ZERO, fim, Color(1.0, 0.98, 0.82, alpha_raio), largura * 0.24, true)
 	else:
 		var aviso := cor
 		var carga := clampf(1.0 - tempo_aviso / maxf(tempo_aviso_total, 0.01), 0.0, 1.0)
@@ -110,7 +139,8 @@ func _draw() -> void:
 		draw_line(normal, fim + normal, Color(cor.r, cor.g, cor.b, 0.42), 2.0, true)
 		draw_line(-normal, fim - normal, Color(cor.r, cor.g, cor.b, 0.42), 2.0, true)
 		draw_dashed_line(Vector2.ZERO, fim, aviso, 3.0 + carga * 2.0, 13.0, true)
-		draw_circle(Vector2.ZERO, 15.0 + sin(Time.get_ticks_msec() * 0.018) * 3.0, aviso)
+		draw_circle(Vector2.ZERO, 14.0 + carga * 20.0 + sin(Time.get_ticks_msec() * 0.018) * 3.0, Color(cor.r, cor.g, cor.b, 0.20 + carga * 0.48))
+		draw_arc(Vector2.ZERO, 24.0 + carga * 16.0, 0.0, TAU, 32, aviso, 3.0 + carga * 2.0, true)
 		if is_instance_valid(player):
 			var alvo := to_local(player.global_position)
 			draw_arc(alvo, 28.0 - carga * 10.0, 0.0, TAU, 28, Color(1.0, 0.28, 0.16, 0.95), 3.0, true)

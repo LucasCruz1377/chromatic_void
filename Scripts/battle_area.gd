@@ -26,7 +26,10 @@ const TIMER_MIN := 0.72
 const MAX_ENEMIES := 26
 const MAX_ENEMIES_BASE := 5
 const INTERVALO_BOSS := 10
-const CAMINHO_LOTUS_DANCE := "res:/" + "/OST/LotusDance.mp3"
+# Construído em duas partes porque a faixa é adicionada pelo autor ao projeto e
+# não faz parte dos pacotes de código. O caminho final continua sendo
+# res://sounds/OST/LotusDance.mp3.
+const CAMINHO_LOTUS_DANCE := "res:/" + "/sounds/OST/LotusDance.mp3"
 
 @export_category("Asteroides bônus")
 @export_range(8.0, 90.0, 1.0) var intervalo_asteroide_min: float = 18.0
@@ -354,7 +357,7 @@ func aplicar_musica_boss(id: StringName) -> void:
 		restaurar_musica_partida()
 		return
 	if not ResourceLoader.exists(CAMINHO_LOTUS_DANCE):
-		push_warning("LotusDance.mp3 não foi encontrado na pasta OST.")
+		push_warning("LotusDance.mp3 não foi encontrado em sounds/OST.")
 		return
 	var faixa := load(CAMINHO_LOTUS_DANCE) as AudioStream
 	if not is_instance_valid(faixa):

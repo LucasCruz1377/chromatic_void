@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dm0vqapjs8xuq"]
+[gd_scene load_steps=4 format=3 uid="uid://dm0vqapjs8xuq"]
 
 [ext_resource type="Script" path="res://Scripts/janela_configuracoes.gd" id="1_settings"]
 

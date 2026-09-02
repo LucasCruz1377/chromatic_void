@@ -50,6 +50,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.LUA, "a luta não começou na Lua")
+	verificar(boss.visual_fase.texture == boss.TEXTURA_LUA, "a Lua 2 não foi aplicada ao boss")
 	verificar(boss.obter_vida_maxima_atual() >= 330.0, "a vida da Lua está abaixo da meta")
 	verificar(
 		boss.CENTRO_FUSAO == Vector2(480.0, 188.0),
@@ -63,6 +64,15 @@ func _ready() -> void:
 	verificar(boss.tempo_ataque >= 4.4, "a maré permite sobreposição precoce de ataques")
 	boss.limpar_ataques_astrais()
 	await get_tree().process_frame
+	boss.criar_chuva_meteoros(1, Color(0.52, 0.68, 1.0), 10.0)
+	await get_tree().process_frame
+	var perigos_meteoro := get_tree().get_nodes_in_group("perigo_astral")
+	verificar(perigos_meteoro.size() == 1, "a chuva não criou o meteoro marcado")
+	if perigos_meteoro.size() == 1:
+		var meteoro := perigos_meteoro[0] as PerigoAstral
+		verificar(is_instance_valid(meteoro.meteoro_visual), "o SVG do meteoro não apareceu durante a queda")
+	boss.limpar_ataques_astrais()
+	await get_tree().process_frame
 	var vida_lua := boss.Vida
 	boss.tomarDano(vida_lua + 999.0)
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.LUA, "o dano excedente atravessou a primeira barra")
@@ -70,6 +80,7 @@ func _ready() -> void:
 
 	boss.concluir_transicao_para_sol()
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.SOL, "a segunda fase não é o Sol")
+	verificar(boss.visual_fase.texture == boss.TEXTURA_SOL, "o Sol 5 pontudo não foi aplicado ao boss")
 	verificar(is_equal_approx(boss.Vida, boss.obter_vida_maxima_atual()), "o Sol não recebeu uma barra cheia independente")
 	boss.lancar_crescentes(3, 0.2, false, false)
 	verificar(get_tree().get_nodes_in_group("projetil_astral").size() == 3, "os crescentes lunares não foram criados")
@@ -77,6 +88,11 @@ func _ready() -> void:
 	await get_tree().process_frame
 	boss.criar_raio_solar(false)
 	verificar(get_tree().get_nodes_in_group("raio_astral").size() == 1, "o raio solar não foi criado")
+	var raios := get_tree().get_nodes_in_group("raio_astral")
+	if raios.size() == 1:
+		var raio := raios[0] as RaioAstral
+		verificar(raio.tempo_aviso >= 2.0, "o raio solar não oferece carga suficiente")
+		verificar(raio.tempo_ativo <= 0.10, "o disparo do raio não é instantâneo")
 	boss.limpar_ataques_astrais()
 	await get_tree().process_frame
 
@@ -84,6 +100,7 @@ func _ready() -> void:
 	verificar(jogador.invulneravel_por_habilidade, "a cinemática não protegeu o jogador")
 	boss.concluir_transicao_para_eclipse()
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.ECLIPSE, "a terceira fase não é o Eclipse")
+	verificar(boss.visual_fase.texture == boss.TEXTURA_ECLIPSE, "o Eclipse 01 não foi aplicado ao boss")
 	verificar(not jogador.invulneravel_por_habilidade, "a proteção da cinemática não terminou")
 	verificar(is_equal_approx(boss.Vida, boss.obter_vida_maxima_atual()), "o Eclipse não recebeu sua barra independente")
 	boss.criar_corona(2, true)

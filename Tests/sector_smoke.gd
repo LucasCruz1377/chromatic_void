@@ -135,8 +135,8 @@ func _ready() -> void:
 	asteroide.conceder_recompensa()
 	verificar(batalha.player.vida > vida_antes, "o asteroide não concedeu Vida")
 	verificar(batalha.player.xp_atual > xp_antes, "o asteroide não concedeu XP")
-	var formas_asteroide := asteroide.find_children("*", "Polygon2D", true, false)
-	verificar(formas_asteroide.size() == 1, "o asteroide bônus não está visualmente sólido")
+	var sprites_asteroide := asteroide.find_children("*", "Sprite2D", true, false)
+	verificar(sprites_asteroide.size() == 1, "o SVG do asteroide bônus não foi aplicado")
 	asteroide.queue_free()
 	await get_tree().process_frame
 

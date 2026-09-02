@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://Scripts/AsteroideBonus.gd" id="1"]
+[ext_resource type="Texture2D" path="res://Assets/AsteroideBonus.svg" id="2_asteroide"]
 
 [sub_resource type="CircleShape2D" id="Circle"]
 radius = 18.0
@@ -24,9 +25,10 @@ tremor_morte = 3.0
 
 [node name="Visual" type="Node2D" parent="."]
 
-[node name="Corpo" type="Polygon2D" parent="Visual"]
-color = Color(0.60, 0.63, 0.70, 1)
-polygon = PackedVector2Array(-18, -8, -10, -18, 4, -20, 17, -12, 20, 1, 13, 16, 1, 20, -13, 15, -20, 3)
+[node name="Corpo" type="Sprite2D" parent="Visual"]
+texture_filter = 2
+scale = Vector2(0.46, 0.46)
+texture = ExtResource("2_asteroide")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Circle")

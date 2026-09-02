@@ -8,6 +8,9 @@ const PerigoAstralCena = preload("res://Scripts/PerigoAstral.gd")
 const OrbeAstralCena = preload("res://Scripts/OrbeAstral.gd")
 const IndicadorGravitacionalCena = preload("res://Scripts/IndicadorGravitacional.gd")
 const SHADER_TRANSICAO = preload("res://FX/eclipse_transicao.gdshader")
+const TEXTURA_LUA = preload("res://Assets/Bosses/SizigiaEterna/lua.svg")
+const TEXTURA_SOL = preload("res://Assets/Bosses/SizigiaEterna/sol.svg")
+const TEXTURA_ECLIPSE = preload("res://Assets/Bosses/SizigiaEterna/eclipse.svg")
 
 
 signal fase_alterada(fase: int)
@@ -56,6 +59,8 @@ var overlay_transicao: CanvasLayer
 var material_transicao: ShaderMaterial
 var invulnerabilidade_anterior := false
 
+@onready var visual_fase: Sprite2D = $VisualFase
+
 
 func _ready() -> void:
 	super._ready()
@@ -64,6 +69,7 @@ func _ready() -> void:
 	Vida = VidaMaxima
 	escala_base_impacto = scale
 	atualizar_colisao(46.0)
+	atualizar_visual_fase()
 	vida_alterada.emit(Vida, VidaMaxima)
 	queue_redraw()
 
@@ -127,6 +133,7 @@ func tomarDano(valor: float) -> void:
 
 
 func Mover(delta: float) -> void:
+	atualizar_animacao_visual(delta)
 	atualizar_contato(delta)
 	atualizar_gravidade(delta)
 	if estado == Estado.TRANSICAO:
@@ -188,7 +195,7 @@ func atualizar_gravidade(delta: float) -> void:
 	gravidade_tempo = maxf(gravidade_tempo - delta, 0.0)
 	if gravidade_tempo <= 0.0 or not is_instance_valid(player):
 		return
-	var direcao = player.global_position.direction_to(global_position) * gravidade_sinal
+	var direcao := player.global_position.direction_to(global_position) * gravidade_sinal
 	var impulso := 150.0 if fase_atual == Fase.LUA else 205.0
 	player.velocity += direcao * impulso * delta
 	player.velocity = player.velocity.limit_length(720.0)
@@ -201,7 +208,7 @@ func escolher_ataque() -> void:
 		escolha = (escolha + randi_range(1, total - 1)) % total
 	ultimo_ataque = escolha
 	var frenesi := fase_atual == Fase.ECLIPSE and Vida <= obter_vida_maxima_atual() * 0.25
-	tempo_ataque = (1.28 if frenesi else 1.72) + randf_range(0.12, 0.48)
+	tempo_ataque = (1.65 if frenesi else 2.05) + randf_range(0.18, 0.52)
 	if fase_atual == Fase.LUA:
 		executar_ataque_lua(escolha)
 	elif fase_atual == Fase.SOL:
@@ -219,13 +226,13 @@ func executar_ataque_lua(indice: int) -> void:
 			ativar_mare_gravitacional()
 		2:
 			anunciar_ataque("CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS")
-			criar_chuva_meteoros(5, Color(0.52, 0.68, 1.0), Dano * 0.42)
+			criar_chuva_meteoros(4, Color(0.52, 0.68, 1.0), Dano * 0.38)
 		3:
 			anunciar_ataque("PRISÃO CRESCENTE — PROCURE A LACUNA AZUL")
 			criar_prisao_crescente()
 		_:
-			anunciar_ataque("FACE OCULTA — PERMANEÇA NO CORREDOR CLARO")
-			criar_umbra(4.2, Dano * 0.22, 0.14)
+			anunciar_ataque("ONDA LUNAR — ATRAVESSE A LACUNA VERDE")
+			criar_corona(2, false)
 
 
 func executar_ataque_sol(indice: int) -> void:
@@ -251,16 +258,16 @@ func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
 	match indice:
 		0:
 			anunciar_ataque("CRESCENTES INCENDIÁRIOS — ELES RETORNAM")
-			lancar_crescentes(6 if frenesi else 5, 0.17, true, true)
+			lancar_crescentes(5 if frenesi else 4, 0.20, true, true)
 		1:
-			ativar_gravidade_eclipse()
+			anunciar_ataque("RAIO DA TOTALIDADE — A MIRA TRAVA ANTES DO DISPARO")
 			criar_raio_solar(true)
 		2:
-			anunciar_ataque("UMBRA TOTAL — SIGA O CORREDOR DE LUZ")
-			criar_umbra(5.0, Dano * 0.24, 0.29)
+			anunciar_ataque("CHUVA DA TOTALIDADE — FUJA DAS MIRAS")
+			criar_chuva_meteoros(4 if frenesi else 3, Color(0.80, 0.32, 1.0), Dano * 0.30)
 		3:
 			anunciar_ataque("FRATURA DA CORONA — ONDAS ALTERNADAS")
-			criar_corona(5 if frenesi else 4, true)
+			criar_corona(4 if frenesi else 3, true)
 		4:
 			anunciar_ataque("REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS")
 			criar_reflexos_astrais(frenesi)
@@ -317,7 +324,7 @@ func ativar_mare_gravitacional() -> void:
 	)
 	criar_campo_gravitacional(gravidade_tempo)
 	criar_corona(2, gravidade_sinal < 0.0)
-	criar_chuva_meteoros(3, Color(0.48, 0.66, 1.0), Dano * 0.34)
+	criar_chuva_meteoros(2, Color(0.48, 0.66, 1.0), Dano * 0.31)
 
 
 func ativar_gravidade_eclipse() -> void:
@@ -337,18 +344,18 @@ func criar_campo_gravitacional(duracao: float) -> void:
 func criar_chuva_meteoros(quantidade: int, nova_cor: Color, novo_dano: float) -> void:
 	if not is_instance_valid(player):
 		return
-	tempo_ataque = maxf(tempo_ataque, 2.65)
+	tempo_ataque = maxf(tempo_ataque, 3.25)
 	for indice in quantidade:
 		var perigo := PerigoAstralCena.new() as PerigoAstral
 		get_tree().current_scene.add_child(perigo)
-		var antecipacao = player.velocity * (0.18 + indice * 0.035)
+		var antecipacao := player.velocity * (0.18 + indice * 0.035)
 		var desloc := Vector2(randf_range(-160.0, 160.0), randf_range(-120.0, 120.0))
-		perigo.configurar_meteoro(player.global_position + antecipacao + desloc, novo_dano, nova_cor, 1.12 + indice * 0.10, 58.0)
+		perigo.configurar_meteoro(player.global_position + antecipacao + desloc, novo_dano, nova_cor, 1.55 + indice * 0.16, 58.0)
 
 
 func criar_prisao_crescente() -> void:
 	tempo_ataque = maxf(tempo_ataque, 3.15)
-	var centro = player.global_position if is_instance_valid(player) else Vector2(480.0, 270.0)
+	var centro := player.global_position if is_instance_valid(player) else Vector2(480.0, 270.0)
 	for indice in 3:
 		var onda := PerigoAstralCena.new() as PerigoAstral
 		get_tree().current_scene.add_child(onda)
@@ -393,9 +400,10 @@ func criar_raio_solar(eclipse: bool) -> void:
 	if not is_instance_valid(player):
 		return
 	var raio := RaioAstralCena.new() as RaioAstral
-	tempo_ataque = maxf(tempo_ataque, 2.8 if eclipse else 2.65)
+	var tempo_carga := 2.35 if eclipse else 2.70
+	tempo_ataque = maxf(tempo_ataque, tempo_carga + 1.05)
 	get_tree().current_scene.add_child(raio)
-	raio.configurar(self, global_position.direction_to(player.global_position), Dano * (0.70 if eclipse else 0.66), Color(1.0, 0.34, 0.12) if eclipse else Color(1.0, 0.74, 0.18), 1.12 if eclipse else 1.28, 0.36, 38.0 if eclipse else 32.0, true, 0.10 if eclipse else 0.0, Dano * 0.23, 2.7)
+	raio.configurar(self, global_position.direction_to(player.global_position), Dano * (0.70 if eclipse else 0.66), Color(1.0, 0.34, 0.12) if eclipse else Color(1.0, 0.74, 0.18), tempo_carga, 0.10, 38.0 if eclipse else 32.0, true, 0.0, Dano * 0.23, 2.7)
 
 
 func lancar_prominencias(quantidade: int) -> void:
@@ -410,14 +418,14 @@ func lancar_prominencias(quantidade: int) -> void:
 
 
 func criar_corona(quantidade: int, alternar_sentido: bool) -> void:
-	tempo_ataque = maxf(tempo_ataque, 2.4 + quantidade * 0.32)
+	tempo_ataque = maxf(tempo_ataque, 2.8 + quantidade * 0.38)
 	for indice in quantidade:
 		var onda := PerigoAstralCena.new() as PerigoAstral
 		get_tree().current_scene.add_child(onda)
 		var contrair := alternar_sentido and indice % 2 == 1
 		var inicio := 720.0 if contrair else 40.0
 		var fim := 40.0 if contrair else 720.0
-		onda.configurar_onda(global_position, Dano * 0.38, obter_cor_fase(), inicio, fim, 1.22 + indice * 0.22, randf_range(-PI, PI), 0.64)
+		onda.configurar_onda(global_position, Dano * 0.34, obter_cor_fase(), inicio, fim, 1.52 + indice * 0.26, randf_range(-PI, PI), 0.82)
 
 
 func criar_manchas_solares(quantidade: int) -> void:
@@ -429,23 +437,22 @@ func criar_manchas_solares(quantidade: int) -> void:
 
 
 func criar_reflexos_astrais(frenesi: bool) -> void:
-	tempo_ataque = maxf(tempo_ataque, 2.75)
+	tempo_ataque = maxf(tempo_ataque, 3.2)
 	var origens := [Vector2(155.0, 110.0), Vector2(805.0, 430.0)]
-	var quantidade := 6 if frenesi else 4
+	var quantidade := 4 if frenesi else 3
 	for origem in origens:
-		var direcao_base = origem.direction_to(player.global_position) if is_instance_valid(player) else Vector2.RIGHT
+		var direcao_base := origem.direction_to(player.global_position) if is_instance_valid(player) else Vector2.RIGHT
 		for indice in quantidade:
 			var proj := ProjetilAstralCena.new() as ProjetilAstral
 			get_tree().current_scene.add_child(proj)
 			var desloc := (indice - (quantidade - 1) * 0.5) * 0.18
-			proj.configurar(origem, direcao_base.rotated(desloc), Dano * 0.27, 275.0, Color(0.88, 0.38, 1.0), ProjetilAstral.Tipo.CORONA, desloc * 0.16, self)
+			proj.configurar(origem, direcao_base.rotated(desloc), Dano * 0.24, 255.0, Color(0.88, 0.38, 1.0), ProjetilAstral.Tipo.CORONA, desloc * 0.16, self)
 
 
 func iniciar_totalidade(frenesi: bool) -> void:
-	tempo_ataque = maxf(tempo_ataque, 5.35)
-	criar_umbra(4.3, Dano * 0.23, 0.34 if frenesi else 0.24)
-	criar_chuva_meteoros(4 if frenesi else 3, Color(0.8, 0.32, 1.0), Dano * 0.36)
-	criar_raio_totalidade_atrasado(fase_atual, 1.25)
+	tempo_ataque = maxf(tempo_ataque, 7.25)
+	criar_chuva_meteoros(4 if frenesi else 3, Color(0.8, 0.32, 1.0), Dano * 0.30)
+	criar_raio_totalidade_atrasado(fase_atual, 2.45)
 
 
 func criar_raio_totalidade_atrasado(fase_esperada: int, atraso: float) -> void:
@@ -486,6 +493,7 @@ func concluir_transicao_para_sol() -> void:
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.35
 	ultimo_ataque = -1
+	atualizar_visual_fase()
 	fase_alterada.emit(fase_atual)
 	subtitulo_alterado.emit(obter_subtitulo_boss())
 	vida_alterada.emit(Vida, VidaMaxima)
@@ -501,6 +509,7 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	if morto or token != token_transicao:
 		return
 	global_position = CENTRO_FUSAO
+	visual_fase.visible = false
 	criar_overlay_transicao()
 	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.set_parallel(true)
@@ -532,6 +541,7 @@ func concluir_transicao_para_eclipse() -> void:
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.15
 	ultimo_ataque = -1
+	atualizar_visual_fase()
 	proteger_player(false)
 	remover_overlay_transicao_gradual()
 	fase_alterada.emit(fase_atual)
@@ -647,68 +657,58 @@ func _exit_tree() -> void:
 
 
 func _draw() -> void:
-	if estado == Estado.TRANSICAO and Vida <= 0.0:
-		if fase_atual == Fase.SOL:
-			desenhar_fusao()
-		else:
-			desenhar_corpo_lua()
-	else:
-		match fase_atual:
-			Fase.LUA:
-				desenhar_corpo_lua()
-			Fase.SOL:
-				desenhar_corpo_sol()
-			_:
-				desenhar_corpo_eclipse()
+	if estado == Estado.TRANSICAO and Vida <= 0.0 and fase_atual == Fase.SOL:
+		desenhar_fusao()
 	if estado == Estado.AVISANDO:
 		var aviso := Color(1.0, 0.32, 0.08, 0.82)
 		draw_dashed_line(Vector2.ZERO, direcao_investida * 850.0, aviso, 3.0, 14.0, true)
 
 
-func desenhar_corpo_lua(posicao: Vector2 = Vector2.ZERO, escala: float = 1.0) -> void:
-	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.0028) * 0.018
-	draw_circle(posicao, 58.0 * escala * pulso, Color(0.46, 0.62, 1.0, 0.13))
-	draw_circle(posicao, 46.0 * escala, Color(0.70, 0.79, 0.94))
-	draw_circle(posicao + Vector2(16.0, -3.0) * escala, 43.0 * escala, Color(0.035, 0.05, 0.13))
-	draw_arc(posicao, 47.0 * escala, 0.0, TAU, 52, Color(0.68, 0.84, 1.0), 3.0 * escala, true)
-	for cratera in [Vector2(-18, -12), Vector2(-23, 16), Vector2(-7, 26)]:
-		draw_circle(posicao + cratera * escala, 5.0 * escala, Color(0.38, 0.45, 0.62, 0.65))
+func atualizar_visual_fase() -> void:
+	if not is_instance_valid(visual_fase):
+		return
+	match fase_atual:
+		Fase.LUA:
+			visual_fase.texture = TEXTURA_LUA
+			visual_fase.scale = Vector2.ONE * 0.55
+		Fase.SOL:
+			visual_fase.texture = TEXTURA_SOL
+			visual_fase.scale = Vector2.ONE * 0.51
+		_:
+			visual_fase.texture = TEXTURA_ECLIPSE
+			visual_fase.scale = Vector2.ONE * 0.53
+	visual_fase.visible = true
+	visual_fase.self_modulate = Color(1.42, 1.42, 1.42, 1.0)
 
 
-func desenhar_corpo_sol(posicao: Vector2 = Vector2.ZERO, escala: float = 1.0) -> void:
-	var tempo := Time.get_ticks_msec() * 0.001
-	for indice in 16:
-		var angulo := TAU * indice / 16.0 + tempo * 0.18
-		var tamanho := 66.0 + sin(tempo * 2.1 + indice) * 7.0
-		draw_line(posicao + Vector2.from_angle(angulo) * 51.0 * escala, posicao + Vector2.from_angle(angulo) * tamanho * escala, Color(1.0, 0.39, 0.08, 0.68), 4.0 * escala, true)
-	draw_circle(posicao, 64.0 * escala, Color(1.0, 0.38, 0.05, 0.13))
-	draw_circle(posicao, 52.0 * escala, Color(1.0, 0.52, 0.08))
-	draw_circle(posicao, 39.0 * escala, Color(1.0, 0.83, 0.24))
-	draw_circle(posicao - Vector2(10.0, 8.0) * escala, 9.0 * escala, Color(0.58, 0.12, 0.035, 0.65))
-	draw_arc(posicao, 53.0 * escala, 0.0, TAU, 56, Color(1.0, 0.93, 0.48), 3.0 * escala, true)
+func atualizar_animacao_visual(delta: float) -> void:
+	if not is_instance_valid(visual_fase) or not visual_fase.visible:
+		return
+	var escala_base := 0.55 if fase_atual == Fase.LUA else (0.51 if fase_atual == Fase.SOL else 0.53)
+	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.0032) * 0.018
+	visual_fase.scale = Vector2.ONE * escala_base * pulso
+	if fase_atual == Fase.SOL:
+		visual_fase.rotation += 0.16 * delta
+	elif fase_atual == Fase.ECLIPSE:
+		visual_fase.rotation -= 0.10 * delta
 
 
-func desenhar_corpo_eclipse(posicao: Vector2 = Vector2.ZERO, escala: float = 1.0) -> void:
-	var tempo := Time.get_ticks_msec() * 0.001
-	for indice in 22:
-		var angulo := TAU * indice / 22.0 - tempo * 0.23
-		var tamanho := 76.0 + sin(tempo * 2.8 + indice * 1.7) * 9.0
-		draw_line(posicao + Vector2.from_angle(angulo) * 55.0 * escala, posicao + Vector2.from_angle(angulo) * tamanho * escala, Color(1.0, 0.31, 0.08, 0.72), 4.0 * escala, true)
-	draw_circle(posicao, 72.0 * escala, Color(0.75, 0.25, 1.0, 0.13))
-	draw_circle(posicao, 59.0 * escala, Color(1.0, 0.48, 0.08))
-	draw_circle(posicao, 53.0 * escala, Color(0.008, 0.012, 0.035))
-	draw_arc(posicao, 55.0 * escala, 0.0, TAU, 64, Color(1.0, 0.74, 0.23), 4.0 * escala, true)
-	draw_arc(posicao, 48.0 * escala, -2.6, 0.75, 40, Color(0.48, 0.63, 1.0, 0.72), 2.0 * escala, true)
+func desenhar_textura_centralizada(
+	textura: Texture2D,
+	posicao: Vector2,
+	escala: float,
+	cor: Color = Color.WHITE
+) -> void:
+	var tamanho := textura.get_size() * escala
+	draw_texture_rect(textura, Rect2(posicao - tamanho * 0.5, tamanho), false, cor)
 
 
 func desenhar_fusao() -> void:
 	var distancia := lerpf(135.0, 0.0, progresso_fusao)
-	var escala := lerpf(0.88, 1.0, progresso_fusao)
+	var escala := lerpf(0.46, 0.53, progresso_fusao)
 	if progresso_fusao < 0.80:
-		desenhar_corpo_lua(Vector2(-distancia, 0.0), escala)
-		desenhar_corpo_sol(Vector2(distancia, 0.0), escala)
+		desenhar_textura_centralizada(TEXTURA_LUA, Vector2(-distancia, 0.0), escala, Color(1.35, 1.35, 1.35))
+		desenhar_textura_centralizada(TEXTURA_SOL, Vector2(distancia, 0.0), escala, Color(1.35, 1.35, 1.35))
 	else:
 		var alpha := clampf((progresso_fusao - 0.80) / 0.20, 0.0, 1.0)
-		draw_circle(Vector2.ZERO, 58.0, Color(0.002, 0.004, 0.014, alpha))
-		draw_arc(Vector2.ZERO, 59.0, -PI, 0.0, 40, Color(1.0, 0.34, 0.08, alpha), 5.0, true)
-		draw_arc(Vector2.ZERO, 59.0, 0.0, PI, 40, Color(0.72, 0.38, 1.0, alpha), 5.0, true)
+		desenhar_textura_centralizada(TEXTURA_ECLIPSE, Vector2.ZERO, 0.53, Color(1.35, 1.35, 1.35, alpha))

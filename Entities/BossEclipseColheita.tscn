@@ -21,5 +21,8 @@ valor_cristais = 320
 intensidade_flash = 0.24
 tremor_morte = 13.0
 
+[node name="VisualFase" type="Sprite2D" parent="."]
+texture_filter = 2
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Shape")

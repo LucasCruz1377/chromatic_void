@@ -1,7 +1,7 @@
 extends InimigoBase
 
 
-
+const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 
 enum Estado {
 	PERSEGUINDO,

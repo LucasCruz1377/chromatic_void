@@ -1,0 +1,20 @@
+<svg width="260" height="260" viewBox="0 0 260 260" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<circle cx="130" cy="130" r="124" fill="#FF5A2D" fill-opacity="0.10"/>
+<g id="ponta">
+  <path d="M130 8L154 70L130 94L106 70L130 8Z" fill="#FF7138"/>
+  <path d="M130 25L143 68L130 81L117 68L130 25Z" fill="#FFD23F"/>
+</g>
+<use xlink:href="#ponta" transform="rotate(45 130 130)"/>
+<use xlink:href="#ponta" transform="rotate(90 130 130)"/>
+<use xlink:href="#ponta" transform="rotate(135 130 130)"/>
+<use xlink:href="#ponta" transform="rotate(180 130 130)"/>
+<use xlink:href="#ponta" transform="rotate(225 130 130)"/>
+<use xlink:href="#ponta" transform="rotate(270 130 130)"/>
+<use xlink:href="#ponta" transform="rotate(315 130 130)"/>
+<circle cx="130" cy="130" r="70" fill="#FF912E"/>
+<circle cx="130" cy="130" r="48" fill="#FFD83D"/>
+<circle cx="130" cy="130" r="24" fill="#FFF5A5"/>
+<path d="M130 94L151 130L130 166L109 130L130 94Z" fill="#FF4A76"/>
+<path d="M130 111L141 130L130 149L119 130L130 111Z" fill="#FFF7C2"/>
+<circle cx="130" cy="130" r="72" stroke="#FFF07A" stroke-width="4"/>
+</svg>

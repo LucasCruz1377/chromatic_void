@@ -48,6 +48,10 @@ var petalas_em_voo := 0
 var petalas_lancadas: Array[PetalaBumerangue] = []
 var vinhas_ativas: Array[VinhaEspinhosa] = []
 var tween_escudo: Tween
+var velocidade_vinhas_atual := 0.0
+var velocidade_vinhas_alvo := 0.0
+var tempo_mudar_sentido_vinhas := 0.0
+var sentido_vinhas := 1.0
 
 @onready var visual: Node2D = $Visual
 @onready var petalas: Node2D = $Visual/Petalas
@@ -253,8 +257,8 @@ func lancar_petala(indice: int) -> void:
 		global_position + direcao * 38.0,
 		direcao,
 		Dano * 0.54,
-		305.0 + fase * 30.0,
-		305.0 + fase * 22.0,
+		315.0 + fase * 25.0,
+		400.0 + fase * 35.0,
 		indice,
 		self
 	)
@@ -297,6 +301,10 @@ func iniciar_danca_caules() -> void:
 	ativar_escudo(true)
 	velocity = Vector2.ZERO
 	sentido_rotacao = -1.0 if randf() < 0.5 else 1.0
+	sentido_vinhas = sentido_rotacao
+	velocidade_vinhas_atual = 0.0
+	velocidade_vinhas_alvo = (0.34 + fase * 0.10) * sentido_vinhas
+	tempo_mudar_sentido_vinhas = maxf(3.0 - fase * 0.38, 1.55)
 
 
 func ir_ao_centro(_delta: float) -> void:
@@ -347,14 +355,31 @@ func crescer_vinhas(delta: float) -> void:
 			if is_instance_valid(vinha):
 				vinha.ativar_dano()
 		estado = Estado.DANCA_VINHAS
-		tempo_estado = 4.0 + fase * 0.5
+		# Cinco segundos extras em todas as fases para tornar a dança uma ameaça
+		# longa, mas as inversões continuam suaves e previsíveis visualmente.
+		tempo_estado = 9.0 + fase * 0.5
 
 
 func processar_danca_vinhas(delta: float) -> void:
 	velocity = Vector2.ZERO
-	var velocidade_rotacao := (0.34 + fase * 0.10) * sentido_rotacao
-	visual.rotation += velocidade_rotacao * delta
-	vinhas_pivot.rotation += velocidade_rotacao * delta
+	tempo_mudar_sentido_vinhas -= delta
+	if tempo_mudar_sentido_vinhas <= 0.0:
+		sentido_vinhas *= -1.0
+		velocidade_vinhas_alvo = (0.34 + fase * 0.10) * sentido_vinhas
+		tempo_mudar_sentido_vinhas = (
+			maxf(3.05 - fase * 0.42, 1.45) + randf_range(-0.12, 0.28)
+		)
+	# Interpolação exponencial: desacelera, cruza o zero e acelera na direção
+	# oposta. Fases altas convergem mais rápido para o novo sentido.
+	var rapidez_lerp := 0.80 + fase * 0.58
+	var peso_lerp := 1.0 - exp(-rapidez_lerp * delta)
+	velocidade_vinhas_atual = lerpf(
+		velocidade_vinhas_atual,
+		velocidade_vinhas_alvo,
+		peso_lerp
+	)
+	visual.rotation += velocidade_vinhas_atual * delta
+	vinhas_pivot.rotation += velocidade_vinhas_atual * delta
 	tempo_estado -= delta
 	if tempo_estado <= 0.0:
 		encerrar_vinhas()

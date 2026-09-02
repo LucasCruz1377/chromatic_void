@@ -4,8 +4,6 @@ class_name PetalaBumerangue
 
 signal retornou(indice_petala: int)
 
-const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
-
 @export_range(100.0, 700.0, 10.0) var velocidade: float = 310.0
 @export_range(100.0, 600.0, 10.0) var distancia_maxima: float = 330.0
 @export_range(0.6, 3.0, 0.05) var brilho_visual: float = 1.45
@@ -84,18 +82,26 @@ func emitir_rastro(delta: float, direcao_movimento: Vector2) -> void:
 	tempo_rastro -= delta
 	if tempo_rastro > 0.0 or direcao_movimento.length_squared() <= 0.0:
 		return
-	tempo_rastro = 0.052
+	tempo_rastro = 0.045
 	var cena := get_tree().current_scene
 	if not is_instance_valid(cena):
 		return
-	EfeitoCombateCena.criar(
-		cena,
-		global_position - direcao_movimento * 14.0,
-		EfeitoCombate.Tipo.RASTRO,
-		Color(0.68, 1.0, 0.40, 0.92),
-		0.72,
-		direcao_movimento
-	)
+	var duplicata := Sprite2D.new()
+	duplicata.texture = visual.texture
+	duplicata.texture_filter = visual.texture_filter
+	duplicata.z_index = z_index - 1
+	duplicata.add_to_group("rastro_petala")
+	cena.add_child(duplicata)
+	duplicata.global_position = global_position - direcao_movimento * 10.0
+	duplicata.global_rotation = visual.global_rotation
+	duplicata.global_scale = visual.global_scale
+	duplicata.modulate = Color(0.68, 1.0, 0.40, 0.58)
+	duplicata.self_modulate = Color(1.22, 1.22, 1.22, 1.0)
+	var tween := duplicata.create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(duplicata, "modulate:a", 0.0, 0.22)
+	tween.tween_property(duplicata, "scale", duplicata.scale * 0.76, 0.22)
+	tween.chain().tween_callback(duplicata.queue_free)
 
 
 func _on_body_entered(body: Node2D) -> void:
