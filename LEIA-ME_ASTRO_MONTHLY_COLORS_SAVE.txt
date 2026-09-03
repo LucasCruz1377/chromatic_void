@@ -1,0 +1,34 @@
+CHROMATIC VOID — ASTRO NO MENU E SAVE NAS CONFIGURAÇÕES
+
+Este pacote é cumulativo e deve ser extraído na raiz do projeto.
+
+MELHORIAS
+
+- O Astro continua ensinando os controles durante o tutorial.
+- Na tela inicial, ele diz seu nome e sua função somente uma vez por save.
+- Nas visitas seguintes, entra diretamente em curiosidades aleatórias, sem repetir a apresentação.
+- Mais de 30 falas usam fatos dos cards do site: datas, etimologias, fenômenos e nomes de Luas Cheias.
+- As falas usam a mesma escrita progressiva e o mesmo som do tutorial.
+- Um clique completa a frase que está sendo digitada; outro mostra uma nova curiosidade.
+- As curiosidades continuam trocando automaticamente quando o jogador não clica.
+- O texto do Astro ganhou quebra automática para acomodar as curiosidades.
+- O botão APAGAR SAVE foi removido da tela inicial.
+- Um novo botão Apagar save foi colocado no rodapé das Configurações.
+- Ao apertá-lo, uma confirmação informa exatamente o que será removido.
+- Cancelar recebe o foco primeiro para evitar exclusões acidentais com controle ou teclado.
+- Apenas APAGAR TUDO exclui progresso, compras, cristais e configurações.
+- Após apagar, voltar ao menu não recria o arquivo de save.
+- Textos da nova interface disponíveis em português e inglês.
+
+VALIDAÇÃO REALIZADA COM GODOT 4.7
+
+- Importação e compilação completas: OK.
+- 168 referências res://: OK.
+- Todos os testes smoke do projeto: OK.
+- Teste específico do Astro e confirmação de save: OK.
+- Inicialização real da tela inicial por 10 segundos: sem erros no log.
+
+IMPORTANTE
+
+Extraia preservando a estrutura de pastas. Este ZIP mantém cumulativamente as
+melhorias anteriores do projeto.

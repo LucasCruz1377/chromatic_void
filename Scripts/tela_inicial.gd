@@ -80,8 +80,3 @@ func click_som() -> void:
 func _on_dispositivo_alterado(tipo: StringName) -> void:
 	if tipo == &"controle":
 		botao_iniciar.grab_focus()
-
-
-func _on_button_pressed() -> void:
-	GerenciadorDeSave.deletar_save()
-	print("SAVE APAGADO: o tutorial será exibido ao iniciar a batalha novamente.")

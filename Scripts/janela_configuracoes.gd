@@ -38,6 +38,7 @@ const VELOCIDADE_ROLAGEM_CONTROLE := 480.0
 @onready var restaurar_controles: Button = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/BarraControles/RestaurarControles
 @onready var rolagem_mapeamentos: ScrollContainer = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem
 @onready var lista_mapeamentos: VBoxContainer = $Painel/Margem/Coluna/Abas/CONTROLES/Conteudo/Rolagem/ListaMapeamentos
+@onready var rodape: HBoxContainer = $Painel/Margem/Coluna/Rodape
 @onready var restaurar: Button = $Painel/Margem/Coluna/Rodape/Restaurar
 @onready var voltar: Button = $Painel/Margem/Coluna/Rodape/Voltar
 
@@ -49,6 +50,9 @@ var captura_pronta := false
 var acao_capturada: StringName
 var slot_capturado := -1
 var botao_capturado: Button
+var save_apagado: bool = false
+var apagar_save: Button
+var confirmar_apagar_save: ConfirmationDialog
 
 
 func _ready() -> void:
@@ -56,6 +60,7 @@ func _ready() -> void:
 	set_process_input(true)
 	set_process_unhandled_input(true)
 	_configurar_opcoes()
+	_criar_controles_save()
 	_conectar_sinais()
 	_criar_lista_mapeamentos()
 	carregar_interface()
@@ -233,7 +238,7 @@ func _selecionar_fps(fps: int) -> void:
 
 
 func _salvar() -> void:
-	if carregando:
+	if carregando or save_apagado:
 		return
 	Global.salvar_configuracoes()
 
@@ -374,7 +379,9 @@ func _on_restaurar_controles_pressed() -> void:
 
 
 func _on_voltar_pressed() -> void:
-	_salvar()
+	_cancelar_captura()
+	if not save_apagado:
+		_salvar()
 	voltar_solicitado.emit()
 
 
@@ -404,7 +411,80 @@ func _atualizar_titulos_abas() -> void:
 	]
 	for indice in mini(abas.get_tab_count(), chaves.size()):
 		abas.set_tab_title(indice, tr(chaves[indice]))
+	_atualizar_textos_save()
 	_atualizar_rotulos_acoes()
+
+
+func _criar_controles_save() -> void:
+	apagar_save = Button.new()
+	apagar_save.name = "ApagarSave"
+	apagar_save.custom_minimum_size = Vector2(190.0, 38.0)
+	apagar_save.focus_mode = Control.FOCUS_ALL
+	apagar_save.add_theme_color_override("font_color", Color(1.0, 0.72, 0.72, 1.0))
+	apagar_save.add_theme_color_override("font_hover_color", Color.WHITE)
+	apagar_save.add_theme_color_override("font_focus_color", Color.WHITE)
+	apagar_save.add_theme_stylebox_override(
+		"normal",
+		_estilo_slot(Color(0.15, 0.035, 0.055, 0.96), Color(0.72, 0.18, 0.28, 0.9))
+	)
+	apagar_save.add_theme_stylebox_override(
+		"hover",
+		_estilo_slot(Color(0.25, 0.045, 0.075, 1.0), Color(1.0, 0.32, 0.42, 1.0))
+	)
+	apagar_save.add_theme_stylebox_override(
+		"focus",
+		_estilo_slot(Color(0.3, 0.055, 0.085, 1.0), Color(1.0, 0.55, 0.62, 1.0))
+	)
+	apagar_save.add_theme_stylebox_override(
+		"pressed",
+		_estilo_slot(Color(0.36, 0.045, 0.075, 1.0), Color(1.0, 0.72, 0.76, 1.0))
+	)
+	rodape.add_child(apagar_save)
+	rodape.move_child(apagar_save, 1)
+	apagar_save.pressed.connect(_on_apagar_save_pressed)
+
+	confirmar_apagar_save = ConfirmationDialog.new()
+	confirmar_apagar_save.name = "ConfirmarApagarSave"
+	confirmar_apagar_save.min_size = Vector2i(560, 220)
+	confirmar_apagar_save.unresizable = true
+	confirmar_apagar_save.exclusive = true
+	add_child(confirmar_apagar_save)
+	confirmar_apagar_save.confirmed.connect(_on_apagar_save_confirmado)
+	confirmar_apagar_save.canceled.connect(_on_apagar_save_cancelado)
+	_atualizar_textos_save()
+
+
+func _atualizar_textos_save() -> void:
+	if is_instance_valid(apagar_save) and not save_apagado:
+		apagar_save.text = tr("B_DELETE_SAVE")
+		apagar_save.tooltip_text = tr("T_DELETE_SAVE_HINT")
+	if is_instance_valid(confirmar_apagar_save):
+		confirmar_apagar_save.title = tr("T_DELETE_SAVE_TITLE")
+		confirmar_apagar_save.dialog_text = tr("T_DELETE_SAVE_CONFIRM")
+		confirmar_apagar_save.ok_button_text = tr("B_DELETE_EVERYTHING")
+		confirmar_apagar_save.cancel_button_text = tr("B_CANCEL")
+
+
+func _on_apagar_save_pressed() -> void:
+	_cancelar_captura()
+	confirmar_apagar_save.popup_centered()
+	confirmar_apagar_save.get_cancel_button().call_deferred("grab_focus")
+
+
+func _on_apagar_save_cancelado() -> void:
+	if is_instance_valid(apagar_save) and not apagar_save.disabled:
+		apagar_save.call_deferred("grab_focus")
+
+
+func _on_apagar_save_confirmado() -> void:
+	Global.apagar_save_completo()
+	save_apagado = true
+	carregar_interface()
+	_atualizar_textos_mapeamentos()
+	apagar_save.text = tr("T_SAVE_DELETED")
+	apagar_save.tooltip_text = ""
+	apagar_save.disabled = true
+	voltar.call_deferred("grab_focus")
 
 
 func _criar_lista_mapeamentos() -> void:

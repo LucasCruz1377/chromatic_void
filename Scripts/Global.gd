@@ -227,6 +227,21 @@ func restaurar_configuracoes_padrao() -> void:
 	salvar_configuracoes()
 
 
+func apagar_save_completo() -> void:
+	_salvamento_economia_agendado = false
+	primeira_vez_jogando = true
+	Pontos = 0
+	kills_max = 0
+	Combo = 0
+	conquistas_desbloqueadas = [""]
+
+	var cristais_anteriores: int = cristais
+	cristais = CRISTAIS_INICIAIS
+	restaurar_configuracoes_padrao()
+	GerenciadorDeSave.deletar_save()
+	cristais_alterados.emit(cristais, cristais - cristais_anteriores)
+
+
 func aplicar_configuracoes() -> void:
 	_aplicar_mapeamentos_controles()
 	_aplicar_volume("Master", volume_master)

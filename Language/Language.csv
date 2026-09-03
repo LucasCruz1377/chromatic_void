@@ -69,3 +69,10 @@ T_BIND_AIM_LEFT,Mira à esquerda,Aim left
 T_BIND_AIM_RIGHT,Mira à direita,Aim right
 T_BIND_AIM_UP,Mira para cima,Aim up
 T_BIND_AIM_DOWN,Mira para baixo,Aim down
+B_DELETE_SAVE,Apagar save,Delete save
+T_DELETE_SAVE_HINT,"Remove progresso, compras, cristais e configurações.","Removes progress, purchases, crystals, and settings."
+T_DELETE_SAVE_TITLE,APAGAR SAVE COMPLETAMENTE,DELETE SAVE COMPLETELY
+T_DELETE_SAVE_CONFIRM,"Tem certeza? Todo o progresso, compras, cristais e configurações serão removidos. Esta ação não pode ser desfeita.","Are you sure? All progress, purchases, crystals, and settings will be removed. This action cannot be undone."
+B_DELETE_EVERYTHING,APAGAR TUDO,DELETE EVERYTHING
+B_CANCEL,CANCELAR,CANCEL
+T_SAVE_DELETED,SAVE APAGADO,SAVE DELETED

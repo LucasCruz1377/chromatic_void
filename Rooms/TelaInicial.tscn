@@ -154,13 +154,6 @@ text = "[wave amp=30 freq=12][rainbow]Chromatic[/rainbow] Void[/wave]"
 fit_content = true
 vertical_alignment = 1
 
-[node name="Button" type="Button" parent="CanvasLayer" unique_id=1095232109]
-offset_left = 839.0
-offset_top = 6.0
-offset_right = 953.0
-offset_bottom = 44.0
-text = "APAGAR SAVE"
-
 [node name="Astro" parent="." unique_id=1436156404 instance=ExtResource("6_chynn")]
 
 [node name="telapreta_init" type="ColorRect" parent="Astro" unique_id=357191067]
@@ -215,4 +208,3 @@ bus = &"Music"
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]
-[connection signal="pressed" from="CanvasLayer/Button" to="." method="_on_button_pressed"]

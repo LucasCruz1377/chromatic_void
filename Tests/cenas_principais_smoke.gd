@@ -34,6 +34,7 @@ func _ready() -> void:
 	if cena_menu != null:
 		var menu := cena_menu.instantiate()
 		var musica := menu.get_node_or_null("menumusica") as AudioStreamPlayer2D
+		var astro := menu.get_node_or_null("Astro")
 		verificar(is_instance_valid(musica), "a tela inicial não possui player de música")
 		if is_instance_valid(musica):
 			verificar(
@@ -42,6 +43,21 @@ func _ready() -> void:
 				"The colors of the void não está configurada na tela inicial"
 			)
 			verificar(musica.bus == &"Music", "a nova faixa não utiliza o barramento Music")
+		verificar(
+			menu.get_node_or_null("CanvasLayer/Button") == null,
+			"o botão antigo Apagar Save ainda está na tela inicial"
+		)
+		verificar(is_instance_valid(astro), "o Astro não está presente na tela inicial")
+		if is_instance_valid(astro):
+			var curiosidades: Array = astro.get("curiosidades_monthly_colors") as Array
+			verificar(
+				curiosidades.size() >= 30,
+				"o Astro não possui curiosidades suficientes sobre o Monthly Colors"
+			)
+			verificar(
+				curiosidades.any(func(texto: String) -> bool: return "Lua Rosa" in texto),
+				"o Astro não utiliza as curiosidades específicas dos cards do site"
+			)
 		menu.free()
 
 	if falhas.is_empty():

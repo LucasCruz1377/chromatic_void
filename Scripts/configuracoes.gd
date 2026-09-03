@@ -21,5 +21,7 @@ func _ready() -> void:
 
 
 func _on_voltar_solicitado() -> void:
-	Global.salvar_configuracoes()
+	var save_foi_apagado: bool = bool(janela_configuracoes.get("save_apagado"))
+	if not save_foi_apagado:
+		Global.salvar_configuracoes()
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
