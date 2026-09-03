@@ -3,6 +3,7 @@ extends Node2D
 
 @onready var transition: AnimationPlayer = $transition
 @onready var som: AudioStreamPlayer2D = $som
+@onready var musica_menu: AudioStreamPlayer2D = $menumusica
 @onready var botao_loja: Button = $CanvasLayer/CaixaMenu2/Shop
 @onready var botao_iniciar: Button = $CanvasLayer/CaixaMenu2/Start
 @onready var botoes_menu: Array[Button] = [
@@ -17,6 +18,10 @@ extends Node2D
 func _ready() -> void:
 	$Astro.apresentar()
 	Global.aplicar_configuracoes()
+	if musica_menu.stream is AudioStreamOggVorbis:
+		(musica_menu.stream as AudioStreamOggVorbis).loop = true
+	if not musica_menu.playing:
+		musica_menu.play()
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	_configurar_navegacao_menu()

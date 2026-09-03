@@ -377,7 +377,7 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
-	var usando_controle_simplificado := (
+	var usando_controle_simplificado: bool = (
 		not Global.controle_avancado
 		and Global.ultimo_dispositivo == &"controle"
 	)

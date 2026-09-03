@@ -21,7 +21,7 @@ func _ready() -> void:
 	var cena := load("res://Entities/BossFlorEquinocio.tscn") as PackedScene
 	verificar(cena != null, "a cena do boss não carregou")
 	if cena == null:
-		finalizar()
+		await finalizar()
 		return
 
 	boss = cena.instantiate() as BossCaosPrimaveril
@@ -103,7 +103,7 @@ func _ready() -> void:
 	verificar(boss.estado == BossCaosPrimaveril.Estado.DANCA_VINHAS, "a dança não iniciou após o crescimento")
 	boss.limpar_vinhas()
 
-	finalizar()
+	await finalizar()
 
 
 func contar_petalas_ocultas() -> int:

@@ -578,7 +578,7 @@ func _atualizar_textos_mapeamentos() -> void:
 				continue
 			if capturando_entrada and botao == botao_capturado:
 				continue
-			var evento := Global.obter_evento_mapeado(acao, slot)
+			var evento: InputEvent = Global.obter_evento_mapeado(acao, slot)
 			var nome_evento := _nome_evento(evento)
 			var icone := IconesControle.textura_para_evento(evento)
 			botao.icon = icone

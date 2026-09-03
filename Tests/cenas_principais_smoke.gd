@@ -30,6 +30,20 @@ func _ready() -> void:
 		if is_instance_valid(instancia):
 			instancia.free()
 
+	var cena_menu := load("res://Rooms/TelaInicial.tscn") as PackedScene
+	if cena_menu != null:
+		var menu := cena_menu.instantiate()
+		var musica := menu.get_node_or_null("menumusica") as AudioStreamPlayer2D
+		verificar(is_instance_valid(musica), "a tela inicial não possui player de música")
+		if is_instance_valid(musica):
+			verificar(
+				musica.stream != null
+				and musica.stream.resource_path.ends_with("sounds/OST/The colors of the void.ogg"),
+				"The colors of the void não está configurada na tela inicial"
+			)
+			verificar(musica.bus == &"Music", "a nova faixa não utiliza o barramento Music")
+		menu.free()
+
 	if falhas.is_empty():
 		print("TESTE OK: telas principais carregam e podem ser instanciadas")
 		get_tree().quit(0)

@@ -149,6 +149,8 @@ func _ready() -> void:
 		"o Game Over não focou o botão para o controle"
 	)
 
+	parar_audios(batalha)
+	await get_tree().create_timer(0.08).timeout
 	batalha.queue_free()
 	await get_tree().process_frame
 
@@ -181,7 +183,10 @@ func _ready() -> void:
 			aceitar.pressed = true
 			loja._input(aceitar)
 			verificar(not loja.mensagem.text.is_empty(), "X não confirmou a habilidade focada")
+		parar_audios(loja)
+		await get_tree().create_timer(0.08).timeout
 		loja.queue_free()
+		await get_tree().process_frame
 		await get_tree().process_frame
 
 	if falhas.is_empty():
@@ -190,3 +195,14 @@ func _ready() -> void:
 	else:
 		print("TESTE FALHOU: %d problema(s)" % falhas.size())
 		get_tree().quit(1)
+
+
+func parar_audios(raiz: Node) -> void:
+	for no in raiz.get_children():
+		if no is AudioStreamPlayer:
+			(no as AudioStreamPlayer).stop()
+			(no as AudioStreamPlayer).stream = null
+		elif no is AudioStreamPlayer2D:
+			(no as AudioStreamPlayer2D).stop()
+			(no as AudioStreamPlayer2D).stream = null
+		parar_audios(no)

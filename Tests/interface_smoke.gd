@@ -17,7 +17,7 @@ func _ready() -> void:
 	var cena := load("res://Rooms/Battle_area.tscn") as PackedScene
 	verificar(cena != null, "a cena de batalha não carregou")
 	if cena == null:
-		finalizar()
+		await finalizar()
 		return
 
 	batalha = cena.instantiate()
@@ -63,7 +63,7 @@ func _ready() -> void:
 			painel_dev.fechar()
 			verificar(not get_tree().paused, "o laboratório não devolveu a partida")
 
-			var setores_antes := batalha.setores_concluidos.duplicate()
+			var setores_antes: Array = batalha.setores_concluidos.duplicate()
 			var proximo_boss_antes: int = batalha.proximo_nivel_boss
 			batalha.invocar_boss_teste(&"pet0")
 			verificar(
@@ -161,14 +161,17 @@ func _ready() -> void:
 	menu_upgrades.abrir_menu()
 	verificar(not menu_upgrades.esta_aberta(), "melhorias abriram depois da morte")
 
-	finalizar()
+	await finalizar()
 
 
 func finalizar() -> void:
 	Engine.time_scale = 1.0
 	get_tree().paused = false
 	if is_instance_valid(batalha):
+		parar_audios(batalha)
+		await get_tree().create_timer(0.08).timeout
 		batalha.queue_free()
+	await get_tree().process_frame
 	await get_tree().process_frame
 	if falhas.is_empty():
 		print("TESTE OK: bloqueios e camadas da interface")
@@ -176,3 +179,14 @@ func finalizar() -> void:
 	else:
 		print("TESTE FALHOU: %d problema(s) de interface" % falhas.size())
 		get_tree().quit(1)
+
+
+func parar_audios(raiz: Node) -> void:
+	for no in raiz.get_children():
+		if no is AudioStreamPlayer:
+			(no as AudioStreamPlayer).stop()
+			(no as AudioStreamPlayer).stream = null
+		elif no is AudioStreamPlayer2D:
+			(no as AudioStreamPlayer2D).stop()
+			(no as AudioStreamPlayer2D).stream = null
+		parar_audios(no)

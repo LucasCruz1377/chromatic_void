@@ -34,6 +34,9 @@ enum Estado {
 
 const VIDA_BASE_FASES := [330.0, 390.0, 520.0]
 const CENTRO_FUSAO := Vector2(480.0, 188.0)
+const POSICAO_LUA_FUSAO := CENTRO_FUSAO + Vector2(-108.0, 0.0)
+const POSICAO_SOL_FUSAO := CENTRO_FUSAO + Vector2(108.0, 0.0)
+const MARGEM_FORA_TELA := 150.0
 const CORES_FASES := [
 	Color(0.58, 0.72, 1.0),
 	Color(1.0, 0.56, 0.12),
@@ -58,6 +61,11 @@ var progresso_fusao := 0.0
 var overlay_transicao: CanvasLayer
 var material_transicao: ShaderMaterial
 var invulnerabilidade_anterior := false
+var visual_lua_transicao: Sprite2D
+var visual_sol_transicao: Sprite2D
+var visual_eclipse_transicao: Sprite2D
+var tempo_animacao_visual := 0.0
+var desenhar_corona_transicao := false
 
 @onready var visual_fase: Sprite2D = $VisualFase
 
@@ -69,6 +77,7 @@ func _ready() -> void:
 	Vida = VidaMaxima
 	escala_base_impacto = scale
 	atualizar_colisao(46.0)
+	criar_visuais_transicao()
 	atualizar_visual_fase()
 	vida_alterada.emit(Vida, VidaMaxima)
 	queue_redraw()
@@ -133,6 +142,7 @@ func tomarDano(valor: float) -> void:
 
 
 func Mover(delta: float) -> void:
+	tempo_animacao_visual += delta
 	atualizar_animacao_visual(delta)
 	atualizar_contato(delta)
 	atualizar_gravidade(delta)
@@ -195,7 +205,7 @@ func atualizar_gravidade(delta: float) -> void:
 	gravidade_tempo = maxf(gravidade_tempo - delta, 0.0)
 	if gravidade_tempo <= 0.0 or not is_instance_valid(player):
 		return
-	var direcao := player.global_position.direction_to(global_position) * gravidade_sinal
+	var direcao: Vector2 = player.global_position.direction_to(global_position) * gravidade_sinal
 	var impulso := 150.0 if fase_atual == Fase.LUA else 205.0
 	player.velocity += direcao * impulso * delta
 	player.velocity = player.velocity.limit_length(720.0)
@@ -348,14 +358,14 @@ func criar_chuva_meteoros(quantidade: int, nova_cor: Color, novo_dano: float) ->
 	for indice in quantidade:
 		var perigo := PerigoAstralCena.new() as PerigoAstral
 		get_tree().current_scene.add_child(perigo)
-		var antecipacao := player.velocity * (0.18 + indice * 0.035)
+		var antecipacao: Vector2 = player.velocity * (0.18 + indice * 0.035)
 		var desloc := Vector2(randf_range(-160.0, 160.0), randf_range(-120.0, 120.0))
 		perigo.configurar_meteoro(player.global_position + antecipacao + desloc, novo_dano, nova_cor, 1.55 + indice * 0.16, 58.0)
 
 
 func criar_prisao_crescente() -> void:
 	tempo_ataque = maxf(tempo_ataque, 3.15)
-	var centro := player.global_position if is_instance_valid(player) else Vector2(480.0, 270.0)
+	var centro: Vector2 = player.global_position if is_instance_valid(player) else Vector2(480.0, 270.0)
 	for indice in 3:
 		var onda := PerigoAstralCena.new() as PerigoAstral
 		get_tree().current_scene.add_child(onda)
@@ -438,10 +448,10 @@ func criar_manchas_solares(quantidade: int) -> void:
 
 func criar_reflexos_astrais(frenesi: bool) -> void:
 	tempo_ataque = maxf(tempo_ataque, 3.2)
-	var origens := [Vector2(155.0, 110.0), Vector2(805.0, 430.0)]
+	var origens: Array[Vector2] = [Vector2(155.0, 110.0), Vector2(805.0, 430.0)]
 	var quantidade := 4 if frenesi else 3
 	for origem in origens:
-		var direcao_base := origem.direction_to(player.global_position) if is_instance_valid(player) else Vector2.RIGHT
+		var direcao_base: Vector2 = origem.direction_to(player.global_position) if is_instance_valid(player) else Vector2.RIGHT
 		for indice in quantidade:
 			var proj := ProjetilAstralCena.new() as ProjetilAstral
 			get_tree().current_scene.add_child(proj)
@@ -477,8 +487,33 @@ func iniciar_transicao(proxima_fase: int) -> void:
 
 func _transicao_para_sol(token: int) -> void:
 	progresso_fusao = 0.0
-	await get_tree().create_timer(1.65).timeout
+	preparar_troca_lua_sol()
+	# A Lua abandona a arena por completo antes de o Sol entrar. Assim a troca
+	# parece a chegada de outro astro, e não uma simples substituição de textura.
+	var saida_lua := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	saida_lua.tween_property(
+		visual_lua_transicao,
+		"global_position",
+		Vector2(-MARGEM_FORA_TELA, global_position.y),
+		0.82
+	)
+	await saida_lua.finished
 	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
+		return
+	await get_tree().create_timer(0.22).timeout
+	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
+		return
+	desenhar_corona_transicao = true
+	var entrada_sol := create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	entrada_sol.set_parallel(true)
+	entrada_sol.tween_property(visual_sol_transicao, "global_position", global_position, 1.05)
+	entrada_sol.tween_property(visual_sol_transicao, "rotation", 0.0, 1.05)
+	entrada_sol.tween_property(visual_sol_transicao, "scale", Vector2.ONE * 0.51, 1.05)
+	await entrada_sol.finished
+	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
 		return
 	concluir_transicao_para_sol()
 
@@ -493,6 +528,7 @@ func concluir_transicao_para_sol() -> void:
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.35
 	ultimo_ataque = -1
+	ocultar_visuais_transicao()
 	atualizar_visual_fase()
 	fase_alterada.emit(fase_atual)
 	subtitulo_alterado.emit(obter_subtitulo_boss())
@@ -503,47 +539,105 @@ func concluir_transicao_para_sol() -> void:
 func iniciar_cinematica_eclipse(token: int) -> void:
 	progresso_fusao = 0.0
 	proteger_player(true)
-	var movimento := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	movimento.tween_property(self, "global_position", CENTRO_FUSAO, 0.85)
-	await movimento.finished
-	if morto or token != token_transicao:
-		return
+	velocity = Vector2.ZERO
+	# O Sol para onde está. O nó do boss é reposicionado sem alterar a imagem,
+	# pois a cópia solar conserva a posição global anterior durante a cinemática.
+	var posicao_sol_inicial := global_position
 	global_position = CENTRO_FUSAO
-	visual_fase.visible = false
+	preparar_fusao(posicao_sol_inicial)
+	await get_tree().create_timer(0.42).timeout
+	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
+		return
+
+	# A Lua que saiu na troca anterior retorna pela esquerda. Só depois os dois
+	# astros ocupam posições lado a lado, deixando a união fácil de acompanhar.
+	var encontro := create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	encontro.set_parallel(true)
+	encontro.tween_property(visual_lua_transicao, "global_position", POSICAO_LUA_FUSAO, 1.25)
+	encontro.tween_property(visual_sol_transicao, "global_position", POSICAO_SOL_FUSAO, 1.25)
+	encontro.tween_property(visual_lua_transicao, "rotation", -0.08, 1.25)
+	encontro.tween_property(visual_sol_transicao, "rotation", 0.08, 1.25)
+	await encontro.finished
+	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
+		return
+	await get_tree().create_timer(0.48).timeout
+	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
+		return
+
 	criar_overlay_transicao()
-	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.set_parallel(true)
-	tween.tween_property(self, "progresso_fusao", 1.0, 3.25)
+	var uniao := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	uniao.set_parallel(true)
+	uniao.tween_property(visual_lua_transicao, "global_position", CENTRO_FUSAO, 2.65)
+	uniao.tween_property(visual_sol_transicao, "global_position", CENTRO_FUSAO, 2.65)
+	uniao.tween_property(visual_lua_transicao, "scale", Vector2.ONE * 0.47, 2.65)
+	uniao.tween_property(visual_sol_transicao, "scale", Vector2.ONE * 0.47, 2.65)
+	uniao.tween_property(visual_lua_transicao, "rotation", -0.32, 2.65)
+	uniao.tween_property(visual_sol_transicao, "rotation", 0.32, 2.65)
+	uniao.tween_property(self, "progresso_fusao", 1.0, 2.65)
 	if is_instance_valid(material_transicao):
-		tween.tween_method(atualizar_progresso_shader, 0.0, 1.0, 3.25)
-		tween.tween_method(atualizar_escuridao_shader, 0.0, 0.88, 2.5)
-	var tween_silhueta := create_tween()
-	tween_silhueta.tween_interval(2.12)
-	tween_silhueta.tween_method(atualizar_silhueta_shader, 0.0, 1.0, 0.95)
-	await get_tree().create_timer(3.35).timeout
+		uniao.tween_method(atualizar_escuridao_shader, 0.0, 0.97, 2.65)
+	await uniao.finished
 	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
 		return
-	Global.vibrar_controle(0.95, 1.0, 0.38)
-	EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.AVISO, Color(1.0, 0.45, 0.13), 2.4)
-	await get_tree().create_timer(1.0).timeout
+
+	visual_lua_transicao.visible = false
+	visual_sol_transicao.visible = false
+	desenhar_corona_transicao = false
+	await piscar_eclipse_no_escuro(token)
 	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
 		return
-	concluir_transicao_para_eclipse()
+
+	# O Eclipse real aparece ainda sob a escuridão. A volta da imagem e a onda
+	# de choque distorcida acontecem juntas; a luta só é liberada ao final.
+	preparar_dados_fase_eclipse()
+	visual_eclipse_transicao.visible = false
+	var retorno := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	retorno.set_parallel(true)
+	retorno.tween_method(atualizar_escuridao_shader, 0.97, 0.0, 0.92)
+	retorno.tween_method(atualizar_onda_shader, 0.015, 1.0, 0.92)
+	retorno.tween_method(atualizar_forca_onda_shader, 1.0, 0.0, 0.92)
+	retorno.tween_method(atualizar_flash_shader, 0.72, 0.0, 0.34)
+	Global.vibrar_controle(0.95, 1.0, 0.42)
+	var camera_transicao := get_tree().get_first_node_in_group("camera") as Camera2D
+	if is_instance_valid(camera_transicao) and camera_transicao.has_method("shake"):
+		camera_transicao.shake(18.0)
+	await retorno.finished
+	if morto or token != token_transicao:
+		ocultar_visuais_transicao()
+		return
+	finalizar_dados_fase_eclipse()
+	remover_overlay_transicao()
 
 
 func concluir_transicao_para_eclipse() -> void:
 	token_transicao += 1
+	preparar_dados_fase_eclipse()
+	finalizar_dados_fase_eclipse()
+	remover_overlay_transicao_gradual()
+
+
+func preparar_dados_fase_eclipse() -> void:
 	fase_atual = Fase.ECLIPSE
 	VidaMaxima = vidas_fases[2]
 	Vida = VidaMaxima
 	Velocidade = 128.0
 	atualizar_colisao(58.0)
+	atualizar_visual_fase()
+	estado = Estado.TRANSICAO
+	velocity = Vector2.ZERO
+
+
+func finalizar_dados_fase_eclipse() -> void:
+	token_transicao += 1
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.15
 	ultimo_ataque = -1
-	atualizar_visual_fase()
 	proteger_player(false)
-	remover_overlay_transicao_gradual()
 	fase_alterada.emit(fase_atual)
 	subtitulo_alterado.emit(obter_subtitulo_boss())
 	vida_alterada.emit(Vida, VidaMaxima)
@@ -581,14 +675,15 @@ func criar_overlay_transicao() -> void:
 	tela.material = material_transicao
 	overlay_transicao.add_child(tela)
 	tela.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	atualizar_progresso_shader(0.0)
 	atualizar_escuridao_shader(0.0)
-	atualizar_silhueta_shader(0.0)
+	atualizar_onda_shader(0.0)
+	atualizar_forca_onda_shader(0.0)
+	atualizar_flash_shader(0.0)
 
 
-func atualizar_progresso_shader(valor: float) -> void:
+func atualizar_onda_shader(valor: float) -> void:
 	if is_instance_valid(material_transicao):
-		material_transicao.set_shader_parameter("progresso", valor)
+		material_transicao.set_shader_parameter("onda_progresso", valor)
 
 
 func atualizar_escuridao_shader(valor: float) -> void:
@@ -596,9 +691,14 @@ func atualizar_escuridao_shader(valor: float) -> void:
 		material_transicao.set_shader_parameter("escuridao", valor)
 
 
-func atualizar_silhueta_shader(valor: float) -> void:
+func atualizar_forca_onda_shader(valor: float) -> void:
 	if is_instance_valid(material_transicao):
-		material_transicao.set_shader_parameter("silhueta", valor)
+		material_transicao.set_shader_parameter("onda_forca", valor)
+
+
+func atualizar_flash_shader(valor: float) -> void:
+	if is_instance_valid(material_transicao):
+		material_transicao.set_shader_parameter("flash", valor)
 
 
 func remover_overlay_transicao_gradual() -> void:
@@ -619,6 +719,7 @@ func remover_overlay_transicao() -> void:
 		overlay_transicao.queue_free()
 	overlay_transicao = null
 	material_transicao = null
+	ocultar_visuais_transicao()
 
 
 func limpar_ataques_astrais() -> void:
@@ -654,11 +755,20 @@ func _exit_tree() -> void:
 	if fase_atual == Fase.ECLIPSE or estado == Estado.TRANSICAO:
 		proteger_player(false)
 	remover_overlay_transicao()
+	for sprite in [visual_lua_transicao, visual_sol_transicao, visual_eclipse_transicao]:
+		if is_instance_valid(sprite):
+			sprite.queue_free()
 
 
 func _draw() -> void:
-	if estado == Estado.TRANSICAO and Vida <= 0.0 and fase_atual == Fase.SOL:
-		desenhar_fusao()
+	if fase_atual == Fase.SOL and visual_fase.visible:
+		desenhar_corona_sol(Vector2.ZERO, 1.0, 1.0)
+	if (
+		desenhar_corona_transicao
+		and is_instance_valid(visual_sol_transicao)
+		and visual_sol_transicao.visible
+	):
+		desenhar_corona_sol(to_local(visual_sol_transicao.global_position), 0.96, 0.82)
 	if estado == Estado.AVISANDO:
 		var aviso := Color(1.0, 0.32, 0.08, 0.82)
 		draw_dashed_line(Vector2.ZERO, direcao_investida * 850.0, aviso, 3.0, 14.0, true)
@@ -682,13 +792,18 @@ func atualizar_visual_fase() -> void:
 
 
 func atualizar_animacao_visual(delta: float) -> void:
+	queue_redraw()
 	if not is_instance_valid(visual_fase) or not visual_fase.visible:
 		return
 	var escala_base := 0.55 if fase_atual == Fase.LUA else (0.51 if fase_atual == Fase.SOL else 0.53)
-	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.0032) * 0.018
+	var velocidade_pulso := 3.8 if fase_atual == Fase.SOL else 3.2
+	var amplitude_pulso := 0.032 if fase_atual == Fase.SOL else 0.018
+	var pulso := 1.0 + sin(tempo_animacao_visual * velocidade_pulso) * amplitude_pulso
 	visual_fase.scale = Vector2.ONE * escala_base * pulso
 	if fase_atual == Fase.SOL:
-		visual_fase.rotation += 0.16 * delta
+		# O núcleo pontudo novo permanece legível enquanto a coroa externa gira e
+		# pulsa como na versão antiga.
+		visual_fase.rotation = sin(tempo_animacao_visual * 0.72) * 0.035
 	elif fase_atual == Fase.ECLIPSE:
 		visual_fase.rotation -= 0.10 * delta
 
@@ -703,12 +818,116 @@ func desenhar_textura_centralizada(
 	draw_texture_rect(textura, Rect2(posicao - tamanho * 0.5, tamanho), false, cor)
 
 
-func desenhar_fusao() -> void:
-	var distancia := lerpf(135.0, 0.0, progresso_fusao)
-	var escala := lerpf(0.46, 0.53, progresso_fusao)
-	if progresso_fusao < 0.80:
-		desenhar_textura_centralizada(TEXTURA_LUA, Vector2(-distancia, 0.0), escala, Color(1.35, 1.35, 1.35))
-		desenhar_textura_centralizada(TEXTURA_SOL, Vector2(distancia, 0.0), escala, Color(1.35, 1.35, 1.35))
-	else:
-		var alpha := clampf((progresso_fusao - 0.80) / 0.20, 0.0, 1.0)
-		desenhar_textura_centralizada(TEXTURA_ECLIPSE, Vector2.ZERO, 0.53, Color(1.35, 1.35, 1.35, alpha))
+func desenhar_corona_sol(posicao: Vector2, escala: float, alpha: float) -> void:
+	# Recupera a animação geométrica antiga: raios independentes, tamanhos
+	# oscilantes, dois sentidos de rotação e halo pulsante. O centro é o SVG novo.
+	var pulso := 1.0 + sin(tempo_animacao_visual * 2.1) * 0.055
+	draw_circle(posicao, 69.0 * escala * pulso, Color(1.0, 0.30, 0.035, 0.10 * alpha))
+	for indice in 16:
+		var angulo := TAU * float(indice) / 16.0 + tempo_animacao_visual * 0.18
+		var tamanho := 67.0 + sin(tempo_animacao_visual * 2.1 + float(indice)) * 7.0
+		draw_line(
+			posicao + Vector2.from_angle(angulo) * 54.0 * escala,
+			posicao + Vector2.from_angle(angulo) * tamanho * escala,
+			Color(1.0, 0.36, 0.06, 0.70 * alpha),
+			4.0 * escala,
+			true
+		)
+	for indice in 8:
+		var angulo_interno := TAU * float(indice) / 8.0 - tempo_animacao_visual * 0.11
+		var inicio := posicao + Vector2.from_angle(angulo_interno) * 58.0 * escala
+		var fim := posicao + Vector2.from_angle(angulo_interno) * 72.0 * escala
+		draw_line(inicio, fim, Color(1.0, 0.76, 0.18, 0.34 * alpha), 2.0 * escala, true)
+	draw_arc(
+		posicao,
+		57.0 * escala * pulso,
+		0.0,
+		TAU,
+		48,
+		Color(1.0, 0.91, 0.42, 0.62 * alpha),
+		2.5 * escala,
+		true
+	)
+
+
+func criar_visuais_transicao() -> void:
+	visual_lua_transicao = criar_sprite_transicao(TEXTURA_LUA, 0.55)
+	visual_sol_transicao = criar_sprite_transicao(TEXTURA_SOL, 0.51)
+	visual_eclipse_transicao = criar_sprite_transicao(TEXTURA_ECLIPSE, 0.53)
+
+
+func criar_sprite_transicao(textura: Texture2D, escala: float) -> Sprite2D:
+	var sprite := Sprite2D.new()
+	sprite.texture = textura
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	sprite.scale = Vector2.ONE * escala
+	sprite.self_modulate = Color(1.42, 1.42, 1.42, 1.0)
+	sprite.z_index = 5
+	sprite.visible = false
+	get_tree().current_scene.add_child(sprite)
+	return sprite
+
+
+func preparar_troca_lua_sol() -> void:
+	visual_fase.visible = false
+	ocultar_visuais_transicao()
+	visual_lua_transicao.global_position = global_position
+	visual_lua_transicao.scale = Vector2.ONE * 0.55
+	visual_lua_transicao.rotation = 0.0
+	visual_lua_transicao.visible = true
+	visual_sol_transicao.global_position = Vector2(960.0 + MARGEM_FORA_TELA, global_position.y)
+	visual_sol_transicao.scale = Vector2.ONE * 0.44
+	visual_sol_transicao.rotation = 0.34
+	visual_sol_transicao.visible = true
+
+
+func preparar_fusao(posicao_sol_inicial: Vector2) -> void:
+	visual_fase.visible = false
+	ocultar_visuais_transicao()
+	visual_sol_transicao.global_position = posicao_sol_inicial
+	visual_sol_transicao.scale = Vector2.ONE * 0.51
+	visual_sol_transicao.rotation = 0.0
+	visual_sol_transicao.visible = true
+	visual_lua_transicao.global_position = Vector2(-MARGEM_FORA_TELA, CENTRO_FUSAO.y)
+	visual_lua_transicao.scale = Vector2.ONE * 0.55
+	visual_lua_transicao.rotation = -0.30
+	visual_lua_transicao.visible = true
+	desenhar_corona_transicao = true
+
+
+func piscar_eclipse_no_escuro(token: int) -> void:
+	if is_instance_valid(overlay_transicao) and visual_eclipse_transicao.get_parent() != overlay_transicao:
+		visual_eclipse_transicao.reparent(overlay_transicao)
+	visual_eclipse_transicao.global_position = CENTRO_FUSAO
+	visual_eclipse_transicao.scale = Vector2.ONE * 0.34
+	visual_eclipse_transicao.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	visual_eclipse_transicao.self_modulate = Color(2.15, 1.62, 2.35, 1.0)
+	visual_eclipse_transicao.visible = true
+	var brilho := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	brilho.set_parallel(true)
+	brilho.tween_property(visual_eclipse_transicao, "scale", Vector2.ONE * 0.61, 0.30)
+	brilho.tween_property(visual_eclipse_transicao, "modulate:a", 1.0, 0.12)
+	brilho.tween_method(atualizar_flash_shader, 0.0, 0.48, 0.10)
+	await brilho.finished
+	if morto or token != token_transicao:
+		return
+	var acomodar := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	acomodar.set_parallel(true)
+	acomodar.tween_property(visual_eclipse_transicao, "scale", Vector2.ONE * 0.53, 0.42)
+	acomodar.tween_property(
+		visual_eclipse_transicao,
+		"self_modulate",
+		Color(1.48, 1.38, 1.65, 1.0),
+		0.42
+	)
+	acomodar.tween_method(atualizar_flash_shader, 0.48, 0.0, 0.42)
+	await acomodar.finished
+	await get_tree().create_timer(0.36).timeout
+
+
+func ocultar_visuais_transicao() -> void:
+	desenhar_corona_transicao = false
+	for sprite in [visual_lua_transicao, visual_sol_transicao, visual_eclipse_transicao]:
+		if is_instance_valid(sprite):
+			sprite.visible = false
+	queue_redraw()

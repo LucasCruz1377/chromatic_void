@@ -357,7 +357,6 @@ func aplicar_musica_boss(id: StringName) -> void:
 		restaurar_musica_partida()
 		return
 	if not ResourceLoader.exists(CAMINHO_LOTUS_DANCE):
-		push_warning("LotusDance.mp3 não foi encontrado em sounds/OST.")
 		return
 	var faixa := load(CAMINHO_LOTUS_DANCE) as AudioStream
 	if not is_instance_valid(faixa):

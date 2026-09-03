@@ -10,7 +10,6 @@ const PROJETIL := preload("res://Entities/ProjetilInimigo.tscn")
 const MINION := preload("res://Entities/InimigoMinion.tscn")
 const FRAGMENTO := preload("res://Entities/FragmentoReciclavel.tscn")
 const EFEITO_RECICLAGEM := preload("res://Entities/EfeitoReciclagem.tscn")
-const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 
 
 enum Estado {
