@@ -36,7 +36,11 @@ func _ready() -> void:
 	verificar(boss.escudo_ativo and boss.polen.visible, "o escudo de pólen não inicia ativo")
 	verificar(boss.VidaMaxima >= 350.0, "a vida do boss voltou ao valor fácil anterior")
 	verificar(boss.Dano >= 34.0, "o dano do boss voltou ao valor fácil anterior")
-	verificar(boss.intervalo_ataques <= 1.6, "o intervalo entre ataques está lento demais")
+	verificar(boss.intervalo_ataques <= 1.2, "o intervalo entre ataques está lento demais")
+	verificar(
+		boss._duracao_janela_vulneravel() <= 0.82,
+		"a janela vulnerável da primeira fase ainda permite derreter o boss"
+	)
 	var escala_boss := boss.scale
 	boss.reproduzir_impacto()
 	boss.reproduzir_impacto()
@@ -51,6 +55,9 @@ func _ready() -> void:
 	boss.ativar_escudo(false)
 	boss.tomarDano(10.0)
 	verificar(boss.Vida < vida_inicial, "a janela vulnerável não recebe dano")
+	boss.abrir_janela_vulneravel(0.25)
+	boss.processar_janela_vulneravel(0.26)
+	verificar(boss.escudo_ativo, "a janela vulnerável não fechou no tempo configurado")
 	boss.Vida = boss.VidaMaxima
 
 	limpar_projeteis()
@@ -78,10 +85,29 @@ func _ready() -> void:
 	await get_tree().create_timer(2.25).timeout
 	verificar(boss.petalas_em_voo == 0, "as pétalas não voltaram ao boss em linha reta")
 	verificar(contar_petalas_ocultas() == 0, "as pétalas não reencaixaram no corpo")
+	boss.processar_petalas(0.0)
+	verificar(
+		boss.escudo_ativo,
+		"a volta das pétalas abriu uma segunda janela vulnerável não planejada"
+	)
 
+	boss.visual.rotation = 0.37
+	boss.aviso_vinhas.rotation = boss.visual.rotation
 	boss.criar_vinhas()
 	await get_tree().process_frame
 	verificar(boss.vinhas_ativas.size() == 4, "a Dança dos Caules não criou quatro vinhas")
+	verificar(
+		is_equal_approx(boss.vinhas_pivot.rotation, boss.aviso_vinhas.rotation),
+		"as vinhas reais nasceram em uma rotação diferente do aviso"
+	)
+	for filho in boss.aviso_vinhas.get_children():
+		var linha := filho as Line2D
+		if not is_instance_valid(linha) or linha.points.is_empty():
+			continue
+		verificar(
+			is_equal_approx(linha.points[-1].length(), boss.COMPRIMENTO_VINHA),
+			"uma linha do aviso não possui o mesmo alcance da vinha real"
+		)
 	var comprimentos_esperados := [560.0, 560.0, 560.0, 560.0]
 	for indice in boss.vinhas_ativas.size():
 		var vinha := boss.vinhas_ativas[indice]
@@ -101,6 +127,17 @@ func _ready() -> void:
 	boss.crescer_vinhas(0.0)
 	verificar(boss.tempo_estado >= 10.5, "a Dança dos Caules não recebeu os cinco segundos extras")
 	verificar(boss.estado == BossCaosPrimaveril.Estado.DANCA_VINHAS, "a dança não iniciou após o crescimento")
+	boss.sentido_vinhas = 1.0
+	boss._sortear_proximo_movimento_vinhas(true)
+	verificar(boss.sentido_vinhas < 0.0, "a dança não sorteou uma inversão real de direção")
+	verificar(
+		absf(boss.velocidade_vinhas_alvo) >= boss._velocidade_base_vinhas() * 0.83,
+		"a nova direção das vinhas ficou lenta demais para exigir acompanhamento"
+	)
+	verificar(
+		boss.tempo_mudar_sentido_vinhas <= 1.60,
+		"a fase final demora demais para mudar novamente a direção das vinhas"
+	)
 	boss.limpar_vinhas()
 
 	await finalizar()

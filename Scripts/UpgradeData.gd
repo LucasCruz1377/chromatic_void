@@ -11,9 +11,7 @@ const TIPO_ESTRUTURAL: StringName = &"estrutural"
 const TIPO_SINERGIA: StringName = &"sinergia"
 const TIPO_SUPERMOD: StringName = &"supermod"
 
-const SLOT_FORMA: StringName = &"forma"
-const SLOT_TRAJETORIA: StringName = &"trajetoria"
-const SLOT_CARGA: StringName = &"carga"
+const SLOT_ESTILO_TIRO: StringName = &"estilo_tiro"
 const SLOT_SUPERMOD: StringName = &"supermod"
 
 
@@ -73,31 +71,31 @@ const DADOS: Dictionary = {
 		"tags": [&"movimento"]
 	},
 	&"tiro_duplo": {
-		"nome": "TIRO DUPLO",
-		"descricao": "Dispara duas linhas paralelas. Cada projétil causa 62% do dano.",
+		"nome": "NÚCLEO PRISMÁTICO",
+		"descricao": "ESTILO PRISMA: duas linhas paralelas, cada uma com 62% do dano. Bloqueia os outros estilos de tiro.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "FORMA",
+		"categoria": "ESTILO DE TIRO • PRISMA",
 		"raridade": "INCOMUM",
 		"cor": Color(1.0, 0.38, 0.7),
 		"max_nivel": 1,
 		"peso": 1.0,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_FORMA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"multitiro",
 		"requisitos": {},
 		"tags": [&"projetil", &"multitiro"]
 	},
 	&"tiro_triplo": {
 		"nome": "FORMAÇÃO TRIDENTE",
-		"descricao": "Cria um tiro central e dois laterais a 7°. Cada projétil causa 42% do dano.",
+		"descricao": "PRISMA II: um tiro central e dois laterais a 7°. Cada projétil causa 42% do dano.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "FORMA",
+		"categoria": "ESTILO PRISMA • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(0.82, 0.38, 1.0),
 		"max_nivel": 1,
 		"peso": 0.72,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_FORMA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"multitiro",
 		"requisitos": {&"tiro_duplo": 1},
 		"tags": [&"projetil", &"multitiro"]
@@ -106,103 +104,103 @@ const DADOS: Dictionary = {
 		"nome": "LEQUE PRISMÁTICO",
 		"descricao": "+1 projétil e +8° de cobertura; o dano total permanece próximo de 125%.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "FORMA",
+		"categoria": "ESTILO PRISMA • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(0.65, 0.3, 1.0),
 		"max_nivel": 2,
 		"peso": 0.6,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_FORMA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"multitiro",
 		"requisitos": {&"tiro_triplo": 1},
 		"tags": [&"projetil", &"multitiro"]
 	},
 	&"calibre_pesado": {
-		"nome": "CALIBRE PESADO",
-		"descricao": "+22%, +16% e +12% de dano; projétil maior, pesado e 10% mais lento por nível.",
+		"nome": "NÚCLEO DE IMPACTO",
+		"descricao": "ESTILO IMPACTO: projétil maior e muito mais forte, mas 10% mais lento por nível. Bloqueia os outros estilos.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "CARGA",
+		"categoria": "ESTILO DE TIRO • IMPACTO",
 		"raridade": "INCOMUM",
 		"cor": Color(1.0, 0.5, 0.22),
 		"max_nivel": 3,
 		"peso": 0.9,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_CARGA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"impacto_pesado",
 		"requisitos": {},
 		"tags": [&"projetil", &"dano", &"pesado"]
 	},
 	&"perfuracao": {
 		"nome": "PONTA PERFURANTE",
-		"descricao": "O projétil atravessa +1 inimigo por nível.",
+		"descricao": "IMPACTO II: o projétil pesado atravessa +1 inimigo por nível.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "CARGA",
+		"categoria": "ESTILO IMPACTO • EVOLUÇÃO",
 		"raridade": "INCOMUM",
 		"cor": Color(1.0, 0.64, 0.2),
 		"max_nivel": 3,
 		"peso": 0.72,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_CARGA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"impacto_pesado",
 		"requisitos": {&"calibre_pesado": 1},
 		"tags": [&"projetil", &"pesado"]
 	},
 	&"fragmentacao": {
-		"nome": "FRAGMENTAÇÃO",
-		"descricao": "Ao atingir, gera +2 estilhaços de 28% do dano por nível; fragmentos não se replicam.",
+		"nome": "NÚCLEO DE ESTILHAÇOS",
+		"descricao": "ESTILO ESTILHAÇOS: o impacto gera dois fragmentos de 28% do dano; eles não se replicam.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "CARGA",
+		"categoria": "ESTILO DE TIRO • ESTILHAÇOS",
 		"raridade": "RARA",
 		"cor": Color(1.0, 0.24, 0.45),
 		"max_nivel": 2,
 		"peso": 0.48,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_CARGA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"fragmentacao",
-		"requisitos": {&"tiro_duplo": 1},
+		"requisitos": {},
 		"tags": [&"projetil", &"multitiro", &"fragmentacao"]
 	},
 	&"mira_gravitacional": {
-		"nome": "MIRA GRAVITACIONAL",
-		"descricao": "Projéteis causam 88% do dano e perseguem alvos próximos com correção progressiva.",
+		"nome": "NÚCLEO PREDADOR",
+		"descricao": "ESTILO PREDADOR: projéteis perseguem alvos, mas causam somente 88% do dano. Bloqueia os outros estilos.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
-		"categoria": "TRAJETÓRIA",
+		"categoria": "ESTILO DE TIRO • PREDADOR",
 		"raridade": "RARA",
 		"cor": Color(0.42, 0.72, 1.0),
 		"max_nivel": 3,
 		"peso": 0.62,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_TRAJETORIA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"gravitacional",
-		"requisitos": {&"propulsao": 1},
+		"requisitos": {},
 		"tags": [&"projetil", &"movimento", &"homing"]
 	},
 	&"ricochete": {
-		"nome": "RICOCHETE DE BORDA",
-		"descricao": "Projéteis rebatem nas bordas da arena +1 vez por nível.",
+		"nome": "NÚCLEO DE RICOCHETE",
+		"descricao": "ESTILO RICOCHETE: projéteis rebatem nas bordas da arena. Bloqueia os outros estilos de tiro.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
-		"categoria": "TRAJETÓRIA",
+		"categoria": "ESTILO DE TIRO • RICOCHETE",
 		"raridade": "INCOMUM",
 		"cor": Color(0.28, 1.0, 0.92),
 		"max_nivel": 2,
 		"peso": 0.68,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_TRAJETORIA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"ricochete",
-		"requisitos": {&"propulsao": 1},
+		"requisitos": {},
 		"tags": [&"projetil", &"movimento"]
 	},
 	&"formacao_convergente": {
 		"nome": "FORMAÇÃO CONVERGENTE",
 		"descricao": "Os projéteis partem separados e convergem à frente. Concentra dano sem bônus oculto.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "FORMA • EVOLUÇÃO",
+		"categoria": "ESTILO PRISMA • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(1.0, 0.34, 0.76),
 		"max_nivel": 1,
 		"peso": 0.58,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_FORMA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"multitiro",
 		"requisitos": {&"tiro_triplo": 1},
 		"tags": [&"projetil", &"multitiro", &"evolucao"]
@@ -211,13 +209,13 @@ const DADOS: Dictionary = {
 		"nome": "ONDA DE IMPACTO",
 		"descricao": "Projéteis pesados explodem ao acertar, causando dano em área. Cada nível amplia dano e raio.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "CARGA • EVOLUÇÃO",
+		"categoria": "ESTILO IMPACTO • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(1.0, 0.55, 0.18),
 		"max_nivel": 2,
 		"peso": 0.52,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_CARGA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"impacto_pesado",
 		"requisitos": {&"calibre_pesado": 2},
 		"tags": [&"projetil", &"pesado", &"area", &"evolucao"]
@@ -226,13 +224,13 @@ const DADOS: Dictionary = {
 		"nome": "RESSONÂNCIA DE BORDA",
 		"descricao": "Cada ricochete aumenta em 28% o dano restante do projétil e produz um pulso neon.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
-		"categoria": "TRAJETÓRIA • EVOLUÇÃO",
+		"categoria": "ESTILO RICOCHETE • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(0.22, 1.0, 0.88),
 		"max_nivel": 2,
 		"peso": 0.54,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_TRAJETORIA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"ricochete",
 		"requisitos": {&"ricochete": 1},
 		"tags": [&"projetil", &"ricochete", &"evolucao"]
@@ -241,13 +239,13 @@ const DADOS: Dictionary = {
 		"nome": "PREDAÇÃO GRAVITACIONAL",
 		"descricao": "A mira corrige com mais força e recupera parte da penalidade de dano dos projéteis guiados.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
-		"categoria": "TRAJETÓRIA • EVOLUÇÃO",
+		"categoria": "ESTILO PREDADOR • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(0.38, 0.66, 1.0),
 		"max_nivel": 2,
 		"peso": 0.50,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_TRAJETORIA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"gravitacional",
 		"requisitos": {&"mira_gravitacional": 1},
 		"tags": [&"projetil", &"homing", &"evolucao"]
@@ -256,13 +254,13 @@ const DADOS: Dictionary = {
 		"nome": "ESTILHAÇOS PREDADORES",
 		"descricao": "Fragmentos causam +8% do dano-base e recebem uma correção gravitacional leve.",
 		"icone": "res://Assets/UpgradeDano.png",
-		"categoria": "CARGA • EVOLUÇÃO",
+		"categoria": "ESTILO ESTILHAÇOS • EVOLUÇÃO",
 		"raridade": "RARA",
 		"cor": Color(1.0, 0.24, 0.58),
 		"max_nivel": 2,
 		"peso": 0.48,
 		"tipo": TIPO_ESTRUTURAL,
-		"slot_estrutural": SLOT_CARGA,
+		"slot_estrutural": SLOT_ESTILO_TIRO,
 		"rota_estrutural": &"fragmentacao",
 		"requisitos": {&"fragmentacao": 1},
 		"tags": [&"projetil", &"fragmentacao", &"evolucao"]
@@ -400,8 +398,8 @@ const DADOS: Dictionary = {
 		"tags": [&"projetil", &"multitiro", &"cadencia"]
 	},
 	&"singularidade": {
-		"nome": "SINGULARIDADE GUIADA",
-		"descricao": "SUPERMOD: +25% de dano, tamanho e perfuração, mas -25% de velocidade do projétil.",
+		"nome": "COLAPSO DE SINGULARIDADE",
+		"descricao": "SUPERMOD DE IMPACTO: projétil colossal e perfurante ganha atração própria, mas perde 25% de velocidade.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
@@ -411,7 +409,7 @@ const DADOS: Dictionary = {
 		"tipo": TIPO_SUPERMOD,
 		"slot_estrutural": SLOT_SUPERMOD,
 		"rota_estrutural": &"singularidade",
-		"requisitos": {&"calibre_pesado": 2, &"mira_gravitacional": 2},
+		"requisitos": {&"calibre_pesado": 2, &"onda_impacto": 1},
 		"tags": [&"projetil", &"pesado", &"homing"]
 	},
 	&"reator_sincronizado": {
@@ -491,9 +489,7 @@ static func rotas_ativas(
 	habilidade: Habilidade = null
 ) -> Dictionary:
 	var rotas := {
-		SLOT_FORMA: &"",
-		SLOT_TRAJETORIA: &"",
-		SLOT_CARGA: &"",
+		SLOT_ESTILO_TIRO: &"",
 		SLOT_SUPERMOD: &"",
 	}
 	for adquirido in niveis:
@@ -509,20 +505,18 @@ static func rotas_ativas(
 
 static func nome_slot(slot: StringName) -> String:
 	match slot:
-		SLOT_FORMA: return "FORMA"
-		SLOT_TRAJETORIA: return "TRAJETÓRIA"
-		SLOT_CARGA: return "CARGA"
+		SLOT_ESTILO_TIRO: return "ESTILO DE TIRO"
 		SLOT_SUPERMOD: return "SUPERMOD"
 		_: return str(slot).to_upper()
 
 
 static func nome_rota(rota: StringName) -> String:
 	match rota:
-		&"multitiro": return "MULTITIRO"
-		&"gravitacional": return "GRAVITACIONAL"
+		&"multitiro": return "PRISMA"
+		&"gravitacional": return "PREDADOR"
 		&"ricochete": return "RICOCHETE"
-		&"impacto_pesado": return "IMPACTO"
-		&"fragmentacao": return "FRAGMENTAÇÃO"
+		&"impacto_pesado": return "IMPACTO PESADO"
+		&"fragmentacao": return "ESTILHAÇOS"
 		&"tempestade_prismatica": return "TEMPESTADE"
 		&"singularidade": return "SINGULARIDADE"
 		&"reator_sincronizado": return "REATOR"
@@ -535,10 +529,8 @@ static func resumo_rotas(
 	habilidade: Habilidade = null
 ) -> String:
 	var rotas := rotas_ativas(niveis, habilidade)
-	return "FORMA: %s   •   TRAJETÓRIA: %s   •   CARGA: %s   •   SUPERMOD: %s" % [
-		nome_rota(rotas[SLOT_FORMA]),
-		nome_rota(rotas[SLOT_TRAJETORIA]),
-		nome_rota(rotas[SLOT_CARGA]),
+	return "ESTILO DE TIRO: %s   •   SUPERMOD: %s" % [
+		nome_rota(rotas[SLOT_ESTILO_TIRO]),
 		nome_rota(rotas[SLOT_SUPERMOD]),
 	]
 
@@ -630,16 +622,17 @@ static func sortear(
 	for id in especificos:
 		candidatos.erase(id)
 
-	if niveis.is_empty():
-		_adicionar_de_tipo(
-			resultado,
-			candidatos,
-			niveis,
-			TIPO_ESTRUTURAL,
-			habilidade
+	var estilo_ativo: StringName = rotas_ativas(
+		niveis, habilidade
+	).get(SLOT_ESTILO_TIRO, &"")
+	if estilo_ativo == &"":
+		_adicionar_do_slot(
+			resultado, candidatos, niveis, SLOT_ESTILO_TIRO, habilidade
 		)
 	else:
-		_adicionar_relacionado(resultado, candidatos, niveis, habilidade)
+		_adicionar_da_rota(
+			resultado, candidatos, niveis, SLOT_ESTILO_TIRO, estilo_ativo, habilidade
+		)
 
 	_adicionar_de_tipo(
 		resultado,
@@ -663,6 +656,51 @@ static func sortear(
 
 	resultado.shuffle()
 	return resultado
+
+
+static func _adicionar_do_slot(
+	resultado: Array[StringName],
+	candidatos: Array[StringName],
+	niveis: Dictionary,
+	slot: StringName,
+	habilidade: Habilidade = null
+) -> void:
+	if resultado.size() >= 3:
+		return
+	var filtrados: Array[StringName] = []
+	for id in candidatos:
+		if StringName(obter(id, habilidade).get("slot_estrutural", &"")) == slot:
+			filtrados.append(id)
+	if filtrados.is_empty():
+		return
+	var escolhido := _sortear_ponderado(filtrados, niveis, habilidade)
+	resultado.append(escolhido)
+	candidatos.erase(escolhido)
+
+
+static func _adicionar_da_rota(
+	resultado: Array[StringName],
+	candidatos: Array[StringName],
+	niveis: Dictionary,
+	slot: StringName,
+	rota: StringName,
+	habilidade: Habilidade = null
+) -> void:
+	if resultado.size() >= 3:
+		return
+	var filtrados: Array[StringName] = []
+	for id in candidatos:
+		var dados := obter(id, habilidade)
+		if (
+			StringName(dados.get("slot_estrutural", &"")) == slot
+			and StringName(dados.get("rota_estrutural", &"")) == rota
+		):
+			filtrados.append(id)
+	if filtrados.is_empty():
+		return
+	var escolhido := _sortear_ponderado(filtrados, niveis, habilidade)
+	resultado.append(escolhido)
+	candidatos.erase(escolhido)
 
 
 static func _adicionar_de_categoria(

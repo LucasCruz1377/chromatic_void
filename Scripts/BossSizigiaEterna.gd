@@ -498,12 +498,16 @@ func _transicao_para_sol(token: int) -> void:
 		0.82
 	)
 	await saida_lua.finished
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
 		return
+	if token != token_transicao:
+		return
 	await get_tree().create_timer(0.22).timeout
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
+		return
+	if token != token_transicao:
 		return
 	desenhar_corona_transicao = true
 	var entrada_sol := create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
@@ -512,8 +516,10 @@ func _transicao_para_sol(token: int) -> void:
 	entrada_sol.tween_property(visual_sol_transicao, "rotation", 0.0, 1.05)
 	entrada_sol.tween_property(visual_sol_transicao, "scale", Vector2.ONE * 0.51, 1.05)
 	await entrada_sol.finished
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
+		return
+	if token != token_transicao:
 		return
 	concluir_transicao_para_sol()
 
@@ -546,8 +552,10 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	global_position = CENTRO_FUSAO
 	preparar_fusao(posicao_sol_inicial)
 	await get_tree().create_timer(0.42).timeout
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
+		return
+	if token != token_transicao:
 		return
 
 	# A Lua que saiu na troca anterior retorna pela esquerda. Só depois os dois
@@ -559,15 +567,23 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	encontro.tween_property(visual_lua_transicao, "rotation", -0.08, 1.25)
 	encontro.tween_property(visual_sol_transicao, "rotation", 0.08, 1.25)
 	await encontro.finished
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
 		return
+	if token != token_transicao:
+		return
 	await get_tree().create_timer(0.48).timeout
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
+		return
+	if token != token_transicao:
 		return
 
 	criar_overlay_transicao()
+	# A Lua fica à frente do Sol, como o corpo que encobre o disco solar em um
+	# eclipse real. Nenhum dos dois some durante a aproximação.
+	visual_sol_transicao.z_index = 6
+	visual_lua_transicao.z_index = 7
 	var uniao := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	uniao.set_parallel(true)
 	uniao.tween_property(visual_lua_transicao, "global_position", CENTRO_FUSAO, 2.65)
@@ -576,26 +592,28 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	uniao.tween_property(visual_sol_transicao, "scale", Vector2.ONE * 0.47, 2.65)
 	uniao.tween_property(visual_lua_transicao, "rotation", -0.32, 2.65)
 	uniao.tween_property(visual_sol_transicao, "rotation", 0.32, 2.65)
-	uniao.tween_property(self, "progresso_fusao", 1.0, 2.65)
-	if is_instance_valid(material_transicao):
-		uniao.tween_method(atualizar_escuridao_shader, 0.0, 0.97, 2.65)
+	# A escuridão agora é derivada do mesmo progresso que sobrepõe os astros.
+	# Assim a tela escurece conforme a Lua cobre o Sol, não por um fade separado.
+	uniao.tween_method(atualizar_fusao_e_escuridao, 0.0, 1.0, 2.65)
 	await uniao.finished
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
 		return
+	if token != token_transicao:
+		return
 
-	visual_lua_transicao.visible = false
-	visual_sol_transicao.visible = false
-	desenhar_corona_transicao = false
+	# O Eclipse aparece sobre os dois discos antes que eles desapareçam. A troca
+	# ocorre por sobreposição e nunca produz um quadro vazio.
 	await piscar_eclipse_no_escuro(token)
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
+		return
+	if token != token_transicao:
 		return
 
 	# O Eclipse real aparece ainda sob a escuridão. A volta da imagem e a onda
 	# de choque distorcida acontecem juntas; a luta só é liberada ao final.
 	preparar_dados_fase_eclipse()
-	visual_eclipse_transicao.visible = false
 	var retorno := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	retorno.set_parallel(true)
 	retorno.tween_method(atualizar_escuridao_shader, 0.97, 0.0, 0.92)
@@ -607,8 +625,10 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	if is_instance_valid(camera_transicao) and camera_transicao.has_method("shake"):
 		camera_transicao.shake(18.0)
 	await retorno.finished
-	if morto or token != token_transicao:
+	if morto:
 		ocultar_visuais_transicao()
+		return
+	if token != token_transicao:
 		return
 	finalizar_dados_fase_eclipse()
 	remover_overlay_transicao()
@@ -628,6 +648,9 @@ func preparar_dados_fase_eclipse() -> void:
 	Velocidade = 128.0
 	atualizar_colisao(58.0)
 	atualizar_visual_fase()
+	# O corpo definitivo já nasce luminoso sob a tela escura; a onda de choque
+	# não é mais responsável por "ligar" o neon depois.
+	visual_fase.self_modulate = Color(1.92, 1.58, 2.14, 1.0)
 	estado = Estado.TRANSICAO
 	velocity = Vector2.ZERO
 
@@ -663,7 +686,13 @@ func proteger_player(ativar: bool) -> void:
 
 
 func criar_overlay_transicao() -> void:
-	remover_overlay_transicao()
+	# Limpa somente uma camada antiga. Durante a fusão, remover também os
+	# visuais de transição criava um quadro vazio justamente quando a tela
+	# começava a escurecer.
+	if is_instance_valid(overlay_transicao):
+		overlay_transicao.queue_free()
+	overlay_transicao = null
+	material_transicao = null
 	overlay_transicao = CanvasLayer.new()
 	overlay_transicao.layer = 70
 	get_tree().current_scene.add_child(overlay_transicao)
@@ -689,6 +718,14 @@ func atualizar_onda_shader(valor: float) -> void:
 func atualizar_escuridao_shader(valor: float) -> void:
 	if is_instance_valid(material_transicao):
 		material_transicao.set_shader_parameter("escuridao", valor)
+
+
+func atualizar_fusao_e_escuridao(valor: float) -> void:
+	progresso_fusao = clampf(valor, 0.0, 1.0)
+	# Pouca sombra enquanto ainda estão lado a lado; a totalidade cresce rápido
+	# quando os discos realmente começam a se sobrepor.
+	var cobertura := smoothstep(0.06, 0.96, progresso_fusao)
+	atualizar_escuridao_shader(cobertura * 0.97)
 
 
 func atualizar_forca_onda_shader(valor: float) -> void:
@@ -788,7 +825,11 @@ func atualizar_visual_fase() -> void:
 			visual_fase.texture = TEXTURA_ECLIPSE
 			visual_fase.scale = Vector2.ONE * 0.53
 	visual_fase.visible = true
-	visual_fase.self_modulate = Color(1.42, 1.42, 1.42, 1.0)
+	visual_fase.self_modulate = (
+		Color(1.92, 1.58, 2.14, 1.0)
+		if fase_atual == Fase.ECLIPSE
+		else Color(1.42, 1.42, 1.42, 1.0)
+	)
 
 
 func atualizar_animacao_visual(delta: float) -> void:
@@ -887,10 +928,14 @@ func preparar_fusao(posicao_sol_inicial: Vector2) -> void:
 	visual_sol_transicao.global_position = posicao_sol_inicial
 	visual_sol_transicao.scale = Vector2.ONE * 0.51
 	visual_sol_transicao.rotation = 0.0
+	visual_sol_transicao.modulate = Color.WHITE
+	visual_sol_transicao.z_index = 6
 	visual_sol_transicao.visible = true
 	visual_lua_transicao.global_position = Vector2(-MARGEM_FORA_TELA, CENTRO_FUSAO.y)
 	visual_lua_transicao.scale = Vector2.ONE * 0.55
 	visual_lua_transicao.rotation = -0.30
+	visual_lua_transicao.modulate = Color.WHITE
+	visual_lua_transicao.z_index = 7
 	visual_lua_transicao.visible = true
 	desenhar_corona_transicao = true
 
@@ -899,25 +944,31 @@ func piscar_eclipse_no_escuro(token: int) -> void:
 	if is_instance_valid(overlay_transicao) and visual_eclipse_transicao.get_parent() != overlay_transicao:
 		visual_eclipse_transicao.reparent(overlay_transicao)
 	visual_eclipse_transicao.global_position = CENTRO_FUSAO
-	visual_eclipse_transicao.scale = Vector2.ONE * 0.34
+	visual_eclipse_transicao.scale = Vector2.ONE * 0.45
 	visual_eclipse_transicao.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	visual_eclipse_transicao.self_modulate = Color(2.15, 1.62, 2.35, 1.0)
+	visual_eclipse_transicao.z_index = 8
 	visual_eclipse_transicao.visible = true
 	var brilho := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	brilho.set_parallel(true)
 	brilho.tween_property(visual_eclipse_transicao, "scale", Vector2.ONE * 0.61, 0.30)
-	brilho.tween_property(visual_eclipse_transicao, "modulate:a", 1.0, 0.12)
+	brilho.tween_property(visual_eclipse_transicao, "modulate:a", 1.0, 0.10)
+	brilho.tween_property(visual_lua_transicao, "modulate:a", 0.0, 0.14)
+	brilho.tween_property(visual_sol_transicao, "modulate:a", 0.0, 0.14)
 	brilho.tween_method(atualizar_flash_shader, 0.0, 0.48, 0.10)
 	await brilho.finished
 	if morto or token != token_transicao:
 		return
+	visual_lua_transicao.visible = false
+	visual_sol_transicao.visible = false
+	desenhar_corona_transicao = false
 	var acomodar := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	acomodar.set_parallel(true)
 	acomodar.tween_property(visual_eclipse_transicao, "scale", Vector2.ONE * 0.53, 0.42)
 	acomodar.tween_property(
 		visual_eclipse_transicao,
 		"self_modulate",
-		Color(1.48, 1.38, 1.65, 1.0),
+		Color(1.86, 1.52, 2.08, 1.0),
 		0.42
 	)
 	acomodar.tween_method(atualizar_flash_shader, 0.48, 0.0, 0.42)

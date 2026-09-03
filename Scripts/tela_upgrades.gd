@@ -374,10 +374,10 @@ func atualizar_cabecalho() -> void:
 	if player.HabilidadeEquipada:
 		nome_habilidade = player.HabilidadeEquipada.Nome
 	texto_habilidade.text = (
-		"HABILIDADE: %s   •   CADA ROTA MUDA A FORMA DE PILOTAR" %
+		"HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO" %
 		nome_habilidade.to_upper()
 	)
-	texto_rotas.text = "ROTAS ATIVAS   •   " + DadosUpgrades.resumo_rotas(
+	texto_rotas.text = "CONSTRUÇÃO ATUAL   •   " + DadosUpgrades.resumo_rotas(
 		player.niveis_upgrades,
 		player.HabilidadeEquipada
 	)

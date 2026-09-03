@@ -67,6 +67,9 @@ func _ready() -> void:
 	verificar(boss.visual_sol_transicao.visible, "o Sol sumiu antes de encontrar a Lua")
 
 	var limite_quadros := 600
+	var houve_brecha_visual := false
+	var detalhe_brecha := ""
+	var eclipse_neon_durante_transicao := false
 	while (
 		limite_quadros > 0
 		and (
@@ -74,10 +77,58 @@ func _ready() -> void:
 			or boss.estado != BossSizigiaEterna.Estado.MOVENDO
 		)
 	):
+		var lua_visivel := (
+			is_instance_valid(boss.visual_lua_transicao)
+			and boss.visual_lua_transicao.visible
+			and boss.visual_lua_transicao.modulate.a > 0.01
+		)
+		var sol_visivel := (
+			is_instance_valid(boss.visual_sol_transicao)
+			and boss.visual_sol_transicao.visible
+			and boss.visual_sol_transicao.modulate.a > 0.01
+		)
+		var eclipse_transicao_visivel := (
+			is_instance_valid(boss.visual_eclipse_transicao)
+			and boss.visual_eclipse_transicao.visible
+			and boss.visual_eclipse_transicao.modulate.a > 0.01
+		)
+		var eclipse_final_visivel := (
+			boss.visual_fase.visible
+			and boss.visual_fase.modulate.a > 0.01
+		)
+		if not (lua_visivel or sol_visivel or eclipse_transicao_visivel or eclipse_final_visivel):
+			houve_brecha_visual = true
+			if detalhe_brecha.is_empty():
+				detalhe_brecha = (
+					"quadro=%d fase=%d estado=%d overlay=%s lua=%s sol=%s eclipse=%s final=%s"
+					% [
+						600 - limite_quadros,
+						boss.fase_atual,
+						boss.estado,
+						is_instance_valid(boss.overlay_transicao),
+						boss.visual_lua_transicao.visible,
+						boss.visual_sol_transicao.visible,
+						boss.visual_eclipse_transicao.visible,
+						boss.visual_fase.visible,
+					]
+				)
+		if (
+			eclipse_transicao_visivel
+			and boss.visual_eclipse_transicao.self_modulate.r >= 1.8
+		):
+			eclipse_neon_durante_transicao = true
 		limite_quadros -= 1
 		await get_tree().process_frame
 
 	verificar(limite_quadros > 0, "a cinemática não terminou dentro do tempo esperado")
+	verificar(
+		not houve_brecha_visual,
+		"Sol, Lua e Eclipse sumiram juntos durante a fusão: " + detalhe_brecha
+	)
+	verificar(
+		eclipse_neon_durante_transicao,
+		"o Eclipse só recebeu neon depois da onda de choque"
+	)
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.ECLIPSE, "a união não formou o Eclipse")
 	verificar(boss.visual_fase.visible, "o Eclipse real não apareceu na volta da tela")
 	verificar(boss.visual_fase.texture == boss.TEXTURA_ECLIPSE, "o Eclipse final usa a textura errada")

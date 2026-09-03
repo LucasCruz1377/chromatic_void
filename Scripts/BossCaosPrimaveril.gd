@@ -7,6 +7,7 @@ signal fase_alterada(fase_atual: int)
 const ESPINHO := preload("res://Entities/EspinhoPrimaveril.tscn")
 const PETALA_BUMERANGUE := preload("res://Entities/PetalaBumerangue.tscn")
 const VINHA := preload("res://Entities/VinhaEspinhosa.tscn")
+const COMPRIMENTO_VINHA := 560.0
 
 enum Ataque {
 	ONDA_ESPINHOS,
@@ -31,15 +32,17 @@ enum Estado {
 @export var selo_monthly_colors := "PRIMAVERA • SETEMBRO"
 
 @export_category("Ritmo")
-@export_range(0.5, 5.0, 0.1) var intervalo_ataques := 1.55
+@export_range(0.5, 5.0, 0.1) var intervalo_ataques := 1.15
 @export_range(0.4, 2.0, 0.1) var tempo_aviso_espinhos := 0.78
 @export_range(0.5, 2.5, 0.1) var tempo_aviso_vinhas := 1.0
+@export_range(0.35, 1.5, 0.05) var janela_vulneravel_base := 0.82
 
 var fase := 1
 var estado := Estado.MOVENDO
 var tempo_estado := 0.0
-var tempo_ataque := 1.5
+var tempo_ataque := 1.1
 var tempo_disparo := 0.0
+var tempo_janela_vulneravel := 0.0
 var ultimo_ataque := -1
 var indice_dificuldade := 1
 var escudo_ativo := true
@@ -52,6 +55,7 @@ var velocidade_vinhas_atual := 0.0
 var velocidade_vinhas_alvo := 0.0
 var tempo_mudar_sentido_vinhas := 0.0
 var sentido_vinhas := 1.0
+var inversao_vinhas_pendente := false
 
 @onready var visual: Node2D = $Visual
 @onready var petalas: Node2D = $Visual/Petalas
@@ -65,6 +69,7 @@ var sentido_vinhas := 1.0
 func _ready() -> void:
 	super._ready()
 	configurar_circulo_aviso()
+	configurar_aviso_vinhas()
 	ativar_escudo(true)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	fase_alterada.emit(fase)
@@ -114,6 +119,7 @@ func Mover(delta: float) -> void:
 			processar_danca_vinhas(delta)
 		Estado.RECUPERANDO:
 			processar_recuperacao(delta)
+	processar_janela_vulneravel(delta)
 
 
 func mover_livre(delta: float) -> void:
@@ -188,7 +194,7 @@ func processar_onda_espinhos(delta: float) -> void:
 	tempo_estado -= delta
 	if tempo_estado <= 0.0:
 		aviso_espinhos.visible = false
-		iniciar_recuperacao(1.8)
+		iniciar_recuperacao(1.05)
 
 
 func disparar_anel_espinhos() -> void:
@@ -212,7 +218,7 @@ func iniciar_petalas_bumerangue() -> void:
 	estado = Estado.PETALAS_ATIVAS
 	tempo_estado = 4.8
 	velocity = Vector2.ZERO
-	ativar_escudo(false)
+	abrir_janela_vulneravel(_duracao_janela_vulneravel())
 	petalas_em_voo = 0
 	petalas_lancadas.clear()
 	var quantidade := mini(fase + 1, 4)
@@ -271,10 +277,10 @@ func processar_petalas(delta: float) -> void:
 	velocity = Vector2.ZERO
 	tempo_estado -= delta
 	if petalas_em_voo <= 0:
-		iniciar_recuperacao(1.0)
+		iniciar_recuperacao(0.80, false)
 	elif tempo_estado <= 0.0:
 		cancelar_petalas_restantes()
-		iniciar_recuperacao(1.0)
+		iniciar_recuperacao(0.80, false)
 
 
 func _on_petala_retornou(indice: int) -> void:
@@ -303,8 +309,9 @@ func iniciar_danca_caules() -> void:
 	sentido_rotacao = -1.0 if randf() < 0.5 else 1.0
 	sentido_vinhas = sentido_rotacao
 	velocidade_vinhas_atual = 0.0
-	velocidade_vinhas_alvo = (0.34 + fase * 0.10) * sentido_vinhas
-	tempo_mudar_sentido_vinhas = maxf(3.0 - fase * 0.38, 1.55)
+	velocidade_vinhas_alvo = _velocidade_base_vinhas() * randf_range(0.88, 1.15) * sentido_vinhas
+	_agendar_intervalo_vinhas()
+	inversao_vinhas_pendente = false
 
 
 func ir_ao_centro(_delta: float) -> void:
@@ -315,6 +322,7 @@ func ir_ao_centro(_delta: float) -> void:
 		velocity = Vector2.ZERO
 		estado = Estado.AVISANDO_VINHAS
 		tempo_estado = tempo_aviso_vinhas
+		aviso_vinhas.rotation = visual.rotation
 		aviso_vinhas.visible = true
 		return
 	velocity = global_position.direction_to(centro) * minf(260.0, distancia * 2.2)
@@ -324,6 +332,8 @@ func avisar_vinhas(delta: float) -> void:
 	velocity = Vector2.ZERO
 	aviso_vinhas.modulate.a = 0.28 + absf(sin(Time.get_ticks_msec() * 0.021)) * 0.70
 	visual.rotation += 0.34 * sentido_rotacao * delta
+	# O aviso acompanha exatamente o ângulo que será entregue ao pivô real.
+	aviso_vinhas.rotation = visual.rotation
 	tempo_estado -= delta
 	if tempo_estado <= 0.0:
 		aviso_vinhas.visible = false
@@ -334,15 +344,13 @@ func avisar_vinhas(delta: float) -> void:
 
 func criar_vinhas() -> void:
 	limpar_vinhas()
-	vinhas_pivot.rotation = visual.rotation
-	# A diagonal da arena mede ~551 px a partir do centro. Usar 560 px em
-	# todos os braços garante que nenhuma vinha deixe de tocar a borda ao girar.
-	var comprimentos := [560.0, 560.0, 560.0, 560.0]
+	# Aviso e ataque compartilham o mesmo ângulo e o mesmo comprimento.
+	vinhas_pivot.rotation = aviso_vinhas.rotation
 	for indice in 4:
 		var vinha := VINHA.instantiate() as VinhaEspinhosa
 		vinhas_pivot.add_child(vinha)
 		vinha.rotation = float(indice) * PI * 0.5
-		vinha.configurar(comprimentos[indice], Dano * 0.58)
+		vinha.configurar(COMPRIMENTO_VINHA, Dano * 0.58)
 		vinha.iniciar_crescimento(0.70)
 		vinhas_ativas.append(vinha)
 
@@ -355,8 +363,8 @@ func crescer_vinhas(delta: float) -> void:
 			if is_instance_valid(vinha):
 				vinha.ativar_dano()
 		estado = Estado.DANCA_VINHAS
-		# Cinco segundos extras em todas as fases para tornar a dança uma ameaça
-		# longa, mas as inversões continuam suaves e previsíveis visualmente.
+		# Cinco segundos extras em todas as fases: a ameaça dura o bastante para
+		# exigir acompanhamento, com mudanças suaves porém não memorizáveis.
 		tempo_estado = 9.0 + fase * 0.5
 
 
@@ -364,14 +372,10 @@ func processar_danca_vinhas(delta: float) -> void:
 	velocity = Vector2.ZERO
 	tempo_mudar_sentido_vinhas -= delta
 	if tempo_mudar_sentido_vinhas <= 0.0:
-		sentido_vinhas *= -1.0
-		velocidade_vinhas_alvo = (0.34 + fase * 0.10) * sentido_vinhas
-		tempo_mudar_sentido_vinhas = (
-			maxf(3.05 - fase * 0.42, 1.45) + randf_range(-0.12, 0.28)
-		)
+		_sortear_proximo_movimento_vinhas()
 	# Interpolação exponencial: desacelera, cruza o zero e acelera na direção
 	# oposta. Fases altas convergem mais rápido para o novo sentido.
-	var rapidez_lerp := 0.80 + fase * 0.58
+	var rapidez_lerp := 2.2 + fase * 1.1
 	var peso_lerp := 1.0 - exp(-rapidez_lerp * delta)
 	velocidade_vinhas_atual = lerpf(
 		velocidade_vinhas_atual,
@@ -383,7 +387,33 @@ func processar_danca_vinhas(delta: float) -> void:
 	tempo_estado -= delta
 	if tempo_estado <= 0.0:
 		encerrar_vinhas()
-		iniciar_recuperacao(2.2)
+		iniciar_recuperacao(1.0)
+
+
+func _velocidade_base_vinhas() -> float:
+	return 0.58 + fase * 0.14
+
+
+func _agendar_intervalo_vinhas() -> void:
+	var minimo := maxf(1.45 - float(fase - 1) * 0.24, 0.82)
+	var maximo := maxf(2.35 - float(fase - 1) * 0.38, 1.32)
+	tempo_mudar_sentido_vinhas = randf_range(minimo, maximo)
+
+
+func _sortear_proximo_movimento_vinhas(forcar_inversao: bool = false) -> void:
+	var velocidade_base := _velocidade_base_vinhas()
+	# Em alguns momentos a vinha apenas desacelera, criando uma finta curta.
+	# A próxima mudança obrigatoriamente completa a inversão prometida.
+	if not forcar_inversao and not inversao_vinhas_pendente and randf() < 0.24:
+		velocidade_vinhas_alvo = sentido_vinhas * velocidade_base * randf_range(0.12, 0.28)
+		tempo_mudar_sentido_vinhas = randf_range(0.34, 0.62)
+		inversao_vinhas_pendente = true
+		return
+
+	sentido_vinhas *= -1.0
+	velocidade_vinhas_alvo = sentido_vinhas * velocidade_base * randf_range(0.84, 1.24)
+	inversao_vinhas_pendente = false
+	_agendar_intervalo_vinhas()
 
 
 func encerrar_vinhas() -> void:
@@ -404,11 +434,14 @@ func limpar_vinhas() -> void:
 	vinhas_ativas.clear()
 
 
-func iniciar_recuperacao(duracao: float) -> void:
+func iniciar_recuperacao(duracao: float, abrir_vulnerabilidade := true) -> void:
 	estado = Estado.RECUPERANDO
 	tempo_estado = duracao
 	velocity = Vector2.ZERO
-	ativar_escudo(false)
+	if abrir_vulnerabilidade:
+		abrir_janela_vulneravel(minf(duracao, _duracao_janela_vulneravel()))
+	else:
+		ativar_escudo(true)
 
 
 func processar_recuperacao(delta: float) -> void:
@@ -419,11 +452,30 @@ func processar_recuperacao(delta: float) -> void:
 	if tempo_estado <= 0.0:
 		ativar_escudo(true)
 		estado = Estado.MOVENDO
-		tempo_ataque = maxf(intervalo_ataques - fase * 0.13, 0.95)
+		tempo_ataque = maxf(intervalo_ataques - float(fase - 1) * 0.10, 0.72)
+
+
+func _duracao_janela_vulneravel() -> float:
+	return maxf(janela_vulneravel_base - float(fase - 1) * 0.11, 0.52)
+
+
+func abrir_janela_vulneravel(duracao: float) -> void:
+	tempo_janela_vulneravel = maxf(duracao, 0.05)
+	ativar_escudo(false)
+
+
+func processar_janela_vulneravel(delta: float) -> void:
+	if escudo_ativo or tempo_janela_vulneravel <= 0.0:
+		return
+	tempo_janela_vulneravel -= delta
+	if tempo_janela_vulneravel <= 0.0:
+		ativar_escudo(true)
 
 
 func ativar_escudo(ativar: bool) -> void:
 	escudo_ativo = ativar
+	if ativar:
+		tempo_janela_vulneravel = 0.0
 	multiplicador_dano_recebido = 0.0 if ativar else 1.0
 	polen.visible = ativar
 	polen.emitting = ativar
@@ -470,6 +522,16 @@ func configurar_circulo_aviso() -> void:
 	for indice in range(49):
 		pontos.append(Vector2.from_angle(TAU * float(indice) / 48.0) * 74.0)
 	aviso_espinhos.points = pontos
+
+
+func configurar_aviso_vinhas() -> void:
+	var nomes: Array[StringName] = [&"Direita", &"Baixo", &"Esquerda", &"Cima"]
+	for indice in nomes.size():
+		var linha := aviso_vinhas.get_node_or_null(NodePath(str(nomes[indice]))) as Line2D
+		if not is_instance_valid(linha):
+			continue
+		var direcao := Vector2.RIGHT.rotated(float(indice) * PI * 0.5)
+		linha.points = PackedVector2Array([Vector2.ZERO, direcao * COMPRIMENTO_VINHA])
 
 
 func ao_colidir_com_player(alvo: Node) -> void:

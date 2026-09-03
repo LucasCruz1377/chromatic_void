@@ -15,6 +15,7 @@ func verificar(condicao: bool, mensagem: String) -> void:
 
 func _ready() -> void:
 	testar_rotas_exclusivas()
+	testar_estilos_de_tiro()
 	testar_supermod_unico()
 	testar_orcamento_de_dano()
 	testar_geometria_multitiro()
@@ -27,7 +28,7 @@ func _ready() -> void:
 
 
 func testar_rotas_exclusivas() -> void:
-	var niveis := {&"propulsao": 1, &"mira_gravitacional": 1}
+	var niveis := {&"mira_gravitacional": 1}
 	verificar(
 		not DadosUpgrades.disponivel(&"ricochete", niveis),
 		"ricochete permaneceu disponível após escolher a rota gravitacional"
@@ -36,11 +37,55 @@ func testar_rotas_exclusivas() -> void:
 		DadosUpgrades.disponivel(&"mira_gravitacional", niveis),
 		"um novo nível da rota gravitacional foi bloqueado indevidamente"
 	)
-	var carga_pesada := {&"tiro_duplo": 1, &"calibre_pesado": 1}
+	var carga_pesada := {&"calibre_pesado": 1}
 	verificar(
 		not DadosUpgrades.disponivel(&"fragmentacao", carga_pesada),
 		"fragmentação permaneceu disponível após escolher impacto pesado"
 	)
+
+
+func testar_estilos_de_tiro() -> void:
+	var raizes: Array[StringName] = [
+		&"tiro_duplo",
+		&"calibre_pesado",
+		&"fragmentacao",
+		&"mira_gravitacional",
+		&"ricochete",
+	]
+	for raiz in raizes:
+		verificar(
+			DadosUpgrades.disponivel(raiz, {}),
+			"o estilo %s não pode ser escolhido desde o começo" % raiz
+		)
+
+	var prisma := {&"tiro_duplo": 1}
+	for raiz in raizes:
+		if raiz == &"tiro_duplo":
+			continue
+		verificar(
+			not DadosUpgrades.disponivel(raiz, prisma),
+			"o estilo Prisma não bloqueou a rota incompatível %s" % raiz
+		)
+	verificar(
+		DadosUpgrades.disponivel(&"tiro_triplo", prisma),
+		"a evolução Tridente não apareceu após escolher Prisma"
+	)
+	var rotas := DadosUpgrades.rotas_ativas(prisma)
+	verificar(
+		rotas[DadosUpgrades.SLOT_ESTILO_TIRO] == &"multitiro",
+		"a construção atual não identificou o estilo Prisma"
+	)
+
+	for _tentativa in range(30):
+		var opcoes := DadosUpgrades.sortear(prisma, 3)
+		for id in opcoes:
+			var dados := DadosUpgrades.obter(id)
+			if dados.get("slot_estrutural", &"") != DadosUpgrades.SLOT_ESTILO_TIRO:
+				continue
+			verificar(
+				dados.get("rota_estrutural", &"") == &"multitiro",
+				"o sorteio misturou outro estilo com a construção Prisma"
+			)
 
 
 func testar_supermod_unico() -> void:
@@ -198,7 +243,7 @@ func testar_rerolls_limitados() -> void:
 
 
 func testar_sorteio_compativel() -> void:
-	var niveis := {&"propulsao": 1, &"mira_gravitacional": 1}
+	var niveis := {&"mira_gravitacional": 1}
 	for _tentativa in range(40):
 		var opcoes := DadosUpgrades.sortear(niveis, 3)
 		verificar(&"ricochete" not in opcoes, "o sorteio ofereceu uma rota incompatível")
