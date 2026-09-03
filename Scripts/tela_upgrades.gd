@@ -288,7 +288,7 @@ func atualizar_indicador() -> void:
 	var pontos := player.pontos_upgrade_pendentes
 	indicador.visible = pode_abrir_menu()
 	var icone := IconesControle.textura_para_acao(&"abrir_melhorias")
-	var usando_controle := (
+	var usando_controle: bool = (
 		Global.ultimo_dispositivo == &"controle"
 		and not Input.get_connected_joypads().is_empty()
 		and icone != null
@@ -333,6 +333,7 @@ func fechar_menu() -> void:
 		return
 
 	menu_aberto = false
+	get_viewport().gui_release_focus()
 	overlay.hide()
 	estado_alterado.emit(false)
 	Engine.time_scale = maxf(time_scale_anterior, 0.01)
@@ -415,7 +416,7 @@ func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 	if container_cards.get_child_count() > 0:
 		var primeiro_card = container_cards.get_child(0)
 		if primeiro_card.botao:
-			primeiro_card.botao.call_deferred("grab_focus")
+			call_deferred("_focar_controle_se_valido", primeiro_card.botao)
 
 
 func _on_rerrolar_pressed() -> void:
@@ -446,7 +447,7 @@ func configurar_navegacao_controle() -> void:
 		if card.botao is Button:
 			botoes.append(card.botao as Button)
 	if botoes.is_empty():
-		botao_fechar.call_deferred("grab_focus")
+		call_deferred("_focar_controle_se_valido", botao_fechar)
 		return
 
 	var destino_inferior: Button = (
@@ -466,6 +467,16 @@ func configurar_navegacao_controle() -> void:
 	if not botao_rerrolar.disabled:
 		botao_rerrolar.focus_neighbor_top = botao_rerrolar.get_path_to(botoes[0])
 		botao_rerrolar.focus_neighbor_bottom = botao_rerrolar.get_path_to(botao_fechar)
+
+
+func _focar_controle_se_valido(controle: Control) -> void:
+	if (
+		menu_aberto
+		and is_instance_valid(controle)
+		and controle.is_inside_tree()
+		and controle.is_visible_in_tree()
+	):
+		controle.grab_focus()
 
 
 func limpar_cards() -> void:

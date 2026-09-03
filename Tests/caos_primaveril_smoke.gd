@@ -21,7 +21,7 @@ func _ready() -> void:
 	var cena := load("res://Entities/BossFlorEquinocio.tscn") as PackedScene
 	verificar(cena != null, "a cena do boss não carregou")
 	if cena == null:
-		finalizar()
+		await finalizar()
 		return
 
 	boss = cena.instantiate() as BossCaosPrimaveril
@@ -96,9 +96,14 @@ func _ready() -> void:
 		)
 		vinha.ativar_dano()
 		verificar(vinha.dano_ativo, "uma vinha não ativou o dano depois do aviso")
+	boss.estado = BossCaosPrimaveril.Estado.CRESCENDO_VINHAS
+	boss.tempo_estado = 0.0
+	boss.crescer_vinhas(0.0)
+	verificar(boss.tempo_estado >= 10.5, "a Dança dos Caules não recebeu os cinco segundos extras")
+	verificar(boss.estado == BossCaosPrimaveril.Estado.DANCA_VINHAS, "a dança não iniciou após o crescimento")
 	boss.limpar_vinhas()
 
-	finalizar()
+	await finalizar()
 
 
 func contar_petalas_ocultas() -> int:
@@ -110,11 +115,7 @@ func contar_petalas_ocultas() -> int:
 
 
 func contar_rastros() -> int:
-	var quantidade := 0
-	for node in arena.get_children():
-		if node is EfeitoCombate and node.tipo == EfeitoCombate.Tipo.RASTRO:
-			quantidade += 1
-	return quantidade
+	return get_tree().get_nodes_in_group("rastro_petala").size()
 
 
 func limpar_projeteis() -> void:

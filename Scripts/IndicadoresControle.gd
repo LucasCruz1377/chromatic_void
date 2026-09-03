@@ -75,7 +75,7 @@ static func textura_para_evento(evento: InputEvent) -> Texture2D:
 static func evento_controle_para_acao(acao: StringName) -> InputEvent:
 	if Global.obter_acoes_remapeaveis().has(acao):
 		for slot in Global.MAX_SLOTS_CONTROLE:
-			var evento := Global.obter_evento_mapeado(acao, slot)
+			var evento: InputEvent = Global.obter_evento_mapeado(acao, slot)
 			if evento != null and not caminho_para_evento(evento).is_empty():
 				return evento
 		return null

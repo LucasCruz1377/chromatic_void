@@ -69,6 +69,11 @@ var tempo_escudo_habilidade := 0.0
 var cor_escudo_habilidade := Color(0.72, 0.42, 1.0, 0.82)
 var tempo_resistencia_temporaria := 0.0
 var resistencia_temporaria_multiplicador := 1.0
+var tempo_queimadura := 0.0
+var contador_pulso_queimadura := 0.0
+var intervalo_pulso_queimadura := 0.0
+var dano_pulso_queimadura := 0.0
+var pulsos_queimadura_restantes := 0
 var dano_colisao_habilidade := 0.0
 var xp_atual: float = 0.0
 var nivel_atual: int = 1
@@ -372,7 +377,7 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
-	var usando_controle_simplificado := (
+	var usando_controle_simplificado: bool = (
 		not Global.controle_avancado
 		and Global.ultimo_dispositivo == &"controle"
 	)
@@ -752,6 +757,45 @@ func aplicar_resistencia_temporaria(multiplicador: float, duracao: float) -> voi
 	tempo_resistencia_temporaria = maxf(duracao, 0.0)
 
 
+func aplicar_queimadura(dano_total: float, duracao: float) -> void:
+	if not vivo or dano_total <= 0.0 or duracao <= 0.0:
+		return
+	# Uma nova fonte renova a duração e conserva apenas o pulso mais forte.
+	# Assim a queimadura permanece perigosa sem acumular infinitamente.
+	pulsos_queimadura_restantes = 3
+	tempo_queimadura = duracao
+	intervalo_pulso_queimadura = duracao / 3.0
+	contador_pulso_queimadura = intervalo_pulso_queimadura
+	dano_pulso_queimadura = maxf(dano_pulso_queimadura, dano_total / 3.0)
+	queue_redraw()
+
+
+func aplicar_pulso_queimadura() -> void:
+	if not vivo or pulsos_queimadura_restantes <= 0:
+		return
+	var dano_final := maxf(
+		dano_pulso_queimadura
+		* multiplicador_dano_recebido
+		* resistencia_temporaria_multiplicador,
+		0.0
+	)
+	vida = maxf(vida - dano_final, 0.0)
+	tempo_sem_dano = 0.0
+	pulsos_queimadura_restantes -= 1
+	Global.vibrar_controle(0.18, 0.38, 0.10)
+	reproduzir_feedback_dano(dano_final)
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(
+			cena,
+			global_position - Vector2(0.0, 18.0),
+			EfeitoCombate.Tipo.RASTRO,
+			Color(1.0, 0.38, 0.06),
+			0.75,
+			Vector2.UP
+		)
+
+
 func atualizar_efeitos_temporarios(delta: float) -> void:
 	if tempo_escudo_habilidade > 0.0:
 		tempo_escudo_habilidade = maxf(tempo_escudo_habilidade - delta, 0.0)
@@ -767,6 +811,19 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 		if tempo_resistencia_temporaria <= 0.0:
 			resistencia_temporaria_multiplicador = 1.0
 
+	if tempo_queimadura > 0.0 and pulsos_queimadura_restantes > 0:
+		tempo_queimadura = maxf(tempo_queimadura - delta, 0.0)
+		contador_pulso_queimadura -= delta
+		if contador_pulso_queimadura <= 0.0:
+			contador_pulso_queimadura += intervalo_pulso_queimadura
+			aplicar_pulso_queimadura()
+		queue_redraw()
+	else:
+		if dano_pulso_queimadura > 0.0:
+			dano_pulso_queimadura = 0.0
+			pulsos_queimadura_restantes = 0
+			queue_redraw()
+
 
 func atualizar_passivos(delta: float) -> void:
 	tempo_sem_dano += delta
@@ -781,23 +838,30 @@ func atualizar_passivos(delta: float) -> void:
 
 
 func _draw() -> void:
-	if escudo_habilidade <= 0.0 or escudo_habilidade_max <= 0.0:
-		return
-
-	var proporcao := clampf(escudo_habilidade / escudo_habilidade_max, 0.0, 1.0)
-	var cor_fundo := cor_escudo_habilidade
-	cor_fundo.a = 0.10
-	draw_circle(Vector2.ZERO, 39.0, cor_fundo)
-	draw_arc(
-		Vector2.ZERO,
-		39.0,
-		-PI * 0.5,
-		-PI * 0.5 + TAU * proporcao,
-		48,
-		cor_escudo_habilidade,
-		3.0,
-		true
-	)
+	if escudo_habilidade > 0.0 and escudo_habilidade_max > 0.0:
+		var proporcao := clampf(escudo_habilidade / escudo_habilidade_max, 0.0, 1.0)
+		var cor_fundo := cor_escudo_habilidade
+		cor_fundo.a = 0.10
+		draw_circle(Vector2.ZERO, 39.0, cor_fundo)
+		draw_arc(
+			Vector2.ZERO,
+			39.0,
+			-PI * 0.5,
+			-PI * 0.5 + TAU * proporcao,
+			48,
+			cor_escudo_habilidade,
+			3.0,
+			true
+		)
+	if tempo_queimadura > 0.0 and pulsos_queimadura_restantes > 0:
+		var chama := Color(1.0, 0.35, 0.06, 0.86)
+		var oscilacao := sin(Time.get_ticks_msec() * 0.018) * 3.0
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(-7.0, -30.0),
+			Vector2(oscilacao, -47.0),
+			Vector2(8.0, -31.0),
+			Vector2(2.0, -25.0),
+		]), chama)
 
 
 func ganhar_xp(valor: float) -> void:

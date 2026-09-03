@@ -62,9 +62,29 @@ func _ready() -> void:
 	verificar(batalha.boss_atual_id == &"flor_equinocio", "o segundo setor não criou seu próprio boss")
 	verificar(batalha.boss_ativo is BossCaosPrimaveril, "o setor floral não criou o Caos Primaveril")
 	verificar(not (batalha.boss_ativo is BossPet0), "o PET-0 foi repetido no segundo setor")
+	if ResourceLoader.exists(batalha.CAMINHO_LOTUS_DANCE):
+		verificar(
+			batalha.tocarmusica.stream.resource_path.ends_with("OST/LotusDance.mp3"),
+			"LotusDance não começou na luta do Florecimento"
+		)
+	else:
+		verificar(
+			batalha.tocarmusica.stream == batalha.musica_partida_padrao,
+			"a ausência opcional de LotusDance removeu a música padrão"
+		)
+
+	var cena_sizigia := load("res://Entities/BossEclipseColheita.tscn") as PackedScene
+	verificar(cena_sizigia != null, "a cena da Sizígia Eterna não carregou")
+	if cena_sizigia != null:
+		var sizigia := cena_sizigia.instantiate()
+		batalha.add_child(sizigia)
+		await get_tree().process_frame
+		verificar(sizigia is BossSizigiaEterna, "o Eclipse antigo não foi substituído pela Sizígia Eterna")
+		verificar(sizigia.obter_vida_maxima_atual() >= 330.0, "a Lua começou sem a vida de boss principal")
+		sizigia.queue_free()
+		await get_tree().process_frame
 
 	for caminho in [
-		"res://Entities/BossEclipseColheita.tscn",
 		"res://Entities/BossSentinelaDourada.tscn",
 		"res://Entities/BossRupturaLilas.tscn",
 	]:
@@ -115,8 +135,8 @@ func _ready() -> void:
 	asteroide.conceder_recompensa()
 	verificar(batalha.player.vida > vida_antes, "o asteroide não concedeu Vida")
 	verificar(batalha.player.xp_atual > xp_antes, "o asteroide não concedeu XP")
-	var formas_asteroide := asteroide.find_children("*", "Polygon2D", true, false)
-	verificar(formas_asteroide.size() == 1, "o asteroide bônus não está visualmente sólido")
+	var sprites_asteroide := asteroide.find_children("*", "Sprite2D", true, false)
+	verificar(sprites_asteroide.size() == 1, "o SVG do asteroide bônus não foi aplicado")
 	asteroide.queue_free()
 	await get_tree().process_frame
 
@@ -129,6 +149,8 @@ func _ready() -> void:
 		"o Game Over não focou o botão para o controle"
 	)
 
+	parar_audios(batalha)
+	await get_tree().create_timer(0.08).timeout
 	batalha.queue_free()
 	await get_tree().process_frame
 
@@ -161,7 +183,10 @@ func _ready() -> void:
 			aceitar.pressed = true
 			loja._input(aceitar)
 			verificar(not loja.mensagem.text.is_empty(), "X não confirmou a habilidade focada")
+		parar_audios(loja)
+		await get_tree().create_timer(0.08).timeout
 		loja.queue_free()
+		await get_tree().process_frame
 		await get_tree().process_frame
 
 	if falhas.is_empty():
@@ -170,3 +195,14 @@ func _ready() -> void:
 	else:
 		print("TESTE FALHOU: %d problema(s)" % falhas.size())
 		get_tree().quit(1)
+
+
+func parar_audios(raiz: Node) -> void:
+	for no in raiz.get_children():
+		if no is AudioStreamPlayer:
+			(no as AudioStreamPlayer).stop()
+			(no as AudioStreamPlayer).stream = null
+		elif no is AudioStreamPlayer2D:
+			(no as AudioStreamPlayer2D).stop()
+			(no as AudioStreamPlayer2D).stream = null
+		parar_audios(no)

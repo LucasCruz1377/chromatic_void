@@ -19,7 +19,7 @@ func _ready() -> void:
 	var cena := load("res://Rooms/configuracoes.tscn") as PackedScene
 	verificar(cena != null, "a janela de configurações não carregou")
 	if cena == null:
-		finalizar()
+		await finalizar()
 		return
 
 	tela_configuracoes = cena.instantiate()
@@ -42,7 +42,7 @@ func _ready() -> void:
 			"o indicador %s não foi incluído" % arquivo
 		)
 
-	var acoes := Global.obter_acoes_remapeaveis()
+	var acoes: Dictionary = Global.obter_acoes_remapeaveis()
 	verificar(acoes.size() == 12, "a lista não contém as doze ações jogáveis")
 	verificar(janela.botoes_mapeamento.size() == acoes.size() * 3, "cada ação não recebeu três slots")
 	verificar(janela.lista_mapeamentos.get_child_count() == acoes.size() + 1, "a lista visual não criou todas as linhas")
@@ -67,7 +67,7 @@ func _ready() -> void:
 
 	Global.definir_mapeamento(&"freio", 2, tecla_g)
 	verificar(Global.obter_evento_mapeado(&"acelerar", 2) == null, "um comando duplicado permaneceu em duas ações")
-	var evento_freio := Global.obter_evento_mapeado(&"freio", 2)
+	var evento_freio: InputEvent = Global.obter_evento_mapeado(&"freio", 2)
 	verificar(evento_freio != null, "o comando não foi transferido para a nova ação")
 
 	var botao_habilidade = janela.botoes_mapeamento["Habilidade:2"] as Button
@@ -141,7 +141,7 @@ func _ready() -> void:
 	Global.definir_mapeamento(&"atirar", 1, mouse)
 	verificar(Global.obter_evento_mapeado(&"atirar", 1) is InputEventMouseButton, "um botão do mouse não foi mapeado")
 
-	var dados := GerenciadorDeSave.carregar()
+	var dados: Dictionary = GerenciadorDeSave.carregar()
 	var config = dados.get("configuracoes", {})
 	verificar(config is Dictionary and config.has("mapeamentos_controles"), "os controles não foram persistidos no save")
 	Global.controle_avancado = true
@@ -158,12 +158,15 @@ func _ready() -> void:
 
 	Global.restaurar_mapeamentos_padrao()
 	verificar(Global.obter_evento_mapeado(&"acelerar", 0) != null, "restaurar controles apagou o padrão")
-	finalizar()
+	await finalizar()
 
 
 func finalizar() -> void:
 	if is_instance_valid(tela_configuracoes):
+		parar_audios(tela_configuracoes)
+		await get_tree().create_timer(0.08).timeout
 		tela_configuracoes.queue_free()
+	await get_tree().process_frame
 	await get_tree().process_frame
 	if falhas.is_empty():
 		print("TESTE OK: três slots, captura, conflito, controle genérico e persistência")
@@ -171,3 +174,14 @@ func finalizar() -> void:
 	else:
 		print("TESTE FALHOU: %d problema(s) no remapeamento" % falhas.size())
 		get_tree().quit(1)
+
+
+func parar_audios(raiz: Node) -> void:
+	for no in raiz.get_children():
+		if no is AudioStreamPlayer:
+			(no as AudioStreamPlayer).stop()
+			(no as AudioStreamPlayer).stream = null
+		elif no is AudioStreamPlayer2D:
+			(no as AudioStreamPlayer2D).stop()
+			(no as AudioStreamPlayer2D).stream = null
+		parar_audios(no)
