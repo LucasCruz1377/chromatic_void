@@ -135,7 +135,23 @@ func tomarDano(valor: float) -> void:
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto()
+	if has_meta("laco_parceiro") and Time.get_ticks_msec() <= int(get_meta("laco_expira", 0)):
+		var parceiro = get_meta("laco_parceiro")
+		if is_instance_valid(parceiro) and parceiro.has_method("receber_eco_laco"):
+			parceiro.call("receber_eco_laco", dano_final * 0.38)
 
+	if Vida <= 0.0:
+		morrer()
+
+
+func receber_eco_laco(valor: float) -> void:
+	if morto or valor <= 0.0:
+		return
+	Vida = maxf(Vida - valor * multiplicador_dano_recebido, 0.0)
+	vida_alterada.emit(Vida, obter_vida_maxima_atual())
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.ACERTO, Color(1.0, 0.34, 0.58), 0.65)
 	if Vida <= 0.0:
 		morrer()
 
@@ -304,7 +320,7 @@ func conceder_recompensa() -> void:
 	if is_instance_valid(player) and player.has_method("ganhar_xp"):
 		player.ganhar_xp(ValorXP)
 
-	Global.kills_max += 1
+	Global.registrar_kill()
 	Global.Combo += 1
 	Global.Pontos += pontos_base + (pontos_base * (Global.Combo - 1))
 	Global.adicionar_cristais(valor_cristais)

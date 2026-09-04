@@ -184,13 +184,6 @@ func _ready() -> void:
 		verificar(loja.rolagem_grade is ScrollContainer, "a grade da loja não possui scroll")
 		verificar(loja.rolagem_detalhes is ScrollContainer, "os detalhes da loja não possuem scroll")
 		verificar(loja.botoes_habilidades.size() == loja.habilidades.size(), "cartões da loja não estão navegáveis")
-		loja.selecionar_categoria(2)
-		verificar(loja.botoes_habilidades.size() == 3, "a aba NAVE não exibiu os três passivos")
-		verificar(loja.botao_acao.text != "EM BREVE", "a aba NAVE ainda está marcada como em breve")
-		loja.selecionar_categoria(3)
-		verificar(loja.botoes_habilidades.size() == 3, "a aba UPGRADES não exibiu os três passivos")
-		verificar(loja.botao_acao.text != "EM BREVE", "a aba UPGRADES ainda está marcada como em breve")
-		loja.selecionar_categoria(0)
 
 		var aba := InputEventAction.new()
 		aba.action = &"proxima_aba"

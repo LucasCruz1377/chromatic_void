@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p15_determinacao"
+Nome = "Determinação Inabalável"
+Descricao = "Marca ameaças próximas e libera proteção com uma explosão concentrada."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "MARÇO • DIA DAS MULHERES"
+MonthlyColorsContexto = "Força e autonomia representadas por pressão seguida de resposta."
+Cooldown = 14.0
+efeito_id = &"determinacao"
+cor_efeito = Color(0.85, 0.47, 1, 1)

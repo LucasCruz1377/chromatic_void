@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = &"p01_ovo_surpresa"
+Nome = "Ovo Surpresa"
+Descricao = "O ovo anuncia pela cor se chocará um drone, uma cura ou uma explosão."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "ABRIL • PÁSCOA"
+MonthlyColorsContexto = "Renovação e cores viram uma escolha rápida em combate."
+Cooldown = 9.0
+efeito_id = &"ovo"
+cor_efeito = Color(1, 0.83, 0.35, 1)

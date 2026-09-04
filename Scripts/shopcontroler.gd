@@ -5,6 +5,7 @@ const VERSAO_LOJA := 4
 const HABILIDADE_INICIAL := "res://Habilidades/habilidadeRetrocesso.tres"
 const CristalIcone = preload("res://Scripts/CristalMoedaIcone.gd")
 const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
+const CatalogoMonthly = preload("res://Scripts/MonthlyCatalog.gd")
 
 const CATALOGO := [
 	{
@@ -80,91 +81,12 @@ const CATALOGO := [
 ]
 
 const CATEGORIAS := ["HABILIDADES", "ARMAS", "NAVE", "UPGRADES"]
-const ITENS_FUTUROS := {
-	1: ["CANHÃO PRISMÁTICO", "RAJADA DUPLA", "LANÇA-FRAGMENTOS", "RAIO CONTÍNUO"],
-}
-
-# As abas já existiam no layout. Estes módulos apenas substituem os cartões
-# "Em breve" por escolhas passivas reais, sem criar outra tela na loja.
-const CATALOGO_PASSIVOS := {
-	2: [
-		{
-			"id": "reflexos_rapidos",
-			"nome": "Reflexos Rápidos",
-			"preco": 3400,
-			"cor": Color(1.0, 0.84, 0.18),
-			"raridade": "MAI • AMARELO",
-			"icone": "res://Habilidades/Icones/hiperdash.svg",
-			"descricao": "Aumenta em 12% a velocidade máxima e em 10% a resposta de giro da nave.",
-			"contexto": "Maio Amarelo destaca atenção e segurança no trânsito; o módulo recompensa pilotagem atenta e reação rápida.",
-			"stats": [1, 1, 5],
-		},
-		{
-			"id": "luz_vital",
-			"nome": "Luz Vital",
-			"preco": 4200,
-			"cor": Color(1.0, 0.72, 0.20),
-			"raridade": "AGO • DOURADO",
-			"icone": "res://Habilidades/Icones/abraco_materno.svg",
-			"descricao": "Aumenta toda cura recebida em 20% e regenera 0,35 de vida por segundo após 5 segundos sem sofrer dano.",
-			"contexto": "Agosto Dourado valoriza cuidado e proteção; a luz representa recuperação gradual da nave.",
-			"stats": [1, 4, 2],
-		},
-		{
-			"id": "armadura_aco",
-			"nome": "Armadura de Aço",
-			"preco": 4800,
-			"cor": Color(0.24, 0.70, 1.0),
-			"raridade": "NOV • AZUL",
-			"icone": "res://Habilidades/Icones/escudo_protetor.svg",
-			"descricao": "Aumenta a vida máxima em 10% e reduz em 12% o dano recebido.",
-			"contexto": "Novembro Azul inspira prevenção e resistência; a nave recebe um casco mais seguro, sem ficar invencível.",
-			"stats": [1, 5, 1],
-		},
-	],
-	3: [
-		{
-			"id": "determinacao",
-			"nome": "Determinação",
-			"preco": 5000,
-			"cor": Color(1.0, 0.80, 0.14),
-			"raridade": "SET • AMARELO",
-			"icone": "res://Habilidades/Icones/aura_serenidade.svg",
-			"descricao": "Abaixo de 35% da vida, os projéteis causam 25% mais dano e o dano recebido cai em 15%.",
-			"contexto": "Setembro Amarelo é tratado com cuidado: o efeito representa apoio e resistência em um momento crítico, nunca sofrimento como recompensa.",
-			"stats": [4, 3, 1],
-		},
-		{
-			"id": "chama_vida",
-			"nome": "Chama da Vida",
-			"preco": 5600,
-			"cor": Color(1.0, 0.20, 0.18),
-			"raridade": "DEZ • VERMELHO",
-			"icone": "res://Habilidades/Icones/fogueira_ardente.svg",
-			"descricao": "Acertos de projéteis restauram 0,35 de vida, no máximo uma vez a cada 0,28 segundo.",
-			"contexto": "Dezembro Vermelho reforça prevenção e cuidado com a saúde; a chama converte combate constante em recuperação controlada.",
-			"stats": [3, 2, 3],
-		},
-		{
-			"id": "ritmo_recomeco",
-			"nome": "Ritmo do Recomeço",
-			"preco": 6000,
-			"cor": Color(0.66, 0.36, 1.0),
-			"raridade": "ANO NOVO • VIOLETA",
-			"icone": "res://Habilidades/Icones/retrocesso.svg",
-			"descricao": "Reduz em 15% a recarga do poder ativo equipado.",
-			"contexto": "O Ano Novo simboliza recomeços; o módulo prepara o próximo ciclo da habilidade mais cedo.",
-			"stats": [2, 2, 4],
-		},
-	],
-}
-
 var habilidades: Array[Habilidade] = []
 var dados_habilidades: Array[Dictionary] = []
 var desbloqueadas: Array[String] = []
+var itens_desbloqueados: Array[StringName] = []
+var equipamentos_loja: Dictionary = {"1": &"", "2": &"", "3": &""}
 var caminho_equipado := HABILIDADE_INICIAL
-var passivos_desbloqueados: Array[String] = []
-var passivos_equipados: Dictionary = {"2": "", "3": ""}
 var indice_selecionado := 0
 var categoria_atual := 0
 var fonte: Font
@@ -332,6 +254,18 @@ func carregar_catalogo() -> void:
 		var recurso := load(caminho)
 		if recurso is Habilidade:
 			habilidades.append(recurso)
+			var entrada: Dictionary = dados.duplicate(true)
+			entrada["id"] = recurso.Id
+			entrada["conquista"] = &""
+			dados_habilidades.append(entrada)
+	for dados in CatalogoMonthly.categoria(0):
+		var caminho := str(dados["caminho"])
+		if not ResourceLoader.exists(caminho):
+			push_warning("Poder Monthly Colors não encontrado: " + caminho)
+			continue
+		var recurso := load(caminho)
+		if recurso is Habilidade:
+			habilidades.append(recurso)
 			dados_habilidades.append(dados)
 
 
@@ -349,6 +283,31 @@ func carregar_estado() -> void:
 
 	if HABILIDADE_INICIAL not in desbloqueadas:
 		desbloqueadas.append(HABILIDADE_INICIAL)
+	# Recompensas de conquista não custam cristais e entram na coleção assim
+	# que a respectiva conquista é obtida.
+	for indice in dados_habilidades.size():
+		var item: Dictionary = dados_habilidades[indice]
+		if Global.item_liberado_por_conquista(StringName(item.get("id", &""))):
+			var caminho_recompensa := str(item.get("caminho", ""))
+			if not caminho_recompensa.is_empty() and caminho_recompensa not in desbloqueadas:
+				desbloqueadas.append(caminho_recompensa)
+
+	itens_desbloqueados.clear()
+	var itens_salvos = dados.get("itens_desbloqueados", [])
+	if itens_salvos is Array:
+		for valor in itens_salvos:
+			var id := StringName(str(valor))
+			if id not in itens_desbloqueados:
+				itens_desbloqueados.append(id)
+	var equipamentos_salvos = dados.get("equipamentos_loja", {})
+	if equipamentos_salvos is Dictionary:
+		for chave in ["1", "2", "3"]:
+			equipamentos_loja[chave] = StringName(str(equipamentos_salvos.get(chave, "")))
+	for categoria in range(1, 4):
+		var chave := str(categoria)
+		var equipado := StringName(equipamentos_loja.get(chave, &""))
+		if not equipado.is_empty() and not _item_generico_liberado(equipado):
+			equipamentos_loja[chave] = &""
 
 	caminho_equipado = str(dados.get("habilidade_equipada", HABILIDADE_INICIAL))
 	if (
@@ -357,30 +316,11 @@ func carregar_estado() -> void:
 	):
 		caminho_equipado = HABILIDADE_INICIAL
 
-	passivos_desbloqueados.clear()
-	var passivos_salvos: Variant = dados.get("passivos_desbloqueados", [])
-	if passivos_salvos is Array:
-		for valor in passivos_salvos:
-			var id_passivo := str(valor)
-			if not id_passivo.is_empty() and id_passivo not in passivos_desbloqueados:
-				passivos_desbloqueados.append(id_passivo)
-
-	var equipados_salvos: Variant = dados.get("passivos_equipados", {})
-	if equipados_salvos is Dictionary:
-		for categoria in [2, 3]:
-			var chave := str(categoria)
-			var equipado := str(equipados_salvos.get(chave, ""))
-			if (
-				_id_passivo_existe(categoria, equipado)
-				and (Global.modo_desenvolvedor or equipado in passivos_desbloqueados)
-			):
-				passivos_equipados[chave] = equipado
-
 	if versao < 2:
 		caminho_equipado = HABILIDADE_INICIAL
 		salvar_estado()
 	elif versao < VERSAO_LOJA:
-		# Migra o catálogo sem apagar compras, passivos ou equipamentos.
+		# Migra o catálogo sem apagar compras nem trocar a habilidade equipada.
 		salvar_estado()
 
 
@@ -389,22 +329,10 @@ func salvar_estado() -> void:
 		"versao_loja": VERSAO_LOJA,
 		"habilidades_desbloqueadas": desbloqueadas,
 		"habilidade_equipada": caminho_equipado,
-		"passivos_desbloqueados": passivos_desbloqueados,
-		"passivos_equipados": passivos_equipados,
+		"itens_desbloqueados": itens_desbloqueados,
+		"equipamentos_loja": equipamentos_loja,
 		"cristais": Global.cristais
 	})
-
-
-func _id_passivo_existe(categoria: int, id_passivo: String) -> bool:
-	for dados in obter_passivos_categoria(categoria):
-		if str(dados.get("id", "")) == id_passivo:
-			return true
-	return false
-
-
-func obter_passivos_categoria(categoria: int) -> Array:
-	var catalogo: Variant = CATALOGO_PASSIVOS.get(categoria, [])
-	return catalogo if catalogo is Array else []
 
 
 func construir_interface() -> void:
@@ -703,12 +631,9 @@ func selecionar_categoria(indice: int) -> void:
 	if categoria_atual == 0:
 		reconstruir_grade_habilidades()
 		atualizar_detalhes()
-	elif CATALOGO_PASSIVOS.has(categoria_atual):
-		reconstruir_grade_passivos()
-		atualizar_detalhes_passivo()
 	else:
-		reconstruir_grade_futura()
-		atualizar_detalhes_futuros()
+		reconstruir_grade_generica()
+		atualizar_detalhes_genericos()
 	call_deferred("_focar_primeiro_item")
 
 
@@ -796,12 +721,15 @@ func criar_cartao_habilidade(indice: int) -> void:
 	coluna.add_child(nome)
 
 	var estado := Label.new()
-	estado.text = texto_estado_cartao(caminho, int(dados["preco"]))
+	estado.text = texto_estado_cartao(
+		caminho, int(dados["preco"]), StringName(dados.get("id", &"")),
+		StringName(dados.get("conquista", &""))
+	)
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	estado.add_theme_color_override(
 		"font_color",
 		Color(0.45, 1.0, 0.72)
-		if esta_liberada(caminho)
+		if _habilidade_liberada(caminho, StringName(dados.get("id", &"")))
 		else Color(0.70, 0.64, 1.0)
 	)
 	aplicar_fonte(estado, 9)
@@ -825,100 +753,8 @@ func criar_cartao_habilidade(indice: int) -> void:
 	botoes_habilidades.append(botao)
 
 
-func reconstruir_grade_passivos() -> void:
-	limpar_grade()
-	var passivos := obter_passivos_categoria(categoria_atual)
-	for indice in passivos.size():
-		criar_cartao_passivo(indice, passivos[indice])
-	atualizar_destaques_cartoes()
-
-
-func criar_cartao_passivo(indice: int, dados: Dictionary) -> void:
-	var id_passivo := str(dados.get("id", ""))
-	var cor: Color = dados.get("cor", Color(0.45, 0.75, 1.0))
-	var wrapper := Control.new()
-	wrapper.custom_minimum_size = Vector2(198, 162)
-	grade.add_child(wrapper)
-
-	var painel := PanelContainer.new()
-	painel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	wrapper.add_child(painel)
-	paineis_cartoes.append(painel)
-
-	var margem := MarginContainer.new()
-	margem.add_theme_constant_override("margin_left", 10)
-	margem.add_theme_constant_override("margin_top", 9)
-	margem.add_theme_constant_override("margin_right", 10)
-	margem.add_theme_constant_override("margin_bottom", 9)
-	painel.add_child(margem)
-
-	var coluna := VBoxContainer.new()
-	coluna.add_theme_constant_override("separation", 4)
-	margem.add_child(coluna)
-
-	var tipo := Label.new()
-	tipo.text = str(dados.get("raridade", "PASSIVA"))
-	tipo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tipo.add_theme_color_override("font_color", cor)
-	aplicar_fonte(tipo, 8)
-	coluna.add_child(tipo)
-
-	var icone := TextureRect.new()
-	icone.custom_minimum_size = Vector2(68, 68)
-	icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	icone.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var caminho_icone := str(dados.get("icone", ""))
-	if ResourceLoader.exists(caminho_icone):
-		icone.texture = load(caminho_icone) as Texture2D
-	icone.self_modulate = cor.lightened(0.12)
-	coluna.add_child(icone)
-
-	var nome := Label.new()
-	nome.text = str(dados.get("nome", id_passivo)).to_upper()
-	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	nome.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	nome.add_theme_color_override("font_color", Color(0.88, 0.91, 1.0))
-	aplicar_fonte(nome, 10)
-	coluna.add_child(nome)
-
-	var estado := Label.new()
-	estado.text = texto_estado_passivo(id_passivo, int(dados.get("preco", 0)))
-	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	estado.add_theme_color_override(
-		"font_color",
-		Color(0.45, 1.0, 0.72)
-		if esta_passivo_liberado(id_passivo)
-		else Color(0.70, 0.64, 1.0)
-	)
-	aplicar_fonte(estado, 9)
-	coluna.add_child(estado)
-
-	var botao := Button.new()
-	botao.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	botao.flat = true
-	botao.focus_mode = Control.FOCUS_ALL
-	botao.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	botao.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-	botao.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
-	botao.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
-	botao.add_theme_stylebox_override(
-		"focus", criar_estilo(Color(0, 0, 0, 0), cor, 10, 2)
-	)
-	botao.pressed.connect(selecionar_passivo.bind(indice))
-	botao.focus_entered.connect(_on_cartao_passivo_focado.bind(indice, botao))
-	wrapper.add_child(botao)
-	botoes_habilidades.append(botao)
-
-
 func _on_cartao_focado(indice: int, botao: Button) -> void:
 	selecionar_habilidade(indice)
-	if is_instance_valid(rolagem_grade):
-		rolagem_grade.call_deferred("ensure_control_visible", botao)
-
-
-func _on_cartao_passivo_focado(indice: int, botao: Button) -> void:
-	selecionar_passivo(indice)
 	if is_instance_valid(rolagem_grade):
 		rolagem_grade.call_deferred("ensure_control_visible", botao)
 
@@ -931,25 +767,9 @@ func selecionar_habilidade(indice: int) -> void:
 	atualizar_detalhes()
 
 
-func selecionar_passivo(indice: int) -> void:
-	var passivos := obter_passivos_categoria(categoria_atual)
-	if indice < 0 or indice >= passivos.size():
-		return
-	indice_selecionado = indice
-	atualizar_destaques_cartoes()
-	atualizar_detalhes_passivo()
-
-
 func atualizar_destaques_cartoes() -> void:
-	var catalogo_atual: Array = (
-		dados_habilidades
-		if categoria_atual == 0
-		else obter_passivos_categoria(categoria_atual)
-	)
 	for indice in paineis_cartoes.size():
-		if indice >= catalogo_atual.size():
-			continue
-		var dados: Dictionary = catalogo_atual[indice]
+		var dados: Dictionary = dados_habilidades[indice]
 		var cor: Color = dados["cor"]
 		paineis_cartoes[indice].add_theme_stylebox_override(
 			"panel",
@@ -965,7 +785,7 @@ func atualizar_destaques_cartoes() -> void:
 
 func atualizar_detalhes() -> void:
 	if habilidades.is_empty():
-		atualizar_detalhes_futuros()
+		return
 		return
 
 	var habilidade := habilidades[indice_selecionado]
@@ -989,15 +809,19 @@ func atualizar_detalhes() -> void:
 	)
 	detalhe_descricao.text = habilidade.Descricao
 	detalhe_recarga.text = "RECARGA  %.1f s" % habilidade.Cooldown
-	detalhe_preco.text = "GRÁTIS" if preco == 0 else formatar_numero(preco)
+	var conquista_id := StringName(dados.get("conquista", &""))
+	detalhe_preco.text = _texto_preco_ou_conquista(preco, conquista_id)
 	reconstruir_stats(dados["stats"], cor)
 
 	if caminho == caminho_equipado:
 		botao_acao.text = "EQUIPADA"
 		botao_acao.disabled = true
-	elif esta_liberada(caminho):
+	elif _habilidade_liberada(caminho, StringName(dados.get("id", &""))):
 		botao_acao.text = "EQUIPAR"
 		botao_acao.disabled = false
+	elif not conquista_id.is_empty():
+		botao_acao.text = "BLOQUEADA POR CONQUISTA"
+		botao_acao.disabled = true
 	elif Global.pode_gastar_cristais(preco):
 		botao_acao.text = "COMPRAR"
 		botao_acao.disabled = false
@@ -1006,55 +830,12 @@ func atualizar_detalhes() -> void:
 		botao_acao.disabled = true
 
 
-func atualizar_detalhes_passivo() -> void:
-	var passivos := obter_passivos_categoria(categoria_atual)
-	if passivos.is_empty() or indice_selecionado >= passivos.size():
-		atualizar_detalhes_futuros()
-		return
-	var dados: Dictionary = passivos[indice_selecionado]
-	var id_passivo := str(dados.get("id", ""))
-	var preco := int(dados.get("preco", 0))
-	var cor: Color = dados.get("cor", Color(0.45, 0.75, 1.0))
-
-	detalhe_tipo.text = str(dados.get("raridade", "PASSIVA")) + " • PASSIVA"
-	detalhe_tipo.add_theme_color_override("font_color", cor)
-	detalhe_nome.text = str(dados.get("nome", id_passivo)).to_upper()
-	var caminho_icone := str(dados.get("icone", ""))
-	detalhe_icone.texture = (
-		load(caminho_icone) as Texture2D
-		if ResourceLoader.exists(caminho_icone)
-		else null
-	)
-	detalhe_icone.self_modulate = cor.lightened(0.10)
-	detalhe_contexto.visible = true
-	detalhe_contexto.text = "MONTHLY COLORS\n%s" % str(dados.get("contexto", ""))
-	detalhe_descricao.text = str(dados.get("descricao", ""))
-	detalhe_recarga.text = "PASSIVA • SEM RECARGA"
-	detalhe_preco.text = "GRÁTIS" if preco == 0 else formatar_numero(preco)
-	reconstruir_stats(dados.get("stats", [0, 0, 0]), cor, ["ATAQUE", "DEFESA", "MOBILIDADE"])
-
-	var equipado := str(passivos_equipados.get(str(categoria_atual), ""))
-	if id_passivo == equipado:
-		botao_acao.text = "EQUIPADA"
-		botao_acao.disabled = true
-	elif esta_passivo_liberado(id_passivo):
-		botao_acao.text = "EQUIPAR"
-		botao_acao.disabled = false
-	elif Global.pode_gastar_cristais(preco):
-		botao_acao.text = "COMPRAR"
-		botao_acao.disabled = false
-	else:
-		botao_acao.text = "SALDO INSUFICIENTE"
-		botao_acao.disabled = true
-func reconstruir_stats(
-	valores: Array,
-	cor: Color,
-	nomes: Array = ["POTÊNCIA", "DURAÇÃO", "RECARGA"]
-) -> void:
+func reconstruir_stats(valores: Array, cor: Color) -> void:
 	for filho in detalhe_stats.get_children():
 		detalhe_stats.remove_child(filho)
 		filho.queue_free()
 
+	var nomes := ["POTÊNCIA", "DURAÇÃO", "RECARGA"]
 	for indice in nomes.size():
 		var linha := HBoxContainer.new()
 		linha.add_theme_constant_override("separation", 4)
@@ -1078,75 +859,158 @@ func reconstruir_stats(
 			linha.add_child(indicador)
 
 
-func reconstruir_grade_futura() -> void:
+func reconstruir_grade_generica() -> void:
 	limpar_grade()
-	var nomes: Array = ITENS_FUTUROS.get(categoria_atual, [])
-	for nome_item in nomes:
-		var painel := PanelContainer.new()
-		painel.custom_minimum_size = Vector2(198, 162)
-		painel.add_theme_stylebox_override(
-			"panel",
-			criar_estilo(Color(0.02, 0.028, 0.062), Color(0.10, 0.16, 0.28), 11, 1)
-		)
-		grade.add_child(painel)
-
-		var coluna := VBoxContainer.new()
-		coluna.alignment = BoxContainer.ALIGNMENT_CENTER
-		painel.add_child(coluna)
-
-		var simbolo := Label.new()
-		simbolo.text = "◇"
-		simbolo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		simbolo.add_theme_color_override("font_color", Color(0.32, 0.45, 0.68))
-		aplicar_fonte(simbolo, 34)
-		coluna.add_child(simbolo)
-
-		var nome := Label.new()
-		nome.text = str(nome_item)
-		nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		nome.add_theme_color_override("font_color", Color(0.48, 0.56, 0.72))
-		aplicar_fonte(nome, 10)
-		coluna.add_child(nome)
-
-		var estado := Label.new()
-		estado.text = "EM DESENVOLVIMENTO"
-		estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		estado.add_theme_color_override("font_color", Color(0.34, 0.40, 0.56))
-		aplicar_fonte(estado, 8)
-		coluna.add_child(estado)
+	var itens := CatalogoMonthly.categoria(categoria_atual)
+	for indice in itens.size():
+		criar_cartao_generico(indice, itens[indice])
+	atualizar_destaques_genericos()
 
 
-func atualizar_detalhes_futuros() -> void:
-	detalhe_tipo.text = CATEGORIAS[categoria_atual] if categoria_atual < CATEGORIAS.size() else ""
-	detalhe_tipo.add_theme_color_override("font_color", Color(0.48, 0.60, 0.82))
-	detalhe_nome.text = "MÓDULOS EM PREPARAÇÃO"
-	detalhe_icone.texture = null
-	detalhe_contexto.visible = false
-	detalhe_contexto.text = ""
-	detalhe_descricao.text = "Esta categoria já possui a estrutura visual pronta para receber novos itens em versões futuras."
-	detalhe_recarga.text = ""
-	detalhe_preco.text = "---"
-	reconstruir_stats([0, 0, 0], Color(0.2, 0.3, 0.5))
-	botao_acao.text = "EM BREVE"
-	botao_acao.disabled = true
+func criar_cartao_generico(indice: int, item: Dictionary) -> void:
+	var cor: Color = item["cor"]
+	var wrapper := Control.new()
+	wrapper.custom_minimum_size = Vector2(198, 162)
+	grade.add_child(wrapper)
+	var painel := PanelContainer.new()
+	painel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	wrapper.add_child(painel)
+	paineis_cartoes.append(painel)
+	var margem := MarginContainer.new()
+	for lado in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+		margem.add_theme_constant_override(lado, 9)
+	painel.add_child(margem)
+	var coluna := VBoxContainer.new()
+	coluna.add_theme_constant_override("separation", 4)
+	margem.add_child(coluna)
+	var tipo := Label.new()
+	tipo.text = str(item["raridade"])
+	tipo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tipo.add_theme_color_override("font_color", cor)
+	aplicar_fonte(tipo, 8)
+	coluna.add_child(tipo)
+	var icone := TextureRect.new()
+	icone.custom_minimum_size = Vector2(68, 68)
+	icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture = load(str(item["icone"])) as Texture2D
+	icone.self_modulate = cor.lightened(0.12)
+	coluna.add_child(icone)
+	var nome := Label.new()
+	nome.text = str(item["nome"])
+	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nome.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nome.add_theme_color_override("font_color", Color(0.88, 0.91, 1.0))
+	aplicar_fonte(nome, 10)
+	coluna.add_child(nome)
+	var estado := Label.new()
+	var id := StringName(item["id"])
+	estado.text = _texto_estado_item_generico(id, int(item["preco"]), StringName(item["conquista"]))
+	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	estado.add_theme_color_override("font_color", Color(0.45, 1.0, 0.72) if _item_generico_liberado(id) else Color(0.70, 0.64, 1.0))
+	aplicar_fonte(estado, 9)
+	coluna.add_child(estado)
+	var botao := Button.new()
+	botao.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	botao.flat = true
+	botao.focus_mode = Control.FOCUS_ALL
+	botao.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	botao.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	botao.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	botao.add_theme_stylebox_override("focus", criar_estilo(Color(0, 0, 0, 0), cor, 10, 2))
+	botao.pressed.connect(_selecionar_item_generico.bind(indice))
+	botao.focus_entered.connect(_on_item_generico_focado.bind(indice, botao))
+	wrapper.add_child(botao)
+	botoes_habilidades.append(botao)
+
+
+func _on_item_generico_focado(indice: int, botao: Button) -> void:
+	_selecionar_item_generico(indice)
+	if is_instance_valid(rolagem_grade):
+		rolagem_grade.call_deferred("ensure_control_visible", botao)
+
+
+func _selecionar_item_generico(indice: int) -> void:
+	var itens := CatalogoMonthly.categoria(categoria_atual)
+	if indice < 0 or indice >= itens.size():
+		return
+	indice_selecionado = indice
+	atualizar_destaques_genericos()
+	atualizar_detalhes_genericos()
+
+
+func atualizar_destaques_genericos() -> void:
+	var itens := CatalogoMonthly.categoria(categoria_atual)
+	for indice in paineis_cartoes.size():
+		var cor: Color = itens[indice]["cor"]
+		paineis_cartoes[indice].add_theme_stylebox_override("panel", criar_estilo(
+			Color(0.025, 0.034, 0.075, 0.98),
+			cor if indice == indice_selecionado else Color(0.10, 0.15, 0.29),
+			11, 2 if indice == indice_selecionado else 1,
+			8 if indice == indice_selecionado else 0
+		))
+
+
+func atualizar_detalhes_genericos() -> void:
+	var itens := CatalogoMonthly.categoria(categoria_atual)
+	if itens.is_empty():
+		return
+	indice_selecionado = clampi(indice_selecionado, 0, itens.size() - 1)
+	var item: Dictionary = itens[indice_selecionado]
+	var cor: Color = item["cor"]
+	var id := StringName(item["id"])
+	var conquista := StringName(item["conquista"])
+	detalhe_tipo.text = str(item["raridade"])
+	detalhe_tipo.add_theme_color_override("font_color", cor)
+	detalhe_nome.text = str(item["nome"])
+	detalhe_icone.texture = load(str(item["icone"])) as Texture2D
+	detalhe_icone.self_modulate = cor.lightened(0.10)
+	detalhe_contexto.visible = true
+	detalhe_contexto.text = "MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
+	detalhe_descricao.text = str(item["descricao"])
+	detalhe_recarga.text = "EQUIPAMENTO ÚNICO • 1 POR CATEGORIA"
+	detalhe_preco.text = _texto_preco_ou_conquista(int(item["preco"]), conquista)
+	reconstruir_stats(item["stats"], cor)
+	var equipado := StringName(equipamentos_loja.get(str(categoria_atual), &""))
+	if id == equipado:
+		botao_acao.text = "EQUIPADO"
+		botao_acao.disabled = true
+	elif _item_generico_liberado(id):
+		botao_acao.text = "EQUIPAR"
+		botao_acao.disabled = false
+	elif not conquista.is_empty():
+		botao_acao.text = "BLOQUEADO POR CONQUISTA"
+		botao_acao.disabled = true
+	elif Global.pode_gastar_cristais(int(item["preco"])):
+		botao_acao.text = "COMPRAR"
+		botao_acao.disabled = false
+	else:
+		botao_acao.text = "SALDO INSUFICIENTE"
+		botao_acao.disabled = true
 
 
 func _on_acao_pressed() -> void:
-	if CATALOGO_PASSIVOS.has(categoria_atual):
-		_comprar_ou_equipar_passivo()
+	if categoria_atual != 0:
+		_on_acao_item_generico()
 		return
-	if categoria_atual != 0 or habilidades.is_empty():
+	if habilidades.is_empty():
 		return
 
 	var habilidade := habilidades[indice_selecionado]
 	var dados: Dictionary = dados_habilidades[indice_selecionado]
 	var caminho := habilidade.resource_path
 	var preco := int(dados["preco"])
+	var item_id := StringName(dados.get("id", habilidade.Id))
+	var conquista := StringName(dados.get("conquista", &""))
 	if caminho == caminho_equipado:
 		mensagem.text = "%s JÁ ESTÁ EQUIPADA" % habilidade.Nome.to_upper()
 		return
 
-	if caminho not in desbloqueadas and not Global.modo_desenvolvedor:
+	if not _habilidade_liberada(caminho, item_id) and not Global.modo_desenvolvedor:
+		if not conquista.is_empty():
+			mensagem.text = _descricao_conquista(conquista)
+			return
 		if not Global.gastar_cristais(preco):
 			mensagem.text = "CRISTAIS INSUFICIENTES"
 			Global.vibrar_controle(0.10, 0.35, 0.14)
@@ -1164,64 +1028,86 @@ func _on_acao_pressed() -> void:
 	call_deferred("_focar_habilidade_selecionada")
 
 
-func _comprar_ou_equipar_passivo() -> void:
-	var passivos := obter_passivos_categoria(categoria_atual)
-	if passivos.is_empty() or indice_selecionado >= passivos.size():
+func _on_acao_item_generico() -> void:
+	var itens := CatalogoMonthly.categoria(categoria_atual)
+	if itens.is_empty() or indice_selecionado < 0 or indice_selecionado >= itens.size():
 		return
-	var dados: Dictionary = passivos[indice_selecionado]
-	var id_passivo := str(dados.get("id", ""))
-	var nome_passivo := str(dados.get("nome", id_passivo)).to_upper()
-	var preco := int(dados.get("preco", 0))
-	var chave_categoria := str(categoria_atual)
-
-	if str(passivos_equipados.get(chave_categoria, "")) == id_passivo:
-		mensagem.text = "%s JÁ ESTÁ EQUIPADA" % nome_passivo
+	var item: Dictionary = itens[indice_selecionado]
+	var id := StringName(item["id"])
+	var conquista := StringName(item["conquista"])
+	var chave := str(categoria_atual)
+	if StringName(equipamentos_loja.get(chave, &"")) == id:
 		return
-
-	if not esta_passivo_liberado(id_passivo) and not Global.modo_desenvolvedor:
-		if not Global.gastar_cristais(preco):
+	if not _item_generico_liberado(id) and not Global.modo_desenvolvedor:
+		if not conquista.is_empty():
+			mensagem.text = _descricao_conquista(conquista)
+			return
+		if not Global.gastar_cristais(int(item["preco"])):
 			mensagem.text = "CRISTAIS INSUFICIENTES"
 			Global.vibrar_controle(0.10, 0.35, 0.14)
 			return
-		passivos_desbloqueados.append(id_passivo)
-		mensagem.text = "%s DESBLOQUEADA" % nome_passivo
-	elif Global.modo_desenvolvedor and id_passivo not in passivos_desbloqueados:
-		mensagem.text = "EQUIPADA PELO MODO DESENVOLVEDOR"
-
-	passivos_equipados[chave_categoria] = id_passivo
+		itens_desbloqueados.append(id)
+		mensagem.text = "%s DESBLOQUEADO" % str(item["nome"])
+	equipamentos_loja[chave] = id
 	salvar_estado()
 	Global.vibrar_controle(0.18, 0.32, 0.12)
-	reconstruir_grade_passivos()
-	atualizar_detalhes_passivo()
-	call_deferred("_focar_habilidade_selecionada")
+	reconstruir_grade_generica()
+	atualizar_detalhes_genericos()
+	call_deferred("_focar_item_selecionado")
 
 
 func esta_liberada(caminho: String) -> bool:
 	return Global.modo_desenvolvedor or caminho in desbloqueadas
 
 
-func esta_passivo_liberado(id_passivo: String) -> bool:
-	return Global.modo_desenvolvedor or id_passivo in passivos_desbloqueados
+func _habilidade_liberada(caminho: String, id: StringName) -> bool:
+	return esta_liberada(caminho) or Global.item_liberado_por_conquista(id)
 
 
-func texto_estado_cartao(caminho: String, preco: int) -> String:
+func _item_generico_liberado(id: StringName) -> bool:
+	return (
+		Global.modo_desenvolvedor
+		or id in itens_desbloqueados
+		or Global.item_liberado_por_conquista(id)
+	)
+
+
+func texto_estado_cartao(
+	caminho: String, preco: int, id: StringName = &"", conquista: StringName = &""
+) -> String:
 	if caminho == caminho_equipado:
 		return "EQUIPADA"
-	if caminho in desbloqueadas:
+	if _habilidade_liberada(caminho, id):
 		return "LIBERADA"
 	if Global.modo_desenvolvedor:
 		return "DEV LIBERADA"
+	if not conquista.is_empty():
+		return "★ CONQUISTA"
 	return "GRÁTIS" if preco == 0 else "◆  " + formatar_numero(preco)
 
 
-func texto_estado_passivo(id_passivo: String, preco: int) -> String:
-	if id_passivo == str(passivos_equipados.get(str(categoria_atual), "")):
-		return "EQUIPADA"
-	if id_passivo in passivos_desbloqueados:
-		return "LIBERADA"
-	if Global.modo_desenvolvedor:
-		return "DEV LIBERADA"
-	return "GRÁTIS" if preco == 0 else "◆  " + formatar_numero(preco)
+func _texto_estado_item_generico(id: StringName, preco: int, conquista: StringName) -> String:
+	if id == StringName(equipamentos_loja.get(str(categoria_atual), &"")):
+		return "EQUIPADO"
+	if _item_generico_liberado(id):
+		return "LIBERADO"
+	if not conquista.is_empty():
+		return "★ CONQUISTA"
+	return "◆  " + formatar_numero(preco)
+
+
+func _texto_preco_ou_conquista(preco: int, conquista: StringName) -> String:
+	if conquista.is_empty():
+		return "GRÁTIS" if preco == 0 else formatar_numero(preco)
+	if Global.conquista_liberada(conquista):
+		return "RECOMPENSA OBTIDA"
+	var progresso := Global.progresso_conquista(conquista)
+	return "CONQUISTA • %d/%d" % [int(progresso["atual"]), int(progresso["meta"])]
+
+
+func _descricao_conquista(id: StringName) -> String:
+	var dados: Dictionary = Global.CONQUISTAS.get(id, {})
+	return "CONQUISTA: " + str(dados.get("descricao", "Continue jogando para desbloquear."))
 
 
 func atualizar_saldo() -> void:
@@ -1233,8 +1119,8 @@ func _on_cristais_alterados(_total: int, _alteracao: int) -> void:
 	atualizar_saldo()
 	if categoria_atual == 0:
 		atualizar_detalhes()
-	elif CATALOGO_PASSIVOS.has(categoria_atual):
-		atualizar_detalhes_passivo()
+	else:
+		atualizar_detalhes_genericos()
 
 
 func _on_adicionar_cristais_pressed() -> void:
@@ -1245,7 +1131,7 @@ func _on_adicionar_cristais_pressed() -> void:
 
 
 func _focar_primeiro_item() -> void:
-	if (categoria_atual == 0 or CATALOGO_PASSIVOS.has(categoria_atual)) and grade.get_child_count() > 0:
+	if grade.get_child_count() > 0:
 		var primeiro := grade.get_child(0)
 		var botoes := primeiro.find_children("*", "Button", true, false)
 		if not botoes.is_empty():
@@ -1256,10 +1142,17 @@ func _focar_primeiro_item() -> void:
 
 func _focar_habilidade_selecionada() -> void:
 	if (
-		(categoria_atual == 0 or CATALOGO_PASSIVOS.has(categoria_atual))
+		categoria_atual == 0
 		and indice_selecionado >= 0
 		and indice_selecionado < botoes_habilidades.size()
 	):
+		botoes_habilidades[indice_selecionado].grab_focus()
+		return
+	_focar_primeiro_item()
+
+
+func _focar_item_selecionado() -> void:
+	if indice_selecionado >= 0 and indice_selecionado < botoes_habilidades.size():
 		botoes_habilidades[indice_selecionado].grab_focus()
 		return
 	_focar_primeiro_item()

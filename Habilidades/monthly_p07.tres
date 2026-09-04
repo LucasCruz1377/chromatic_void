@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p07_forma_fantasma"
+Nome = "Forma Fantasma"
+Descricao = "Fica intangível, acelera e deixa ecos que explodem depois."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "OUTUBRO • HALLOWEEN"
+MonthlyColorsContexto = "Fantasmas e o imaginário do Halloween em movimento neon."
+Cooldown = 10.0
+efeito_id = &"fantasma"
+cor_efeito = Color(0.66, 0.47, 1, 1)

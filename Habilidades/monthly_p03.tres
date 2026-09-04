@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p03_renascimento"
+Nome = "Renascimento"
+Descricao = "Planta uma semente de retorno. Se o casco cair, você renasce nela uma vez."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "JULHO VERDE"
+MonthlyColorsContexto = "Verde representa recomeço, cuidado e crescimento."
+Cooldown = 18.0
+efeito_id = &"renascimento"
+cor_efeito = Color(0.32, 1, 0.57, 1)

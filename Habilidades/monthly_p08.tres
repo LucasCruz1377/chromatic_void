@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p08_presente_misterioso"
+Nome = "Presente Misterioso"
+Descricao = "Abre um presente de ataque, defesa ou controle; a fita denuncia o tipo."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "DEZEMBRO • NATAL"
+MonthlyColorsContexto = "Uma surpresa legível antes de abrir, sem depender apenas da sorte."
+Cooldown = 9.0
+efeito_id = &"presente"
+cor_efeito = Color(1, 0.3, 0.38, 1)

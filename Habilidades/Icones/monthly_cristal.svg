@@ -1,0 +1,6 @@
+<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs><filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <circle cx="48" cy="48" r="36" fill="#081026" stroke="#7d58ff" stroke-width="3" opacity=".92"/>
+  <path d="M48 11 59 37 85 48 59 59 48 85 37 59 11 48 37 37Z" fill="#d357ff" stroke="#8ffcff" stroke-width="3" filter="url(#g)"/>
+  <circle cx="48" cy="48" r="8" fill="#fff" opacity=".9"/>
+</svg>

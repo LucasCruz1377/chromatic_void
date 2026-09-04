@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p09_recomeco"
+Nome = "Recomeço"
+Descricao = "Limpa efeitos negativos e repete seus disparos recentes como fogos."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "JANEIRO • ANO NOVO"
+MonthlyColorsContexto = "O fim do ciclo abre um novo começo."
+Cooldown = 13.0
+efeito_id = &"recomeco"
+cor_efeito = Color(0.96, 0.97, 1, 1)

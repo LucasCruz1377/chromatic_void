@@ -5,6 +5,8 @@ class_name Player
 const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
 const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
+const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
+const CatalogoMonthly = preload("res://Scripts/MonthlyCatalog.gd")
 const TEXTURA_COOLDOWN_RELOGIO = preload(
 	"res://Habilidades/Icones/cooldown_relogio.svg"
 )
@@ -115,11 +117,6 @@ var impactos_capacitor := 0
 var capacitor_pronto := false
 var bonus_cadencia_reacao := 0.0
 var tempo_reacao := 0.0
-var passivo_determinacao := false
-var cura_passiva_por_acerto := 0.0
-var intervalo_cura_passiva := 0.28
-var tempo_cura_passiva := 0.0
-var fator_cooldown_passivo := 1.0
 var tween_dano_visual: Tween
 
 # Sinergias entre a arma e a habilidade equipada.
@@ -130,6 +127,31 @@ var nivel_nova_ativacao := 0
 var duracao_escudo_fase := 0.0
 var reator_sincronizado := false
 var barra_cooldown_habilidade: TextureProgressBar
+
+# Equipamentos permanentes escolhidos nas três novas abas da loja.
+var arma_monthly: StringName = &""
+var modulo_nave: StringName = &""
+var mutacao_habilidade: StringName = &""
+var carga_arma := 0.0
+var calor_feixe := 0.0
+var tempo_poder_monthly := 0.0
+var tipo_poder_temporario: StringName = &""
+var cor_poder_temporario := Color.WHITE
+var semente_renascimento_ativa := false
+var posicao_semente := Vector2.ZERO
+var janela_parry := 0.0
+var folhas_tempestade_ativas := false
+var sementes_vermelhas := 0
+var reserva_celulas := 0.0
+var progresso_luz_vital := 0.0
+var ponto_seguro_ativo := false
+var ponto_seguro := Vector2.ZERO
+var tempo_motor_maia := 0.0
+var tempo_scanner := 0.0
+var tempo_reflexo := 0.0
+var intervalo_quase_colisao := 0.0
+var satelites_restantes := 3
+var fase_equinocio_solar := false
 
 
 enum Upgrade {
@@ -147,8 +169,8 @@ signal upgrade_adquirido(id: StringName, novo_nivel: int)
 
 
 func _ready() -> void:
-	carregar_passivos_loja()
 	vida = VIDA_MAXIMA
+	carregar_equipamentos_monthly()
 	carregar_habilidade_equipada()
 	criar_barra_cooldown_habilidade()
 	var menu := get_node_or_null("../GUI/TelaUpgrades")
@@ -173,6 +195,7 @@ func _process(delta: float) -> void:
 	atualizar_invencibilidade(delta)
 	atualizar_efeitos_temporarios(delta)
 	atualizar_passivos(delta)
+	atualizar_equipamentos_monthly(delta)
 	atualizar_overdrive(delta)
 	atualizar_habilidade(delta)
 	atualizar_movimento(delta)
@@ -191,7 +214,16 @@ func carregar_habilidade_equipada() -> void:
 			"habilidades_desbloqueadas",
 			[CAMINHO_HABILIDADE_PADRAO]
 		)
-		if not (liberadas is Array) or caminho not in liberadas:
+		var recurso_teste: Habilidade
+		if not caminho.is_empty() and ResourceLoader.exists(caminho):
+			var carregado := load(caminho)
+			if carregado is Habilidade:
+				recurso_teste = carregado
+		var liberada_por_conquista := (
+			is_instance_valid(recurso_teste)
+			and Global.item_liberado_por_conquista(recurso_teste.Id)
+		)
+		if (not (liberadas is Array) or caminho not in liberadas) and not liberada_por_conquista:
 			caminho = CAMINHO_HABILIDADE_PADRAO
 			GerenciadorDeSave.salvar({"habilidade_equipada": caminho})
 
@@ -221,41 +253,29 @@ func carregar_habilidade_equipada() -> void:
 
 	HabilidadeEquipada = copia
 	HabilidadeEquipada.reiniciar_estado()
-	if fator_cooldown_passivo < 1.0:
-		HabilidadeEquipada.reduzir_cooldown(fator_cooldown_passivo)
 	HabilidadeEquipada.ao_equipar(self)
 
 
-func carregar_passivos_loja() -> void:
+func carregar_equipamentos_monthly() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
-	var equipados: Variant = dados.get("passivos_equipados", {})
-	if not (equipados is Dictionary):
-		return
-	var desbloqueados: Variant = dados.get("passivos_desbloqueados", [])
-	for categoria in ["2", "3"]:
-		var id_passivo := str(equipados.get(categoria, ""))
-		if Global.modo_desenvolvedor or (desbloqueados is Array and id_passivo in desbloqueados):
-			aplicar_passivo_loja(id_passivo)
-
-
-func aplicar_passivo_loja(id_passivo: String) -> void:
-	match id_passivo:
-		"reflexos_rapidos":
-			SPEED *= 1.12
-			MAX_VELOCIDADE *= 1.12
-			VelocidadeVirar *= 1.10
-		"luz_vital":
-			multiplicador_cura_recebida *= 1.20
-			regeneracao_casco_por_segundo += 0.35
-		"armadura_aco":
-			VIDA_MAXIMA *= 1.10
-			multiplicador_dano_recebido *= 0.88
-		"determinacao":
-			passivo_determinacao = true
-		"chama_vida":
-			cura_passiva_por_acerto = 0.35
-		"ritmo_recomeco":
-			fator_cooldown_passivo = 0.85
+	var equipamentos = dados.get("equipamentos_loja", {})
+	if equipamentos is Dictionary:
+		arma_monthly = StringName(str(equipamentos.get("1", "")))
+		modulo_nave = StringName(str(equipamentos.get("2", "")))
+		mutacao_habilidade = StringName(str(equipamentos.get("3", "")))
+	for id in [arma_monthly, modulo_nave, mutacao_habilidade]:
+		if id.is_empty():
+			continue
+		var item := CatalogoMonthly.encontrar(id)
+		var comprados = dados.get("itens_desbloqueados", [])
+		if item.is_empty() or (
+			not Global.modo_desenvolvedor
+			and id not in comprados
+			and not Global.item_liberado_por_conquista(id)
+		):
+			if id == arma_monthly: arma_monthly = &""
+			elif id == modulo_nave: modulo_nave = &""
+			elif id == mutacao_habilidade: mutacao_habilidade = &""
 
 
 func atualizar_ui() -> void:
@@ -390,6 +410,344 @@ func ao_ativar_habilidade() -> void:
 	if nivel_nova_ativacao > 0:
 		disparar_nova_de_ativacao()
 
+	if modulo_nave == &"n10_chassi_equinocio":
+		fase_equinocio_solar = not fase_equinocio_solar
+		if fase_equinocio_solar:
+			_criar_feedback_monthly(global_position, Color(1.0, 0.72, 0.18), 1.1, 2.0)
+		else:
+			ativar_escudo(16.0, 4.0, Color(0.48, 0.62, 1.0))
+			_criar_feedback_monthly(global_position, Color(0.48, 0.62, 1.0), 1.1, 1.0)
+	aplicar_mutacao_habilidade()
+
+
+func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -> void:
+	var cena := get_tree().current_scene
+	if not is_instance_valid(cena):
+		return
+	match efeito_id:
+		&"ovo":
+			var resultado := randi_range(0, 2)
+			if resultado == 0:
+				curar(18.0 * potencia)
+				ativar_escudo(8.0, 3.0, Color(0.45, 1.0, 0.62))
+			elif resultado == 1:
+				_disparar_radial(6, 0.75 * potencia, &"missile", cor)
+			else:
+				_atingir_area(global_position, 155.0, 9.0 * potencia, 240.0, 0.35)
+			_criar_feedback_monthly(global_position, cor, 1.25, 5.0)
+		&"clone":
+			_criar_feedback_monthly(global_position - transform.y * 28.0, cor, 1.0, 1.0)
+			_repetir_disparo_clone(cor, potencia)
+		&"renascimento":
+			semente_renascimento_ativa = true
+			posicao_semente = global_position
+			_criar_feedback_monthly(posicao_semente, cor, 1.4, 2.0)
+		&"protetor":
+			ativar_escudo(35.0 * potencia, 7.0, cor)
+			_limpar_projeteis_inimigos(global_position, 135.0, true)
+			_disparar_radial(8, 0.55 * potencia, &"guardian", cor)
+			_criar_feedback_monthly(global_position, cor, 1.35, 5.0)
+		&"florescimento":
+			_explodir_em_linha(cor, 5, 72.0, 64.0, 7.0 * potencia)
+			_disparar_radial(10, 0.42 * potencia, &"petal", cor)
+		&"parry":
+			janela_parry = 1.15
+			_criar_feedback_monthly(global_position, cor, 0.85, 0.0)
+		&"fantasma":
+			tipo_poder_temporario = &"fantasma"
+			tempo_poder_monthly = 2.4
+			cor_poder_temporario = cor
+			invulneravel_por_habilidade = true
+			multiplicador_velocidade_habilidade = 1.42
+		&"presente":
+			var presente := randi_range(0, 2)
+			var cor_presente: Color = [
+				Color(1.0, 0.28, 0.34),
+				Color(0.32, 0.72, 1.0),
+				Color(0.42, 1.0, 0.62)
+			][presente]
+			_criar_feedback_monthly(global_position, cor_presente, 1.35, 3.0)
+			if presente == 0:
+				_disparar_radial(12, 0.55 * potencia, &"gift", cor_presente)
+			elif presente == 1:
+				ativar_escudo(28.0 * potencia, 6.0, cor_presente)
+			else:
+				_atingir_area(global_position, 210.0, 3.0, 80.0, 2.4)
+		&"recomeco":
+			tempo_queimadura = 0.0
+			pulsos_queimadura_restantes = 0
+			resistencia_temporaria_multiplicador = 1.0
+			_disparar_radial(16, 0.52 * potencia, &"firework", cor)
+			_criar_feedback_monthly(global_position, cor, 1.6, 8.0)
+		&"laco":
+			var alvos := _inimigos_mais_proximos(2)
+			if alvos.size() >= 2:
+				var expira := Time.get_ticks_msec() + 6000
+				alvos[0].set_meta("laco_parceiro", alvos[1])
+				alvos[1].set_meta("laco_parceiro", alvos[0])
+				alvos[0].set_meta("laco_expira", expira)
+				alvos[1].set_meta("laco_expira", expira)
+			for alvo in alvos:
+				if alvo.has_method("aplicar_atordoamento"):
+					alvo.aplicar_atordoamento(1.3)
+				_criar_feedback_monthly(alvo.global_position, cor, 0.9, 0.0)
+			_criar_feedback_monthly(global_position, cor, 1.1, 3.0)
+		&"imaginacao":
+			tipo_poder_temporario = &"imaginacao"
+			tempo_poder_monthly = 6.0
+			cor_poder_temporario = cor
+			_disparar_radial(7, 0.5, &"toy", cor)
+		&"natureza":
+			_explodir_em_linha(cor, 7, 62.0, 55.0, 8.0 * potencia)
+			_criar_feedback_monthly(global_position, cor, 1.25, 7.0)
+		&"onda":
+			_limpar_projeteis_inimigos(global_position, 245.0, false)
+			_atingir_area(global_position, 245.0, 6.0 * potencia, 360.0, 0.45)
+			_criar_feedback_monthly(global_position + transform.x * 80.0, cor, 2.0, 8.0)
+		&"tempestade":
+			if folhas_tempestade_ativas:
+				folhas_tempestade_ativas = false
+				_disparar_leque(12, 95.0, 0.5 * potencia, &"leaf", cor)
+				_criar_feedback_monthly(global_position, cor, 1.2, 4.0)
+			else:
+				folhas_tempestade_ativas = true
+				ativar_escudo(18.0, 9.0, cor)
+				_criar_feedback_monthly(global_position, cor, 0.9, 0.0)
+		&"determinacao":
+			ativar_escudo(32.0 * potencia, 6.0, cor)
+			_atingir_area(global_position, 190.0, 13.0 * potencia, 260.0, 0.8)
+			_criar_feedback_monthly(global_position, cor, 1.7, 10.0)
+
+
+func aplicar_mutacao_habilidade() -> void:
+	if mutacao_habilidade.is_empty():
+		return
+	match mutacao_habilidade:
+		&"u01_alcateia_lunar":
+			criar_projetil(rotation - 0.32, 0.58, true, null, 0.0, &"moon", Color(0.78, 0.88, 1.0))
+			criar_projetil(rotation + 0.32, 0.58, true, null, 0.0, &"moon", Color(0.78, 0.88, 1.0))
+		&"u02_cobertura_neve":
+			_atingir_area(global_position, 150.0, 1.0, 0.0, 1.8)
+			_criar_feedback_monthly(global_position, Color(0.72, 0.92, 1.0), 1.2, 0.0)
+		&"u03_retorno_subterraneo":
+			_mutacao_atrasada(&"worm")
+		&"u04_floracao_rosa":
+			_disparar_radial(10, 0.38, &"petal", Color(1.0, 0.48, 0.7))
+		&"u05_jardim_crescente":
+			_atingir_area(global_position, 180.0, 4.5, 60.0, 0.65)
+			_criar_feedback_monthly(global_position, Color(1.0, 0.42, 0.68), 1.45, 3.0)
+		&"u06_sementes_vermelhas":
+			var bonus := 1.0 + float(sementes_vermelhas) * 0.12
+			_disparar_radial(6 + sementes_vermelhas, 0.38 * bonus, &"seed", Color(1.0, 0.25, 0.36))
+			sementes_vermelhas = 0
+		&"u07_galhos_lunares":
+			for deslocamento in [-0.48, 0.48]:
+				criar_projetil(rotation + deslocamento, 0.62, true, null, 0.0, &"branch", Color(0.77, 0.55, 0.34))
+		&"u08_corrente_esturjao":
+			criar_projetil(rotation, 0.72, true, null, 0.0, &"wave", Color(0.35, 0.78, 1.0), {"penetracao": 2})
+		&"u09_colheita_cromatica":
+			_coletar_experiencia_proxima()
+			_disparar_radial(6, 0.4, &"harvest", Color(1.0, 0.7, 0.26))
+		&"u10_marca_cacador":
+			var alvos := _inimigos_mais_fortes(1)
+			if not alvos.is_empty():
+				for angulo in [-0.12, 0.0, 0.12]:
+					criar_projetil(rotation + angulo, 0.55, true, alvos[0], 0.0, &"hunter", Color(1.0, 0.55, 0.25), {"homing": 4.0})
+		&"u11_barragem_castor":
+			ativar_escudo(22.0, 5.0, Color(0.78, 0.53, 0.3))
+		&"u12_noite_congelada":
+			_limpar_projeteis_inimigos(global_position, 190.0, true)
+			_criar_feedback_monthly(global_position, Color(0.5, 0.78, 1.0), 1.35, 2.0)
+
+
+func _criar_feedback_monthly(posicao: Vector2, cor: Color, intensidade: float, tremor: float) -> void:
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(cena, posicao, EfeitoCombate.Tipo.MORTE, cor, intensidade, transform.x)
+		ExplosaoMonthlyCena.criar(cena, posicao, cor, intensidade)
+	var camera_efeito := get_tree().get_first_node_in_group("camera") as Camera2D
+	if tremor > 0.0 and is_instance_valid(camera_efeito) and camera_efeito.has_method("shake"):
+		camera_efeito.shake(tremor)
+
+
+func _atingir_area(
+	centro: Vector2, raio: float, dano_area: float, empurrao: float, atordoamento: float
+) -> void:
+	for node in get_tree().get_nodes_in_group("inimigo"):
+		if not is_instance_valid(node) or not (node is Node2D):
+			continue
+		var alvo := node as Node2D
+		var distancia := centro.distance_to(alvo.global_position)
+		if distancia > raio:
+			continue
+		var queda := clampf(1.0 - distancia / maxf(raio, 1.0), 0.25, 1.0)
+		if alvo.has_method("tomarDano"):
+			alvo.tomarDano(dano_area * queda * multiplicador_dano_habilidade)
+		if empurrao > 0.0 and alvo.has_method("aplicar_empurrao"):
+			var direcao := centro.direction_to(alvo.global_position)
+			alvo.aplicar_empurrao(direcao * empurrao * queda)
+		if atordoamento > 0.0 and alvo.has_method("aplicar_atordoamento"):
+			alvo.aplicar_atordoamento(atordoamento * queda)
+
+
+func _limpar_projeteis_inimigos(centro: Vector2, raio: float, com_estilhacos: bool) -> void:
+	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
+		if not is_instance_valid(node) or not (node is Node2D):
+			continue
+		var projetil_inimigo := node as Node2D
+		if centro.distance_to(projetil_inimigo.global_position) > raio:
+			continue
+		if com_estilhacos:
+			EfeitoCombateCena.criar(get_tree().current_scene, projetil_inimigo.global_position, EfeitoCombate.Tipo.ACERTO, Color(0.62, 0.86, 1.0), 0.55)
+		projetil_inimigo.queue_free()
+
+
+func _disparar_radial(
+	quantidade: int, dano_extra: float, estilo: StringName, cor: Color
+) -> void:
+	for indice in range(quantidade):
+		var angulo := rotation + TAU * float(indice) / float(maxi(quantidade, 1))
+		criar_projetil(angulo, dano_extra, true, null, 0.0, estilo, cor)
+
+
+func _disparar_leque(
+	quantidade: int, abertura_graus: float, dano_extra: float,
+	estilo: StringName, cor: Color
+) -> void:
+	for indice in range(quantidade):
+		var progresso := float(indice) / float(maxi(quantidade - 1, 1))
+		var angulo := rotation + deg_to_rad(lerpf(-abertura_graus * 0.5, abertura_graus * 0.5, progresso))
+		criar_projetil(angulo, dano_extra, true, null, 0.0, estilo, cor)
+
+
+func _explodir_em_linha(
+	cor: Color, quantidade: int, passo: float, raio: float, dano_linha: float
+) -> void:
+	for indice in range(1, quantidade + 1):
+		var ponto := global_position + transform.x * passo * float(indice)
+		_atingir_area(ponto, raio, dano_linha, 90.0, 0.5)
+		EfeitoCombateCena.criar(get_tree().current_scene, ponto, EfeitoCombate.Tipo.MORTE, cor, 0.68, transform.x)
+	_criar_feedback_monthly(global_position + transform.x * passo * 2.0, cor, 0.9, 5.0)
+
+
+func _inimigos_mais_proximos(quantidade: int) -> Array[Node2D]:
+	var alvos: Array[Node2D] = []
+	for node in get_tree().get_nodes_in_group("inimigo"):
+		if is_instance_valid(node) and node is Node2D:
+			alvos.append(node as Node2D)
+	alvos.sort_custom(func(a: Node2D, b: Node2D) -> bool:
+		return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position)
+	)
+	if alvos.size() > quantidade:
+		alvos.resize(quantidade)
+	return alvos
+
+
+func _inimigos_mais_fortes(quantidade: int) -> Array[Node2D]:
+	var alvos: Array[Node2D] = []
+	for node in get_tree().get_nodes_in_group("inimigo"):
+		if is_instance_valid(node) and node is Node2D:
+			alvos.append(node as Node2D)
+	alvos.sort_custom(func(a: Node2D, b: Node2D) -> bool:
+		return float(a.get("Vida")) > float(b.get("Vida"))
+	)
+	if alvos.size() > quantidade:
+		alvos.resize(quantidade)
+	return alvos
+
+
+func _repetir_disparo_clone(cor: Color, potencia: float) -> void:
+	await get_tree().create_timer(0.28).timeout
+	if not vivo:
+		return
+	for deslocamento in [-0.18, 0.0, 0.18]:
+		criar_projetil(rotation + deslocamento, 0.65 * potencia, true, null, 20.0 * deslocamento, &"clone", cor)
+	_criar_feedback_monthly(global_position - transform.y * 28.0, cor, 0.7, 1.0)
+
+
+func _mutacao_atrasada(estilo: StringName) -> void:
+	await get_tree().create_timer(0.45).timeout
+	if not vivo:
+		return
+	var alvos := _inimigos_mais_proximos(1)
+	if alvos.is_empty():
+		return
+	var alvo := alvos[0]
+	_atingir_area(alvo.global_position, 72.0, 7.0, 110.0, 0.45)
+	EfeitoCombateCena.criar(get_tree().current_scene, alvo.global_position, EfeitoCombate.Tipo.MORTE, Color(0.58, 0.88, 0.46), 0.9, Vector2.UP)
+
+
+func _coletar_experiencia_proxima() -> void:
+	for grupo in [&"xp", &"experiencia", &"cristal_xp"]:
+		for node in get_tree().get_nodes_in_group(grupo):
+			if is_instance_valid(node) and node is Node2D:
+				(node as Node2D).global_position = global_position
+
+
+func atualizar_equipamentos_monthly(delta: float) -> void:
+	janela_parry = maxf(janela_parry - delta, 0.0)
+	tempo_reflexo = maxf(tempo_reflexo - delta, 0.0)
+	calor_feixe = maxf(calor_feixe - delta * 0.34, 0.0)
+	if tempo_poder_monthly > 0.0:
+		tempo_poder_monthly = maxf(tempo_poder_monthly - delta, 0.0)
+		if tipo_poder_temporario == &"fantasma" and fmod(tempo_poder_monthly, 0.16) < delta:
+			EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.RASTRO, cor_poder_temporario, 0.7, -transform.x)
+			_atingir_area(global_position, 42.0, 2.2, 45.0, 0.1)
+		if tempo_poder_monthly <= 0.0:
+			if tipo_poder_temporario == &"fantasma":
+				invulneravel_por_habilidade = false
+				multiplicador_velocidade_habilidade = 1.0
+			tipo_poder_temporario = &""
+
+	if modulo_nave == &"n08_motor_maia":
+		if velocity.length() > 150.0 and tempo_sem_dano > 0.4:
+			tempo_motor_maia = minf(tempo_motor_maia + delta, 12.0)
+		else:
+			tempo_motor_maia = maxf(tempo_motor_maia - delta * 2.0, 0.0)
+	if modulo_nave == &"n06_scanner_preventivo":
+		tempo_scanner -= delta
+		if tempo_scanner <= 0.0:
+			tempo_scanner = 0.18
+			_atualizar_scanner()
+	if modulo_nave == &"n01_reflexos_rapidos":
+		intervalo_quase_colisao -= delta
+		if intervalo_quase_colisao <= 0.0:
+			intervalo_quase_colisao = 0.09
+			_verificar_quase_colisao()
+	if ponto_seguro_ativo and global_position.distance_to(ponto_seguro) <= 42.0:
+		ponto_seguro_ativo = false
+		ativar_escudo(20.0, 5.0, Color(1.0, 0.82, 0.24))
+		_criar_feedback_monthly(global_position, Color(1.0, 0.82, 0.24), 0.9, 1.5)
+	if (
+		semente_renascimento_ativa
+		or ponto_seguro_ativo
+		or folhas_tempestade_ativas
+		or modulo_nave in [&"n02_luz_vital", &"n09_familia_satelites"]
+	):
+		queue_redraw()
+
+
+func _atualizar_scanner() -> void:
+	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
+		if not is_instance_valid(node) or not (node is CanvasItem) or not (node is Node2D):
+			continue
+		var distancia := global_position.distance_to((node as Node2D).global_position)
+		(node as CanvasItem).modulate = Color(1.3, 0.55, 0.25, 1.0) if distancia < 210.0 else Color.WHITE
+
+
+func _verificar_quase_colisao() -> void:
+	if tempo_reflexo > 0.0:
+		return
+	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
+		if not is_instance_valid(node) or not (node is Node2D):
+			continue
+		var distancia := global_position.distance_to((node as Node2D).global_position)
+		if distancia > 34.0 and distancia < 72.0:
+			tempo_reflexo = 1.1
+			rotation += PI * 0.38
+			_criar_feedback_monthly(global_position, Color(1.0, 0.9, 0.35), 0.55, 1.0)
+			break
+
 
 func disparar_nova_de_ativacao() -> void:
 	var quantidade := 6 + nivel_nova_ativacao * 2
@@ -417,6 +775,10 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
+	if modulo_nave == &"n08_motor_maia":
+		fator_movimento *= 1.0 + minf(tempo_motor_maia / 12.0, 1.0) * 0.22
+	if tempo_reflexo > 0.0:
+		fator_movimento *= 1.18
 	var usando_toque: bool = Global.controle_toque_ativo
 	var usando_controle_simplificado: bool = usando_toque or (
 		not Global.controle_avancado
@@ -555,6 +917,14 @@ func atualizar_combate(delta: float) -> void:
 	cooldown = maxf(cooldown - delta, 0.0)
 	if ctrlblock:
 		return
+	if arma_monthly in [&"a02_rifle_cacador", &"a04_canhao_esturjao"]:
+		if vivo and Input.is_action_pressed("atirar"):
+			carga_arma = minf(carga_arma + delta, 1.8)
+			if fmod(carga_arma, 0.25) < delta:
+				EfeitoCombateCena.criar(get_tree().current_scene, PontaArma.global_position, EfeitoCombate.Tipo.AVISO, Color(1.0, 0.58, 0.28), 0.35 + carga_arma * 0.2, transform.x)
+		if vivo and Input.is_action_just_released("atirar") and carga_arma > 0.08 and cooldown <= 0.0:
+			fire()
+		return
 
 	if vivo and Input.is_action_pressed("atirar") and cooldown <= 0.0:
 		fire()
@@ -562,6 +932,21 @@ func atualizar_combate(delta: float) -> void:
 
 func fire() -> void:
 	if not tiro:
+		return
+	if tipo_poder_temporario == &"imaginacao" and tempo_poder_monthly > 0.0:
+		var forma := randi_range(0, 2)
+		var cor_brinquedo: Color = [Color(1.0, 0.35, 0.72), Color(0.25, 0.86, 1.0), Color(1.0, 0.84, 0.25)][forma]
+		if forma == 0:
+			_disparar_leque(5, 46.0, 0.42, &"toy", cor_brinquedo)
+		elif forma == 1:
+			criar_projetil(rotation, 1.25, false, null, 0.0, &"boomerang", cor_brinquedo, {"velocidade": 0.75, "penetracao": 2})
+		else:
+			criar_projetil(rotation, 0.85, false, null, 0.0, &"missile", cor_brinquedo, {"homing": 3.4})
+		somtiro.play()
+		cooldown = maxf(CD_MAX * 1.25, 0.08)
+		return
+	if not arma_monthly.is_empty():
+		disparar_arma_monthly()
 		return
 
 	var quantidade := maxi(projeteis_por_tiro, 1)
@@ -604,6 +989,87 @@ func fire() -> void:
 	)
 
 
+func disparar_arma_monthly() -> void:
+	var cor := Color(0.55, 0.9, 1.0)
+	var recarga := CD_MAX
+	match arma_monthly:
+		&"a01_espingarda_lua_rosa":
+			cor = Color(1.0, 0.46, 0.7)
+			_disparar_leque(7, 54.0, 0.5, &"petal", cor)
+			recarga *= 2.25
+		&"a02_rifle_cacador":
+			cor = Color(1.0, 0.56, 0.24)
+			var proporcao := clampf(carga_arma / 1.35, 0.15, 1.0)
+			criar_projetil(rotation, 1.2 + proporcao * 2.6, false, null, 0.0, &"sniper", cor, {"velocidade": 1.65, "escala": 0.7 + proporcao * 0.8, "penetracao": 2 + roundi(proporcao * 3.0)})
+			carga_arma = 0.0
+			recarga *= 3.2
+			_criar_feedback_monthly(PontaArma.global_position, cor, 0.8 + proporcao * 0.45, 2.0 + proporcao * 5.0)
+		&"a03_alcateia_misseis":
+			cor = Color(0.72, 0.84, 1.0)
+			var alvos := _inimigos_mais_proximos(3)
+			for indice in range(3):
+				var alvo: Node2D = alvos[indice % alvos.size()] if not alvos.is_empty() else null
+				criar_projetil(rotation + (float(indice) - 1.0) * 0.32, 0.62, false, alvo, (float(indice) - 1.0) * 14.0, &"missile", cor, {"homing": 4.2, "velocidade": 0.72, "explosao": 0.35, "raio": 54.0})
+			recarga *= 2.8
+		&"a04_canhao_esturjao":
+			cor = Color(0.32, 0.74, 1.0)
+			var proporcao := clampf(carga_arma / 1.55, 0.15, 1.0)
+			criar_projetil(rotation, 1.0 + proporcao * 3.2, false, null, 0.0, &"wave", cor, {"velocidade": 0.62, "escala": 1.1 + proporcao, "penetracao": 2 + roundi(proporcao * 2.0)})
+			carga_arma = 0.0
+			recarga *= 3.8
+			_criar_feedback_monthly(PontaArma.global_position, cor, 1.0, 4.0 + proporcao * 4.0)
+		&"a05_minas_castor":
+			cor = Color(0.78, 0.53, 0.3)
+			criar_projetil(rotation + PI, 1.55, false, null, 0.0, &"mine", cor, {"velocidade": 0.0, "escala": 1.25, "explosao": 0.8, "raio": 92.0})
+			recarga *= 4.0
+		&"a06_feixe_perielio":
+			if calor_feixe >= 1.0:
+				return
+			cor = Color(1.0, 0.77, 0.18)
+			criar_projetil(rotation, 0.58, false, null, 0.0, &"beam", cor, {"velocidade": 1.65, "penetracao": 2, "escala": 0.7})
+			calor_feixe = minf(calor_feixe + 0.075, 1.15)
+			recarga = maxf(CD_MAX * 0.42, 0.045)
+		&"a07_foice_colheita":
+			cor = Color(1.0, 0.68, 0.24)
+			criar_projetil(rotation, 1.4, false, null, 0.0, &"boomerang", cor, {"velocidade": 0.72, "escala": 1.45, "penetracao": 5})
+			recarga *= 3.0
+		&"a08_torpedo_subterraneo":
+			cor = Color(0.52, 0.9, 0.42)
+			criar_projetil(rotation, 1.75, false, null, 0.0, &"underground", cor, {"velocidade": 0.55, "escala": 1.25, "explosao": 0.7, "raio": 82.0})
+			recarga *= 3.4
+		&"a09_morteiro_fogueira":
+			cor = Color(1.0, 0.38, 0.12)
+			criar_projetil(rotation, 1.5, false, null, 0.0, &"mortar", cor, {"velocidade": 0.42, "escala": 1.4, "explosao": 0.7, "raio": 78.0})
+			recarga *= 2.9
+		&"a10_rajada_morango":
+			cor = Color(1.0, 0.24, 0.36)
+			for deslocamento in [-0.12, 0.0, 0.12]:
+				criar_projetil(rotation + deslocamento, 0.48, false, null, deslocamento * 55.0, &"seed", cor, {"fragmentos": 3, "escala": 0.72})
+			recarga *= 1.8
+		&"a11_projetor_nevasca":
+			cor = Color(0.7, 0.92, 1.0)
+			_disparar_leque(5, 38.0, 0.34, &"snow", cor)
+			recarga *= 1.35
+		&"a12_jardim_orbital":
+			cor = Color(1.0, 0.38, 0.67)
+			for indice in range(6):
+				criar_projetil(rotation + TAU * float(indice) / 6.0, 0.45, false, null, 0.0, &"orbit", cor, {"indice_orbita": indice})
+			recarga *= 3.1
+		&"a13_canhao_lua_fria":
+			cor = Color(0.5, 0.76, 1.0)
+			criar_projetil(rotation, 2.1, false, null, 0.0, &"cold", cor, {"velocidade": 0.42, "escala": 1.75, "penetracao": 2, "explosao": 0.65, "raio": 96.0})
+			recarga *= 4.2
+		_:
+			arma_monthly = &""
+			fire()
+			return
+
+	somtiro.pitch_scale = randf_range(0.88, 1.12)
+	somtiro.play()
+	var fator_overdrive := 0.75 if tempo_overdrive > 0.0 else 1.0
+	cooldown = maxf(recarga * fator_overdrive * multiplicador_cadencia_habilidade, 0.04)
+
+
 func calcular_padrao_multitiro(indice: int, quantidade: int) -> Vector2:
 	if quantidade <= 1:
 		return Vector2.ZERO
@@ -636,7 +1102,10 @@ func criar_projetil(
 	multiplicador_dano_extra := 1.0,
 	eh_nova := false,
 	alvo_homing_preferido: Node2D = null,
-	deslocamento_lateral := 0.0
+	deslocamento_lateral := 0.0,
+	estilo_monthly: StringName = &"",
+	cor_monthly: Color = Color.WHITE,
+	config_monthly: Dictionary = {}
 ) -> void:
 	var projetil = tiro.instantiate()
 	get_tree().current_scene.add_child(projetil)
@@ -647,13 +1116,13 @@ func criar_projetil(
 	projetil.rotation = angulo
 
 	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
-	var bonus_determinacao := 1.25 if determinacao_ativa() else 1.0
 	var velocidade_relativa := clampf(
 		velocity.length() / maxf(MAX_VELOCIDADE, 1.0),
 		0.0,
 		1.0
 	)
 	var bonus_movimento := 1.0 + bonus_vetor_ofensivo * velocidade_relativa
+	var bonus_chassi := 1.18 if modulo_nave == &"n10_chassi_equinocio" and fase_equinocio_solar else 1.0
 	var dano_final := (
 		dano
 		* multiplicador_dano_projetil
@@ -661,28 +1130,35 @@ func criar_projetil(
 		* multiplicador_dano_mira
 		* multiplicador_dano_habilidade
 		* bonus_overdrive
-		* bonus_determinacao
 		* bonus_movimento
 		* multiplicador_dano_extra
+		* bonus_chassi
 	)
 
 	if projetil.has_method("configurar"):
+		var velocidade_config := 1000.0 * multiplicador_velocidade_projetil * float(config_monthly.get("velocidade", 1.0))
+		var escala_config := multiplicador_escala_projetil * float(config_monthly.get("escala", 1.0))
+		var penetracao_config := penetracao_projetil + int(config_monthly.get("penetracao", 0))
+		var homing_config := maxf(forca_mira_gravitacional, float(config_monthly.get("homing", 0.0)))
+		var fragmentos_config := 0 if eh_nova else fragmentos_projetil + int(config_monthly.get("fragmentos", 0))
 		projetil.configurar(
 			dano_final,
-			1000.0 * multiplicador_velocidade_projetil,
-			multiplicador_escala_projetil,
-			penetracao_projetil,
-			forca_mira_gravitacional,
-			0 if eh_nova else fragmentos_projetil,
+			velocidade_config,
+			escala_config,
+			penetracao_config,
+			homing_config,
+			fragmentos_config,
 			ricochetes_projetil,
 			self,
 			tiro,
 			false,
 			multiplicador_fragmentos,
-			dano_explosao_impacto,
-			raio_explosao_impacto,
+			maxf(dano_explosao_impacto, float(config_monthly.get("explosao", 0.0))),
+			maxf(raio_explosao_impacto, float(config_monthly.get("raio", 0.0))),
 			bonus_dano_ricochete
 		)
+		if not estilo_monthly.is_empty() and projetil.has_method("configurar_estilo_monthly"):
+			projetil.configurar_estilo_monthly(estilo_monthly, cor_monthly, config_monthly)
 		if (
 			is_instance_valid(alvo_homing_preferido)
 			and projetil.has_method("definir_alvo_homing")
@@ -708,11 +1184,10 @@ func obter_alvos_para_multitiro(quantidade: int) -> Array[Node2D]:
 
 
 func registrar_acerto_projetil() -> void:
+	if mutacao_habilidade == &"u06_sementes_vermelhas":
+		sementes_vermelhas = mini(sementes_vermelhas + 1, 5)
 	if reducao_cooldown_por_impacto > 0.0 and HabilidadeEquipada:
 		HabilidadeEquipada.reduzir_cooldown_atual(reducao_cooldown_por_impacto)
-	if cura_passiva_por_acerto > 0.0 and tempo_cura_passiva <= 0.0 and vida < VIDA_MAXIMA:
-		curar(cura_passiva_por_acerto)
-		tempo_cura_passiva = intervalo_cura_passiva
 	if nivel_capacitor_cinetico <= 0 or capacitor_pronto:
 		return
 	impactos_capacitor += 1
@@ -737,9 +1212,29 @@ func tomar_dano(valor: float) -> void:
 		or not vivo
 	):
 		return
+	if janela_parry > 0.0:
+		janela_parry = 0.0
+		_disparar_radial(12, 0.62, &"thorn", Color(0.92, 0.42, 1.0))
+		_criar_feedback_monthly(global_position, Color(0.92, 0.42, 1.0), 1.35, 7.0)
+		invencibilidade = true
+		invencibilidade_cd = 0.42
+		return
 
-	var fator_determinacao := 0.85 if determinacao_ativa() else 1.0
-	var dano_restante := maxf(valor, 0.0) * fator_determinacao
+	var dano_restante := maxf(valor, 0.0)
+	if modulo_nave == &"n09_familia_satelites" and satelites_restantes > 0:
+		satelites_restantes -= 1
+		dano_restante *= 0.35
+		_criar_feedback_monthly(global_position, Color(1.0, 0.82, 0.28), 0.7, 2.0)
+	if modulo_nave == &"n05_reserva_solidaria" and reserva_celulas > 0.0:
+		var reserva_usada := minf(reserva_celulas, dano_restante)
+		reserva_celulas -= reserva_usada
+		dano_restante -= reserva_usada
+	if modulo_nave == &"n04_armadura_aco" and velocity.dot(transform.x) > 40.0:
+		dano_restante *= 0.7
+	if modulo_nave == &"n07_propulsor_janus":
+		var impulso_frontal := velocity.dot(transform.x)
+		if absf(impulso_frontal) > 80.0:
+			dano_restante *= 0.78
 	if escudo_habilidade > 0.0:
 		var absorvido := minf(escudo_habilidade, dano_restante)
 		escudo_habilidade -= absorvido
@@ -760,6 +1255,14 @@ func tomar_dano(valor: float) -> void:
 	invencibilidade_cd = invencibilidade_cd_max
 	Global.vibrar_controle(0.35, 0.75, 0.2)
 	reproduzir_feedback_dano(dano_final)
+	if modulo_nave == &"n03_rede_apoio":
+		ponto_seguro_ativo = true
+		var lado_x := -1.0 if randf() < 0.5 else 1.0
+		var lado_y := -1.0 if randf() < 0.5 else 1.0
+		ponto_seguro = Vector2(
+			wrapf(global_position.x + randf_range(85.0, 150.0) * lado_x, 32.0, 928.0),
+			wrapf(global_position.y + randf_range(70.0, 125.0) * lado_y, 32.0, 508.0)
+		)
 
 
 func reproduzir_feedback_dano(dano_recebido: float) -> void:
@@ -786,8 +1289,11 @@ func reproduzir_feedback_dano(dano_recebido: float) -> void:
 func curar(valor: float) -> void:
 	if valor <= 0.0 or not vivo:
 		return
-
-	vida = minf(vida + valor * multiplicador_cura_recebida, VIDA_MAXIMA)
+	var cura_total := valor * multiplicador_cura_recebida
+	var excedente := maxf(vida + cura_total - VIDA_MAXIMA, 0.0)
+	vida = minf(vida + cura_total, VIDA_MAXIMA)
+	if modulo_nave == &"n05_reserva_solidaria" and excedente > 0.0:
+		reserva_celulas = minf(reserva_celulas + excedente, 35.0)
 
 
 func sacrificar_vida(valor: float) -> bool:
@@ -833,8 +1339,6 @@ func aplicar_pulso_queimadura() -> void:
 		* resistencia_temporaria_multiplicador,
 		0.0
 	)
-	if determinacao_ativa():
-		dano_final *= 0.85
 	vida = maxf(vida - dano_final, 0.0)
 	tempo_sem_dano = 0.0
 	pulsos_queimadura_restantes -= 1
@@ -883,8 +1387,6 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 
 func atualizar_passivos(delta: float) -> void:
 	tempo_sem_dano += delta
-	if tempo_cura_passiva > 0.0:
-		tempo_cura_passiva = maxf(tempo_cura_passiva - delta, 0.0)
 	if tempo_reacao > 0.0:
 		tempo_reacao = maxf(tempo_reacao - delta, 0.0)
 	if (
@@ -893,10 +1395,6 @@ func atualizar_passivos(delta: float) -> void:
 		and vida < VIDA_MAXIMA
 	):
 		curar(regeneracao_casco_por_segundo * delta)
-
-
-func determinacao_ativa() -> bool:
-	return passivo_determinacao and vida <= VIDA_MAXIMA * 0.35
 
 
 func _draw() -> void:
@@ -924,10 +1422,36 @@ func _draw() -> void:
 			Vector2(8.0, -31.0),
 			Vector2(2.0, -25.0),
 		]), chama)
+	if semente_renascimento_ativa:
+		var local_semente := to_local(posicao_semente)
+		draw_circle(local_semente, 10.0, Color(0.2, 1.0, 0.48, 0.2))
+		draw_arc(local_semente, 15.0, 0.0, TAU, 24, Color(0.35, 1.0, 0.58), 2.5, true)
+	if ponto_seguro_ativo:
+		var local_seguro := to_local(ponto_seguro)
+		draw_circle(local_seguro, 28.0, Color(1.0, 0.82, 0.24, 0.08))
+		draw_arc(local_seguro, 28.0, 0.0, TAU, 32, Color(1.0, 0.82, 0.24, 0.8), 2.0, true)
+	if modulo_nave == &"n09_familia_satelites":
+		for indice in range(satelites_restantes):
+			var angulo := Time.get_ticks_msec() * 0.0015 + TAU * float(indice) / 3.0
+			var ponto := Vector2.from_angle(angulo) * 48.0
+			draw_circle(ponto, 5.0, Color(1.0, 0.78, 0.24, 0.9))
+	if modulo_nave == &"n02_luz_vital" and progresso_luz_vital > 0.0:
+		draw_arc(Vector2.ZERO, 44.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(progresso_luz_vital / 30.0, 0.0, 1.0), 40, Color(1.0, 0.84, 0.28), 3.0, true)
+	if folhas_tempestade_ativas:
+		for indice in range(8):
+			var angulo := -Time.get_ticks_msec() * 0.002 + TAU * float(indice) / 8.0
+			draw_circle(Vector2.from_angle(angulo) * 48.0, 3.5, Color(0.3, 1.0, 0.55, 0.9))
 
 
 func ganhar_xp(valor: float) -> void:
 	xp_atual += valor
+	if modulo_nave == &"n02_luz_vital":
+		progresso_luz_vital += valor
+		if progresso_luz_vital >= 30.0:
+			progresso_luz_vital -= 30.0
+			curar(12.0)
+			ativar_escudo(16.0, 4.0, Color(1.0, 0.84, 0.28))
+			_criar_feedback_monthly(global_position, Color(1.0, 0.84, 0.28), 1.05, 2.0)
 	while xp_atual >= xp_necessario:
 		xp_atual -= xp_necessario
 		subir_de_nivel()
@@ -1135,6 +1659,16 @@ func receber_upgrade(tipo: int) -> void:
 
 func morrer() -> void:
 	if not vivo:
+		return
+	if semente_renascimento_ativa:
+		semente_renascimento_ativa = false
+		global_position = posicao_semente
+		vida = VIDA_MAXIMA * 0.42
+		invencibilidade = true
+		invencibilidade_cd = 2.0
+		ativar_escudo(VIDA_MAXIMA * 0.18, 4.0, Color(0.32, 1.0, 0.55))
+		_criar_feedback_monthly(global_position, Color(0.32, 1.0, 0.55), 1.8, 10.0)
+		queue_redraw()
 		return
 
 	vivo = false

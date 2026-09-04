@@ -126,6 +126,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
 	Global.definir_emulacao_mouse_mobile(true)
 
@@ -516,6 +517,7 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 			tween_teste.tween_property(boss_hud, "modulate:a", 0.0, 0.25)
 			tween_teste.tween_callback(boss_hud.queue_free)
 		return
+	Global.registrar_boss_derrotado(boss_atual_id)
 	if setor_atual not in setores_concluidos:
 		setores_concluidos.append(setor_atual)
 	boss_ativo = null
@@ -679,6 +681,7 @@ func encerrar_escolha_setor() -> void:
 
 func mostrar_vitoria() -> void:
 	game_over = true
+	Global.registrar_jogo_zerado()
 	var linha := iniciar_painel_escolha(
 		"CICLO DE SETORES CONCLUÍDO",
 		"Todos os cinco bosses foram derrotados sem repetir setores."

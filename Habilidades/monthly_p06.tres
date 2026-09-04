@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p06_rosa_espinhosa"
+Nome = "Rosa Espinhosa"
+Descricao = "Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "AGOSTO LILÁS"
+MonthlyColorsContexto = "Defesa ativa que transforma uma ruptura em reação."
+Cooldown = 7.5
+efeito_id = &"parry"
+cor_efeito = Color(0.9, 0.47, 1, 1)

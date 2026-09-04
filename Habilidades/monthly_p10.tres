@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p10_laco_uniao"
+Nome = "Laço da União"
+Descricao = "Liga dois inimigos; parte do dano sofrido por um ecoa no outro."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "JUNHO VERMELHO"
+MonthlyColorsContexto = "Conexão, cuidado e responsabilidade compartilhada."
+Cooldown = 10.0
+efeito_id = &"laco"
+cor_efeito = Color(1, 0.36, 0.55, 1)

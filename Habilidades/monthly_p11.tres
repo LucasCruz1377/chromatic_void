@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p11_imaginacao"
+Nome = "Imaginação sem Limites"
+Descricao = "Transforma temporariamente o tiro em um brinquedo cromático imprevisível."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "OUTUBRO • DIA DAS CRIANÇAS"
+MonthlyColorsContexto = "Formas simples e lúdicas celebram a infância."
+Cooldown = 12.0
+efeito_id = &"imaginacao"
+cor_efeito = Color(0.27, 0.87, 1, 1)

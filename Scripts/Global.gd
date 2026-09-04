@@ -4,6 +4,8 @@ extends Node
 signal dispositivo_alterado(tipo: StringName)
 signal configuracoes_alteradas
 signal cristais_alterados(total: int, alteracao: int)
+signal conquista_desbloqueada(id: StringName, dados: Dictionary)
+signal progresso_conquistas_alterado
 
 const CONFIG_PADRAO := {
 	"mira_mouse": true,
@@ -76,8 +78,105 @@ var cristais := CRISTAIS_INICIAIS
 var modo_desenvolvedor := false
 var _salvamento_economia_agendado := false
 
-var conquistas_disponiveis = ["ACH_10KILlS", "ACH_100KILlS", "ACH_1000KILlS"]
-var conquistas_desbloqueadas = [""]
+const CONQUISTAS: Dictionary = {
+	&"primeiro_brilho": {
+		"nome": "PRIMEIRO BRILHO",
+		"descricao": "Derrote o primeiro inimigo.",
+		"tipo": &"kills", "meta": 1,
+		"recompensas": [&"p01_ovo_surpresa"]
+	},
+	&"constelacao_10": {
+		"nome": "PEQUENA CONSTELAÇÃO",
+		"descricao": "Derrote 10 inimigos.",
+		"tipo": &"kills", "meta": 10,
+		"recompensas": [&"n01_reflexos_rapidos"]
+	},
+	&"constelacao_50": {
+		"nome": "CÉU MOVIMENTADO",
+		"descricao": "Derrote 50 inimigos.",
+		"tipo": &"kills", "meta": 50,
+		"recompensas": [&"u03_retorno_subterraneo", &"a05_minas_castor"]
+	},
+	&"constelacao_250": {
+		"nome": "ÓRBITA VETERANA",
+		"descricao": "Derrote 250 inimigos.",
+		"tipo": &"kills", "meta": 250,
+		"recompensas": [&"u07_galhos_lunares", &"u09_colheita_cromatica"]
+	},
+	&"constelacao_1000": {
+		"nome": "LENDA CROMÁTICA",
+		"descricao": "Derrote 1.000 inimigos.",
+		"tipo": &"kills", "meta": 1000,
+		"recompensas": [&"p15_determinacao", &"u11_barragem_castor"]
+	},
+	&"boss_pet0": {
+		"nome": "RECICLAGEM COMPLETA",
+		"descricao": "Derrote PET-0.",
+		"tipo": &"boss", "alvo": &"pet0", "meta": 1,
+		"recompensas": [&"n05_reserva_solidaria"]
+	},
+	&"boss_florescimento": {
+		"nome": "DEPOIS DA PRIMAVERA",
+		"descricao": "Derrote o Florecimento.",
+		"tipo": &"boss", "alvo": &"flor_equinocio", "meta": 1,
+		"recompensas": [
+			&"p05_florescimento", &"a12_jardim_orbital",
+			&"u04_floracao_rosa", &"u05_jardim_crescente"
+		]
+	},
+	&"boss_sentinela": {
+		"nome": "REDE DESFEITA",
+		"descricao": "Derrote a Sentinela Dourada.",
+		"tipo": &"boss", "alvo": &"sentinela_dourada", "meta": 1,
+		"recompensas": [&"p04_espirito_protetor", &"n09_familia_satelites"]
+	},
+	&"boss_ruptura": {
+		"nome": "QUEBRE O SILÊNCIO",
+		"descricao": "Derrote a Ruptura Lilás.",
+		"tipo": &"boss", "alvo": &"ruptura_lilas", "meta": 1,
+		"recompensas": [&"p06_rosa_espinhosa", &"n04_armadura_aco"]
+	},
+	&"boss_sizigia": {
+		"nome": "LUZ APÓS O ECLIPSE",
+		"descricao": "Derrote a Sizígia Eterna.",
+		"tipo": &"boss", "alvo": &"eclipse_colheita", "meta": 1,
+		"recompensas": [
+			&"a06_feixe_perielio", &"a13_canhao_lua_fria",
+			&"u01_alcateia_lunar", &"u08_corrente_esturjao",
+			&"u10_marca_cacador", &"u12_noite_congelada"
+		]
+	},
+	&"bosses_1": {
+		"nome": "PRIMEIRO GUARDIÃO",
+		"descricao": "Derrote qualquer boss.",
+		"tipo": &"bosses_total", "meta": 1,
+		"recompensas": [&"u02_cobertura_neve"]
+	},
+	&"bosses_3": {
+		"nome": "TRÊS CORES DO VAZIO",
+		"descricao": "Derrote três bosses diferentes.",
+		"tipo": &"bosses_total", "meta": 3,
+		"recompensas": [&"u06_sementes_vermelhas"]
+	},
+	&"bosses_5": {
+		"nome": "PALETA COMPLETA",
+		"descricao": "Derrote os cinco bosses.",
+		"tipo": &"bosses_total", "meta": 5,
+		"recompensas": [&"n10_chassi_equinocio"]
+	},
+	&"jogo_zerado": {
+		"nome": "CICLO CROMÁTICO",
+		"descricao": "Conclua uma partida derrotando os cinco bosses.",
+		"tipo": &"vitoria", "meta": 1,
+		"recompensas": [&"p09_recomeco"]
+	},
+}
+
+var conquistas_disponiveis: Array[StringName] = []
+var conquistas_desbloqueadas: Array[StringName] = []
+var bosses_derrotados: Array[StringName] = []
+var jogos_zerados: int = 0
+var _salvamento_conquistas_agendado := false
 
 
 func _ready() -> void:
@@ -90,6 +189,8 @@ func _ready() -> void:
 	_capturar_mapeamentos_padrao()
 	carregar_configuracoes()
 	carregar_economia()
+	conquistas_disponiveis.assign(CONQUISTAS.keys())
+	carregar_conquistas()
 	get_tree().node_added.connect(_on_node_adicionado)
 	call_deferred("aplicar_configuracoes")
 
@@ -97,6 +198,169 @@ func _ready() -> void:
 func carregar_economia() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
 	cristais = maxi(int(dados.get("cristais", CRISTAIS_INICIAIS)), 0)
+
+
+func carregar_conquistas() -> void:
+	var dados: Dictionary = GerenciadorDeSave.carregar()
+	kills_max = maxi(int(dados.get("kills_totais", dados.get("kills_max", 0))), 0)
+	jogos_zerados = maxi(int(dados.get("jogos_zerados", 0)), 0)
+	conquistas_desbloqueadas.clear()
+	var salvas = dados.get("conquistas_desbloqueadas", [])
+	if salvas is Array:
+		for valor in salvas:
+			var id := StringName(str(valor))
+			if CONQUISTAS.has(id) and id not in conquistas_desbloqueadas:
+				conquistas_desbloqueadas.append(id)
+	bosses_derrotados.clear()
+	var bosses_salvos = dados.get("bosses_derrotados", [])
+	if bosses_salvos is Array:
+		for valor in bosses_salvos:
+			var id := StringName(str(valor))
+			if id not in bosses_derrotados:
+				bosses_derrotados.append(id)
+	# Migra saves antigos e concede conquistas já alcançadas sem repetir avisos.
+	_verificar_conquistas(false)
+
+
+func registrar_kill() -> void:
+	kills_max += 1
+	_verificar_conquistas(true)
+	_agendar_salvamento_conquistas()
+
+
+func registrar_boss_derrotado(id: StringName) -> void:
+	if id not in bosses_derrotados:
+		bosses_derrotados.append(id)
+	_verificar_conquistas(true)
+	_salvar_progresso_conquistas()
+
+
+func registrar_jogo_zerado() -> void:
+	jogos_zerados += 1
+	_verificar_conquistas(true)
+	_salvar_progresso_conquistas()
+
+
+func salvar_conquistas() -> void:
+	_salvar_progresso_conquistas()
+
+
+func conquista_liberada(id: StringName) -> bool:
+	return id in conquistas_desbloqueadas
+
+
+func item_liberado_por_conquista(item_id: StringName) -> bool:
+	for conquista_id in conquistas_desbloqueadas:
+		var dados: Dictionary = CONQUISTAS.get(conquista_id, {})
+		var recompensas: Array = dados.get("recompensas", [])
+		if item_id in recompensas:
+			return true
+	return false
+
+
+func obter_conquista_do_item(item_id: StringName) -> StringName:
+	for conquista_id in CONQUISTAS:
+		var dados: Dictionary = CONQUISTAS[conquista_id]
+		var recompensas: Array = dados.get("recompensas", [])
+		if item_id in recompensas:
+			return conquista_id
+	return &""
+
+
+func progresso_conquista(id: StringName) -> Dictionary:
+	var dados: Dictionary = CONQUISTAS.get(id, {})
+	var tipo: StringName = dados.get("tipo", &"")
+	var atual := 0
+	match tipo:
+		&"kills": atual = kills_max
+		&"boss": atual = 1 if StringName(dados.get("alvo", &"")) in bosses_derrotados else 0
+		&"bosses_total": atual = bosses_derrotados.size()
+		&"vitoria": atual = jogos_zerados
+	return {"atual": atual, "meta": int(dados.get("meta", 1))}
+
+
+func _verificar_conquistas(exibir_aviso: bool) -> void:
+	for id in CONQUISTAS:
+		if id in conquistas_desbloqueadas:
+			continue
+		var progresso := progresso_conquista(id)
+		if int(progresso["atual"]) < int(progresso["meta"]):
+			continue
+		conquistas_desbloqueadas.append(id)
+		var dados: Dictionary = CONQUISTAS[id]
+		if exibir_aviso:
+			conquista_desbloqueada.emit(id, dados)
+			_mostrar_aviso_conquista(dados)
+	progresso_conquistas_alterado.emit()
+
+
+func _salvar_progresso_conquistas() -> void:
+	_salvamento_conquistas_agendado = false
+	GerenciadorDeSave.salvar({
+		"kills_totais": kills_max,
+		"bosses_derrotados": bosses_derrotados,
+		"jogos_zerados": jogos_zerados,
+		"conquistas_desbloqueadas": conquistas_desbloqueadas,
+	})
+
+
+func _agendar_salvamento_conquistas() -> void:
+	if _salvamento_conquistas_agendado:
+		return
+	_salvamento_conquistas_agendado = true
+	_salvar_conquistas_depois()
+
+
+func _salvar_conquistas_depois() -> void:
+	await get_tree().create_timer(1.25, true).timeout
+	if _salvamento_conquistas_agendado:
+		_salvar_progresso_conquistas()
+
+
+func _mostrar_aviso_conquista(dados: Dictionary) -> void:
+	var camada := CanvasLayer.new()
+	camada.layer = 300
+	camada.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().root.add_child(camada)
+	var painel := PanelContainer.new()
+	painel.position = Vector2(960.0, 22.0)
+	painel.size = Vector2(330.0, 78.0)
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.015, 0.025, 0.07, 0.96)
+	estilo.border_color = Color(0.72, 0.36, 1.0, 1.0)
+	estilo.set_border_width_all(2)
+	estilo.set_corner_radius_all(12)
+	estilo.shadow_color = Color(0.35, 0.08, 0.62, 0.55)
+	estilo.shadow_size = 12
+	painel.add_theme_stylebox_override("panel", estilo)
+	camada.add_child(painel)
+	var margem := MarginContainer.new()
+	for lado in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+		margem.add_theme_constant_override(lado, 10)
+	painel.add_child(margem)
+	var coluna := VBoxContainer.new()
+	margem.add_child(coluna)
+	var titulo := Label.new()
+	titulo.text = "✦  CONQUISTA DESBLOQUEADA"
+	titulo.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0))
+	titulo.add_theme_font_size_override("font_size", 13)
+	coluna.add_child(titulo)
+	var nome := Label.new()
+	nome.text = str(dados.get("nome", "CONQUISTA"))
+	nome.add_theme_color_override("font_color", Color.WHITE)
+	nome.add_theme_font_size_override("font_size", 18)
+	coluna.add_child(nome)
+	var viewport := get_viewport()
+	var largura := viewport.get_visible_rect().size.x if viewport else 960.0
+	painel.position.x = largura + 20.0
+	var destino_x := maxf(largura - painel.size.x - 20.0, 12.0)
+	var tween := camada.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(painel, "position:x", destino_x, 0.42)
+	tween.tween_interval(2.7)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(painel, "position:x", largura + 30.0, 0.34)
+	tween.tween_callback(camada.queue_free)
 
 
 func adicionar_cristais(quantidade: int, salvar_imediatamente := false) -> void:
@@ -287,11 +551,14 @@ func restaurar_configuracoes_padrao() -> void:
 
 func apagar_save_completo() -> void:
 	_salvamento_economia_agendado = false
+	_salvamento_conquistas_agendado = false
 	primeira_vez_jogando = true
 	Pontos = 0
 	kills_max = 0
 	Combo = 0
-	conquistas_desbloqueadas = [""]
+	conquistas_desbloqueadas.clear()
+	bosses_derrotados.clear()
+	jogos_zerados = 0
 
 	var cristais_anteriores: int = cristais
 	cristais = CRISTAIS_INICIAIS

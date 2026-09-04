@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HabilidadeMonthly" load_steps=3 format=3]
+[ext_resource path="res://Habilidades/MonthlyAtiva.gd" type="Script" id="1"]
+[ext_resource path="res://Habilidades/Icones/monthly_cristal.svg" type="Texture2D" id="2"]
+[resource]
+script = ExtResource("1")
+Id = &"p02_clone_enganador"
+Nome = "Clone Enganador"
+Descricao = "Cria um eco da nave que repete sua direção e dispara uma cópia atrasada."
+Icone = ExtResource("2")
+MonthlyColorsSelo = "ABRIL • DIA DA MENTIRA"
+MonthlyColorsContexto = "Uma brincadeira visual que confunde sem esconder informação do jogador."
+Cooldown = 8.0
+efeito_id = &"clone"
+cor_efeito = Color(1, 0.38, 0.81, 1)
