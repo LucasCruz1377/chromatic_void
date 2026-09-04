@@ -32,6 +32,10 @@ window/stretch/mode="canvas_items"
 window/handheld/orientation=4
 mouse_cursor/tooltip_position_offset=Vector2(0, 0)
 
+[input_devices]
+
+pointing/emulate_mouse_from_touch=true
+
 [file_customization]
 
 folder_colors={
@@ -187,4 +191,5 @@ locale/locale_filter_mode=1
 
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true
 viewport/hdr_2d=true
