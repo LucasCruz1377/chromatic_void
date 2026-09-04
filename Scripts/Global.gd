@@ -39,7 +39,7 @@ const ACOES_REMAPEAVEIS := {
 }
 
 const CRISTAIS_INICIAIS := 1250
-const MODO_DESENVOLVEDOR := true
+const MODO_DESENVOLVEDOR_EM_TESTES := true
 
 var primeira_vez_jogando: bool = true
 var Pontos := 0
@@ -64,11 +64,13 @@ var vibracao := true
 var controle_avancado := false
 var ultimo_dispositivo: StringName = &"teclado_mouse"
 var ultimo_controle_id := -1
+var controle_toque_ativo := false
+var direcao_controle_toque := Vector2.ZERO
 var mapeamentos_controles: Dictionary = {}
 var _mapeamentos_padrao: Dictionary = {}
 
 var cristais := CRISTAIS_INICIAIS
-var modo_desenvolvedor := MODO_DESENVOLVEDOR
+var modo_desenvolvedor := false
 var _salvamento_economia_agendado := false
 
 var conquistas_disponiveis = ["ACH_10KILlS", "ACH_100KILlS", "ACH_1000KILlS"]
@@ -77,6 +79,11 @@ var conquistas_desbloqueadas = [""]
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	modo_desenvolvedor = calcular_permissao_desenvolvedor(
+		OS.has_feature("editor"),
+		OS.has_feature("debug"),
+		OS.has_feature("release")
+	)
 	_capturar_mapeamentos_padrao()
 	carregar_configuracoes()
 	carregar_economia()
@@ -133,7 +140,9 @@ func _salvar_economia_depois() -> void:
 
 func _input(event: InputEvent) -> void:
 	var novo_tipo := ultimo_dispositivo
-	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		novo_tipo = &"toque"
+	elif event is InputEventJoypadButton or event is InputEventJoypadMotion:
 		if event is InputEventJoypadMotion and absf(event.axis_value) < zona_morta_controle:
 			return
 		if event.device >= 0:
@@ -147,6 +156,39 @@ func _input(event: InputEvent) -> void:
 	if novo_tipo != ultimo_dispositivo:
 		ultimo_dispositivo = novo_tipo
 		dispositivo_alterado.emit(ultimo_dispositivo)
+
+
+static func calcular_permissao_desenvolvedor(
+	eh_editor: bool,
+	_eh_debug: bool,
+	eh_release: bool
+) -> bool:
+	return (
+		MODO_DESENVOLVEDOR_EM_TESTES
+		and not eh_release
+		and eh_editor
+	)
+
+
+func dispositivo_mobile() -> bool:
+	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+
+
+func deve_exibir_controles_toque() -> bool:
+	return dispositivo_mobile()
+
+
+func definir_direcao_toque(direcao: Vector2) -> void:
+	direcao_controle_toque = direcao.limit_length(1.0)
+	controle_toque_ativo = direcao_controle_toque.length_squared() > 0.0001
+	if controle_toque_ativo and ultimo_dispositivo != &"toque":
+		ultimo_dispositivo = &"toque"
+		dispositivo_alterado.emit(ultimo_dispositivo)
+
+
+func limpar_controle_toque() -> void:
+	direcao_controle_toque = Vector2.ZERO
+	controle_toque_ativo = false
 
 
 func carregar_configuracoes() -> void:
@@ -249,7 +291,7 @@ func aplicar_configuracoes() -> void:
 	_aplicar_volume("Sound", volume_som)
 	TranslationServer.set_locale(idioma)
 
-	if not OS.has_feature("web"):
+	if not OS.has_feature("web") and not dispositivo_mobile():
 		DisplayServer.window_set_mode(
 			DisplayServer.WINDOW_MODE_FULLSCREEN
 			if tela_cheia

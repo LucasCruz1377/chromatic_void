@@ -377,15 +377,19 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
-	var usando_controle_simplificado: bool = (
+	var usando_toque: bool = Global.controle_toque_ativo
+	var usando_controle_simplificado: bool = usando_toque or (
 		not Global.controle_avancado
 		and Global.ultimo_dispositivo == &"controle"
 	)
 	var direcao_simplificada := Vector2.ZERO
 	var intensidade_re := 0.0
 	if usando_controle_simplificado:
-		direcao_simplificada = _obter_analogico_esquerdo()
-		intensidade_re = _obter_intensidade_l2()
+		if usando_toque:
+			direcao_simplificada = Global.direcao_controle_toque
+		else:
+			direcao_simplificada = _obter_analogico_esquerdo()
+			intensidade_re = _obter_intensidade_l2()
 	var acelerando := false
 
 	if usando_controle_simplificado:

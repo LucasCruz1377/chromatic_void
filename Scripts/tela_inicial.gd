@@ -6,6 +6,8 @@ extends Node2D
 @onready var musica_menu: AudioStreamPlayer2D = $menumusica
 @onready var botao_loja: Button = $CanvasLayer/CaixaMenu2/Shop
 @onready var botao_iniciar: Button = $CanvasLayer/CaixaMenu2/Start
+@onready var botao_sair: Button = $CanvasLayer/CaixaMenu2/Exit
+@onready var texto_debug: Control = $Debug_text
 @onready var botoes_menu: Array[Button] = [
 	$CanvasLayer/CaixaMenu2/Start as Button,
 	$CanvasLayer/CaixaMenu2/Shop as Button,
@@ -16,6 +18,10 @@ extends Node2D
 
 
 func _ready() -> void:
+	botao_sair.visible = not Global.dispositivo_mobile()
+	texto_debug.visible = Global.modo_desenvolvedor
+	if not botao_sair.visible:
+		botoes_menu.erase(botao_sair)
 	$Astro.apresentar()
 	Global.aplicar_configuracoes()
 	if musica_menu.stream is AudioStreamOggVorbis:

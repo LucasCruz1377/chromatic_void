@@ -57,6 +57,15 @@ var dialogo_inicial: Array[String] = [
 	"Pressione Espaço para usar sua habilidade especial."
 ]
 
+var dialogo_inicial_mobile: Array[String] = [
+	"Agora vou te ensinar o básico sobre o jogo.",
+	"O jogo ainda está em desenvolvimento, então podem existir alguns erros.",
+	"Arraste o analógico do lado esquerdo para apontar e acelerar a nave.",
+	"Segure [color=yellow]TIRO[/color] para disparar. Você pode mover e atirar com dois dedos ao mesmo tempo.",
+	"Toque em [color=yellow]PODER[/color] para usar sua habilidade especial.",
+	"Os botões [color=yellow]UP[/color] e [color=yellow]II[/color] abrem as melhorias e a pausa. Toque no texto para avançar mais rápido."
+]
+
 var indice_dialogo: int = 0
 var escrevendo: bool = false
 var tutorial_ativo: bool = false
@@ -115,6 +124,8 @@ func iniciar_tutorial(player: Player) -> void:
 	modo_menu = false
 	timer_proxima.stop()
 	indice_dialogo = 0
+	if Global.dispositivo_mobile():
+		dialogo_inicial = dialogo_inicial_mobile.duplicate()
 	tutorial_ativo = true
 	tutorial_terminado = false
 
@@ -270,6 +281,10 @@ func _input(event: InputEvent) -> void:
 	# Clique esquerdo.
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			avancar = true
+	if event is InputEventScreenTouch:
+		var toque := event as InputEventScreenTouch
+		if toque.pressed:
 			avancar = true
 
 	# Teclado e controle também podem avançar sem tirar o suporte ao clique.

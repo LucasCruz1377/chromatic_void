@@ -99,9 +99,15 @@ jobs:
           - preset: Windows Desktop
             nome: Windows
             artefato: windows
+            android: false
           - preset: Web
             nome: Web
             artefato: web
+            android: false
+          - preset: Android APK
+            nome: Android APK
+            artefato: android
+            android: true
 
     steps:
       - name: Baixar a versão da tag
@@ -109,22 +115,77 @@ jobs:
         with:
           ref: ${{ needs.preparar.outputs.tag }}
 
+      - name: Aplicar versão da tag aos executáveis
+        env:
+          TAG: ${{ needs.preparar.outputs.tag }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: python3 Tests/aplicar_versao_release.py "$TAG" "$VERSION_CODE"
+
+      - name: Preparar Java 17 para Android
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Android SDK
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        uses: android-actions/setup-android@v4
+
+      - name: Instalar componentes Android exigidos pelo Godot
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        shell: bash
+        run: sdkmanager "platform-tools" "build-tools;35.0.1" "platforms;android-35"
+
+      - name: Preparar assinatura privada do APK
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEYSTORE_PASSWORD" ]]; then
+            echo "Configure os três secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS e ANDROID_KEYSTORE_PASSWORD."
+            exit 1
+          fi
+          mkdir -p "${RUNNER_TEMP}/android-signing"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "${RUNNER_TEMP}/android-signing/chromatic-void.keystore"
+          keytool -list -keystore "${RUNNER_TEMP}/android-signing/chromatic-void.keystore" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
       - name: Exportar ${{ matrix.nome }} com Godot
+        if: matrix.android != true || vars.ANDROID_RELEASE_ENABLED == 'true'
         id: export
         uses: firebelley/godot-export@v8.0.0
+        env:
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/android-signing/chromatic-void.keystore
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEY_ALIAS }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         with:
           godot_executable_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
           godot_export_templates_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz
           relative_project_path: ./
           presets_to_export: ${{ matrix.preset }}
+          export_debug: false
           archive_output: true
           cache: true
 
       - name: Guardar build para publicação
+        if: matrix.android != true
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.artefato }}
           path: ${{ steps.export.outputs.archive_directory }}
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Guardar APK para publicação
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.artefato }}
+          path: ${{ steps.export.outputs.build_directory }}/**/*.apk
           if-no-files-found: error
           retention-days: 7
 

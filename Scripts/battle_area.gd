@@ -3,6 +3,7 @@ extends Node2D
 
 const DadosSetores = preload("res://Scripts/SectorData.gd")
 const PainelDesenvolvedorCena = preload("res://Scripts/PainelDesenvolvedor.gd")
+const ControlesMobileCena = preload("res://Scripts/ControlesMobile.gd")
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
@@ -74,6 +75,7 @@ var boss_detalhe: ProgressBar
 var spawns_pausados_desenvolvedor := false
 var boss_em_teste := false
 var painel_desenvolvedor: PainelDesenvolvedor
+var controles_mobile: ControlesMobile
 var musica_partida_padrao: AudioStream
 var musica_boss_ativa := false
 
@@ -97,6 +99,11 @@ func _ready() -> void:
 		painel_desenvolvedor.name = "PainelDesenvolvedor"
 		add_child(painel_desenvolvedor)
 		painel_desenvolvedor.configurar(self, player)
+	if Global.deve_exibir_controles_toque():
+		controles_mobile = ControlesMobileCena.new()
+		controles_mobile.name = "ControlesMobile"
+		add_child(controles_mobile)
+		controles_mobile.configurar(self, player)
 
 	musica_partida_padrao = tocarmusica.stream
 	if not tocarmusica.playing:

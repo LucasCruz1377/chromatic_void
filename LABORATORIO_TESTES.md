@@ -18,18 +18,11 @@ tempo. A navegação e a confirmação dos botões funcionam pelo controle.
 Bosses invocados pelo laboratório não concluem setores, não avançam o próximo
 encontro e não alteram a progressão normal da partida.
 
-## Antes de uma build pública
+## Segurança das builds
 
-Em `Scripts/Global.gd`, troque:
+Não é necessário alterar uma constante antes de publicar. A permissão é
+calculada automaticamente: o laboratório funciona somente dentro do editor do
+Godot. Exportações Release e Debug não criam o indicador, o atalho nem o painel,
+e também não liberam cristais ou habilidades da loja.
 
-```gdscript
-const MODO_DESENVOLVEDOR := true
-```
-
-por:
-
-```gdscript
-const MODO_DESENVOLVEDOR := false
-```
-
-Assim o indicador, o atalho e o painel inteiro deixam de ser criados.
+O workflow de Release usa explicitamente `export_debug: false`.

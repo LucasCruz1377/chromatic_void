@@ -384,6 +384,7 @@ func construir_cabecalho(pai: VBoxContainer) -> void:
 	botao_adicionar.custom_minimum_size = Vector2(32, 32)
 	botao_adicionar.text = "+"
 	botao_adicionar.disabled = not Global.modo_desenvolvedor
+	botao_adicionar.visible = Global.modo_desenvolvedor
 	botao_adicionar.tooltip_text = "DEV: adicionar 1.000 cristais"
 	estilizar_botao(
 		botao_adicionar,
