@@ -1,6 +1,10 @@
 extends Node2D
 
 
+const CENA_BATALHA := "res://Rooms/Battle_area.tscn"
+const CENA_LOJA := "res://Rooms/Loja.tscn"
+const CENA_CONFIGURACOES := "res://Rooms/configuracoes.tscn"
+
 @onready var transition: AnimationPlayer = $transition
 @onready var som: AudioStreamPlayer2D = $som
 @onready var musica_menu: AudioStreamPlayer2D = $menumusica
@@ -15,9 +19,14 @@ extends Node2D
 	$CanvasLayer/CaixaMenu2/Credits as Button,
 	$CanvasLayer/CaixaMenu2/Exit as Button,
 ]
+var tela_carregamento: Control
+var texto_carregamento: Label
+var carregando_cena := false
 
 
 func _ready() -> void:
+	Global.definir_emulacao_mouse_mobile(true)
+	_criar_tela_carregamento()
 	botao_sair.visible = not Global.dispositivo_mobile()
 	texto_debug.visible = Global.modo_desenvolvedor
 	if not botao_sair.visible:
@@ -49,28 +58,25 @@ func _configurar_navegacao_menu() -> void:
 func _process(_delta: float) -> void:
 	if get_tree().paused:
 		get_tree().paused = false
+	if carregando_cena and is_instance_valid(texto_carregamento):
+		var quantidade_pontos := int(Time.get_ticks_msec() / 320) % 4
+		texto_carregamento.text = "CARREGANDO" + ".".repeat(quantidade_pontos)
 
 
 func _on_start_pressed() -> void:
 	Global.primeira_vez_jogando = false
 	click_som()
-	transition.play("fade_in")
-	await transition.animation_finished
-	get_tree().change_scene_to_file("res://Rooms/Battle_area.tscn")
+	await _carregar_cena(CENA_BATALHA)
 
 
 func _on_shop_pressed() -> void:
 	click_som()
-	transition.play("fade_in")
-	await transition.animation_finished
-	get_tree().change_scene_to_file("res://Rooms/Loja.tscn")
+	await _carregar_cena(CENA_LOJA)
 
 
 func _on_options_pressed() -> void:
-	transition.play("fade_in")
 	click_som()
-	await transition.animation_finished
-	get_tree().change_scene_to_file("res://Rooms/configuracoes.tscn")
+	await _carregar_cena(CENA_CONFIGURACOES)
 
 
 func _on_exit_pressed() -> void:
@@ -81,6 +87,78 @@ func _on_exit_pressed() -> void:
 
 func click_som() -> void:
 	som.play()
+
+
+func _carregar_cena(caminho: String) -> void:
+	if carregando_cena:
+		return
+	carregando_cena = true
+	for botao in botoes_menu:
+		botao.disabled = true
+
+	var erro: Error = ResourceLoader.load_threaded_request(caminho)
+	transition.play("fade_in")
+	await transition.animation_finished
+	tela_carregamento.show()
+	await get_tree().process_frame
+
+	if erro != OK:
+		push_warning("Não foi possível iniciar o carregamento em segundo plano: %s" % caminho)
+		get_tree().change_scene_to_file(caminho)
+		return
+
+	var progresso: Array = []
+	while true:
+		var estado: int = int(ResourceLoader.load_threaded_get_status(caminho, progresso))
+		if estado == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+			continue
+		if estado == ResourceLoader.THREAD_LOAD_LOADED:
+			var recurso: Resource = ResourceLoader.load_threaded_get(caminho)
+			if recurso is PackedScene:
+				get_tree().change_scene_to_packed(recurso as PackedScene)
+				return
+		push_warning("Falha no carregamento em segundo plano: %s" % caminho)
+		get_tree().change_scene_to_file(caminho)
+		return
+
+
+func _criar_tela_carregamento() -> void:
+	var camada := CanvasLayer.new()
+	camada.name = "CamadaCarregamento"
+	camada.layer = 120
+	add_child(camada)
+
+	tela_carregamento = ColorRect.new()
+	tela_carregamento.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tela_carregamento.color = Color(0.002, 0.004, 0.016, 1.0)
+	tela_carregamento.mouse_filter = Control.MOUSE_FILTER_STOP
+	camada.add_child(tela_carregamento)
+
+	var centro := CenterContainer.new()
+	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tela_carregamento.add_child(centro)
+
+	var coluna := VBoxContainer.new()
+	coluna.alignment = BoxContainer.ALIGNMENT_CENTER
+	coluna.add_theme_constant_override("separation", 14)
+	centro.add_child(coluna)
+
+	var simbolo := Label.new()
+	simbolo.text = "◇"
+	simbolo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	simbolo.add_theme_font_size_override("font_size", 42)
+	simbolo.add_theme_color_override("font_color", Color(0.45, 0.9, 1.0))
+	coluna.add_child(simbolo)
+
+	texto_carregamento = Label.new()
+	texto_carregamento.text = "CARREGANDO"
+	texto_carregamento.custom_minimum_size = Vector2(230.0, 28.0)
+	texto_carregamento.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	texto_carregamento.add_theme_font_size_override("font_size", 18)
+	texto_carregamento.add_theme_color_override("font_color", Color(0.72, 0.82, 1.0))
+	coluna.add_child(texto_carregamento)
+	tela_carregamento.hide()
 
 
 func _on_dispositivo_alterado(tipo: StringName) -> void:

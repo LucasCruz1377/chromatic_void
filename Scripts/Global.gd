@@ -40,6 +40,9 @@ const ACOES_REMAPEAVEIS := {
 
 const CRISTAIS_INICIAIS := 1250
 const MODO_DESENVOLVEDOR_EM_TESTES := true
+const FATOR_PARTICULAS_MOBILE := 0.55
+const LIMITE_PARTICULAS_MOBILE := 90
+const LIMITE_PARTICULAS_FUNDO_MOBILE := 55
 
 var primeira_vez_jogando: bool = true
 var Pontos := 0
@@ -184,6 +187,13 @@ func deve_exibir_controles_toque() -> bool:
 	return dispositivo_mobile()
 
 
+func definir_emulacao_mouse_mobile(interface_ativa: bool) -> void:
+	# Durante a partida o toque pertence ao analógico e aos botões nativos.
+	# A emulação volta apenas em telas com Buttons, cartas e sliders.
+	if dispositivo_mobile():
+		Input.emulate_mouse_from_touch = interface_ativa
+
+
 func definir_direcao_toque(direcao: Vector2) -> void:
 	direcao_controle_toque = direcao.limit_length(1.0)
 	controle_toque_ativo = direcao_controle_toque.length_squared() > 0.0001
@@ -306,7 +316,9 @@ func aplicar_configuracoes() -> void:
 	DisplayServer.window_set_vsync_mode(
 		DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED
 	)
-	Engine.max_fps = limite_fps
+	# Evita que telas de 90/120 Hz façam o celular renderizar quadros extras sem
+	# benefício para a jogabilidade. No desktop, respeita a opção normalmente.
+	Engine.max_fps = mini(limite_fps, 60) if dispositivo_mobile() else limite_fps
 
 	for acao in [
 		&"acelerar",
@@ -334,6 +346,37 @@ func _aplicar_volume(nome_bus: String, valor_db: float) -> void:
 func _on_node_adicionado(node: Node) -> void:
 	if node.is_in_group("ambiente_global"):
 		call_deferred("_aplicar_ambiente", node)
+	if dispositivo_mobile() and node is GPUParticles2D:
+		call_deferred("_otimizar_particulas_mobile", node)
+
+
+func _otimizar_particulas_mobile(node: Node) -> void:
+	if not is_instance_valid(node) or not (node is GPUParticles2D):
+		return
+	var particulas := node as GPUParticles2D
+	if particulas.has_meta("perfil_mobile_aplicado"):
+		return
+	particulas.set_meta("perfil_mobile_aplicado", true)
+	var nome_minusculo := str(particulas.name).to_lower()
+	var eh_fundo := (
+		nome_minusculo.contains("fundo")
+		or nome_minusculo.contains("background")
+	)
+	var limite := (
+		LIMITE_PARTICULAS_FUNDO_MOBILE
+		if eh_fundo
+		else LIMITE_PARTICULAS_MOBILE
+	)
+	particulas.amount = clampi(
+		roundi(float(particulas.amount) * FATOR_PARTICULAS_MOBILE),
+		1,
+		limite
+	)
+	particulas.fixed_fps = 30
+	particulas.interpolate = false
+	particulas.fract_delta = false
+	if eh_fundo:
+		particulas.trail_enabled = false
 
 
 func _aplicar_ambiente(node: Node) -> void:
@@ -342,9 +385,15 @@ func _aplicar_ambiente(node: Node) -> void:
 	var world := node as WorldEnvironment
 	if not world.environment:
 		return
-	world.environment.glow_enabled = neon > 0.01 or bloom > 0.01
-	world.environment.glow_intensity = neon
-	world.environment.glow_bloom = bloom
+	var neon_aplicado := neon
+	var bloom_aplicado := bloom
+	if dispositivo_mobile():
+		# Mantém a identidade neon, reduzindo o custo do HDR/glow no celular.
+		neon_aplicado = minf(neon_aplicado, 0.78)
+		bloom_aplicado = minf(bloom_aplicado, 0.06)
+	world.environment.glow_enabled = neon_aplicado > 0.01 or bloom_aplicado > 0.01
+	world.environment.glow_intensity = neon_aplicado
+	world.environment.glow_bloom = bloom_aplicado
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:

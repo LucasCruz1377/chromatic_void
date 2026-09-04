@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="2_bg"]
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_shader"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="4_aim"]
-[ext_resource type="AudioStream" uid="uid://dcdvl7x5pcgny" path="res://sounds/menu_song(CV).mp3" id="5_music"]
+[ext_resource type="AudioStream" path="res://sounds/OST/Space Market.ogg" id="5_music"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_shop"]
 particle_flag_disable_z = true
@@ -67,4 +67,3 @@ polygon = PackedVector2Array(-245, -3, -92, -3, -72, 3, 72, 3, 92, -3, 245, -3, 
 stream = ExtResource("5_music")
 autoplay = true
 bus = &"Music"
-

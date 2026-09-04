@@ -4,9 +4,10 @@ class_name ControlesMobile
 
 const VisualControlesMobile = preload("res://Scripts/VisualControlesMobile.gd")
 
-const COR_BASE := Color(0.08, 0.10, 0.22, 0.42)
-const COR_BORDA := Color(0.32, 0.84, 1.0, 0.72)
-const COR_ATIVO := Color(0.82, 0.34, 1.0, 0.82)
+const COR_BASE := Color(0.035, 0.06, 0.14, 0.48)
+const COR_BORDA := Color(0.26, 0.78, 1.0, 0.74)
+const COR_DETALHE := Color(0.48, 0.9, 1.0, 0.34)
+const COR_ATIVO := Color(0.76, 0.28, 1.0, 0.88)
 
 var area_batalha: Node
 var jogador: Node
@@ -45,8 +46,6 @@ func _process(_delta: float) -> void:
 	var tamanho_atual := _obter_tamanho_interface()
 	if not tamanho_atual.is_equal_approx(ultimo_tamanho_interface):
 		_atualizar_layout()
-	if visible and is_instance_valid(superficie):
-		superficie.queue_redraw()
 
 
 func _exit_tree() -> void:
@@ -70,6 +69,9 @@ func _input(event: InputEvent) -> void:
 
 func _iniciar_toque(indice: int, posicao: Vector2) -> void:
 	var tamanho := _obter_tamanho_interface()
+	if _tentar_abrir_melhorias_pelo_indicador(posicao):
+		_marcar_toque_como_usado()
+		return
 	# Fallback explícito: além do TouchScreenButton nativo, converte o toque em
 	# ação aqui. Isso mantém os comandos funcionais até em aparelhos/runtimes
 	# que não encaminham o evento ao nó nativo depois do stretch da tela.
@@ -83,11 +85,17 @@ func _iniciar_toque(indice: int, posicao: Vector2) -> void:
 			_on_botao_toque_pressionado()
 			_marcar_toque_como_usado()
 			return
-	var centro_esperado := _centro_analogico(tamanho)
 	var raio_analogico := _raio_analogico(tamanho)
-	if dedo_analogico < 0 and posicao.distance_to(centro_esperado) <= raio_analogico * 1.55:
+	var area_analogico := (
+		posicao.x <= tamanho.x * 0.43
+		and posicao.y >= tamanho.y * 0.48
+	)
+	if dedo_analogico < 0 and area_analogico:
 		dedo_analogico = indice
-		centro_analogico = centro_esperado
+		centro_analogico = Vector2(
+			clampf(posicao.x, raio_analogico * 1.15, tamanho.x * 0.38),
+			clampf(posicao.y, tamanho.y * 0.56, tamanho.y - raio_analogico * 1.15)
+		)
 		_atualizar_analogico(posicao)
 		_marcar_toque_como_usado()
 
@@ -95,13 +103,18 @@ func _iniciar_toque(indice: int, posicao: Vector2) -> void:
 func _finalizar_toque(indice: int) -> void:
 	if indice == dedo_analogico:
 		dedo_analogico = -1
+		centro_analogico = Vector2.ZERO
 		direcao_analogico = Vector2.ZERO
 		Global.limpar_controle_toque()
+		if is_instance_valid(superficie):
+			superficie.queue_redraw()
 		_marcar_toque_como_usado()
 	if dedos_acoes.has(indice):
 		var acao: StringName = dedos_acoes[indice]
 		Input.action_release(acao)
 		dedos_acoes.erase(indice)
+		if is_instance_valid(superficie):
+			superficie.queue_redraw()
 		_marcar_toque_como_usado()
 
 
@@ -114,6 +127,7 @@ func _atualizar_analogico(posicao: Vector2) -> void:
 
 
 func _atualizar_visibilidade() -> void:
+	var visibilidade_anterior := visible
 	var deve_mostrar := forcar_exibicao or Global.deve_exibir_controles_toque()
 	if get_tree().paused:
 		deve_mostrar = false
@@ -125,17 +139,26 @@ func _atualizar_visibilidade() -> void:
 		if acabou or escolhendo:
 			deve_mostrar = false
 		var tela_upgrades := area_batalha.get_node_or_null("GUI/TelaUpgrades") as Control
-		if is_instance_valid(tela_upgrades) and tela_upgrades.visible:
-			deve_mostrar = false
+		if is_instance_valid(tela_upgrades):
+			var menu_melhorias_aberto := false
+			if tela_upgrades.has_method("esta_aberta"):
+				menu_melhorias_aberto = bool(tela_upgrades.call("esta_aberta"))
+			else:
+				menu_melhorias_aberto = tela_upgrades.visible
+			if menu_melhorias_aberto:
+				deve_mostrar = false
 	if visible and not deve_mostrar:
 		_liberar_todos_os_comandos()
 	visible = deve_mostrar
+	if visibilidade_anterior != visible and visible and is_instance_valid(superficie):
+		superficie.queue_redraw()
 
 
 func _liberar_todos_os_comandos() -> void:
 	if dedo_analogico >= 0 or Global.controle_toque_ativo:
 		Global.limpar_controle_toque()
 	dedo_analogico = -1
+	centro_analogico = Vector2.ZERO
 	direcao_analogico = Vector2.ZERO
 	for acao in botoes_toque:
 		Input.action_release(StringName(acao))
@@ -144,12 +167,27 @@ func _liberar_todos_os_comandos() -> void:
 
 func desenhar_controles(alvo: Control) -> void:
 	var tamanho := alvo.size
-	var centro := _centro_analogico(tamanho)
+	var centro := (
+		centro_analogico
+		if dedo_analogico >= 0
+		else _centro_analogico(tamanho)
+	)
 	var raio := _raio_analogico(tamanho)
 	alvo.draw_circle(centro, raio, COR_BASE)
-	alvo.draw_arc(centro, raio, 0.0, TAU, 48, COR_BORDA, 3.0, true)
-	var deslocamento := direcao_analogico * raio * 0.58
-	alvo.draw_circle(centro + deslocamento, raio * 0.38, COR_ATIVO if dedo_analogico >= 0 else COR_BORDA)
+	alvo.draw_arc(centro, raio, 0.0, TAU, 36, COR_BORDA, 2.4, true)
+	alvo.draw_arc(centro, raio * 0.70, 0.0, TAU, 32, COR_DETALHE, 1.2, true)
+	for direcao in [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]:
+		alvo.draw_line(
+			centro + direcao * raio * 0.77,
+			centro + direcao * raio * 0.91,
+			COR_DETALHE,
+			2.0,
+			true
+		)
+	var deslocamento := direcao_analogico * raio * 0.55
+	var cor_manopla := COR_ATIVO if dedo_analogico >= 0 else COR_BORDA
+	alvo.draw_circle(centro + deslocamento, raio * 0.32, Color(cor_manopla, 0.62))
+	alvo.draw_arc(centro + deslocamento, raio * 0.32, 0.0, TAU, 28, cor_manopla, 2.0, true)
 
 	for dados in _obter_botoes(tamanho):
 		var centro_botao: Vector2 = dados["centro"]
@@ -161,7 +199,8 @@ func desenhar_controles(alvo: Control) -> void:
 			or acao in dedos_acoes.values()
 		)
 		alvo.draw_circle(centro_botao, raio_botao, COR_ATIVO if ativo else COR_BASE)
-		alvo.draw_arc(centro_botao, raio_botao, 0.0, TAU, 40, COR_BORDA, 3.0, true)
+		alvo.draw_arc(centro_botao, raio_botao, 0.0, TAU, 32, COR_BORDA, 2.2, true)
+		alvo.draw_arc(centro_botao, raio_botao * 0.76, -2.4, 0.75, 18, COR_DETALHE, 1.2, true)
 		var texto: String = dados["texto"]
 		var tamanho_fonte: int = maxi(13, int(raio_botao * 0.34))
 		var fonte := ThemeDB.fallback_font
@@ -207,6 +246,7 @@ func _criar_botoes_toque() -> void:
 		forma.radius = float(dados["raio"]) * 1.18
 		botao.shape = forma
 		botao.pressed.connect(_on_botao_toque_pressionado)
+		botao.released.connect(_on_botao_toque_liberado)
 		add_child(botao)
 		botoes_toque[acao] = botao
 
@@ -241,16 +281,23 @@ func _on_tamanho_viewport_alterado() -> void:
 
 func _on_botao_toque_pressionado() -> void:
 	Global.ultimo_dispositivo = &"toque"
+	if is_instance_valid(superficie):
+		superficie.queue_redraw()
 	if Global.vibracao:
 		Input.vibrate_handheld(18)
 
 
+func _on_botao_toque_liberado() -> void:
+	if is_instance_valid(superficie):
+		superficie.queue_redraw()
+
+
 func _centro_analogico(tamanho: Vector2) -> Vector2:
-	return Vector2(tamanho.x * 0.14, tamanho.y * 0.78)
+	return Vector2(tamanho.x * 0.15, tamanho.y * 0.77)
 
 
 func _raio_analogico(tamanho: Vector2) -> float:
-	return minf(tamanho.x, tamanho.y) * 0.13
+	return minf(tamanho.x, tamanho.y) * 0.115
 
 
 func _obter_botoes(tamanho: Vector2) -> Array[Dictionary]:
@@ -259,20 +306,14 @@ func _obter_botoes(tamanho: Vector2) -> Array[Dictionary]:
 		{
 			"acao": &"atirar",
 			"texto": "TIRO",
-			"centro": Vector2(tamanho.x * 0.87, tamanho.y * 0.78),
-			"raio": unidade * 0.105,
+			"centro": Vector2(tamanho.x * 0.86, tamanho.y * 0.76),
+			"raio": unidade * 0.087,
 		},
 		{
 			"acao": &"Habilidade",
 			"texto": "PODER",
-			"centro": Vector2(tamanho.x * 0.74, tamanho.y * 0.85),
-			"raio": unidade * 0.078,
-		},
-		{
-			"acao": &"abrir_melhorias",
-			"texto": "UP",
-			"centro": Vector2(tamanho.x * 0.87, tamanho.y * 0.53),
-			"raio": unidade * 0.065,
+			"centro": Vector2(tamanho.x * 0.73, tamanho.y * 0.84),
+			"raio": unidade * 0.067,
 		},
 		{
 			"acao": &"pausar",
@@ -281,6 +322,23 @@ func _obter_botoes(tamanho: Vector2) -> Array[Dictionary]:
 			"raio": unidade * 0.052,
 		},
 	]
+
+
+func _tentar_abrir_melhorias_pelo_indicador(posicao: Vector2) -> bool:
+	if not is_instance_valid(area_batalha):
+		return false
+	var tela_upgrades := area_batalha.get_node_or_null("GUI/TelaUpgrades") as Control
+	if not is_instance_valid(tela_upgrades):
+		return false
+	var indicador := tela_upgrades.get_node_or_null("IndicadorMelhorias") as Control
+	if not is_instance_valid(indicador) or not indicador.is_visible_in_tree():
+		return false
+	if not indicador.get_global_rect().has_point(posicao):
+		return false
+	if tela_upgrades.has_method("abrir_menu"):
+		tela_upgrades.call("abrir_menu")
+		return true
+	return false
 
 
 func _marcar_toque_como_usado() -> void:

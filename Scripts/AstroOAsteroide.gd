@@ -63,7 +63,7 @@ var dialogo_inicial_mobile: Array[String] = [
 	"Arraste o analógico do lado esquerdo para apontar e acelerar a nave.",
 	"Segure [color=yellow]TIRO[/color] para disparar. Você pode mover e atirar com dois dedos ao mesmo tempo.",
 	"Toque em [color=yellow]PODER[/color] para usar sua habilidade especial.",
-	"Os botões [color=yellow]UP[/color] e [color=yellow]II[/color] abrem as melhorias e a pausa. Toque no texto para avançar mais rápido."
+	"Quando houver uma melhoria, toque no aviso no alto da tela. O botão [color=yellow]II[/color] abre a pausa. Toque no texto para avançar mais rápido."
 ]
 
 var indice_dialogo: int = 0

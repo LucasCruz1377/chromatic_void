@@ -422,7 +422,11 @@ func atualizar_movimento(delta: float) -> void:
 				direcao_mira_controle.angle(),
 				VelocidadeVirar * fator_movimento * delta
 			)
-		elif mira_mouse and Global.ultimo_dispositivo != &"controle":
+		elif (
+			mira_mouse
+			and Global.ultimo_dispositivo != &"controle"
+			and not Global.dispositivo_mobile()
+		):
 			var target_angle := global_position.angle_to_point(get_global_mouse_position())
 			rotation = rotate_toward(
 				rotation,

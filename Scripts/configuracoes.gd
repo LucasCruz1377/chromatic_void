@@ -5,6 +5,7 @@ extends Control
 
 
 func _ready() -> void:
+	Global.definir_emulacao_mouse_mobile(true)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	Engine.time_scale = 1.0

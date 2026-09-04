@@ -114,11 +114,17 @@ var rolagem_grade: ScrollContainer
 var rolagem_detalhes: ScrollContainer
 var botoes_habilidades: Array[Button] = []
 var dica_controles: HBoxContainer
+@onready var musica_loja: AudioStreamPlayer = $Musica
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	Global.definir_emulacao_mouse_mobile(true)
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	if musica_loja.stream is AudioStreamOggVorbis:
+		(musica_loja.stream as AudioStreamOggVorbis).loop = true
+	if not musica_loja.playing:
+		musica_loja.play()
 	if ResourceLoader.exists("res://Fonts/Stereohead.otf"):
 		fonte = load("res://Fonts/Stereohead.otf") as Font
 

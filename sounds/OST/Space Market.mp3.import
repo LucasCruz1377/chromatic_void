@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://da8eo7cd01wky"
+path="res://.godot/imported/Space Market.mp3-890e63da9ba2c7eb8a0c2cb05513aa58.mp3str"
+
+[deps]
+
+source_file="res://sounds/OST/Space Market.mp3"
+dest_files=["res://.godot/imported/Space Market.mp3-890e63da9ba2c7eb8a0c2cb05513aa58.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

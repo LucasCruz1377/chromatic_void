@@ -82,6 +82,7 @@ var musica_boss_ativa := false
 
 func _ready() -> void:
 	get_tree().paused = false
+	Global.definir_emulacao_mouse_mobile(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	Global.Pontos = 0
 	Global.Combo = 0
@@ -124,12 +125,18 @@ func _ready() -> void:
 		proximo_nivel_boss = 1
 
 
+func _exit_tree() -> void:
+	Global.limpar_controle_toque()
+	Global.definir_emulacao_mouse_mobile(true)
+
+
 func _process(delta: float) -> void:
 	if game_over or escolha_setor_ativa:
 		return
 	atualizar_pontos(delta)
 	if get_tree().get_nodes_in_group("player").is_empty():
 		game_over = true
+		Global.definir_emulacao_mouse_mobile(true)
 		caixa_gameover.visible = true
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		return
@@ -581,6 +588,7 @@ func mostrar_escolha_setor(opcoes: Array[StringName]) -> void:
 func iniciar_painel_escolha(titulo: String, subtitulo: String) -> HBoxContainer:
 	escolha_setor_ativa = true
 	get_tree().paused = true
+	Global.definir_emulacao_mouse_mobile(true)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	camada_escolha = CanvasLayer.new()
 	camada_escolha.layer = 80
@@ -662,6 +670,7 @@ func _on_setor_escolhido(id: StringName) -> void:
 func encerrar_escolha_setor() -> void:
 	escolha_setor_ativa = false
 	get_tree().paused = false
+	Global.definir_emulacao_mouse_mobile(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	if is_instance_valid(camada_escolha):
 		camada_escolha.queue_free()

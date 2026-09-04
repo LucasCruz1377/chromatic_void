@@ -92,9 +92,11 @@ func _process(_delta: float) -> void:
 		else:
 			get_tree().paused = not get_tree().paused
 			if get_tree().paused:
+				Global.definir_emulacao_mouse_mobile(true)
 				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 				botao_despause.call_deferred("grab_focus")
 			else:
+				Global.definir_emulacao_mouse_mobile(false)
 				Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
 	caixa_pause.visible = get_tree().paused and not escolhendo_setor
@@ -119,6 +121,7 @@ func preparar_troca_de_cena() -> void:
 		tela_upgrades.call("fechar_menu")
 	get_tree().paused = false
 	Engine.time_scale = 1.0
+	Global.definir_emulacao_mouse_mobile(true)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 
@@ -131,6 +134,7 @@ func _on_tentar_de_novo_pressed() -> void:
 
 func _on_despause_pressed() -> void:
 	get_tree().paused = false
+	Global.definir_emulacao_mouse_mobile(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
 

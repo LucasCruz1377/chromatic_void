@@ -43,6 +43,20 @@ func _ready() -> void:
 		batalha.get_node_or_null("PainelDesenvolvedor") == null,
 		"o painel de desenvolvedor foi criado quando a permissão estava bloqueada"
 	)
+	var jogador_batalha := batalha.get_node("Player") as Node2D
+	var controles_batalha := ControlesMobileCena.new()
+	batalha.add_child(controles_batalha)
+	controles_batalha.configurar(batalha, jogador_batalha, true)
+	await get_tree().process_frame
+	var tela_upgrades_batalha := batalha.get_node("GUI/TelaUpgrades") as Control
+	verificar(
+		tela_upgrades_batalha.visible and not bool(tela_upgrades_batalha.call("esta_aberta")),
+		"o cenário de regressão da tela de melhorias não pôde ser reproduzido"
+	)
+	verificar(
+		controles_batalha.visible,
+		"os controles sumiram na batalha porque a tela de melhorias fechada está visível"
+	)
 	parar_audios(batalha)
 	await get_tree().create_timer(0.08).timeout
 	batalha.queue_free()
@@ -58,9 +72,27 @@ func _ready() -> void:
 	await get_tree().process_frame
 	verificar(controles.visible, "os controles de toque forçados não ficaram visíveis")
 	verificar(
-		controles.quantidade_botoes_toque_para_teste() == 4,
-		"os quatro TouchScreenButtons não foram criados"
+		controles.quantidade_botoes_toque_para_teste() == 3,
+		"os três TouchScreenButtons essenciais não foram criados"
 	)
+	verificar(
+		not controles.botoes_toque.has(&"abrir_melhorias"),
+		"o antigo botão UP ainda apareceu na interface mobile"
+	)
+	var particulas_teste := GPUParticles2D.new()
+	particulas_teste.name = "FundoTeste"
+	particulas_teste.amount = 200
+	add_child(particulas_teste)
+	Global._otimizar_particulas_mobile(particulas_teste)
+	verificar(
+		particulas_teste.amount == Global.LIMITE_PARTICULAS_FUNDO_MOBILE,
+		"o perfil mobile não limitou as partículas de fundo"
+	)
+	verificar(
+		particulas_teste.fixed_fps == 30 and not particulas_teste.interpolate,
+		"as partículas mobile não receberam a atualização econômica"
+	)
+	particulas_teste.queue_free()
 	verificar(
 		controles.superficie.size.x > 1.0 and controles.superficie.size.y > 1.0,
 		"a superfície responsiva dos controles ficou sem tamanho"

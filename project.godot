@@ -13,15 +13,15 @@ config_version=5
 config/name="Chromatic Void"
 config/description="Jogo colorido inspirado em Asteroids(1979) - Atari"
 config/version="0.5.0-dev"
-run/main_scene="uid://4n1y5b4uhay0"
+run/main_scene="res://Rooms/TelaInicial.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 boot_splash/bg_color=Color(0, 0, 0, 1)
-config/icon="uid://d3bgt0o17j0qy"
+config/icon="res://Icon_Splash/PolyIcon.png"
 
 [autoload]
 
-Global="*uid://syp3i6gsjtl3"
-GerenciadorDeSave="*uid://be24t6lr65tfl"
+Global="*res://Scripts/Global.gd"
+GerenciadorDeSave="*res://Scripts/GerenciadorDeSave.gd"
 
 [display]
 
@@ -29,14 +29,8 @@ window/size/viewport_width=960
 window/size/viewport_height=540
 window/size/mode=3
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-window/stretch/scale_mode="fractional"
 window/handheld/orientation=4
 mouse_cursor/tooltip_position_offset=Vector2(0, 0)
-
-[input_devices]
-
-pointing/emulate_mouse_from_touch=true
 
 [file_customization]
 

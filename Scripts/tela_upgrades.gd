@@ -294,11 +294,15 @@ func atualizar_indicador() -> void:
 		and icone != null
 	)
 	indicador.icon = icone if usando_controle else null
-	indicador.text = (
-		"◆  MELHORIAS: %d" % pontos
-		if usando_controle
-		else "◆  MELHORIAS: %d  [TAB]" % pontos
-	)
+	if Global.dispositivo_mobile():
+		indicador.icon = null
+		indicador.text = "◆  MELHORIAS: %d" % pontos
+	else:
+		indicador.text = (
+			"◆  MELHORIAS: %d" % pontos
+			if usando_controle
+			else "◆  MELHORIAS: %d  [TAB]" % pontos
+		)
 
 
 func pulsar_indicador() -> void:
@@ -317,6 +321,7 @@ func abrir_menu() -> void:
 		return
 
 	menu_aberto = true
+	Global.definir_emulacao_mouse_mobile(true)
 	time_scale_anterior = Engine.time_scale
 	mouse_mode_anterior = Input.mouse_mode
 	Engine.time_scale = 0.0
@@ -338,6 +343,7 @@ func fechar_menu() -> void:
 	estado_alterado.emit(false)
 	Engine.time_scale = maxf(time_scale_anterior, 0.01)
 	Input.set_mouse_mode(mouse_mode_anterior)
+	Global.definir_emulacao_mouse_mobile(false)
 	limpar_cards()
 	atualizar_indicador()
 
