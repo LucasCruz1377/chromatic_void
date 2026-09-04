@@ -171,7 +171,13 @@ static func calcular_permissao_desenvolvedor(
 
 
 func dispositivo_mobile() -> bool:
-	return OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")
+	return (
+		OS.get_name() in ["Android", "iOS"]
+		or OS.has_feature("mobile")
+		or OS.has_feature("mobile_controls")
+		or OS.has_feature("android")
+		or OS.has_feature("ios")
+	)
 
 
 func deve_exibir_controles_toque() -> bool:

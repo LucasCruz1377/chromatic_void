@@ -59,6 +59,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_process_input(true)
 	set_process_unhandled_input(true)
+	_aplicar_visibilidade_plataforma(Global.dispositivo_mobile())
 	_configurar_opcoes()
 	_criar_controles_save()
 	_conectar_sinais()
@@ -67,6 +68,23 @@ func _ready() -> void:
 	_atualizar_titulos_abas()
 	atualizar_controles_detectados()
 	call_deferred("_focar_primeiro_controle")
+
+
+func _aplicar_visibilidade_plataforma(eh_mobile: bool) -> void:
+	var aba_controles := abas.get_node_or_null("CONTROLES") as Control
+	if not is_instance_valid(aba_controles):
+		return
+	var indice := abas.get_tab_idx_from_control(aba_controles)
+	if indice >= 0:
+		abas.set_tab_hidden(indice, eh_mobile)
+	# Essas opções dizem respeito à mira com mouse e a controles físicos.
+	# O Android usa o layout touch fixo e não precisa expô-las.
+	mira_mouse.visible = not eh_mobile
+	zona_morta.get_parent().visible = not eh_mobile
+
+
+func aplicar_layout_mobile_para_teste(eh_mobile: bool) -> void:
+	_aplicar_visibilidade_plataforma(eh_mobile)
 
 
 func _process(delta: float) -> void:

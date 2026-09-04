@@ -57,6 +57,14 @@ func _ready() -> void:
 	controles.configurar(null, jogador_falso, true)
 	await get_tree().process_frame
 	verificar(controles.visible, "os controles de toque forçados não ficaram visíveis")
+	verificar(
+		controles.quantidade_botoes_toque_para_teste() == 4,
+		"os quatro TouchScreenButtons não foram criados"
+	)
+	verificar(
+		controles.superficie.size.x > 1.0 and controles.superficie.size.y > 1.0,
+		"a superfície responsiva dos controles ficou sem tamanho"
+	)
 
 	controles.definir_analogico_para_teste(Vector2(0.8, -0.25))
 	verificar(Global.controle_toque_ativo, "o analógico virtual não ativou o controle por toque")
@@ -64,10 +72,40 @@ func _ready() -> void:
 		Global.direcao_controle_toque.distance_to(Vector2(0.8, -0.25)) < 0.01,
 		"a direção do analógico virtual não chegou ao jogador"
 	)
-	controles.pressionar_acao_para_teste(&"atirar")
-	verificar(Input.is_action_pressed("atirar"), "o botão virtual de tiro não pressionou a ação")
-	controles.liberar_acao_para_teste(&"atirar")
-	verificar(not Input.is_action_pressed("atirar"), "o botão virtual de tiro ficou preso")
+	var botao_tiro := controles.botoes_toque.get(&"atirar") as TouchScreenButton
+	verificar(is_instance_valid(botao_tiro), "o TouchScreenButton de tiro não existe")
+	if is_instance_valid(botao_tiro):
+		var toque_tiro := InputEventScreenTouch.new()
+		toque_tiro.index = 7
+		toque_tiro.position = botao_tiro.position
+		toque_tiro.pressed = true
+		controles._input(toque_tiro)
+		verificar(Input.is_action_pressed("atirar"), "o toque real não pressionou a ação de tiro")
+		toque_tiro = toque_tiro.duplicate() as InputEventScreenTouch
+		toque_tiro.pressed = false
+		controles._input(toque_tiro)
+		verificar(not Input.is_action_pressed("atirar"), "o tiro touch ficou preso após soltar o dedo")
+
+	var cena_configuracoes := load("res://Janela_Configurações.tscn") as PackedScene
+	var janela_configuracoes := cena_configuracoes.instantiate() as Control
+	add_child(janela_configuracoes)
+	await get_tree().process_frame
+	janela_configuracoes.aplicar_layout_mobile_para_teste(true)
+	var abas := janela_configuracoes.get_node("Painel/Margem/Coluna/Abas") as TabContainer
+	var aba_controles := abas.get_node("CONTROLES") as Control
+	var indice_controles := abas.get_tab_idx_from_control(aba_controles)
+	verificar(abas.is_tab_hidden(indice_controles), "a aba de controles apareceu no mobile")
+	janela_configuracoes.queue_free()
+	await get_tree().process_frame
+
+	verificar(
+		str(ProjectSettings.get_setting("display/window/stretch/aspect")) == "keep",
+		"a proporção 16:9 não está protegida na escala mobile"
+	)
+	verificar(
+		str(ProjectSettings.get_setting("display/window/stretch/scale_mode")) == "fractional",
+		"a escala não aceita resoluções fracionárias de celular"
+	)
 
 	controles.queue_free()
 	await get_tree().process_frame
