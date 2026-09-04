@@ -3,77 +3,130 @@ class_name HabilidadeTransfusao
 
 
 @export_category("Transfusão")
-@export_range(0.05, 0.80, 0.05) var custo_vida_maxima: float = 0.25
-@export var dano: float = 15.0
-@export var raio: float = 260.0
-@export var forca_empurrao: float = 420.0
+@export var dano_dreno: float = 28.0
+@export var alcance: float = 420.0
+@export_range(0.10, 1.0, 0.05) var fator_roubo: float = 0.65
 
 
 func pode_ativar(player) -> bool:
-	if not super(player):
-		return false
-	return player.vida > player.VIDA_MAXIMA * custo_vida_maxima + 1.0
+	return super(player) and is_instance_valid(obter_alvo(player))
 
 
 func executar(player) -> void:
-	var custo = player.VIDA_MAXIMA * custo_vida_maxima
-	if not player.sacrificar_vida(custo):
+	var alvo := obter_alvo(player)
+	if not is_instance_valid(alvo):
 		return
 
-	criar_pulso(player)
-	var camera = player.get_tree().get_first_node_in_group("camera")
-	if camera and camera.has_method("shake"):
-		camera.shake(10.0)
+	var origem := (alvo as Node2D).global_position
+	var destino := (player as Node2D).global_position
+	var vida_antes := ler_vida(alvo)
+	criar_fluxo_vital(player, origem, destino)
+	alvo.call("tomarDano", dano_dreno)
 
-	for inimigo in player.get_tree().get_nodes_in_group("inimigo"):
-		if not is_instance_valid(inimigo) or not (inimigo is Node2D):
+	var vida_depois := ler_vida(alvo)
+	var dano_real := dano_dreno
+	if vida_antes >= 0.0:
+		if vida_depois >= 0.0 and vida_depois <= vida_antes:
+			dano_real = vida_antes - vida_depois
+		else:
+			dano_real = minf(dano_dreno, vida_antes)
+	player.curar(maxf(dano_real, 0.0) * fator_roubo)
+
+	var camera := player.get_tree().get_first_node_in_group("camera") as Camera2D
+	if is_instance_valid(camera) and camera.has_method("shake"):
+		camera.shake(5.5)
+	Global.vibrar_controle(0.22, 0.48, 0.16)
+
+
+func obter_alvo(player) -> Node2D:
+	if not is_instance_valid(player) or not (player is Node2D):
+		return null
+	var jogador := player as Node2D
+	var melhor_alvo: Node2D
+	var menor_distancia_quadrada := alcance * alcance
+	for candidato in jogador.get_tree().get_nodes_in_group("inimigo"):
+		if (
+			not is_instance_valid(candidato)
+			or not (candidato is Node2D)
+			or not candidato.has_method("tomarDano")
+		):
 			continue
-		var distancia = player.global_position.distance_to(inimigo.global_position)
-		if distancia > raio:
-			continue
-		if inimigo.has_method("tomarDano"):
-			inimigo.tomarDano(dano)
-		var direcao = player.global_position.direction_to(inimigo.global_position)
-		if inimigo.has_method("aplicar_empurrao"):
-			inimigo.aplicar_empurrao(direcao * forca_empurrao)
+		var alvo := candidato as Node2D
+		var distancia_quadrada := jogador.global_position.distance_squared_to(
+			alvo.global_position
+		)
+		if distancia_quadrada <= menor_distancia_quadrada:
+			menor_distancia_quadrada = distancia_quadrada
+			melhor_alvo = alvo
+	return melhor_alvo
 
 
-func criar_pulso(player) -> void:
-	var pulso := Line2D.new()
-	pulso.width = 7.0
-	pulso.default_color = Color(1.0, 0.05, 0.18, 0.92)
-	pulso.closed = true
-	pulso.antialiased = true
-	pulso.z_index = 7
-	var raio_inicial := 24.0
+func ler_vida(alvo: Object) -> float:
+	if not is_instance_valid(alvo):
+		return -1.0
+	var valor: Variant = alvo.get("Vida")
+	return float(valor) if valor != null else -1.0
 
-	for indice in range(56):
-		var angulo := TAU * float(indice) / 56.0
-		pulso.add_point(Vector2.from_angle(angulo) * raio_inicial)
 
-	player.get_tree().current_scene.add_child(pulso)
-	pulso.global_position = player.global_position
-	var escala_final := raio / raio_inicial
-	var tween := pulso.create_tween().set_parallel(true)
-	tween.tween_property(pulso, "scale", Vector2.ONE * escala_final, 0.34)
-	tween.tween_property(pulso, "modulate:a", 0.0, 0.34)
-	tween.chain().tween_callback(pulso.queue_free)
+func criar_fluxo_vital(player, origem: Vector2, destino: Vector2) -> void:
+	var jogador := player as Node
+	var cena := jogador.get_tree().current_scene
+	if not is_instance_valid(cena):
+		return
+
+	var efeito := Node2D.new()
+	efeito.name = "FluxoTransfusao"
+	efeito.z_index = 12
+	cena.add_child(efeito)
+
+	var direcao := origem.direction_to(destino)
+	var perpendicular := direcao.orthogonal()
+	for indice in range(3):
+		var deslocamento := float(indice - 1) * 13.0
+		var linha := Line2D.new()
+		linha.width = 5.0 - absf(deslocamento) * 0.10
+		linha.default_color = Color(1.0, 0.04, 0.22, 0.90)
+		linha.antialiased = true
+		linha.add_point(origem + perpendicular * deslocamento)
+		linha.add_point(origem.lerp(destino, 0.45) - perpendicular * deslocamento * 0.65)
+		linha.add_point(origem.lerp(destino, 0.78) + perpendicular * deslocamento * 0.35)
+		linha.add_point(destino)
+		efeito.add_child(linha)
+
+	var nucleo := Polygon2D.new()
+	nucleo.polygon = criar_circulo(11.0, 18)
+	nucleo.color = Color(1.0, 0.12, 0.30, 1.0)
+	nucleo.global_position = origem
+	efeito.add_child(nucleo)
+
+	var tween_movimento := efeito.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween_movimento.tween_property(nucleo, "global_position", destino, 0.32)
+	var tween_sumico := efeito.create_tween().set_parallel(true)
+	tween_sumico.tween_property(efeito, "modulate:a", 0.0, 0.42)
+	tween_sumico.chain().tween_callback(efeito.queue_free)
+
+
+func criar_circulo(raio: float, lados: int) -> PackedVector2Array:
+	var pontos := PackedVector2Array()
+	for indice in range(lados):
+		pontos.append(Vector2.from_angle(TAU * float(indice) / float(lados)) * raio)
+	return pontos
 
 
 func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/transfusao.svg"
 	var cor := Color(1.0, 0.08, 0.24)
 	return {
-		&"transfusao_dano": criar_carta_upgrade("PULSO HEMÁTICO", "+4 de dano em área.", icone, cor, Nome, 3, [&"dano"]),
-		&"transfusao_alcance": criar_carta_upgrade("CÍRCULO SOLIDÁRIO", "+40 de raio da onda.", icone, cor, Nome, 3, [&"alcance"]),
-		&"transfusao_eficiencia": criar_carta_upgrade("DOAÇÃO EFICIENTE", "Reduz o custo em 3% da vida máxima.", icone, cor, Nome, 3, [&"vida"]),
+		&"transfusao_dano": criar_carta_upgrade("DRENAGEM PROFUNDA", "+6 de dano roubado do alvo.", icone, cor, Nome, 3, [&"dano"]),
+		&"transfusao_alcance": criar_carta_upgrade("VEIA CROMÁTICA", "+55 de alcance para escolher o inimigo.", icone, cor, Nome, 3, [&"alcance"]),
+		&"transfusao_eficiencia": criar_carta_upgrade("CICLO VITAL", "+12% do dano convertido em cura.", icone, cor, Nome, 3, [&"vida"]),
 	}
 
 
 func aplicar_upgrade_especifico(id: StringName, _nivel: int) -> bool:
 	match id:
-		&"transfusao_dano": dano += 4.0
-		&"transfusao_alcance": raio += 40.0
-		&"transfusao_eficiencia": custo_vida_maxima = maxf(custo_vida_maxima - 0.03, 0.10)
+		&"transfusao_dano": dano_dreno += 6.0
+		&"transfusao_alcance": alcance += 55.0
+		&"transfusao_eficiencia": fator_roubo = minf(fator_roubo + 0.12, 1.0)
 		_: return false
 	return true

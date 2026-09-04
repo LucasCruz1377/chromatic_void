@@ -119,6 +119,25 @@ func _ready() -> void:
 	verificar(projetil_player.brilho_visual > 1.0, "o glow do jogador não está ajustável")
 	projetil_player.queue_free()
 
+	var cena_inimigo_teste := load("res://Entities/InimigoMelee.tscn") as PackedScene
+	var inimigo_teste := cena_inimigo_teste.instantiate() as InimigoBase
+	inimigo_teste.VidaMaxima = 100.0
+	inimigo_teste.process_mode = Node.PROCESS_MODE_DISABLED
+	batalha.add_child(inimigo_teste)
+	inimigo_teste.global_position = batalha.player.global_position + Vector2(180.0, 0.0)
+	await get_tree().process_frame
+	var transfusao := (
+		load("res://Habilidades/habilidadeTransfusao.tres").duplicate(true)
+		as HabilidadeTransfusao
+	)
+	var vida_inimigo_antes: float = inimigo_teste.Vida
+	batalha.player.vida = 40.0
+	transfusao.executar(batalha.player)
+	verificar(inimigo_teste.Vida < vida_inimigo_antes, "Transfusão não drenou vida do inimigo")
+	verificar(batalha.player.vida > 40.0, "Transfusão não curou o jogador com a vida drenada")
+	inimigo_teste.queue_free()
+	await get_tree().process_frame
+
 	batalha.player.nivel_atual = 4
 	batalha.player.xp_necessario = 1000
 	batalha.player.xp_atual = 0.0
@@ -165,6 +184,13 @@ func _ready() -> void:
 		verificar(loja.rolagem_grade is ScrollContainer, "a grade da loja não possui scroll")
 		verificar(loja.rolagem_detalhes is ScrollContainer, "os detalhes da loja não possuem scroll")
 		verificar(loja.botoes_habilidades.size() == loja.habilidades.size(), "cartões da loja não estão navegáveis")
+		loja.selecionar_categoria(2)
+		verificar(loja.botoes_habilidades.size() == 3, "a aba NAVE não exibiu os três passivos")
+		verificar(loja.botao_acao.text != "EM BREVE", "a aba NAVE ainda está marcada como em breve")
+		loja.selecionar_categoria(3)
+		verificar(loja.botoes_habilidades.size() == 3, "a aba UPGRADES não exibiu os três passivos")
+		verificar(loja.botao_acao.text != "EM BREVE", "a aba UPGRADES ainda está marcada como em breve")
+		loja.selecionar_categoria(0)
 
 		var aba := InputEventAction.new()
 		aba.action = &"proxima_aba"

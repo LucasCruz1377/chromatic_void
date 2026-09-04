@@ -115,6 +115,11 @@ var impactos_capacitor := 0
 var capacitor_pronto := false
 var bonus_cadencia_reacao := 0.0
 var tempo_reacao := 0.0
+var passivo_determinacao := false
+var cura_passiva_por_acerto := 0.0
+var intervalo_cura_passiva := 0.28
+var tempo_cura_passiva := 0.0
+var fator_cooldown_passivo := 1.0
 var tween_dano_visual: Tween
 
 # Sinergias entre a arma e a habilidade equipada.
@@ -142,6 +147,7 @@ signal upgrade_adquirido(id: StringName, novo_nivel: int)
 
 
 func _ready() -> void:
+	carregar_passivos_loja()
 	vida = VIDA_MAXIMA
 	carregar_habilidade_equipada()
 	criar_barra_cooldown_habilidade()
@@ -215,7 +221,41 @@ func carregar_habilidade_equipada() -> void:
 
 	HabilidadeEquipada = copia
 	HabilidadeEquipada.reiniciar_estado()
+	if fator_cooldown_passivo < 1.0:
+		HabilidadeEquipada.reduzir_cooldown(fator_cooldown_passivo)
 	HabilidadeEquipada.ao_equipar(self)
+
+
+func carregar_passivos_loja() -> void:
+	var dados: Dictionary = GerenciadorDeSave.carregar()
+	var equipados: Variant = dados.get("passivos_equipados", {})
+	if not (equipados is Dictionary):
+		return
+	var desbloqueados: Variant = dados.get("passivos_desbloqueados", [])
+	for categoria in ["2", "3"]:
+		var id_passivo := str(equipados.get(categoria, ""))
+		if Global.modo_desenvolvedor or (desbloqueados is Array and id_passivo in desbloqueados):
+			aplicar_passivo_loja(id_passivo)
+
+
+func aplicar_passivo_loja(id_passivo: String) -> void:
+	match id_passivo:
+		"reflexos_rapidos":
+			SPEED *= 1.12
+			MAX_VELOCIDADE *= 1.12
+			VelocidadeVirar *= 1.10
+		"luz_vital":
+			multiplicador_cura_recebida *= 1.20
+			regeneracao_casco_por_segundo += 0.35
+		"armadura_aco":
+			VIDA_MAXIMA *= 1.10
+			multiplicador_dano_recebido *= 0.88
+		"determinacao":
+			passivo_determinacao = true
+		"chama_vida":
+			cura_passiva_por_acerto = 0.35
+		"ritmo_recomeco":
+			fator_cooldown_passivo = 0.85
 
 
 func atualizar_ui() -> void:
@@ -607,6 +647,7 @@ func criar_projetil(
 	projetil.rotation = angulo
 
 	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
+	var bonus_determinacao := 1.25 if determinacao_ativa() else 1.0
 	var velocidade_relativa := clampf(
 		velocity.length() / maxf(MAX_VELOCIDADE, 1.0),
 		0.0,
@@ -620,6 +661,7 @@ func criar_projetil(
 		* multiplicador_dano_mira
 		* multiplicador_dano_habilidade
 		* bonus_overdrive
+		* bonus_determinacao
 		* bonus_movimento
 		* multiplicador_dano_extra
 	)
@@ -668,6 +710,9 @@ func obter_alvos_para_multitiro(quantidade: int) -> Array[Node2D]:
 func registrar_acerto_projetil() -> void:
 	if reducao_cooldown_por_impacto > 0.0 and HabilidadeEquipada:
 		HabilidadeEquipada.reduzir_cooldown_atual(reducao_cooldown_por_impacto)
+	if cura_passiva_por_acerto > 0.0 and tempo_cura_passiva <= 0.0 and vida < VIDA_MAXIMA:
+		curar(cura_passiva_por_acerto)
+		tempo_cura_passiva = intervalo_cura_passiva
 	if nivel_capacitor_cinetico <= 0 or capacitor_pronto:
 		return
 	impactos_capacitor += 1
@@ -693,7 +738,8 @@ func tomar_dano(valor: float) -> void:
 	):
 		return
 
-	var dano_restante := maxf(valor, 0.0)
+	var fator_determinacao := 0.85 if determinacao_ativa() else 1.0
+	var dano_restante := maxf(valor, 0.0) * fator_determinacao
 	if escudo_habilidade > 0.0:
 		var absorvido := minf(escudo_habilidade, dano_restante)
 		escudo_habilidade -= absorvido
@@ -787,6 +833,8 @@ func aplicar_pulso_queimadura() -> void:
 		* resistencia_temporaria_multiplicador,
 		0.0
 	)
+	if determinacao_ativa():
+		dano_final *= 0.85
 	vida = maxf(vida - dano_final, 0.0)
 	tempo_sem_dano = 0.0
 	pulsos_queimadura_restantes -= 1
@@ -835,6 +883,8 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 
 func atualizar_passivos(delta: float) -> void:
 	tempo_sem_dano += delta
+	if tempo_cura_passiva > 0.0:
+		tempo_cura_passiva = maxf(tempo_cura_passiva - delta, 0.0)
 	if tempo_reacao > 0.0:
 		tempo_reacao = maxf(tempo_reacao - delta, 0.0)
 	if (
@@ -843,6 +893,10 @@ func atualizar_passivos(delta: float) -> void:
 		and vida < VIDA_MAXIMA
 	):
 		curar(regeneracao_casco_por_segundo * delta)
+
+
+func determinacao_ativa() -> bool:
+	return passivo_determinacao and vida <= VIDA_MAXIMA * 0.35
 
 
 func _draw() -> void:
