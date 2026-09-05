@@ -184,6 +184,16 @@ func _ready() -> void:
 		verificar(loja.rolagem_grade is ScrollContainer, "a grade da loja não possui scroll")
 		verificar(loja.rolagem_detalhes is ScrollContainer, "os detalhes da loja não possuem scroll")
 		verificar(loja.botoes_habilidades.size() == loja.habilidades.size(), "cartões da loja não estão navegáveis")
+		loja.selecionar_categoria(4)
+		await get_tree().process_frame
+		verificar(loja.painel_filtros_personalizacao.visible, "os filtros de personalização não apareceram")
+		verificar(loja.botoes_filtros_personalizacao.size() == 3, "a personalização não possui três aspectos")
+		verificar(loja.obter_itens_categoria_atual().size() == 5, "o filtro Modelos não exibiu cinco naves")
+		loja._selecionar_filtro_personalizacao(&"cor")
+		verificar(loja.obter_itens_categoria_atual().size() == 6, "o filtro Cores não exibiu seis paletas")
+		loja._selecionar_filtro_personalizacao(&"rastro")
+		verificar(loja.obter_itens_categoria_atual().size() == 1, "o filtro Rastros não exibiu seu estado Em breve")
+		loja.selecionar_categoria(0)
 
 		var aba := InputEventAction.new()
 		aba.action = &"proxima_aba"

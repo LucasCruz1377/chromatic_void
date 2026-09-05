@@ -55,6 +55,11 @@ jobs:
       - name: Verificar referências de recursos
         run: python3 Tests/validar_referencias.py
 
+      - name: Verificar catálogo, loja e feedback de combate
+        run: |
+          python3 Tests/validar_monthly_catalogo.py
+          python3 Tests/validar_polimento_loja_dano.py
+
       - name: Importar projeto em modo headless
         run: godot --headless --audio-driver Dummy --path . --import --quit
 

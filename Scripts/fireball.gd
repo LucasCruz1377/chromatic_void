@@ -4,6 +4,9 @@ extends Area2D
 const BRILHO_PROJETEIS_PADRAO := 1.65
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
+const TexturaArcoColheita: Texture2D = preload("res://Assets/Armas/arco_colheita.svg")
+const RAIO_ATIVACAO_SINALIZADOR := 132.0
+const TEMPO_ARMAR_SINALIZADOR := 0.30
 
 @export_category("Neon")
 @export_range(0.6, 3.0, 0.05) var brilho_visual: float = BRILHO_PROJETEIS_PADRAO
@@ -31,7 +34,22 @@ var tempo_estilo := 0.0
 var origem_estilo := Vector2.ZERO
 var angulo_estilo := 0.0
 var indice_orbita := 0
+var quantidade_orbita := 6
 var rastro_contador := 0.0
+var modo_mina: StringName = &"tempo"
+var duracao_mina_total := 5.0
+var tempo_orbita := 0.65
+var duracao_lentidao := 0.32
+var raio_absorcao := 42.0
+var multiplicador_retorno := 1.25
+var visual_arco_colheita: Sprite2D
+var bumerangue_retornando := false
+var bumerangue_direcao_ida := Vector2.RIGHT
+var bumerangue_distancia_ida := 0.0
+var bumerangue_alcance_ida := 390.0
+var bumerangue_graca_retorno := 0.0
+var bumerangue_alvos_ida: Dictionary = {}
+var bumerangue_alvos_retorno: Dictionary = {}
 
 @onready var visual: Polygon2D = $Polygon2D
 @onready var luz: PointLight2D = $PointLight2D
@@ -99,6 +117,13 @@ func configurar_estilo_monthly(estilo: StringName, cor: Color, config: Dictionar
 	origem_estilo = global_position
 	angulo_estilo = global_rotation
 	indice_orbita = int(config.get("indice_orbita", 0))
+	quantidade_orbita = maxi(int(config.get("quantidade_orbita", quantidade_orbita)), 1)
+	tempo_vida = maxf(float(config.get("tempo_vida", tempo_vida)), 0.05)
+	tempo_orbita = maxf(float(config.get("tempo_orbita", tempo_orbita)), 0.10)
+	duracao_lentidao = maxf(float(config.get("duracao_lentidao", duracao_lentidao)), 0.05)
+	raio_absorcao = maxf(float(config.get("raio_absorcao", raio_absorcao)), 8.0)
+	multiplicador_retorno = maxf(float(config.get("multiplicador_retorno", multiplicador_retorno)), 0.5)
+	bumerangue_alcance_ida = maxf(float(config.get("alcance_ida", bumerangue_alcance_ida)), 80.0)
 	if is_instance_valid(visual):
 		visual.color = cor
 		visual.self_modulate = Color(1.45, 1.45, 1.45, 1.0)
@@ -108,12 +133,25 @@ func configurar_estilo_monthly(estilo: StringName, cor: Color, config: Dictionar
 	match estilo_monthly:
 		&"mine":
 			add_to_group("monthly_mine")
-			tempo_vida = 9.0
+			modo_mina = StringName(config.get("modo_mina", &"tempo"))
+			duracao_mina_total = maxf(float(config.get("tempo_detonacao", 5.0)), 1.0)
+			tempo_vida = 14.0 if modo_mina in [&"proximidade", &"remoto"] else duracao_mina_total
 			velocidade = 0.0
+			monitoring = false
+			var colisao := get_node_or_null("CollisionShape2D") as CollisionShape2D
+			if is_instance_valid(colisao):
+				var forma_mina := CircleShape2D.new()
+				forma_mina.radius = 22.0
+				colisao.position = Vector2.ZERO
+				colisao.shape = forma_mina
 			var minas := get_tree().get_nodes_in_group("monthly_mine")
-			if minas.size() > 3 and is_instance_valid(minas[0]):
+			if minas.size() > 4 and is_instance_valid(minas[0]):
 				(minas[0] as Node).queue_free()
 		&"boomerang": tempo_vida = 2.4
+		&"harvest_boomerang":
+			tempo_vida = 5.0
+			bumerangue_direcao_ida = Vector2.from_angle(angulo_estilo)
+			_configurar_visual_arco_colheita()
 		&"underground":
 			visible = false
 			monitoring = false
@@ -127,6 +165,9 @@ func _physics_process(delta: float) -> void:
 	tempo_estilo += delta
 	rastro_contador -= delta
 	if tempo_vida <= 0.0:
+		if estilo_monthly == &"mine":
+			detonar_mina()
+			return
 		if estilo_monthly in [&"mortar", &"cold"] and dano_explosao > 0.0:
 			aplicar_onda_de_impacto(null)
 			_criar_feedback_monthly(1.0)
@@ -146,12 +187,14 @@ func _processar_movimento_monthly(delta: float) -> bool:
 	match estilo_monthly:
 		&"mine":
 			rotation += delta * 1.8
-			for node in get_tree().get_nodes_in_group("inimigo"):
-				if is_instance_valid(node) and node is Node2D and global_position.distance_to((node as Node2D).global_position) < 72.0:
-					aplicar_onda_de_impacto(node as Node2D)
-					_criar_feedback_monthly(1.0)
-					queue_free()
-					break
+			queue_redraw()
+			if tempo_estilo < TEMPO_ARMAR_SINALIZADOR:
+				return true
+			if modo_mina == &"proximidade":
+				for node in get_tree().get_nodes_in_group("inimigo"):
+					if is_instance_valid(node) and node is Node2D and global_position.distance_to((node as Node2D).global_position) < RAIO_ATIVACAO_SINALIZADOR:
+						detonar_mina()
+						break
 			return true
 		&"boomerang":
 			if tempo_estilo < 0.62:
@@ -159,11 +202,14 @@ func _processar_movimento_monthly(delta: float) -> bool:
 			elif is_instance_valid(dono_player) and dono_player is Node2D:
 				var direcao_retorno := global_position.direction_to((dono_player as Node2D).global_position)
 				global_rotation = direcao_retorno.angle()
-				global_position += direcao_retorno * velocidade * 1.25 * delta
+				global_position += direcao_retorno * velocidade * multiplicador_retorno * delta
 				if global_position.distance_to((dono_player as Node2D).global_position) < 28.0:
 					queue_free()
 			rotation += delta * 8.0
 			_criar_rastro_monthly()
+			return true
+		&"harvest_boomerang":
+			_processar_bumerangue_colheita(delta)
 			return true
 		&"wave":
 			var frente := Vector2.from_angle(angulo_estilo)
@@ -192,8 +238,8 @@ func _processar_movimento_monthly(delta: float) -> bool:
 			_criar_rastro_monthly()
 			return true
 		&"orbit":
-			if tempo_estilo < 0.65 and is_instance_valid(dono_player) and dono_player is Node2D:
-				var angulo := tempo_estilo * 7.0 + TAU * float(indice_orbita) / 6.0
+			if tempo_estilo < tempo_orbita and is_instance_valid(dono_player) and dono_player is Node2D:
+				var angulo := tempo_estilo * 7.0 + TAU * float(indice_orbita) / float(quantidade_orbita)
 				global_position = (dono_player as Node2D).global_position + Vector2.from_angle(angulo) * 58.0
 				global_rotation = angulo + PI * 0.5
 			else:
@@ -203,12 +249,101 @@ func _processar_movimento_monthly(delta: float) -> bool:
 		&"cold":
 			global_position += transform.x * velocidade * delta
 			for node in get_tree().get_nodes_in_group("projetil_inimigo"):
-				if is_instance_valid(node) and node is Node2D and global_position.distance_to((node as Node2D).global_position) < 42.0:
+				if is_instance_valid(node) and node is Node2D and global_position.distance_to((node as Node2D).global_position) < raio_absorcao:
 					EfeitoCombateCena.criar(get_tree().current_scene, (node as Node2D).global_position, EfeitoCombate.Tipo.ACERTO, cor_monthly, 0.45)
 					node.queue_free()
 			_criar_rastro_monthly()
 			return true
 	return false
+
+
+func _configurar_visual_arco_colheita() -> void:
+	if is_instance_valid(visual):
+		visual.visible = false
+	visual_arco_colheita = Sprite2D.new()
+	visual_arco_colheita.name = "VisualArcoColheita"
+	visual_arco_colheita.texture = TexturaArcoColheita
+	var maior_dimensao := maxf(float(TexturaArcoColheita.get_width()), float(TexturaArcoColheita.get_height()))
+	visual_arco_colheita.scale = Vector2.ONE * (34.0 / maxf(maior_dimensao, 1.0))
+	visual_arco_colheita.self_modulate = Color(1.35, 1.35, 1.35, 1.0)
+	add_child(visual_arco_colheita)
+	var colisao := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if is_instance_valid(colisao):
+		var forma_arco := CircleShape2D.new()
+		forma_arco.radius = 13.0
+		colisao.position = Vector2.ZERO
+		colisao.shape = forma_arco
+
+
+func _processar_bumerangue_colheita(delta: float) -> void:
+	if bumerangue_retornando:
+		bumerangue_graca_retorno = maxf(bumerangue_graca_retorno - delta, 0.0)
+		if not is_instance_valid(dono_player) or not (dono_player is Node2D):
+			queue_free()
+			return
+		var posicao_player := (dono_player as Node2D).global_position
+		var direcao_retorno := global_position.direction_to(posicao_player)
+		global_rotation = direcao_retorno.angle()
+		global_position += direcao_retorno * velocidade * multiplicador_retorno * delta
+		if bumerangue_graca_retorno <= 0.0:
+			_atingir_alvos_sobrepostos_bumerangue()
+		if global_position.distance_to(posicao_player) < 28.0:
+			queue_free()
+	else:
+		var deslocamento := bumerangue_direcao_ida * velocidade * delta
+		global_position += deslocamento
+		bumerangue_distancia_ida += deslocamento.length()
+		if bumerangue_distancia_ida >= bumerangue_alcance_ida:
+			_iniciar_retorno_bumerangue()
+	if is_instance_valid(visual_arco_colheita):
+		visual_arco_colheita.rotation += delta * 9.5
+	_criar_rastro_monthly()
+
+
+func _iniciar_retorno_bumerangue() -> void:
+	if bumerangue_retornando:
+		return
+	bumerangue_retornando = true
+	bumerangue_graca_retorno = 0.10
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		global_position,
+		EfeitoCombate.Tipo.AVISO,
+		cor_monthly,
+		0.55,
+		-bumerangue_direcao_ida
+	)
+
+
+func _atingir_alvos_sobrepostos_bumerangue() -> void:
+	for corpo in get_overlapping_bodies():
+		if corpo is Node2D:
+			_atingir_com_bumerangue(corpo as Node2D)
+
+
+func _atingir_com_bumerangue(body: Node2D) -> void:
+	if not is_instance_valid(body) or not body.has_method("tomarDano"):
+		return
+	var id_alvo := body.get_instance_id()
+	var alvos_da_fase: Dictionary = bumerangue_alvos_retorno if bumerangue_retornando else bumerangue_alvos_ida
+	if alvos_da_fase.has(id_alvo):
+		return
+	alvos_da_fase[id_alvo] = true
+	body.tomarDano(dmg)
+	EfeitoCombateCena.criar(
+		get_tree().current_scene,
+		body.global_position,
+		EfeitoCombate.Tipo.ACERTO,
+		cor_monthly,
+		0.7,
+		global_position.direction_to(body.global_position)
+	)
+	if body is CharacterBody2D:
+		(body as CharacterBody2D).velocity *= 0.75
+	if is_instance_valid(dono_player) and dono_player.has_method("registrar_acerto_projetil"):
+		dono_player.registrar_acerto_projetil()
+	if not bumerangue_retornando:
+		_iniciar_retorno_bumerangue()
 
 
 func _criar_rastro_monthly() -> void:
@@ -308,10 +443,17 @@ func verificar_fora_da_arena() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if not body.has_method("tomarDano"):
 		return
+	# Minas não causam dano por toque. Elas só explodem pelo temporizador ou
+	# pelo detonador escolhido na rota específica da arma.
+	if estilo_monthly == &"mine":
+		return
+	if estilo_monthly == &"harvest_boomerang":
+		_atingir_com_bumerangue(body)
+		return
 
 	body.tomarDano(dmg)
 	if estilo_monthly == &"snow" and body.has_method("aplicar_atordoamento"):
-		body.aplicar_atordoamento(0.32)
+		body.aplicar_atordoamento(duracao_lentidao)
 	if body is CharacterBody2D:
 		var corpo := body as CharacterBody2D
 		corpo.velocity *= 0.1
@@ -328,6 +470,42 @@ func _on_body_entered(body: Node2D) -> void:
 		penetracoes_restantes -= 1
 		return
 
+	queue_free()
+
+
+func _draw() -> void:
+	if estilo_monthly != &"mine":
+		return
+	var armada := tempo_estilo >= TEMPO_ARMAR_SINALIZADOR
+	var pulso := 0.5 + 0.5 * sin(tempo_estilo * 5.5)
+	var raio_local := RAIO_ATIVACAO_SINALIZADOR / maxf(scale.x, 0.01)
+	draw_circle(Vector2.ZERO, 9.0, Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.86))
+	draw_arc(Vector2.ZERO, 15.0 + pulso * 3.0, 0.0, TAU, 24, cor_monthly, 2.4, true)
+	if armada:
+		if modo_mina == &"proximidade":
+			var cor_area := Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.20)
+			draw_circle(Vector2.ZERO, raio_local, cor_area, false, 2.0, true)
+		elif modo_mina == &"remoto":
+			for indice in 3:
+				draw_arc(
+					Vector2.ZERO, 22.0 + float(indice) * 7.0, -0.72, 0.72,
+					12, Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.72 - float(indice) * 0.16), 2.0, true
+				)
+		else:
+			var restante := clampf(tempo_vida / maxf(duracao_mina_total, 0.01), 0.0, 1.0)
+			draw_arc(
+				Vector2.ZERO, 25.0, -PI * 0.5, -PI * 0.5 + TAU * restante,
+				32, cor_monthly, 3.2, true
+			)
+
+
+func detonar_mina() -> void:
+	if estilo_monthly != &"mine" or is_queued_for_deletion():
+		return
+	aplicar_onda_de_impacto(null)
+	_criar_feedback_monthly(1.18)
+	if is_instance_valid(dono_player) and dono_player.has_method("registrar_acerto_projetil"):
+		dono_player.registrar_acerto_projetil()
 	queue_free()
 
 

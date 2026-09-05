@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <g fill="#17213d" stroke="#dff8ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M64 8l55 56-55 56L9 64Z"/></g>
+  <g fill="none" stroke="#f8fdff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><style>.a{fill:#78eaff;fill-opacity:.72}</style><path class="a" d="M82 19c-31 5-45 27-35 47 9 18 31 24 49 12-9 25-42 34-63 13-25-26-4-67 31-73 6-1 12-1 18 1Z"/><path d="M82 62v45M63 73l38 23M63 96l38-23M82 74l-8-7M82 74l8-7"/></g>
+</svg>

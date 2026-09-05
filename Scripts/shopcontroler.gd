@@ -1,7 +1,7 @@
 extends Control
 
 
-const VERSAO_LOJA := 4
+const VERSAO_LOJA := 7
 const HABILIDADE_INICIAL := "res://Habilidades/habilidadeRetrocesso.tres"
 const CristalIcone = preload("res://Scripts/CristalMoedaIcone.gd")
 const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
@@ -80,15 +80,26 @@ const CATALOGO := [
 	}
 ]
 
-const CATEGORIAS := ["HABILIDADES", "ARMAS", "NAVE", "UPGRADES"]
+const CATEGORIAS := ["HABILIDADES", "ARMAS", "NAVE", "UPGRADES", "PERSONALIZAÇÃO"]
+const FILTROS_PERSONALIZACAO := [
+	{"id": &"modelo", "nome": "MODELOS", "cor": Color(0.30, 0.88, 1.0)},
+	{"id": &"cor", "nome": "CORES", "cor": Color(1.0, 0.40, 0.72)},
+	{"id": &"rastro", "nome": "RASTROS", "cor": Color(0.72, 0.46, 1.0)},
+]
 var habilidades: Array[Habilidade] = []
 var dados_habilidades: Array[Dictionary] = []
 var desbloqueadas: Array[String] = []
 var itens_desbloqueados: Array[StringName] = []
-var equipamentos_loja: Dictionary = {"1": &"", "2": &"", "3": &""}
+var equipamentos_loja: Dictionary = {
+	"1": &"", "2": &"", "3": &"", "4": &"c01_modelo_padrao"
+}
+var personalizacao_nave: Dictionary = {
+	"modelo": &"c01_modelo_padrao", "cor": &"c10_verde_original"
+}
 var caminho_equipado := HABILIDADE_INICIAL
 var indice_selecionado := 0
 var categoria_atual := 0
+var filtro_personalizacao: StringName = &"modelo"
 var fonte: Font
 
 var saldo_label: Label
@@ -111,6 +122,16 @@ var rolagem_grade: ScrollContainer
 var rolagem_detalhes: ScrollContainer
 var botoes_habilidades: Array[Button] = []
 var dica_controles: HBoxContainer
+var margem_interface: MarginContainer
+var cabecalho_loja: HBoxContainer
+var botao_voltar: Button
+var saldo_painel: PanelContainer
+var grade_categorias: GridContainer
+var painel_filtros_personalizacao: PanelContainer
+var grade_filtros_personalizacao: GridContainer
+var botoes_filtros_personalizacao: Array[Button] = []
+var conteudo_principal: HBoxContainer
+var largura_cartao_atual := 198.0
 @onready var musica_loja: AudioStreamPlayer = $Musica
 
 
@@ -128,6 +149,7 @@ func _ready() -> void:
 	carregar_catalogo()
 	carregar_estado()
 	construir_interface()
+	get_viewport().size_changed.connect(_on_tamanho_viewport_alterado)
 	Global.cristais_alterados.connect(_on_cristais_alterados)
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	Global.configuracoes_alteradas.connect(_atualizar_dica_controles)
@@ -135,6 +157,7 @@ func _ready() -> void:
 	atualizar_saldo()
 	_atualizar_dica_controles()
 	selecionar_categoria(0)
+	call_deferred("_aplicar_layout_responsivo")
 	call_deferred("_focar_primeiro_item")
 
 
@@ -152,6 +175,9 @@ func _atualizar_dica_controles() -> void:
 	for filho in dica_controles.get_children():
 		dica_controles.remove_child(filho)
 		filho.queue_free()
+	if Global.dispositivo_mobile():
+		_adicionar_texto_dica("TOQUE UMA ABA OU ITEM • ARRASTE PARA ROLAR")
+		return
 
 	if (
 		Global.ultimo_dispositivo != &"controle"
@@ -301,9 +327,36 @@ func carregar_estado() -> void:
 				itens_desbloqueados.append(id)
 	var equipamentos_salvos = dados.get("equipamentos_loja", {})
 	if equipamentos_salvos is Dictionary:
-		for chave in ["1", "2", "3"]:
+		for chave in ["1", "2", "3", "4"]:
 			equipamentos_loja[chave] = StringName(str(equipamentos_salvos.get(chave, "")))
-	for categoria in range(1, 4):
+	# Migração sem perda: a antiga sniper e o Canhão do Esturjão agora são uma
+	# única arma. A compra anterior libera automaticamente a versão consolidada.
+	if &"a02_rifle_cacador" in itens_desbloqueados and &"a04_canhao_esturjao" not in itens_desbloqueados:
+		itens_desbloqueados.append(&"a04_canhao_esturjao")
+	if StringName(equipamentos_loja.get("1", &"")) == &"a02_rifle_cacador":
+		equipamentos_loja["1"] = &"a04_canhao_esturjao"
+	if StringName(equipamentos_loja.get("4", &"")).is_empty():
+		equipamentos_loja["4"] = &"c01_modelo_padrao"
+	var personalizacao_salva = dados.get("personalizacao_nave", {})
+	if personalizacao_salva is Dictionary:
+		personalizacao_nave["modelo"] = StringName(str(personalizacao_salva.get(
+			"modelo", equipamentos_loja.get("4", &"c01_modelo_padrao")
+		)))
+		personalizacao_nave["cor"] = StringName(str(personalizacao_salva.get(
+			"cor", &"c10_verde_original"
+		)))
+	if not _item_generico_liberado(StringName(personalizacao_nave["modelo"])):
+		personalizacao_nave["modelo"] = &"c01_modelo_padrao"
+	if not _item_generico_liberado(StringName(personalizacao_nave["cor"])):
+		personalizacao_nave["cor"] = &"c10_verde_original"
+	var item_modelo := CatalogoMonthly.encontrar(StringName(personalizacao_nave["modelo"]))
+	var item_cor := CatalogoMonthly.encontrar(StringName(personalizacao_nave["cor"]))
+	if item_modelo.is_empty() or StringName(item_modelo.get("grupo_personalizacao", &"")) != &"modelo":
+		personalizacao_nave["modelo"] = &"c01_modelo_padrao"
+	if item_cor.is_empty() or StringName(item_cor.get("grupo_personalizacao", &"")) != &"cor":
+		personalizacao_nave["cor"] = &"c10_verde_original"
+	equipamentos_loja["4"] = personalizacao_nave["modelo"]
+	for categoria in range(1, 5):
 		var chave := str(categoria)
 		var equipado := StringName(equipamentos_loja.get(chave, &""))
 		if not equipado.is_empty() and not _item_generico_liberado(equipado):
@@ -331,23 +384,24 @@ func salvar_estado() -> void:
 		"habilidade_equipada": caminho_equipado,
 		"itens_desbloqueados": itens_desbloqueados,
 		"equipamentos_loja": equipamentos_loja,
+		"personalizacao_nave": personalizacao_nave,
 		"cristais": Global.cristais
 	})
 
 
 func construir_interface() -> void:
-	var margem := MarginContainer.new()
-	margem.name = "InterfaceLoja"
-	margem.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margem.add_theme_constant_override("margin_left", 22)
-	margem.add_theme_constant_override("margin_top", 14)
-	margem.add_theme_constant_override("margin_right", 22)
-	margem.add_theme_constant_override("margin_bottom", 14)
-	add_child(margem)
+	margem_interface = MarginContainer.new()
+	margem_interface.name = "InterfaceLoja"
+	margem_interface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margem_interface.add_theme_constant_override("margin_left", 22)
+	margem_interface.add_theme_constant_override("margin_top", 14)
+	margem_interface.add_theme_constant_override("margin_right", 22)
+	margem_interface.add_theme_constant_override("margin_bottom", 14)
+	add_child(margem_interface)
 
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override("separation", 8)
-	margem.add_child(coluna)
+	margem_interface.add_child(coluna)
 
 	construir_cabecalho(coluna)
 	construir_categorias(coluna)
@@ -365,24 +419,25 @@ func construir_interface() -> void:
 
 
 func construir_cabecalho(pai: VBoxContainer) -> void:
-	var cabecalho := HBoxContainer.new()
-	cabecalho.custom_minimum_size = Vector2(0, 54)
-	cabecalho.add_theme_constant_override("separation", 14)
-	pai.add_child(cabecalho)
+	cabecalho_loja = HBoxContainer.new()
+	cabecalho_loja.custom_minimum_size = Vector2(0, 54)
+	cabecalho_loja.add_theme_constant_override("separation", 14)
+	pai.add_child(cabecalho_loja)
 
-	var voltar := Button.new()
-	voltar.custom_minimum_size = Vector2(142, 46)
-	voltar.text = "<  VOLTAR"
-	voltar.focus_mode = Control.FOCUS_ALL
-	estilizar_botao(voltar, Color(0.03, 0.05, 0.11), Color(0.28, 0.45, 0.78))
-	aplicar_fonte(voltar, 15)
-	voltar.pressed.connect(_on_voltar_pressed)
-	cabecalho.add_child(voltar)
+	botao_voltar = Button.new()
+	botao_voltar.custom_minimum_size = Vector2(142, 46)
+	botao_voltar.text = "<  VOLTAR"
+	botao_voltar.focus_mode = Control.FOCUS_ALL
+	botao_voltar.clip_text = true
+	estilizar_botao(botao_voltar, Color(0.03, 0.05, 0.11), Color(0.28, 0.45, 0.78))
+	aplicar_fonte(botao_voltar, 15)
+	botao_voltar.pressed.connect(_on_voltar_pressed)
+	cabecalho_loja.add_child(botao_voltar)
 
 	var titulo_box := VBoxContainer.new()
 	titulo_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	titulo_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	cabecalho.add_child(titulo_box)
+	cabecalho_loja.add_child(titulo_box)
 
 	var titulo := Label.new()
 	titulo.text = "LOJA"
@@ -398,13 +453,13 @@ func construir_cabecalho(pai: VBoxContainer) -> void:
 	aplicar_fonte(subtitulo, 10)
 	titulo_box.add_child(subtitulo)
 
-	var saldo_painel := PanelContainer.new()
+	saldo_painel = PanelContainer.new()
 	saldo_painel.custom_minimum_size = Vector2(176, 46)
 	saldo_painel.add_theme_stylebox_override(
 		"panel",
 		criar_estilo(Color(0.025, 0.035, 0.085), Color(0.34, 0.40, 0.78), 10, 1)
 	)
-	cabecalho.add_child(saldo_painel)
+	cabecalho_loja.add_child(saldo_painel)
 
 	var saldo_box := HBoxContainer.new()
 	saldo_box.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -446,39 +501,46 @@ func construir_categorias(pai: VBoxContainer) -> void:
 	)
 	pai.add_child(painel)
 
-	var linha := HBoxContainer.new()
-	linha.alignment = BoxContainer.ALIGNMENT_CENTER
-	linha.add_theme_constant_override("separation", 4)
-	painel.add_child(linha)
+	grade_categorias = GridContainer.new()
+	grade_categorias.columns = CATEGORIAS.size()
+	grade_categorias.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grade_categorias.add_theme_constant_override("h_separation", 4)
+	grade_categorias.add_theme_constant_override("v_separation", 4)
+	painel.add_child(grade_categorias)
 
 	var cores := [
 		Color(0.18, 0.86, 1.0),
 		Color(1.0, 0.32, 0.56),
 		Color(0.30, 0.80, 1.0),
-		Color(0.68, 0.38, 1.0)
+		Color(0.68, 0.38, 1.0),
+		Color(0.38, 1.0, 0.72)
 	]
 	for indice in CATEGORIAS.size():
 		var botao := Button.new()
-		botao.custom_minimum_size = Vector2(208, 42)
+		botao.custom_minimum_size = Vector2(112, 42)
+		botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		botao.text = CATEGORIAS[indice]
+		botao.clip_text = true
 		botao.focus_mode = Control.FOCUS_ALL
 		botao.set_meta("cor_categoria", cores[indice])
 		botao.pressed.connect(selecionar_categoria.bind(indice))
-		aplicar_fonte(botao, 13)
-		linha.add_child(botao)
+		aplicar_fonte(botao, 11)
+		grade_categorias.add_child(botao)
 		botoes_categorias.append(botao)
 
 
 func construir_conteudo(pai: VBoxContainer) -> void:
-	var conteudo := HBoxContainer.new()
-	conteudo.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	conteudo.add_theme_constant_override("separation", 12)
-	pai.add_child(conteudo)
+	conteudo_principal = HBoxContainer.new()
+	conteudo_principal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	conteudo_principal.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	conteudo_principal.add_theme_constant_override("separation", 12)
+	pai.add_child(conteudo_principal)
 
 	var esquerda := VBoxContainer.new()
 	esquerda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	esquerda.add_theme_constant_override("separation", 8)
-	conteudo.add_child(esquerda)
+	conteudo_principal.add_child(esquerda)
+	construir_filtros_personalizacao(esquerda)
 
 	# Esta moldura interrompe a propagação do tamanho mínimo da grade.
 	# Assim, o surgimento da barra de rolagem nunca alarga o painel da loja.
@@ -516,7 +578,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 		"panel",
 		criar_estilo(Color(0.018, 0.027, 0.068), Color(0.26, 0.46, 0.78), 12, 2, 8)
 	)
-	conteudo.add_child(painel_detalhes)
+	conteudo_principal.add_child(painel_detalhes)
 
 	var margem := MarginContainer.new()
 	margem.add_theme_constant_override("margin_left", 16)
@@ -542,6 +604,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	moldura_detalhes.add_child(rolagem_detalhes)
 
 	var coluna := VBoxContainer.new()
+	coluna.custom_minimum_size = Vector2.ZERO
 	coluna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	coluna.add_theme_constant_override("separation", 5)
 	rolagem_detalhes.add_child(coluna)
@@ -612,22 +675,64 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	preco_box.add_child(detalhe_preco)
 
 	botao_acao = Button.new()
-	botao_acao.custom_minimum_size = Vector2(0, 38)
+	botao_acao.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	botao_acao.focus_mode = Control.FOCUS_ALL
+	botao_acao.clip_text = true
 	estilizar_botao(
 		botao_acao,
 		Color(0.05, 0.18, 0.26),
 		Color(0.24, 0.86, 1.0)
 	)
-	aplicar_fonte(botao_acao, 15)
+	aplicar_fonte(botao_acao, 13)
 	botao_acao.pressed.connect(_on_acao_pressed)
-	coluna.add_child(botao_acao)
+	var moldura_botao := Control.new()
+	moldura_botao.custom_minimum_size = Vector2(0, 42)
+	moldura_botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	moldura_botao.clip_contents = true
+	coluna.add_child(moldura_botao)
+	moldura_botao.add_child(botao_acao)
+
+
+func construir_filtros_personalizacao(pai: VBoxContainer) -> void:
+	painel_filtros_personalizacao = PanelContainer.new()
+	painel_filtros_personalizacao.custom_minimum_size = Vector2(0, 40)
+	painel_filtros_personalizacao.visible = false
+	painel_filtros_personalizacao.add_theme_stylebox_override(
+		"panel",
+		criar_estilo(Color(0.016, 0.030, 0.065), Color(0.18, 0.30, 0.52), 8, 1)
+	)
+	pai.add_child(painel_filtros_personalizacao)
+
+	grade_filtros_personalizacao = GridContainer.new()
+	grade_filtros_personalizacao.columns = FILTROS_PERSONALIZACAO.size()
+	grade_filtros_personalizacao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grade_filtros_personalizacao.add_theme_constant_override("h_separation", 5)
+	painel_filtros_personalizacao.add_child(grade_filtros_personalizacao)
+
+	for dados in FILTROS_PERSONALIZACAO:
+		var botao := Button.new()
+		botao.custom_minimum_size = Vector2(82, 36)
+		botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		botao.text = str(dados["nome"])
+		botao.clip_text = true
+		botao.focus_mode = Control.FOCUS_ALL
+		botao.set_meta("grupo", StringName(dados["id"]))
+		botao.set_meta("cor_filtro", dados["cor"])
+		botao.pressed.connect(
+			_selecionar_filtro_personalizacao.bind(StringName(dados["id"]))
+		)
+		aplicar_fonte(botao, 10)
+		grade_filtros_personalizacao.add_child(botao)
+		botoes_filtros_personalizacao.append(botao)
 
 
 func selecionar_categoria(indice: int) -> void:
 	categoria_atual = indice
 	indice_selecionado = 0
+	if is_instance_valid(painel_filtros_personalizacao):
+		painel_filtros_personalizacao.visible = categoria_atual == 4
 	atualizar_botoes_categorias()
+	atualizar_botoes_filtros_personalizacao()
 	if categoria_atual == 0:
 		reconstruir_grade_habilidades()
 		atualizar_detalhes()
@@ -635,6 +740,37 @@ func selecionar_categoria(indice: int) -> void:
 		reconstruir_grade_generica()
 		atualizar_detalhes_genericos()
 	call_deferred("_focar_primeiro_item")
+
+
+func _selecionar_filtro_personalizacao(grupo: StringName) -> void:
+	if categoria_atual != 4 or grupo not in [&"modelo", &"cor", &"rastro"]:
+		return
+	filtro_personalizacao = grupo
+	indice_selecionado = 0
+	mensagem.text = ""
+	atualizar_botoes_filtros_personalizacao()
+	reconstruir_grade_generica()
+	atualizar_detalhes_genericos()
+	call_deferred("_focar_primeiro_item")
+
+
+func atualizar_botoes_filtros_personalizacao() -> void:
+	for botao in botoes_filtros_personalizacao:
+		var grupo := StringName(botao.get_meta("grupo", &""))
+		var cor: Color = botao.get_meta("cor_filtro", Color(0.5, 0.8, 1.0))
+		var selecionado := grupo == filtro_personalizacao
+		botao.add_theme_stylebox_override(
+			"normal",
+			criar_estilo(
+				Color(0.04, 0.09, 0.15) if selecionado else Color(0.018, 0.028, 0.06),
+				cor if selecionado else Color(0.12, 0.20, 0.34),
+				7,
+				2 if selecionado else 1
+			)
+		)
+		botao.add_theme_color_override(
+			"font_color", cor if selecionado else Color(0.52, 0.61, 0.76)
+		)
 
 
 func atualizar_botoes_categorias() -> void:
@@ -677,7 +813,7 @@ func criar_cartao_habilidade(indice: int) -> void:
 	var cor: Color = dados["cor"]
 
 	var wrapper := Control.new()
-	wrapper.custom_minimum_size = Vector2(198, 162)
+	wrapper.custom_minimum_size = Vector2(largura_cartao_atual, 162)
 	grade.add_child(wrapper)
 
 	var painel := PanelContainer.new()
@@ -793,6 +929,7 @@ func atualizar_detalhes() -> void:
 	var caminho := habilidade.resource_path
 	var preco := int(dados["preco"])
 	var cor: Color = dados["cor"]
+	detalhe_stats.visible = true
 
 	detalhe_tipo.text = str(dados["raridade"])
 	detalhe_tipo.add_theme_color_override("font_color", cor)
@@ -861,7 +998,7 @@ func reconstruir_stats(valores: Array, cor: Color) -> void:
 
 func reconstruir_grade_generica() -> void:
 	limpar_grade()
-	var itens := CatalogoMonthly.categoria(categoria_atual)
+	var itens := obter_itens_categoria_atual()
 	for indice in itens.size():
 		criar_cartao_generico(indice, itens[indice])
 	atualizar_destaques_genericos()
@@ -870,7 +1007,7 @@ func reconstruir_grade_generica() -> void:
 func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	var cor: Color = item["cor"]
 	var wrapper := Control.new()
-	wrapper.custom_minimum_size = Vector2(198, 162)
+	wrapper.custom_minimum_size = Vector2(largura_cartao_atual, 162)
 	grade.add_child(wrapper)
 	var painel := PanelContainer.new()
 	painel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -906,7 +1043,11 @@ func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	coluna.add_child(nome)
 	var estado := Label.new()
 	var id := StringName(item["id"])
-	estado.text = _texto_estado_item_generico(id, int(item["preco"]), StringName(item["conquista"]))
+	estado.text = (
+		"EM BREVE"
+		if bool(item.get("em_breve", false))
+		else _texto_estado_item_generico(item)
+	)
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	estado.add_theme_color_override("font_color", Color(0.45, 1.0, 0.72) if _item_generico_liberado(id) else Color(0.70, 0.64, 1.0))
 	aplicar_fonte(estado, 9)
@@ -932,7 +1073,7 @@ func _on_item_generico_focado(indice: int, botao: Button) -> void:
 
 
 func _selecionar_item_generico(indice: int) -> void:
-	var itens := CatalogoMonthly.categoria(categoria_atual)
+	var itens := obter_itens_categoria_atual()
 	if indice < 0 or indice >= itens.size():
 		return
 	indice_selecionado = indice
@@ -941,7 +1082,7 @@ func _selecionar_item_generico(indice: int) -> void:
 
 
 func atualizar_destaques_genericos() -> void:
-	var itens := CatalogoMonthly.categoria(categoria_atual)
+	var itens := obter_itens_categoria_atual()
 	for indice in paineis_cartoes.size():
 		var cor: Color = itens[indice]["cor"]
 		paineis_cartoes[indice].add_theme_stylebox_override("panel", criar_estilo(
@@ -953,7 +1094,7 @@ func atualizar_destaques_genericos() -> void:
 
 
 func atualizar_detalhes_genericos() -> void:
-	var itens := CatalogoMonthly.categoria(categoria_atual)
+	var itens := obter_itens_categoria_atual()
 	if itens.is_empty():
 		return
 	indice_selecionado = clampi(indice_selecionado, 0, itens.size() - 1)
@@ -961,6 +1102,7 @@ func atualizar_detalhes_genericos() -> void:
 	var cor: Color = item["cor"]
 	var id := StringName(item["id"])
 	var conquista := StringName(item["conquista"])
+	var em_breve := bool(item.get("em_breve", false))
 	detalhe_tipo.text = str(item["raridade"])
 	detalhe_tipo.add_theme_color_override("font_color", cor)
 	detalhe_nome.text = str(item["nome"])
@@ -969,11 +1111,19 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_contexto.visible = true
 	detalhe_contexto.text = "MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
 	detalhe_descricao.text = str(item["descricao"])
-	detalhe_recarga.text = "EQUIPAMENTO ÚNICO • 1 POR CATEGORIA"
-	detalhe_preco.text = _texto_preco_ou_conquista(int(item["preco"]), conquista)
+	detalhe_recarga.text = (
+		"PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS"
+		if categoria_atual == 4
+		else "EQUIPAMENTO ÚNICO • 1 POR CATEGORIA"
+	)
+	detalhe_preco.text = "EM BREVE" if em_breve else _texto_preco_ou_conquista(int(item["preco"]), conquista)
+	detalhe_stats.visible = categoria_atual != 4
 	reconstruir_stats(item["stats"], cor)
-	var equipado := StringName(equipamentos_loja.get(str(categoria_atual), &""))
-	if id == equipado:
+	var equipado := _item_generico_equipado(item)
+	if em_breve:
+		botao_acao.text = "EM BREVE"
+		botao_acao.disabled = true
+	elif id == equipado:
 		botao_acao.text = "EQUIPADO"
 		botao_acao.disabled = true
 	elif _item_generico_liberado(id):
@@ -1029,10 +1179,16 @@ func _on_acao_pressed() -> void:
 
 
 func _on_acao_item_generico() -> void:
-	var itens := CatalogoMonthly.categoria(categoria_atual)
+	var itens := obter_itens_categoria_atual()
 	if itens.is_empty() or indice_selecionado < 0 or indice_selecionado >= itens.size():
 		return
 	var item: Dictionary = itens[indice_selecionado]
+	if bool(item.get("em_breve", false)):
+		mensagem.text = "ESSA PERSONALIZAÇÃO CHEGARÁ EM BREVE"
+		return
+	if categoria_atual == 4:
+		_on_acao_personalizacao(item)
+		return
 	var id := StringName(item["id"])
 	var conquista := StringName(item["conquista"])
 	var chave := str(categoria_atual)
@@ -1056,6 +1212,31 @@ func _on_acao_item_generico() -> void:
 	call_deferred("_focar_item_selecionado")
 
 
+func _on_acao_personalizacao(item: Dictionary) -> void:
+	var id := StringName(item["id"])
+	var grupo := StringName(item.get("grupo_personalizacao", &""))
+	if grupo not in [&"modelo", &"cor"]:
+		return
+	if StringName(personalizacao_nave.get(str(grupo), &"")) == id:
+		return
+	if not _item_generico_liberado(id) and not Global.modo_desenvolvedor:
+		var preco := int(item["preco"])
+		if not Global.gastar_cristais(preco):
+			mensagem.text = "CRISTAIS INSUFICIENTES"
+			Global.vibrar_controle(0.10, 0.35, 0.14)
+			return
+		itens_desbloqueados.append(id)
+		mensagem.text = "%s DESBLOQUEADO" % str(item["nome"])
+	personalizacao_nave[str(grupo)] = id
+	if grupo == &"modelo":
+		equipamentos_loja["4"] = id
+	salvar_estado()
+	Global.vibrar_controle(0.18, 0.32, 0.12)
+	reconstruir_grade_generica()
+	atualizar_detalhes_genericos()
+	call_deferred("_focar_item_selecionado")
+
+
 func esta_liberada(caminho: String) -> bool:
 	return Global.modo_desenvolvedor or caminho in desbloqueadas
 
@@ -1066,7 +1247,9 @@ func _habilidade_liberada(caminho: String, id: StringName) -> bool:
 
 func _item_generico_liberado(id: StringName) -> bool:
 	return (
-		Global.modo_desenvolvedor
+		id == &"c01_modelo_padrao"
+		or id == &"c10_verde_original"
+		or Global.modo_desenvolvedor
 		or id in itens_desbloqueados
 		or Global.item_liberado_por_conquista(id)
 	)
@@ -1086,14 +1269,35 @@ func texto_estado_cartao(
 	return "GRÁTIS" if preco == 0 else "◆  " + formatar_numero(preco)
 
 
-func _texto_estado_item_generico(id: StringName, preco: int, conquista: StringName) -> String:
-	if id == StringName(equipamentos_loja.get(str(categoria_atual), &"")):
+func _texto_estado_item_generico(item: Dictionary) -> String:
+	var id := StringName(item["id"])
+	var preco := int(item["preco"])
+	var conquista := StringName(item["conquista"])
+	if _item_generico_equipado(item) == id:
 		return "EQUIPADO"
 	if _item_generico_liberado(id):
 		return "LIBERADO"
 	if not conquista.is_empty():
 		return "★ CONQUISTA"
 	return "◆  " + formatar_numero(preco)
+
+
+func _item_generico_equipado(item: Dictionary) -> StringName:
+	if categoria_atual == 4:
+		var grupo := str(item.get("grupo_personalizacao", ""))
+		return StringName(personalizacao_nave.get(grupo, &""))
+	return StringName(equipamentos_loja.get(str(categoria_atual), &""))
+
+
+func obter_itens_categoria_atual() -> Array[Dictionary]:
+	var itens := CatalogoMonthly.categoria(categoria_atual)
+	if categoria_atual != 4:
+		return itens
+	var filtrados: Array[Dictionary] = []
+	for item in itens:
+		if StringName(item.get("grupo_personalizacao", &"")) == filtro_personalizacao:
+			filtrados.append(item)
+	return filtrados
 
 
 func _texto_preco_ou_conquista(preco: int, conquista: StringName) -> String:
@@ -1161,6 +1365,46 @@ func _focar_item_selecionado() -> void:
 func _on_voltar_pressed() -> void:
 	Global.salvar_economia()
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
+
+
+func _on_tamanho_viewport_alterado() -> void:
+	call_deferred("_aplicar_layout_responsivo")
+
+
+func _aplicar_layout_responsivo() -> void:
+	if not is_instance_valid(margem_interface) or not is_instance_valid(grade):
+		return
+	var tamanho := get_viewport_rect().size
+	var compacto := tamanho.x < 820.0 or tamanho.y < 500.0
+	var margem_horizontal := 10 if compacto else 22
+	var margem_vertical := 8 if compacto else 14
+	for lado in ["margin_left", "margin_right"]:
+		margem_interface.add_theme_constant_override(lado, margem_horizontal)
+	for lado in ["margin_top", "margin_bottom"]:
+		margem_interface.add_theme_constant_override(lado, margem_vertical)
+
+	grade_categorias.columns = 3 if tamanho.x < 720.0 else CATEGORIAS.size()
+	conteudo_principal.add_theme_constant_override("separation", 8 if compacto else 12)
+	botao_voltar.custom_minimum_size = Vector2(104 if compacto else 142, 42 if compacto else 46)
+	saldo_painel.custom_minimum_size = Vector2(140 if compacto else 176, 42 if compacto else 46)
+
+	var largura_util := tamanho.x - float(margem_horizontal * 2)
+	var largura_detalhes := clampf(largura_util * 0.30, 218.0, 292.0)
+	painel_detalhes.custom_minimum_size = Vector2(largura_detalhes, 0)
+	var largura_esquerda := largura_util - largura_detalhes - (8.0 if compacto else 12.0)
+	var colunas := 3
+	if largura_esquerda < 570.0:
+		colunas = 2
+	if largura_esquerda < 350.0:
+		colunas = 1
+	grade.columns = colunas
+	largura_cartao_atual = maxf(
+		(largura_esquerda - float(maxi(colunas - 1, 0) * 8)) / float(colunas),
+		148.0
+	)
+	for painel in paineis_cartoes:
+		if is_instance_valid(painel) and is_instance_valid(painel.get_parent()):
+			(painel.get_parent() as Control).custom_minimum_size.x = largura_cartao_atual
 
 
 func formatar_numero(valor: int) -> String:

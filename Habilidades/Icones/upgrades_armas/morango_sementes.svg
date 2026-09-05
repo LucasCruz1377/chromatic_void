@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><filter id="g" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect x="7" y="7" width="114" height="114" rx="24" fill="#07101f" stroke="#ff2448" stroke-width="5" opacity=".96"/>
+  <g filter="url(#g)" stroke="#ff2448" stroke-linecap="round" stroke-linejoin="round"><g fill="none" stroke="white" stroke-width="6"><ellipse cx="64" cy="64" rx="17" ry="29"/><ellipse cx="29" cy="45" rx="7" ry="12" transform="rotate(-35 29 45)"/><ellipse cx="99" cy="45" rx="7" ry="12" transform="rotate(35 99 45)"/><ellipse cx="35" cy="91" rx="7" ry="12" transform="rotate(35 35 91)"/><ellipse cx="93" cy="91" rx="7" ry="12" transform="rotate(-35 93 91)"/></g></g>
+</svg>

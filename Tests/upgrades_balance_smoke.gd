@@ -2,8 +2,18 @@ extends Node
 
 
 const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
+const CenaProjetil = preload("res://Entities/fireball.tscn")
+const CameraShake = preload("res://Scripts/camera.gd")
 
 var falhas: Array[String] = []
+
+
+class AlvoBumerangueTeste:
+	extends CharacterBody2D
+	var dano_recebido := 0.0
+
+	func tomarDano(valor: float) -> void:
+		dano_recebido += valor
 
 
 func verificar(condicao: bool, mensagem: String) -> void:
@@ -24,6 +34,10 @@ func _ready() -> void:
 	testar_curva_de_xp()
 	testar_rerolls_limitados()
 	testar_sorteio_compativel()
+	testar_upgrades_por_arma()
+	testar_mina_temporizada()
+	testar_bumerangue_colheita()
+	testar_tremor_sem_acumulo()
 	finalizar()
 
 
@@ -251,6 +265,116 @@ func testar_sorteio_compativel() -> void:
 		for id in opcoes:
 			unicas[id] = true
 		verificar(unicas.size() == opcoes.size(), "o sorteio repetiu uma carta na oferta")
+
+
+func testar_upgrades_por_arma() -> void:
+	var armas: Array[StringName] = [
+		&"a01_espingarda_lua_rosa", &"a03_alcateia_misseis",
+		&"a04_canhao_esturjao", &"a05_minas_castor", &"a06_feixe_perielio",
+		&"a07_foice_colheita", &"a08_torpedo_subterraneo",
+		&"a09_morteiro_fogueira", &"a10_rajada_morango",
+		&"a11_projetor_nevasca", &"a12_jardim_orbital",
+		&"a13_canhao_lua_fria",
+	]
+	for arma in armas:
+		var proprias := 0
+		for id in DadosUpgrades.DADOS_ARMAS:
+			var dados: Dictionary = DadosUpgrades.DADOS_ARMAS[id]
+			if StringName(dados.get("arma_exclusiva", &"")) == arma:
+				proprias += 1
+		verificar(proprias >= 2, "%s não possui duas melhorias próprias" % arma)
+		for _tentativa in range(12):
+			var opcoes := DadosUpgrades.sortear({}, 3, null, [], arma)
+			var encontrou_propria := false
+			for id in opcoes:
+				if StringName(DadosUpgrades.obter(id).get("arma_exclusiva", &"")) == arma:
+					encontrou_propria = true
+					break
+			verificar(
+				encontrou_propria,
+				"a oferta de %s não trouxe uma melhoria da arma equipada" % arma
+			)
+			verificar(
+				&"tiro_duplo" not in opcoes and &"calibre_pesado" not in opcoes,
+				"%s recebeu um estilo exclusivo do tiro padrão" % arma
+			)
+
+	verificar(
+		not DadosUpgrades.disponivel(&"mina_comando_remoto", {&"mina_sensor_proximidade": 1}, null, &"a05_minas_castor"),
+		"a mina permitiu sensor e comando remoto ao mesmo tempo"
+	)
+	verificar(
+		not DadosUpgrades.disponivel(&"rosa_petalas_extras", {}, null, &"a03_alcateia_misseis"),
+		"uma melhoria da espingarda apareceu para os foguetes"
+	)
+
+
+func testar_mina_temporizada() -> void:
+	var mina = CenaProjetil.instantiate()
+	add_child(mina)
+	mina.configurar(4.0, 0.0, 1.0, 0, 0.0, 0, 0, null, CenaProjetil)
+	mina.configurar_estilo_monthly(&"mine", Color.YELLOW, {
+		"modo_mina": &"tempo", "tempo_detonacao": 5.0,
+	})
+	verificar(mina.modo_mina == &"tempo", "a mina padrão não usa temporizador")
+	verificar(is_equal_approx(mina.tempo_vida, 5.0), "a mina padrão não dura 5 segundos")
+	verificar(not mina.monitoring, "a mina temporizada ainda causa dano por proximidade física")
+	mina.queue_free()
+
+	var player := Player.new()
+	verificar(player.obter_modo_mina() == &"tempo", "o detonador padrão não é temporizado")
+	player.niveis_upgrades[&"mina_pavio_curto"] = 3
+	verificar(maxf(5.0 - float(player.nivel_upgrade_arma(&"mina_pavio_curto")), 2.0) == 2.0, "o pavio curto não alcança o mínimo de 2 segundos")
+	player.niveis_upgrades[&"mina_sensor_proximidade"] = 1
+	verificar(player.obter_modo_mina() == &"proximidade", "o sensor raro não ativou proximidade")
+	player.free()
+
+
+func testar_bumerangue_colheita() -> void:
+	var player_teste := Node2D.new()
+	add_child(player_teste)
+	var bumerangue = CenaProjetil.instantiate()
+	add_child(bumerangue)
+	bumerangue.configurar(6.0, 700.0, 1.0, 0, 0.0, 0, 0, player_teste, CenaProjetil)
+	bumerangue.configurar_estilo_monthly(&"harvest_boomerang", Color(1.0, 0.68, 0.24), {
+		"alcance_ida": 390.0, "multiplicador_retorno": 1.4,
+	})
+	verificar(is_instance_valid(bumerangue.visual_arco_colheita), "o Arco da Colheita não recebeu o SVG próprio")
+	verificar(not bumerangue.visual.visible, "o projétil antigo continuou visível sob o SVG")
+
+	var primeiro_alvo := AlvoBumerangueTeste.new()
+	add_child(primeiro_alvo)
+	bumerangue._atingir_com_bumerangue(primeiro_alvo)
+	verificar(bumerangue.bumerangue_retornando, "o bumerangue não retornou após o primeiro impacto")
+	verificar(is_equal_approx(primeiro_alvo.dano_recebido, 6.0), "o impacto de ida aplicou dano incorreto")
+
+	bumerangue.bumerangue_graca_retorno = 0.0
+	bumerangue._atingir_com_bumerangue(primeiro_alvo)
+	bumerangue._atingir_com_bumerangue(primeiro_alvo)
+	verificar(is_equal_approx(primeiro_alvo.dano_recebido, 12.0), "o retorno não limitou o dano a uma vez por inimigo")
+	var segundo_alvo := AlvoBumerangueTeste.new()
+	add_child(segundo_alvo)
+	bumerangue._atingir_com_bumerangue(segundo_alvo)
+	verificar(is_equal_approx(segundo_alvo.dano_recebido, 6.0), "o retorno não atravessou causando dano em outro inimigo")
+	verificar(not bumerangue.is_queued_for_deletion(), "o bumerangue foi destruído ao atravessar um inimigo")
+
+	bumerangue.queue_free()
+	primeiro_alvo.queue_free()
+	segundo_alvo.queue_free()
+	player_teste.queue_free()
+
+
+func testar_tremor_sem_acumulo() -> void:
+	var camera = CameraShake.new()
+	add_child(camera)
+	camera.shake(3.0)
+	camera.shake(3.0)
+	verificar(is_equal_approx(camera.ForcaShake, 3.0), "dois tremores comuns foram somados")
+	camera.shake(15.0)
+	verificar(camera.ForcaShake <= camera.ShakeComumMax, "um impacto comum virou tremor forte")
+	camera.shake(18.0, true)
+	verificar(camera.ForcaShake >= 17.9, "o tremor forte reservado não alcançou a intensidade esperada")
+	camera.queue_free()
 
 
 func finalizar() -> void:

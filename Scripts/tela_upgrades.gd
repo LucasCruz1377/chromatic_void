@@ -385,7 +385,8 @@ func atualizar_cabecalho() -> void:
 	)
 	texto_rotas.text = "CONSTRUÇÃO ATUAL   •   " + DadosUpgrades.resumo_rotas(
 		player.niveis_upgrades,
-		player.HabilidadeEquipada
+		player.HabilidadeEquipada,
+		player.arma_monthly
 	)
 	_atualizar_botao_rerrolar()
 
@@ -399,7 +400,8 @@ func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 		player.niveis_upgrades,
 		qtd_cartas,
 		player.HabilidadeEquipada,
-		evitar
+		evitar,
+		player.arma_monthly
 	)
 	for id in opcoes_atuais:
 		var dados := DadosUpgrades.obter(id, player.HabilidadeEquipada)
@@ -411,7 +413,8 @@ func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 			DadosUpgrades.texto_requisitos(
 				id,
 				player.niveis_upgrades,
-				player.HabilidadeEquipada
+				player.HabilidadeEquipada,
+				player.arma_monthly
 			)
 		)
 		card.escolhido.connect(_on_upgrade_escolhido)

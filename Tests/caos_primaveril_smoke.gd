@@ -44,6 +44,12 @@ func _ready() -> void:
 	var escala_boss := boss.scale
 	boss.reproduzir_impacto()
 	boss.reproduzir_impacto()
+	verificar(not boss.materiais_hitflash.is_empty(), "o boss não recebeu material de hitflash")
+	if not boss.materiais_hitflash.is_empty():
+		verificar(
+			float(boss.materiais_hitflash[0].get_shader_parameter("brightness")) >= 0.70,
+			"o shader de hitflash não ficou visível ao receber dano"
+		)
 	verificar(
 		boss.scale.is_equal_approx(escala_boss),
 		"o feedback de dano alterou ou acumulou a escala do boss"

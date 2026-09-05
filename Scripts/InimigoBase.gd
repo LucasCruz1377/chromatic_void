@@ -3,6 +3,8 @@ class_name InimigoBase
 
 
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
+const IndicadorDanoCena = preload("res://Scripts/IndicadorDano.gd")
+const ShaderHitflash = preload("res://FX/canvas_shader/enemy.gdshader")
 
 # AJUSTE GLOBAL DO BRILHO DOS INIMIGOS.
 # 1.35 recupera o neon alto antigo. Para regular, tente entre 0.80 e 1.60.
@@ -41,6 +43,7 @@ var morto: bool = false
 var tween_impacto: Tween
 var modulacao_base := Color.WHITE
 var escala_base_impacto := Vector2.ONE
+var materiais_hitflash: Array[ShaderMaterial] = []
 
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
@@ -60,6 +63,7 @@ func _ready() -> void:
 	)
 	modulate = modulacao_base
 	normalizar_brilho_visual()
+	preparar_materiais_hitflash()
 
 	var bonus_vida := 0.0
 	if is_instance_valid(player):
@@ -134,7 +138,7 @@ func tomarDano(valor: float) -> void:
 	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
-	reproduzir_impacto()
+	reproduzir_impacto(dano_final)
 	if has_meta("laco_parceiro") and Time.get_ticks_msec() <= int(get_meta("laco_expira", 0)):
 		var parceiro = get_meta("laco_parceiro")
 		if is_instance_valid(parceiro) and parceiro.has_method("receber_eco_laco"):
@@ -152,6 +156,7 @@ func receber_eco_laco(valor: float) -> void:
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
 		EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.ACERTO, Color(1.0, 0.34, 0.58), 0.65)
+		IndicadorDanoCena.criar(cena, global_position, valor * multiplicador_dano_recebido, Color(1.0, 0.42, 0.68))
 	if Vida <= 0.0:
 		morrer()
 
@@ -165,7 +170,7 @@ func obter_vida_maxima_atual() -> float:
 	return VidaMaxima + bonus_vida
 
 
-func reproduzir_impacto() -> void:
+func reproduzir_impacto(dano_exibido: float = 0.0) -> void:
 	if is_instance_valid(dmg_taken_audio):
 		dmg_taken_audio.pitch_scale = randf_range(0.92, 1.08)
 		dmg_taken_audio.play()
@@ -174,7 +179,7 @@ func reproduzir_impacto() -> void:
 	# rápidos a animação recomeçava no pico, criando o clarão acumulado.
 	if is_instance_valid(anim) and anim.current_animation == "flash-in":
 		anim.stop()
-	zerar_brilho_dos_materiais()
+	_definir_hitflash_shader(0.0)
 
 	if tween_impacto and tween_impacto.is_valid():
 		tween_impacto.kill()
@@ -182,14 +187,14 @@ func reproduzir_impacto() -> void:
 	# do próximo impacto, fazendo bosses crescerem a cada tiro recebido.
 	scale = escala_base_impacto
 
-	var cor_impacto := modulacao_base.lerp(
-		Color(1.0, 0.48, 0.62, modulacao_base.a),
-		intensidade_flash
-	)
+	var forca_flash := clampf(maxf(intensidade_flash, 0.76), 0.76, 1.0)
+	var cor_impacto := modulacao_base.lerp(Color(1.45, 1.45, 1.45, modulacao_base.a), 0.72)
 	modulate = cor_impacto
 	tween_impacto = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween_impacto.set_parallel(true)
-	tween_impacto.tween_property(self, "modulate", modulacao_base, 0.10)
+	_definir_hitflash_shader(forca_flash)
+	tween_impacto.tween_method(_definir_hitflash_shader, forca_flash, 0.0, 0.13)
+	tween_impacto.tween_property(self, "modulate", modulacao_base, 0.13)
 	# Bosses já possuem silhuetas e animações próprias; o feedback de acerto não
 	# altera seu tamanho. Inimigos comuns conservam uma pulsação leve e limitada.
 	if not is_in_group("boss"):
@@ -209,6 +214,11 @@ func reproduzir_impacto() -> void:
 			obter_cor_feedback(),
 			clampf(0.72 + sqrt(maxf(VidaMaxima, 1.0)) * 0.035, 0.8, 1.45)
 		)
+		if dano_exibido > 0.0:
+			IndicadorDanoCena.criar(
+				cena, global_position, dano_exibido, obter_cor_feedback(),
+				dano_exibido >= maxf(obter_vida_maxima_atual() * 0.12, 4.0)
+			)
 
 
 func normalizar_brilho_visual() -> void:
@@ -228,6 +238,39 @@ func normalizar_brilho_visual() -> void:
 			var intensidade := clampf(brilho_visual, 0.6, 2.0)
 			item.self_modulate = Color(intensidade, intensidade, intensidade, alpha)
 	zerar_brilho_dos_materiais()
+
+
+func preparar_materiais_hitflash() -> void:
+	materiais_hitflash.clear()
+	for node in find_children("*", "CanvasItem", true, false):
+		var item := node as CanvasItem
+		if not item or not (
+			item is Polygon2D
+			or item is Line2D
+			or item is Sprite2D
+			or item is AnimatedSprite2D
+		):
+			continue
+		var material_hitflash: ShaderMaterial
+		if item.material is ShaderMaterial:
+			var material_existente := item.material as ShaderMaterial
+			if material_existente.get_shader_parameter("brightness") == null:
+				continue
+			material_hitflash = material_existente.duplicate(true) as ShaderMaterial
+		elif item.material == null:
+			material_hitflash = ShaderMaterial.new()
+			material_hitflash.shader = ShaderHitflash
+		if not is_instance_valid(material_hitflash):
+			continue
+		material_hitflash.set_shader_parameter("brightness", 0.0)
+		item.material = material_hitflash
+		materiais_hitflash.append(material_hitflash)
+
+
+func _definir_hitflash_shader(valor: float) -> void:
+	for material in materiais_hitflash:
+		if is_instance_valid(material):
+			material.set_shader_parameter("brightness", clampf(valor, 0.0, 1.0))
 
 
 func zerar_brilho_dos_materiais() -> void:
@@ -263,7 +306,7 @@ func morrer() -> void:
 	morreu.emit(self)
 
 	if is_instance_valid(camera) and camera.has_method("shake"):
-		camera.shake(obter_tremor_morte())
+		camera.shake(obter_tremor_morte(), is_in_group("boss"))
 
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):

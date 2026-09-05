@@ -3,6 +3,7 @@ extends Control
 @onready var texto_label: RichTextLabel = $DialogoAstro
 @onready var som_digito: AudioStreamPlayer2D = $VozAstro
 @onready var timer_proxima: Timer = $Timer
+@onready var tela_preta: ColorRect = get_node_or_null("telapreta_init") as ColorRect
 
 @export var velocidade_escrita: float = 0.03
 
@@ -87,6 +88,9 @@ func _ready() -> void:
 	timer_proxima.wait_time = INTERVALO_CURIOSIDADE_MENU
 	if not timer_proxima.timeout.is_connected(_on_timer_proxima_timeout):
 		timer_proxima.timeout.connect(_on_timer_proxima_timeout)
+	if not get_viewport().size_changed.is_connected(_atualizar_tela_preta_responsiva):
+		get_viewport().size_changed.connect(_atualizar_tela_preta_responsiva)
+	call_deferred("_atualizar_tela_preta_responsiva")
 
 
 func apresentar() -> void:
@@ -95,6 +99,14 @@ func apresentar() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
 	var primeira_apresentacao: bool = _deve_se_apresentar(dados)
 	modo_menu = true
+	# Na tela inicial o Astro acompanha o canto inferior direito em qualquer
+	# proporção de tela, sem escapar em celulares ultrawide.
+	set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	offset_left = -79.0
+	offset_top = -72.0
+	offset_right = -39.0
+	offset_bottom = -32.0
+	_atualizar_tela_preta_responsiva()
 	visible = true
 	texto_label.visible = true
 	set_process_input(true)
@@ -103,6 +115,13 @@ func apresentar() -> void:
 		falar(apresentacao[0])
 	else:
 		mostrar_proxima_curiosidade()
+
+
+func _atualizar_tela_preta_responsiva() -> void:
+	if not is_instance_valid(tela_preta):
+		return
+	tela_preta.global_position = Vector2.ZERO
+	tela_preta.size = get_viewport_rect().size
 
 
 func _deve_se_apresentar(dados: Dictionary) -> bool:

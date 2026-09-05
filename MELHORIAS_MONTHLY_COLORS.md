@@ -1,12 +1,21 @@
 # Monthly Colors — conquistas e equipamentos
 
-Esta versão adiciona 50 opções permanentes à loja sem alterar sua estrutura de
+Esta versão adiciona 49 opções permanentes à loja sem alterar sua estrutura de
 quatro abas:
 
 - 15 poderes ativos;
-- 13 estilos de arma;
+- 12 estilos de arma (a antiga sniper foi incorporada ao Canhão do Esturjão);
 - 10 módulos de nave;
 - 12 mutações para a habilidade ativa.
+
+Durante a partida, cada uma das 12 armas possui melhorias próprias. Uma oferta
+sempre inclui uma carta compatível com a arma equipada enquanto houver evolução
+disponível; estilos exclusivos do tiro padrão não aparecem para armas Monthly.
+No total são 25 melhorias específicas, todas com ícone SVG próprio.
+
+Os Sinalizadores Amarelos explodem após 5 segundos por padrão. A Contagem
+Preventiva reduz esse tempo até 2 segundos; Sensor de Proximidade e Comando de
+Segurança são detonadores raros e mutuamente exclusivos.
 
 Somente um item de cada aba pode ficar equipado. Compras normais usam cristais;
 itens inspirados em padrões dos bosses são recompensas de conquistas e não podem

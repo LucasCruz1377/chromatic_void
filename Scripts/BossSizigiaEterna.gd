@@ -130,7 +130,7 @@ func tomarDano(valor: float) -> void:
 	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
-	reproduzir_impacto()
+	reproduzir_impacto(dano_final)
 	if Vida > 0.0:
 		return
 	if fase_atual < Fase.ECLIPSE:
@@ -623,7 +623,7 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	Global.vibrar_controle(0.95, 1.0, 0.42)
 	var camera_transicao := get_tree().get_first_node_in_group("camera") as Camera2D
 	if is_instance_valid(camera_transicao) and camera_transicao.has_method("shake"):
-		camera_transicao.shake(18.0)
+		camera_transicao.shake(18.0, true)
 	await retorno.finished
 	if morto:
 		ocultar_visuais_transicao()

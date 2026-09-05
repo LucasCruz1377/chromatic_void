@@ -131,8 +131,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	verificar(
-		str(ProjectSettings.get_setting("display/window/stretch/aspect")) == "keep",
-		"a proporção 16:9 não está protegida na escala mobile"
+		str(ProjectSettings.get_setting("display/window/stretch/aspect")) == "expand",
+		"a área visível não está preparada para telas ultrawide"
 	)
 	verificar(
 		str(ProjectSettings.get_setting("display/window/stretch/scale_mode")) == "fractional",

@@ -9,5 +9,5 @@ fill = 1
 fill_from = Vector2(0.47391304, 0.5043478)
 
 [node name="espaco" type="Sprite2D" unique_id=435737775]
-scale = Vector2(18.531254, 11.375002)
+scale = Vector2(32, 20)
 texture = SubResource("GradientTexture2D_kdubu")

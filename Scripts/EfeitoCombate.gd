@@ -77,38 +77,63 @@ func _draw() -> void:
 
 
 func desenhar_acerto(progresso: float, cor_atual: Color) -> void:
-	var raio := lerpf(4.0, 19.0, progresso) * intensidade
-	draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, cor_atual, 2.2, true)
-	for indice in 5:
-		var angulo := float(indice) * TAU / 5.0 + float(semente % 17) * 0.07
-		var inicio := Vector2.from_angle(angulo) * raio * 0.35
-		var fim := Vector2.from_angle(angulo) * raio * 1.25
-		draw_line(inicio, fim, cor_atual, 1.7, true)
+	var abertura := lerpf(2.0, 22.0, progresso) * intensidade
+	var base := float(semente % 31) * 0.11
+	for indice in 4:
+		var angulo := base + float(indice) * TAU / 4.0 + sin(float(indice) * 7.3) * 0.24
+		var vetor := Vector2.from_angle(angulo)
+		var inicio := vetor * abertura * 0.28
+		var fim := vetor * abertura
+		draw_line(inicio, fim, cor_atual, lerpf(2.8, 1.1, progresso), true)
+		var lasca := fim - vetor * 4.0 * intensidade
+		draw_line(lasca, lasca + vetor.orthogonal() * 3.0 * intensidade, cor_atual, 1.2, true)
+	if progresso < 0.45:
+		var brilho := (1.0 - progresso / 0.45) * 5.0 * intensidade
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(brilho, 0.0), Vector2(0.0, brilho * 0.55),
+			Vector2(-brilho, 0.0), Vector2(0.0, -brilho * 0.55),
+		]), cor_atual)
 
 
 func desenhar_morte(progresso: float, cor_atual: Color) -> void:
-	var raio := lerpf(8.0, 46.0, progresso) * intensidade
-	draw_arc(Vector2.ZERO, raio, 0.0, TAU, 28, cor_atual, 3.0, true)
-	draw_arc(Vector2.ZERO, raio * 0.55, 0.0, TAU, 20, cor_atual, 1.5, true)
-	for indice in 9:
-		var angulo := float(indice) * TAU / 9.0 + float(semente % 11) * 0.09
-		var inicio := Vector2.from_angle(angulo) * raio * 0.30
-		var fim := Vector2.from_angle(angulo) * raio * 1.30
-		draw_line(inicio, fim, cor_atual, 2.0, true)
+	var raio := lerpf(7.0, 42.0, progresso) * intensidade
+	var pontos := PackedVector2Array()
+	var pontas := 14
+	for indice in pontas:
+		var angulo := float(indice) * TAU / float(pontas) + float(semente % 13) * 0.04
+		var alternancia := 1.0 if indice % 2 == 0 else 0.48
+		pontos.append(Vector2.from_angle(angulo) * raio * alternancia)
+	draw_colored_polygon(pontos, Color(cor_atual.r, cor_atual.g, cor_atual.b, cor_atual.a * 0.22))
+	for indice in 8:
+		var angulo := float(indice) * TAU / 8.0 + float(semente % 19) * 0.07
+		var vetor := Vector2.from_angle(angulo)
+		var centro := vetor * raio * lerpf(0.45, 1.12, progresso)
+		var tamanho := (4.5 - progresso * 2.8) * intensidade
+		draw_colored_polygon(PackedVector2Array([
+			centro + vetor * tamanho,
+			centro + vetor.orthogonal() * tamanho * 0.55,
+			centro - vetor * tamanho * 0.65,
+			centro - vetor.orthogonal() * tamanho * 0.55,
+		]), cor_atual)
 
 
 func desenhar_dano_player(progresso: float, cor_atual: Color) -> void:
-	var raio := lerpf(18.0, 54.0, progresso) * intensidade
-	draw_arc(Vector2.ZERO, raio, -PI * 0.85, PI * 0.85, 30, cor_atual, 4.0, true)
-	var cruz := 13.0 * intensidade * (1.0 - progresso * 0.35)
-	draw_line(Vector2(-cruz, 0), Vector2(cruz, 0), cor_atual, 2.5, true)
-	draw_line(Vector2(0, -cruz), Vector2(0, cruz), cor_atual, 2.5, true)
+	var distancia := lerpf(12.0, 48.0, progresso) * intensidade
+	for indice in 6:
+		var angulo := float(indice) * TAU / 6.0 + 0.28
+		var vetor := Vector2.from_angle(angulo)
+		var centro := vetor * distancia
+		draw_line(centro - vetor * 10.0, centro + vetor * 5.0, cor_atual, 3.2, true)
 
 
 func desenhar_aviso(progresso: float, cor_atual: Color) -> void:
-	var raio := lerpf(8.0, 32.0, progresso) * intensidade
-	draw_arc(Vector2.ZERO, raio, 0.0, TAU, 24, cor_atual, 2.5, true)
-	draw_line(Vector2.ZERO, direcao * raio * 1.45, cor_atual, 2.0, true)
+	var alcance := lerpf(8.0, 35.0, progresso) * intensidade
+	var lateral := direcao.orthogonal()
+	for lado in [-1.0, 1.0]:
+		var lado_float := float(lado)
+		var centro: Vector2 = direcao * alcance * 0.35 + lateral * lado_float * alcance * 0.38
+		draw_line(centro - direcao * 7.0, centro + direcao * 5.0 - lateral * lado_float * 5.0, cor_atual, 2.2, true)
+		draw_line(centro - direcao * 7.0, centro + direcao * 5.0 + lateral * lado_float * 5.0, cor_atual, 2.2, true)
 
 
 func desenhar_rastro(progresso: float, cor_atual: Color) -> void:

@@ -10,9 +10,11 @@ const TIPO_BASICA: StringName = &"basica"
 const TIPO_ESTRUTURAL: StringName = &"estrutural"
 const TIPO_SINERGIA: StringName = &"sinergia"
 const TIPO_SUPERMOD: StringName = &"supermod"
+const TIPO_ARMA_ESPECIFICA: StringName = &"arma_especifica"
 
 const SLOT_ESTILO_TIRO: StringName = &"estilo_tiro"
 const SLOT_SUPERMOD: StringName = &"supermod"
+const SLOT_DETONADOR_MINA: StringName = &"detonador_mina"
 
 
 # Catálogo central dos mods. Para personalizar a tela, altere aqui:
@@ -430,11 +432,195 @@ const DADOS: Dictionary = {
 }
 
 
+# Evoluções que só entram no sorteio quando a arma indicada está equipada.
+# Os nomes usam exclusivamente assuntos já presentes nos cards do Monthly
+# Colors: campanhas mensais, datas comemorativas e as doze luas anuais.
+const DADOS_ARMAS: Dictionary = {
+	&"rosa_petalas_extras": {
+		"nome": "PÉTALAS EXTRAS", "descricao": "+2 pétalas por disparo. O leque continua curto e cada pétala mantém seu dano.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/rosa_petalas_extras.svg", "categoria": "LEQUE DA PRIMAVERA",
+		"raridade": "INCOMUM", "cor": Color("ff7eb7"), "max_nivel": 2, "peso": 0.92,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a01_espingarda_lua_rosa",
+		"tags": [&"arma_especifica", &"multitiro", &"primavera"]
+	},
+	&"rosa_cano_curto": {
+		"nome": "FLORAÇÃO CONCENTRADA", "descricao": "Fecha o cone e aumenta o dano próximo. A distância máxima não aumenta.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/rosa_cano_curto.svg", "categoria": "LEQUE DA PRIMAVERA",
+		"raridade": "RARA", "cor": Color("ff5f9f"), "max_nivel": 2, "peso": 0.66,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a01_espingarda_lua_rosa",
+		"tags": [&"arma_especifica", &"dano", &"curto_alcance"]
+	},
+	&"fogos_formacao": {
+		"nome": "CONSTELAÇÃO DE FOGOS", "descricao": "+1 foguete por salva, lançado por um novo ângulo ao redor do alvo.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/fogos_formacao.svg", "categoria": "FOGOS DO RECOMEÇO",
+		"raridade": "INCOMUM", "cor": Color("e7edff"), "max_nivel": 2, "peso": 0.88,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a03_alcateia_misseis",
+		"tags": [&"arma_especifica", &"multitiro", &"ano_novo"]
+	},
+	&"fogos_estouro": {
+		"nome": "VIRADA LUMINOSA", "descricao": "Amplia a explosão e o dano em área de cada fogo do recomeço.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/fogos_estouro.svg", "categoria": "FOGOS DO RECOMEÇO",
+		"raridade": "RARA", "cor": Color("b8c8ff"), "max_nivel": 2, "peso": 0.62,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a03_alcateia_misseis",
+		"tags": [&"arma_especifica", &"area", &"ano_novo"]
+	},
+	&"esturjao_correnteza": {
+		"nome": "CORRENTEZA CRESCENTE", "descricao": "A carga completa chega 20% mais rápido por nível, sem reduzir o impacto final.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/esturjao_correnteza.svg", "categoria": "CANHÃO DO ESTURJÃO",
+		"raridade": "INCOMUM", "cor": Color("54c6ff"), "max_nivel": 2, "peso": 0.86,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a04_canhao_esturjao",
+		"tags": [&"arma_especifica", &"carga", &"esturjao"]
+	},
+	&"esturjao_perfurante": {
+		"nome": "MIGRAÇÃO PROFUNDA", "descricao": "+1 perfuração e mais dano para o disparo completamente carregado.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/esturjao_perfurante.svg", "categoria": "CANHÃO DO ESTURJÃO",
+		"raridade": "RARA", "cor": Color("309fe8"), "max_nivel": 2, "peso": 0.64,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a04_canhao_esturjao",
+		"tags": [&"arma_especifica", &"dano", &"perfuracao", &"esturjao"]
+	},
+	&"mina_pavio_curto": {
+		"nome": "CONTAGEM PREVENTIVA", "descricao": "O sinalizador detona 1 segundo antes por nível. O tempo mínimo é 2 segundos.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/mina_pavio_curto.svg", "categoria": "SINALIZADORES AMARELOS",
+		"raridade": "INCOMUM", "cor": Color("ffd447"), "max_nivel": 3, "peso": 0.94,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a05_minas_castor",
+		"tags": [&"arma_especifica", &"tempo", &"maio_amarelo"]
+	},
+	&"mina_sensor_proximidade": {
+		"nome": "SENSOR DE PROXIMIDADE", "descricao": "DETONADOR RARO: troca o temporizador por uma zona que reage a ameaças próximas.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/mina_sensor_proximidade.svg", "categoria": "SINALIZADORES AMARELOS",
+		"raridade": "RARA", "cor": Color("fff06a"), "max_nivel": 1, "peso": 0.34,
+		"tipo": TIPO_ESTRUTURAL, "slot_estrutural": SLOT_DETONADOR_MINA, "rota_estrutural": &"proximidade",
+		"requisitos": {}, "arma_exclusiva": &"a05_minas_castor", "tags": [&"arma_especifica", &"detonador", &"maio_amarelo"]
+	},
+	&"mina_comando_remoto": {
+		"nome": "COMANDO DE SEGURANÇA", "descricao": "DETONADOR RARO: o próximo disparo explode todas as minas armadas; o seguinte instala outra.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/mina_comando_remoto.svg", "categoria": "SINALIZADORES AMARELOS",
+		"raridade": "RARA", "cor": Color("ffb52e"), "max_nivel": 1, "peso": 0.30,
+		"tipo": TIPO_ESTRUTURAL, "slot_estrutural": SLOT_DETONADOR_MINA, "rota_estrutural": &"remoto",
+		"requisitos": {}, "arma_exclusiva": &"a05_minas_castor", "tags": [&"arma_especifica", &"detonador", &"maio_amarelo"]
+	},
+	&"perielio_resfriamento": {
+		"nome": "JANELA DO PERIÉLIO", "descricao": "O feixe aquece 22% menos por nível antes de exigir resfriamento.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_resfriamento.svg", "categoria": "FEIXE DO PERIÉLIO",
+		"raridade": "INCOMUM", "cor": Color("ffcf45"), "max_nivel": 2, "peso": 0.88,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a06_feixe_perielio",
+		"tags": [&"arma_especifica", &"calor", &"perielio"]
+	},
+	&"perielio_foco": {
+		"nome": "FOCO SOLAR", "descricao": "Concentra o feixe: mais dano e perfuração, mantendo sua vocação de curta distância.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_foco.svg", "categoria": "FEIXE DO PERIÉLIO",
+		"raridade": "RARA", "cor": Color("ff9f2f"), "max_nivel": 2, "peso": 0.62,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a06_feixe_perielio",
+		"tags": [&"arma_especifica", &"dano", &"perielio"]
+	},
+	&"colheita_dupla": {
+		"nome": "CEIFA EM DUPLA", "descricao": "+1 arco de colheita por disparo, abrindo trajetórias laterais de ida e volta.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/colheita_dupla.svg", "categoria": "ARCO DA COLHEITA",
+		"raridade": "INCOMUM", "cor": Color("ffb34d"), "max_nivel": 2, "peso": 0.86,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a07_foice_colheita",
+		"tags": [&"arma_especifica", &"multitiro", &"colheita"]
+	},
+	&"colheita_retorno": {
+		"nome": "COLHEITA COMPLETA", "descricao": "Aumenta o dano, a velocidade de retorno e a capacidade de atravessar inimigos.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/colheita_retorno.svg", "categoria": "ARCO DA COLHEITA",
+		"raridade": "RARA", "cor": Color("ff8f35"), "max_nivel": 2, "peso": 0.62,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a07_foice_colheita",
+		"tags": [&"arma_especifica", &"dano", &"colheita"]
+	},
+	&"terra_raizes_gemeas": {
+		"nome": "RAÍZES GÊMEAS", "descricao": "+1 raiz subterrânea, emergindo por uma trajetória lateral diferente.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/terra_raizes_gemeas.svg", "categoria": "RAIZ DO DIA DA TERRA",
+		"raridade": "INCOMUM", "cor": Color("8ae878"), "max_nivel": 2, "peso": 0.86,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a08_torpedo_subterraneo",
+		"tags": [&"arma_especifica", &"multitiro", &"dia_terra"]
+	},
+	&"terra_ruptura": {
+		"nome": "SOLO RENOVADO", "descricao": "Aumenta o raio e o dano da erupção quando a raiz deixa o solo.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/terra_ruptura.svg", "categoria": "RAIZ DO DIA DA TERRA",
+		"raridade": "RARA", "cor": Color("5fcf69"), "max_nivel": 2, "peso": 0.62,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a08_torpedo_subterraneo",
+		"tags": [&"arma_especifica", &"area", &"dia_terra"]
+	},
+	&"fogueira_brasas": {
+		"nome": "RODA DE BRASAS", "descricao": "+1 brasa de morteiro por disparo, distribuída ao redor da mira.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/fogueira_brasas.svg", "categoria": "MORTEIRO DA FOGUEIRA",
+		"raridade": "INCOMUM", "cor": Color("ff6f32"), "max_nivel": 2, "peso": 0.86,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a09_morteiro_fogueira",
+		"tags": [&"arma_especifica", &"multitiro", &"festa_junina"]
+	},
+	&"fogueira_circulo": {
+		"nome": "FOGUEIRA MAIOR", "descricao": "Amplia o círculo incendiado e o dano da explosão de cada brasa.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/fogueira_circulo.svg", "categoria": "MORTEIRO DA FOGUEIRA",
+		"raridade": "RARA", "cor": Color("ff4224"), "max_nivel": 2, "peso": 0.60,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a09_morteiro_fogueira",
+		"tags": [&"arma_especifica", &"area", &"festa_junina"]
+	},
+	&"morango_cacho": {
+		"nome": "CACHO DE MORANGOS", "descricao": "+2 projéteis por rajada, preservando a formação simétrica.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/morango_cacho.svg", "categoria": "SEMENTES VERMELHAS",
+		"raridade": "INCOMUM", "cor": Color("ff405f"), "max_nivel": 2, "peso": 0.90,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a10_rajada_morango",
+		"tags": [&"arma_especifica", &"multitiro", &"lua_morango"]
+	},
+	&"morango_sementes": {
+		"nome": "SEMENTES SILVESTRES", "descricao": "+1 semente criada em cada impacto e mais dano no projétil principal.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/morango_sementes.svg", "categoria": "SEMENTES VERMELHAS",
+		"raridade": "RARA", "cor": Color("ff2448"), "max_nivel": 2, "peso": 0.62,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a10_rajada_morango",
+		"tags": [&"arma_especifica", &"fragmentacao", &"lua_morango"]
+	},
+	&"roxo_neblina": {
+		"nome": "NEBLINA VIOLETA", "descricao": "+2 partículas no cone de fevereiro, cobrindo melhor a área próxima.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/roxo_neblina.svg", "categoria": "PROJETOR FEVEREIRO ROXO",
+		"raridade": "INCOMUM", "cor": Color("bd8cff"), "max_nivel": 2, "peso": 0.88,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a11_projetor_nevasca",
+		"tags": [&"arma_especifica", &"multitiro", &"fevereiro_roxo"]
+	},
+	&"roxo_persistencia": {
+		"nome": "CUIDADO CONTÍNUO", "descricao": "Os impactos desaceleram o inimigo por mais tempo e causam mais dano.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/roxo_persistencia.svg", "categoria": "PROJETOR FEVEREIRO ROXO",
+		"raridade": "RARA", "cor": Color("9562e8"), "max_nivel": 2, "peso": 0.60,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a11_projetor_nevasca",
+		"tags": [&"arma_especifica", &"controle", &"fevereiro_roxo"]
+	},
+	&"jardim_petalas": {
+		"nome": "JARDIM EM FLORAÇÃO", "descricao": "+2 pétalas orbitais por nível antes do ataque conjunto.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/jardim_petalas.svg", "categoria": "JARDIM ORBITAL",
+		"raridade": "INCOMUM", "cor": Color("ff67b3"), "max_nivel": 2, "peso": 0.88,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a12_jardim_orbital",
+		"tags": [&"arma_especifica", &"multitiro", &"flores"]
+	},
+	&"jardim_sincronia": {
+		"nome": "DESABROCHAR CONJUNTO", "descricao": "As pétalas orbitam por menos tempo e avançam com mais dano.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/jardim_sincronia.svg", "categoria": "JARDIM ORBITAL",
+		"raridade": "RARA", "cor": Color("f04491"), "max_nivel": 2, "peso": 0.60,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a12_jardim_orbital",
+		"tags": [&"arma_especifica", &"dano", &"flores"]
+	},
+	&"solsticio_nucleo": {
+		"nome": "NOITE MAIS LONGA", "descricao": "Amplia o orbe, sua explosão e o dano liberado no estilhaçamento.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/solsticio_nucleo.svg", "categoria": "CANHÃO DO SOLSTÍCIO",
+		"raridade": "INCOMUM", "cor": Color("90caff"), "max_nivel": 2, "peso": 0.84,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a13_canhao_lua_fria",
+		"tags": [&"arma_especifica", &"area", &"solsticio"]
+	},
+	&"solsticio_absorcao": {
+		"nome": "CÉU DE INVERNO", "descricao": "Aumenta a área que captura projéteis pequenos durante o avanço do orbe.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/solsticio_absorcao.svg", "categoria": "CANHÃO DO SOLSTÍCIO",
+		"raridade": "RARA", "cor": Color("67a8ff"), "max_nivel": 2, "peso": 0.58,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a13_canhao_lua_fria",
+		"tags": [&"arma_especifica", &"defesa", &"solsticio"]
+	},
+}
+
+
 static func obter(id: StringName, habilidade: Habilidade = null) -> Dictionary:
 	if is_instance_valid(habilidade):
 		var especificos := habilidade.obter_upgrades_especificos()
 		if especificos.has(id):
 			return especificos[id]
+	if DADOS_ARMAS.has(id):
+		return DADOS_ARMAS[id]
 	var dados: Dictionary = DADOS.get(id, {})
 	return dados
 
@@ -507,6 +693,7 @@ static func nome_slot(slot: StringName) -> String:
 	match slot:
 		SLOT_ESTILO_TIRO: return "ESTILO DE TIRO"
 		SLOT_SUPERMOD: return "SUPERMOD"
+		SLOT_DETONADOR_MINA: return "DETONADOR DA MINA"
 		_: return str(slot).to_upper()
 
 
@@ -520,14 +707,26 @@ static func nome_rota(rota: StringName) -> String:
 		&"tempestade_prismatica": return "TEMPESTADE"
 		&"singularidade": return "SINGULARIDADE"
 		&"reator_sincronizado": return "REATOR"
+		&"proximidade": return "PROXIMIDADE"
+		&"remoto": return "COMANDO REMOTO"
 		&"": return "LIVRE"
 		_: return str(rota).replace("_", " ").to_upper()
 
 
 static func resumo_rotas(
 	niveis: Dictionary,
-	habilidade: Habilidade = null
+	habilidade: Habilidade = null,
+	arma: StringName = &""
 ) -> String:
+	if not arma.is_empty():
+		var melhorias_arma := 0
+		for id in niveis:
+			var dados := obter(id, habilidade)
+			if StringName(dados.get("arma_exclusiva", &"")) == arma:
+				melhorias_arma += int(niveis[id])
+		return "%s   •   %d MELHORIA(S) PRÓPRIA(S)" % [
+			nome_arma(arma), melhorias_arma
+		]
 	var rotas := rotas_ativas(niveis, habilidade)
 	return "ESTILO DE TIRO: %s   •   SUPERMOD: %s" % [
 		nome_rota(rotas[SLOT_ESTILO_TIRO]),
@@ -535,13 +734,33 @@ static func resumo_rotas(
 	]
 
 
+static func nome_arma(arma: StringName) -> String:
+	match arma:
+		&"a01_espingarda_lua_rosa": return "LEQUE DA PRIMAVERA"
+		&"a03_alcateia_misseis": return "FOGOS DO RECOMEÇO"
+		&"a04_canhao_esturjao": return "CANHÃO DO ESTURJÃO"
+		&"a05_minas_castor": return "SINALIZADORES AMARELOS"
+		&"a06_feixe_perielio": return "FEIXE DO PERIÉLIO"
+		&"a07_foice_colheita": return "ARCO DA COLHEITA"
+		&"a08_torpedo_subterraneo": return "RAIZ DO DIA DA TERRA"
+		&"a09_morteiro_fogueira": return "MORTEIRO DA FOGUEIRA"
+		&"a10_rajada_morango": return "SEMENTES VERMELHAS"
+		&"a11_projetor_nevasca": return "PROJETOR FEVEREIRO ROXO"
+		&"a12_jardim_orbital": return "JARDIM ORBITAL"
+		&"a13_canhao_lua_fria": return "CANHÃO DO SOLSTÍCIO"
+		_: return "ARMA PADRÃO"
+
+
 static func disponivel(
 	id: StringName,
 	niveis: Dictionary,
-	habilidade: Habilidade = null
+	habilidade: Habilidade = null,
+	arma: StringName = &""
 ) -> bool:
 	var dados := obter(id, habilidade)
 	if dados.is_empty():
+		return false
+	if not _compativel_com_arma(dados, arma):
 		return false
 	return (
 		nivel(id, niveis) < int(dados.get("max_nivel", 1))
@@ -553,7 +772,8 @@ static func disponivel(
 static func texto_requisitos(
 	id: StringName,
 	niveis: Dictionary,
-	habilidade: Habilidade = null
+	habilidade: Habilidade = null,
+	arma: StringName = &""
 ) -> String:
 	var dados := obter(id, habilidade)
 	var requisitos: Dictionary = dados.get("requisitos", {})
@@ -564,6 +784,8 @@ static func texto_requisitos(
 		texto_rota = "ROTA: %s • %s" % [nome_slot(slot), nome_rota(rota)]
 
 	if requisitos.is_empty():
+		if not StringName(dados.get("arma_exclusiva", &"")).is_empty():
+			return "EXCLUSIVO DA ARMA EQUIPADA"
 		if &"habilidade_especifica" in dados.get("tags", []):
 			return "EXCLUSIVO DA HABILIDADE EQUIPADA"
 		if not texto_rota.is_empty():
@@ -588,15 +810,19 @@ static func sortear(
 	niveis: Dictionary,
 	quantidade := 3,
 	habilidade: Habilidade = null,
-	evitar: Array[StringName] = []
+	evitar: Array[StringName] = [],
+	arma: StringName = &""
 ) -> Array[StringName]:
 	var candidatos: Array[StringName] = []
 	for id in DADOS:
-		if disponivel(id, niveis, habilidade):
+		if disponivel(id, niveis, habilidade, arma):
+			candidatos.append(id)
+	for id in DADOS_ARMAS:
+		if disponivel(id, niveis, habilidade, arma):
 			candidatos.append(id)
 	if is_instance_valid(habilidade):
 		for id in habilidade.obter_upgrades_especificos():
-			if disponivel(id, niveis, habilidade):
+			if disponivel(id, niveis, habilidade, arma):
 				candidatos.append(id)
 
 	# Um reroll tenta não repetir imediatamente as mesmas cartas. Se o catálogo
@@ -607,10 +833,23 @@ static func sortear(
 
 	var resultado: Array[StringName] = []
 	var especificos: Array[StringName] = []
+	var especificos_arma: Array[StringName] = []
 	for id in candidatos:
-		var tags: Array = obter(id, habilidade).get("tags", [])
+		var dados_candidato := obter(id, habilidade)
+		var tags: Array = dados_candidato.get("tags", [])
 		if &"habilidade_especifica" in tags:
 			especificos.append(id)
+		if not StringName(dados_candidato.get("arma_exclusiva", &"")).is_empty():
+			especificos_arma.append(id)
+
+	# Toda arma Monthly recebe ao menos uma evolução própria por oferta enquanto
+	# ainda houver alguma disponível. As demais cartas continuam sendo casco,
+	# mobilidade, habilidade ou atributos universais realmente aplicáveis.
+	if not especificos_arma.is_empty():
+		resultado.append(_sortear_ponderado(especificos_arma, niveis, habilidade))
+	for id in especificos_arma:
+		candidatos.erase(id)
+		especificos.erase(id)
 
 	# A habilidade equipada entra por chance, nunca como dupla garantida.
 	# Depois do sorteio, todas as demais específicas saem dos candidatos.
@@ -656,6 +895,21 @@ static func sortear(
 
 	resultado.shuffle()
 	return resultado
+
+
+static func _compativel_com_arma(dados: Dictionary, arma: StringName) -> bool:
+	var exclusiva: StringName = dados.get("arma_exclusiva", &"")
+	if not exclusiva.is_empty():
+		return arma == exclusiva
+
+	# Os estilos estruturais antigos modificam somente o tiro padrão. Uma arma
+	# permanente possui geometria própria e nunca deve receber uma carta que não
+	# altera seus projéteis de verdade.
+	if not arma.is_empty() and StringName(dados.get("slot_estrutural", &"")) == SLOT_ESTILO_TIRO:
+		return false
+	if not arma.is_empty() and StringName(dados.get("tipo", &"")) == TIPO_SUPERMOD:
+		return false
+	return true
 
 
 static func _adicionar_do_slot(

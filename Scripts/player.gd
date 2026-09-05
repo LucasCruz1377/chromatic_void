@@ -49,6 +49,9 @@ const XP_PROGRESSAO_INICIAL := [2, 3, 4, 6, 8, 11, 14, 18, 23]
 @onready var lvl_text: Label = $"../GUI/LvlText"
 @onready var somtiro: AudioStreamPlayer2D = $somtiro
 @onready var death: AudioStreamPlayer2D = $death
+@onready var corpo_visual: Polygon2D = $corpo
+@onready var detalhe_visual: Polygon2D = $corpo2
+@onready var luz_visual: PointLight2D = $luz
 
 var vida: float
 var cooldown := 0.0
@@ -132,6 +135,8 @@ var barra_cooldown_habilidade: TextureProgressBar
 var arma_monthly: StringName = &""
 var modulo_nave: StringName = &""
 var mutacao_habilidade: StringName = &""
+var modelo_visual_nave: StringName = &"c01_modelo_padrao"
+var cor_visual_nave: StringName = &"c10_verde_original"
 var carga_arma := 0.0
 var calor_feixe := 0.0
 var tempo_poder_monthly := 0.0
@@ -171,6 +176,7 @@ signal upgrade_adquirido(id: StringName, novo_nivel: int)
 func _ready() -> void:
 	vida = VIDA_MAXIMA
 	carregar_equipamentos_monthly()
+	aplicar_personalizacao_nave()
 	carregar_habilidade_equipada()
 	criar_barra_cooldown_habilidade()
 	var menu := get_node_or_null("../GUI/TelaUpgrades")
@@ -258,16 +264,50 @@ func carregar_habilidade_equipada() -> void:
 
 func carregar_equipamentos_monthly() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
-	var equipamentos = dados.get("equipamentos_loja", {})
+	var equipamentos: Variant = dados.get("equipamentos_loja", {})
 	if equipamentos is Dictionary:
 		arma_monthly = StringName(str(equipamentos.get("1", "")))
 		modulo_nave = StringName(str(equipamentos.get("2", "")))
 		mutacao_habilidade = StringName(str(equipamentos.get("3", "")))
+	var personalizacao: Variant = dados.get("personalizacao_nave", {})
+	if personalizacao is Dictionary:
+		modelo_visual_nave = StringName(str(personalizacao.get("modelo", &"c01_modelo_padrao")))
+		cor_visual_nave = StringName(str(personalizacao.get("cor", &"c10_verde_original")))
+	var comprados: Variant = dados.get("itens_desbloqueados", [])
+	# A antiga sniper foi fundida ao Canhão do Esturjão. Quem a comprou mantém
+	# a compra e já entra com a arma consolidada equipada.
+	if arma_monthly == &"a02_rifle_cacador":
+		arma_monthly = &"a04_canhao_esturjao"
+		if equipamentos is Dictionary:
+			equipamentos["1"] = arma_monthly
+		if comprados is Array and &"a04_canhao_esturjao" not in comprados:
+			comprados.append(&"a04_canhao_esturjao")
+		GerenciadorDeSave.salvar({
+			"equipamentos_loja": equipamentos,
+			"itens_desbloqueados": comprados,
+		})
+	var item_modelo := CatalogoMonthly.encontrar(modelo_visual_nave)
+	var item_cor := CatalogoMonthly.encontrar(cor_visual_nave)
+	if item_modelo.is_empty() or StringName(item_modelo.get("grupo_personalizacao", &"")) != &"modelo":
+		modelo_visual_nave = &"c01_modelo_padrao"
+	if item_cor.is_empty() or StringName(item_cor.get("grupo_personalizacao", &"")) != &"cor":
+		cor_visual_nave = &"c10_verde_original"
+	if (
+		modelo_visual_nave != &"c01_modelo_padrao"
+		and not Global.modo_desenvolvedor
+		and (not (comprados is Array) or modelo_visual_nave not in comprados)
+	):
+		modelo_visual_nave = &"c01_modelo_padrao"
+	if (
+		cor_visual_nave != &"c10_verde_original"
+		and not Global.modo_desenvolvedor
+		and (not (comprados is Array) or cor_visual_nave not in comprados)
+	):
+		cor_visual_nave = &"c10_verde_original"
 	for id in [arma_monthly, modulo_nave, mutacao_habilidade]:
 		if id.is_empty():
 			continue
 		var item := CatalogoMonthly.encontrar(id)
-		var comprados = dados.get("itens_desbloqueados", [])
 		if item.is_empty() or (
 			not Global.modo_desenvolvedor
 			and id not in comprados
@@ -276,6 +316,78 @@ func carregar_equipamentos_monthly() -> void:
 			if id == arma_monthly: arma_monthly = &""
 			elif id == modulo_nave: modulo_nave = &""
 			elif id == mutacao_habilidade: mutacao_habilidade = &""
+
+
+func aplicar_personalizacao_nave() -> void:
+	if not is_instance_valid(corpo_visual) or not is_instance_valid(detalhe_visual):
+		return
+	var dados_cor := CatalogoMonthly.encontrar(cor_visual_nave)
+	var cor_nave := Color("8bff2a")
+	if not dados_cor.is_empty():
+		var cor_catalogo: Variant = dados_cor.get("cor", cor_nave)
+		if typeof(cor_catalogo) == TYPE_COLOR:
+			cor_nave = cor_catalogo
+	corpo_visual.color = cor_nave
+	detalhe_visual.color = cor_nave.lightened(0.10)
+	if is_instance_valid(luz_visual):
+		luz_visual.color = cor_nave
+	var material_particulas := particles.process_material as ParticleProcessMaterial
+	if is_instance_valid(material_particulas):
+		material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
+		particles.process_material = material_particulas
+		material_particulas.color = cor_nave
+
+	# O modelo padrão conserva os polígonos originais da cena. As variações usam
+	# a mesma caixa visual (aprox. 56 x 44 px) e nunca alteram a colisão circular.
+	if modelo_visual_nave == &"c01_modelo_padrao":
+		return
+	corpo_visual.position = Vector2.ZERO
+	corpo_visual.rotation = 0.0
+	corpo_visual.scale = Vector2.ONE
+	detalhe_visual.position = Vector2.ZERO
+	detalhe_visual.rotation = 0.0
+	detalhe_visual.scale = Vector2.ONE
+	PontaArma.position = Vector2(30.0, 0.0)
+	match modelo_visual_nave:
+		&"c02_asa_delta":
+			corpo_visual.polygon = PackedVector2Array([
+				Vector2(30, 0), Vector2(-15, -22), Vector2(-7, -7),
+				Vector2(-22, 0), Vector2(-7, 7), Vector2(-15, 22),
+			])
+			detalhe_visual.polygon = PackedVector2Array([
+				Vector2(24, 0), Vector2(-7, -7), Vector2(5, 0), Vector2(-7, 7),
+			])
+		&"c03_nucleo_orbital":
+			corpo_visual.polygon = PackedVector2Array([
+				Vector2(29, 0), Vector2(-10, -22), Vector2(-7, -10),
+				Vector2(-22, -5), Vector2(-15, 0), Vector2(-22, 5),
+				Vector2(-7, 10), Vector2(-10, 22),
+			])
+			detalhe_visual.polygon = PackedVector2Array([
+				Vector2(2, 0), Vector2(-1, -7), Vector2(-7, -10),
+				Vector2(-13, -7), Vector2(-16, 0), Vector2(-13, 7),
+				Vector2(-7, 10), Vector2(-1, 7),
+			])
+		&"c04_dardo":
+			corpo_visual.polygon = PackedVector2Array([
+				Vector2(31, 0), Vector2(-14, -15), Vector2(-8, -5),
+				Vector2(-24, -8), Vector2(-16, 0), Vector2(-24, 8),
+				Vector2(-8, 5), Vector2(-14, 15),
+			])
+			detalhe_visual.polygon = PackedVector2Array([
+				Vector2(25, 0), Vector2(-8, -5), Vector2(0, 0), Vector2(-8, 5),
+			])
+		&"c05_interceptor":
+			corpo_visual.polygon = PackedVector2Array([
+				Vector2(29, 0), Vector2(5, -5), Vector2(-12, -22),
+				Vector2(-7, -7), Vector2(-24, -11), Vector2(-15, 0),
+				Vector2(-24, 11), Vector2(-7, 7), Vector2(-12, 22), Vector2(5, 5),
+			])
+			detalhe_visual.polygon = PackedVector2Array([
+				Vector2(23, 0), Vector2(5, -5), Vector2(-3, 0), Vector2(5, 5),
+			])
+		_:
+			modelo_visual_nave = &"c01_modelo_padrao"
 
 
 func atualizar_ui() -> void:
@@ -620,6 +732,16 @@ func _disparar_leque(
 		criar_projetil(angulo, dano_extra, true, null, 0.0, estilo, cor)
 
 
+func _disparar_leque_monthly(
+	quantidade: int, abertura_graus: float, dano_extra: float,
+	estilo: StringName, cor: Color, config: Dictionary
+) -> void:
+	for indice in range(quantidade):
+		var progresso := float(indice) / float(maxi(quantidade - 1, 1))
+		var angulo := rotation + deg_to_rad(lerpf(-abertura_graus * 0.5, abertura_graus * 0.5, progresso))
+		criar_projetil(angulo, dano_extra, true, null, 0.0, estilo, cor, config)
+
+
 func _explodir_em_linha(
 	cor: Color, quantidade: int, passo: float, raio: float, dano_linha: float
 ) -> void:
@@ -916,15 +1038,20 @@ func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
 func atualizar_combate(delta: float) -> void:
 	cooldown = maxf(cooldown - delta, 0.0)
 	if ctrlblock:
+		if carga_arma > 0.0:
+			carga_arma = 0.0
+			queue_redraw()
 		return
-	if arma_monthly in [&"a02_rifle_cacador", &"a04_canhao_esturjao"]:
+	if arma_monthly == &"a04_canhao_esturjao":
 		if vivo and Input.is_action_pressed("atirar"):
 			carga_arma = minf(carga_arma + delta, 1.8)
-			if fmod(carga_arma, 0.25) < delta:
-				EfeitoCombateCena.criar(get_tree().current_scene, PontaArma.global_position, EfeitoCombate.Tipo.AVISO, Color(1.0, 0.58, 0.28), 0.35 + carga_arma * 0.2, transform.x)
+			queue_redraw()
 		if vivo and Input.is_action_just_released("atirar") and carga_arma > 0.08 and cooldown <= 0.0:
 			fire()
 		return
+	if carga_arma > 0.0:
+		carga_arma = 0.0
+		queue_redraw()
 
 	if vivo and Input.is_action_pressed("atirar") and cooldown <= 0.0:
 		fire()
@@ -989,75 +1116,141 @@ func fire() -> void:
 	)
 
 
+func nivel_upgrade_arma(id: StringName) -> int:
+	return DadosUpgrades.nivel(id, niveis_upgrades)
+
+
+func obter_tempo_carga_esturjao() -> float:
+	return maxf(1.55 * pow(0.80, nivel_upgrade_arma(&"esturjao_correnteza")), 0.82)
+
+
+func obter_modo_mina() -> StringName:
+	if nivel_upgrade_arma(&"mina_comando_remoto") > 0:
+		return &"remoto"
+	if nivel_upgrade_arma(&"mina_sensor_proximidade") > 0:
+		return &"proximidade"
+	return &"tempo"
+
+
+func _detonar_minas_remotamente() -> bool:
+	var detonou := false
+	for node in get_tree().get_nodes_in_group("monthly_mine"):
+		if (
+			is_instance_valid(node)
+			and node.has_method("detonar_mina")
+			and float(node.get("tempo_estilo")) >= 0.30
+		):
+			node.call("detonar_mina")
+			detonou = true
+	return detonou
+
+
 func disparar_arma_monthly() -> void:
 	var cor := Color(0.55, 0.9, 1.0)
 	var recarga := CD_MAX
 	match arma_monthly:
 		&"a01_espingarda_lua_rosa":
 			cor = Color(1.0, 0.46, 0.7)
-			_disparar_leque(7, 54.0, 0.5, &"petal", cor)
-			recarga *= 2.25
-		&"a02_rifle_cacador":
-			cor = Color(1.0, 0.56, 0.24)
-			var proporcao := clampf(carga_arma / 1.35, 0.15, 1.0)
-			criar_projetil(rotation, 1.2 + proporcao * 2.6, false, null, 0.0, &"sniper", cor, {"velocidade": 1.65, "escala": 0.7 + proporcao * 0.8, "penetracao": 2 + roundi(proporcao * 3.0)})
-			carga_arma = 0.0
-			recarga *= 3.2
-			_criar_feedback_monthly(PontaArma.global_position, cor, 0.8 + proporcao * 0.45, 2.0 + proporcao * 5.0)
+			var nivel_petalas := nivel_upgrade_arma(&"rosa_petalas_extras")
+			var nivel_foco := nivel_upgrade_arma(&"rosa_cano_curto")
+			var quantidade := 7 + nivel_petalas * 2
+			var abertura := 54.0 - float(nivel_foco) * 8.0
+			var dano_petala := 0.50 * (1.0 + float(nivel_foco) * 0.18)
+			_disparar_leque_monthly(
+				quantidade, abertura, dano_petala, &"petal", cor,
+				{"tempo_vida": 0.26, "velocidade": 0.92}
+			)
+			# Cadência deliberadamente baixa: é uma espingarda de aproximação,
+			# não um leque capaz de limpar a tela continuamente.
+			recarga = maxf(CD_MAX * 3.35, 0.58)
 		&"a03_alcateia_misseis":
 			cor = Color(0.72, 0.84, 1.0)
-			var alvos := _inimigos_mais_proximos(3)
-			for indice in range(3):
+			var quantidade := 3 + nivel_upgrade_arma(&"fogos_formacao")
+			var nivel_estouro := nivel_upgrade_arma(&"fogos_estouro")
+			var alvos := _inimigos_mais_proximos(quantidade)
+			for indice in range(quantidade):
 				var alvo: Node2D = alvos[indice % alvos.size()] if not alvos.is_empty() else null
-				criar_projetil(rotation + (float(indice) - 1.0) * 0.32, 0.62, false, alvo, (float(indice) - 1.0) * 14.0, &"missile", cor, {"homing": 4.2, "velocidade": 0.72, "explosao": 0.35, "raio": 54.0})
+				var centro := float(indice) - float(quantidade - 1) * 0.5
+				criar_projetil(rotation + centro * 0.25, 0.62, false, alvo, centro * 12.0, &"missile", cor, {"homing": 4.2, "velocidade": 0.72, "explosao": 0.35 + float(nivel_estouro) * 0.18, "raio": 54.0 + float(nivel_estouro) * 12.0})
 			recarga *= 2.8
 		&"a04_canhao_esturjao":
 			cor = Color(0.32, 0.74, 1.0)
-			var proporcao := clampf(carga_arma / 1.55, 0.15, 1.0)
-			criar_projetil(rotation, 1.0 + proporcao * 3.2, false, null, 0.0, &"wave", cor, {"velocidade": 0.62, "escala": 1.1 + proporcao, "penetracao": 2 + roundi(proporcao * 2.0)})
+			var carga_maxima := obter_tempo_carga_esturjao()
+			var proporcao := clampf(carga_arma / carga_maxima, 0.15, 1.0)
+			var nivel_perfuracao := nivel_upgrade_arma(&"esturjao_perfurante")
+			criar_projetil(rotation, 1.0 + proporcao * (3.2 + float(nivel_perfuracao) * 0.25), false, null, 0.0, &"wave", cor, {"velocidade": 0.72, "escala": 1.0 + proporcao, "penetracao": 2 + roundi(proporcao * 2.0) + nivel_perfuracao})
 			carga_arma = 0.0
 			recarga *= 3.8
 			_criar_feedback_monthly(PontaArma.global_position, cor, 1.0, 4.0 + proporcao * 4.0)
 		&"a05_minas_castor":
-			cor = Color(0.78, 0.53, 0.3)
-			criar_projetil(rotation + PI, 1.55, false, null, 0.0, &"mine", cor, {"velocidade": 0.0, "escala": 1.25, "explosao": 0.8, "raio": 92.0})
-			recarga *= 4.0
+			cor = Color(1.0, 0.79, 0.16)
+			var modo_mina: StringName = obter_modo_mina()
+			if modo_mina == &"remoto" and _detonar_minas_remotamente():
+				recarga = maxf(CD_MAX * 1.4, 0.22)
+			else:
+				var tempo_detonacao := maxf(5.0 - float(nivel_upgrade_arma(&"mina_pavio_curto")), 2.0)
+				criar_projetil(rotation + PI, 2.4, false, null, 0.0, &"mine", cor, {"velocidade": 0.0, "escala": 1.35, "explosao": 1.2, "raio": 142.0, "modo_mina": modo_mina, "tempo_detonacao": tempo_detonacao})
+			recarga *= 4.8
 		&"a06_feixe_perielio":
 			if calor_feixe >= 1.0:
 				return
 			cor = Color(1.0, 0.77, 0.18)
-			criar_projetil(rotation, 0.58, false, null, 0.0, &"beam", cor, {"velocidade": 1.65, "penetracao": 2, "escala": 0.7})
-			calor_feixe = minf(calor_feixe + 0.075, 1.15)
+			var nivel_foco := nivel_upgrade_arma(&"perielio_foco")
+			criar_projetil(rotation, 0.58 + float(nivel_foco) * 0.10, false, null, 0.0, &"beam", cor, {"velocidade": 1.65, "penetracao": 2 + nivel_foco, "escala": 0.7, "tempo_vida": 0.34})
+			var calor_por_tiro := 0.075 * pow(0.78, nivel_upgrade_arma(&"perielio_resfriamento"))
+			calor_feixe = minf(calor_feixe + calor_por_tiro, 1.15)
 			recarga = maxf(CD_MAX * 0.42, 0.045)
 		&"a07_foice_colheita":
 			cor = Color(1.0, 0.68, 0.24)
-			criar_projetil(rotation, 1.4, false, null, 0.0, &"boomerang", cor, {"velocidade": 0.72, "escala": 1.45, "penetracao": 5})
+			var quantidade := 1 + nivel_upgrade_arma(&"colheita_dupla")
+			var nivel_retorno := nivel_upgrade_arma(&"colheita_retorno")
+			for indice in range(quantidade):
+				var centro := float(indice) - float(quantidade - 1) * 0.5
+				criar_projetil(rotation + centro * 0.24, 1.4 + float(nivel_retorno) * 0.16, false, null, centro * 10.0, &"harvest_boomerang", cor, {"velocidade": 0.72, "escala": 1.45, "alcance_ida": 390.0, "multiplicador_retorno": 1.25 + float(nivel_retorno) * 0.18})
 			recarga *= 3.0
 		&"a08_torpedo_subterraneo":
 			cor = Color(0.52, 0.9, 0.42)
-			criar_projetil(rotation, 1.75, false, null, 0.0, &"underground", cor, {"velocidade": 0.55, "escala": 1.25, "explosao": 0.7, "raio": 82.0})
+			var quantidade := 1 + nivel_upgrade_arma(&"terra_raizes_gemeas")
+			var nivel_ruptura := nivel_upgrade_arma(&"terra_ruptura")
+			for indice in range(quantidade):
+				var centro := float(indice) - float(quantidade - 1) * 0.5
+				criar_projetil(rotation + centro * 0.18, 1.75, false, null, centro * 18.0, &"underground", cor, {"velocidade": 0.55, "escala": 1.25, "explosao": 0.7 + float(nivel_ruptura) * 0.18, "raio": 82.0 + float(nivel_ruptura) * 14.0})
 			recarga *= 3.4
 		&"a09_morteiro_fogueira":
 			cor = Color(1.0, 0.38, 0.12)
-			criar_projetil(rotation, 1.5, false, null, 0.0, &"mortar", cor, {"velocidade": 0.42, "escala": 1.4, "explosao": 0.7, "raio": 78.0})
+			var quantidade := 1 + nivel_upgrade_arma(&"fogueira_brasas")
+			var nivel_circulo := nivel_upgrade_arma(&"fogueira_circulo")
+			for indice in range(quantidade):
+				var centro := float(indice) - float(quantidade - 1) * 0.5
+				criar_projetil(rotation + centro * 0.18, 1.5, false, null, centro * 12.0, &"mortar", cor, {"velocidade": 0.42, "escala": 1.4, "explosao": 0.7 + float(nivel_circulo) * 0.2, "raio": 78.0 + float(nivel_circulo) * 15.0})
 			recarga *= 2.9
 		&"a10_rajada_morango":
 			cor = Color(1.0, 0.24, 0.36)
-			for deslocamento in [-0.12, 0.0, 0.12]:
-				criar_projetil(rotation + deslocamento, 0.48, false, null, deslocamento * 55.0, &"seed", cor, {"fragmentos": 3, "escala": 0.72})
+			var quantidade := 3 + nivel_upgrade_arma(&"morango_cacho") * 2
+			var nivel_sementes := nivel_upgrade_arma(&"morango_sementes")
+			for indice in range(quantidade):
+				var centro := float(indice) - float(quantidade - 1) * 0.5
+				var deslocamento := centro * 0.10
+				criar_projetil(rotation + deslocamento, 0.48 + float(nivel_sementes) * 0.06, false, null, centro * 7.0, &"seed", cor, {"fragmentos": 3 + nivel_sementes, "escala": 0.72})
 			recarga *= 1.8
 		&"a11_projetor_nevasca":
 			cor = Color(0.7, 0.92, 1.0)
-			_disparar_leque(5, 38.0, 0.34, &"snow", cor)
+			var nivel_neblina := nivel_upgrade_arma(&"roxo_neblina")
+			var nivel_persistencia := nivel_upgrade_arma(&"roxo_persistencia")
+			_disparar_leque_monthly(5 + nivel_neblina * 2, 38.0 + float(nivel_neblina) * 5.0, 0.34 + float(nivel_persistencia) * 0.06, &"snow", cor, {"tempo_vida": 0.55, "duracao_lentidao": 0.32 + float(nivel_persistencia) * 0.22})
 			recarga *= 1.35
 		&"a12_jardim_orbital":
 			cor = Color(1.0, 0.38, 0.67)
-			for indice in range(6):
-				criar_projetil(rotation + TAU * float(indice) / 6.0, 0.45, false, null, 0.0, &"orbit", cor, {"indice_orbita": indice})
+			var quantidade := 6 + nivel_upgrade_arma(&"jardim_petalas") * 2
+			var nivel_sincronia := nivel_upgrade_arma(&"jardim_sincronia")
+			for indice in range(quantidade):
+				criar_projetil(rotation + TAU * float(indice) / float(quantidade), 0.45 + float(nivel_sincronia) * 0.07, false, null, 0.0, &"orbit", cor, {"indice_orbita": indice, "quantidade_orbita": quantidade, "tempo_orbita": 0.65 - float(nivel_sincronia) * 0.10})
 			recarga *= 3.1
 		&"a13_canhao_lua_fria":
 			cor = Color(0.5, 0.76, 1.0)
-			criar_projetil(rotation, 2.1, false, null, 0.0, &"cold", cor, {"velocidade": 0.42, "escala": 1.75, "penetracao": 2, "explosao": 0.65, "raio": 96.0})
+			var nivel_nucleo := nivel_upgrade_arma(&"solsticio_nucleo")
+			var nivel_absorcao := nivel_upgrade_arma(&"solsticio_absorcao")
+			criar_projetil(rotation, 2.1 + float(nivel_nucleo) * 0.18, false, null, 0.0, &"cold", cor, {"velocidade": 0.42, "escala": 1.75 + float(nivel_nucleo) * 0.16, "penetracao": 2, "explosao": 0.65 + float(nivel_nucleo) * 0.16, "raio": 96.0 + float(nivel_nucleo) * 14.0, "raio_absorcao": 42.0 + float(nivel_absorcao) * 12.0})
 			recarga *= 4.2
 		_:
 			arma_monthly = &""
@@ -1109,10 +1302,13 @@ func criar_projetil(
 ) -> void:
 	var projetil = tiro.instantiate()
 	get_tree().current_scene.add_child(projetil)
-	projetil.global_position = (
-		PontaArma.global_position
-		+ global_transform.y.normalized() * deslocamento_lateral
-	)
+	if estilo_monthly == &"mine":
+		projetil.global_position = global_position - global_transform.x.normalized() * 38.0
+	else:
+		projetil.global_position = (
+			PontaArma.global_position
+			+ global_transform.y.normalized() * deslocamento_lateral
+		)
 	projetil.rotation = angulo
 
 	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
@@ -1398,6 +1594,7 @@ func atualizar_passivos(delta: float) -> void:
 
 
 func _draw() -> void:
+	_desenhar_carga_arma()
 	if escudo_habilidade > 0.0 and escudo_habilidade_max > 0.0:
 		var proporcao := clampf(escudo_habilidade / escudo_habilidade_max, 0.0, 1.0)
 		var cor_fundo := cor_escudo_habilidade
@@ -1443,6 +1640,32 @@ func _draw() -> void:
 			draw_circle(Vector2.from_angle(angulo) * 48.0, 3.5, Color(0.3, 1.0, 0.55, 0.9))
 
 
+func _desenhar_carga_arma() -> void:
+	if carga_arma <= 0.0 or arma_monthly != &"a04_canhao_esturjao":
+		return
+	var carga_maxima := obter_tempo_carga_esturjao()
+	var progresso := clampf(carga_arma / carga_maxima, 0.0, 1.0)
+	var cor_carga := Color(0.26, 0.86, 1.0)
+	var pulso := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.022)
+	var centro := PontaArma.position + Vector2(5.0, 0.0)
+	var raio := lerpf(2.8, 9.5, progresso)
+	draw_circle(
+		centro,
+		raio * (1.75 + pulso * 0.18),
+		Color(cor_carga.r, cor_carga.g, cor_carga.b, 0.10 + progresso * 0.12)
+	)
+	draw_circle(
+		centro,
+		raio,
+		Color(cor_carga.r, cor_carga.g, cor_carga.b, 0.72 + progresso * 0.25)
+	)
+	draw_circle(
+		centro + Vector2(-raio * 0.24, -raio * 0.24),
+		maxf(raio * 0.28, 1.2),
+		Color(1.0, 1.0, 1.0, 0.82)
+	)
+
+
 func ganhar_xp(valor: float) -> void:
 	xp_atual += valor
 	if modulo_nave == &"n02_luz_vital":
@@ -1476,7 +1699,7 @@ func calcular_xp_proximo_nivel(nivel: int) -> int:
 func comprar_upgrade(id: StringName) -> bool:
 	if pontos_upgrade_pendentes <= 0:
 		return false
-	if not DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada):
+	if not DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada, arma_monthly):
 		return false
 
 	var novo_nivel := DadosUpgrades.nivel(id, niveis_upgrades) + 1
@@ -1516,6 +1739,11 @@ func atualizar_multiplicador_forma() -> void:
 
 func aplicar_upgrade(id: StringName) -> void:
 	var nivel_atual_upgrade := DadosUpgrades.nivel(id, niveis_upgrades)
+	var dados_upgrade := DadosUpgrades.obter(id, HabilidadeEquipada)
+	# As melhorias exclusivas são consultadas diretamente no momento do disparo;
+	# o nível já foi salvo e não deve cair no manipulador da habilidade ativa.
+	if not StringName(dados_upgrade.get("arma_exclusiva", &"")).is_empty():
+		return
 	match id:
 		&"dano_calibrado":
 			dano *= 1.0 + _valor_tabela(
