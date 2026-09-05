@@ -30,13 +30,8 @@ window/size/viewport_height=540
 window/size/mode=3
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/stretch/scale_mode="fractional"
 window/handheld/orientation=4
 mouse_cursor/tooltip_position_offset=Vector2(0, 0)
-
-[input_devices]
-
-pointing/emulate_mouse_from_touch=true
 
 [file_customization]
 
