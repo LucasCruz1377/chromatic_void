@@ -6,8 +6,8 @@ on:
       tag:
         description: "Tag da Release. Deixe vazio para usar a Release mais recente."
         required: false
-        type: string
         default: ""
+        type: string
 
 permissions:
   contents: read
@@ -21,23 +21,31 @@ env:
 
 jobs:
   publicar:
-    name: Publicar Release no itch.io
+    name: Publicar no itch.io
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      # ============================================================
-      # 1. Instalar Butler
-      # ============================================================
+
+      # ==========================================================
+      # 1. INSTALAR BUTLER
+      # ==========================================================
+
       - name: Instalar Butler
-        uses: remarkablegames/setup-butler@v3.0.0
+        uses: remarkablegames/setup-butler@v3
+        with:
+          butler-version: LATEST
 
       - name: Verificar Butler
-        run: butler --version
+        run: |
+          set -euo pipefail
+          butler --version
 
-      # ============================================================
-      # 2. Encontrar a Release
-      # ============================================================
+
+      # ==========================================================
+      # 2. ENCONTRAR RELEASE
+      # ==========================================================
+
       - name: Encontrar Release
         id: release
         env:
@@ -48,44 +56,46 @@ jobs:
           set -euo pipefail
 
           if [[ -n "$TAG_INFORMADA" ]]; then
+
             TAG="$TAG_INFORMADA"
 
-            echo "Release escolhida manualmente:"
+            echo "Release informada manualmente:"
             echo "$TAG"
 
           else
+
             echo "Procurando a Release mais recente..."
-            echo "Incluindo pre-releases."
+            echo "Pre-releases também serão consideradas."
 
             TAG=$(gh release list \
               --repo "$GITHUB_REPOSITORY" \
               --limit 100 \
               --exclude-drafts \
               --json tagName,publishedAt,isPrerelease \
-              --jq '
-                sort_by(.publishedAt)
-                | reverse
-                | .[0].tagName
-              ')
+              --jq 'sort_by(.publishedAt) | reverse | .[0].tagName')
 
             if [[ -z "$TAG" || "$TAG" == "null" ]]; then
-              echo "ERRO: nenhuma Release publicada foi encontrada."
+              echo "ERRO: nenhuma Release encontrada."
               exit 1
             fi
 
-            echo "Release mais recente encontrada:"
+            echo "Release encontrada:"
             echo "$TAG"
+
           fi
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-      # ============================================================
-      # 3. Mostrar informações da Release
-      # ============================================================
+
+      # ==========================================================
+      # 3. MOSTRAR RELEASE
+      # ==========================================================
+
       - name: Mostrar Release selecionada
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -95,16 +105,15 @@ jobs:
 
           gh release view "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --json \
-              tagName \
-              name \
-              isPrerelease \
-              publishedAt \
-              assets
+            --json tagName,name,isPrerelease,publishedAt
 
-      # ============================================================
-      # 4. Baixar Windows
-      # ============================================================
+          echo "=========================================="
+
+
+      # ==========================================================
+      # 4. BAIXAR WINDOWS
+      # ==========================================================
+
       - name: Baixar Windows
         env:
           GH_TOKEN: ${{ github.token }}
@@ -121,22 +130,26 @@ jobs:
 
           gh release download "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern 'Windows.Desktop.zip' \
+            --pattern "Windows.Desktop.zip" \
             --dir downloads/windows
 
           echo ""
-          echo "Arquivo baixado:"
+          echo "Arquivos baixados:"
+
           ls -lah downloads/windows
 
           if [[ ! -f "downloads/windows/Windows.Desktop.zip" ]]; then
             echo ""
-            echo "ERRO: Windows.Desktop.zip não foi encontrado."
+            echo "ERRO:"
+            echo "Windows.Desktop.zip não foi encontrado na Release."
             exit 1
           fi
 
-      # ============================================================
-      # 5. Baixar Android
-      # ============================================================
+
+      # ==========================================================
+      # 5. BAIXAR ANDROID
+      # ==========================================================
+
       - name: Baixar Android
         env:
           GH_TOKEN: ${{ github.token }}
@@ -153,22 +166,26 @@ jobs:
 
           gh release download "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern 'ChromaticVoid-Android.apk' \
+            --pattern "ChromaticVoid-Android.apk" \
             --dir downloads/android
 
           echo ""
-          echo "Arquivo baixado:"
+          echo "Arquivos baixados:"
+
           ls -lah downloads/android
 
           if [[ ! -f "downloads/android/ChromaticVoid-Android.apk" ]]; then
             echo ""
-            echo "ERRO: ChromaticVoid-Android.apk não foi encontrado."
+            echo "ERRO:"
+            echo "ChromaticVoid-Android.apk não foi encontrado na Release."
             exit 1
           fi
 
-      # ============================================================
-      # 6. Publicar Windows
-      # ============================================================
+
+      # ==========================================================
+      # 6. PUBLICAR WINDOWS
+      # ==========================================================
+
       - name: Publicar Windows no itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
@@ -180,20 +197,25 @@ jobs:
           echo "=========================================="
           echo "PUBLICANDO WINDOWS"
           echo "=========================================="
+
           echo "Release: $TAG"
           echo "Arquivo: Windows.Desktop.zip"
+          echo "Canal: windows"
           echo "Destino: $ITCHIO_GAME:windows"
+
           echo "=========================================="
 
           butler push \
-            --userversion "$TAG" \
-            --if-changed \
             "downloads/windows/Windows.Desktop.zip" \
-            "$ITCHIO_GAME:windows"
+            "$ITCHIO_GAME:windows" \
+            --userversion "$TAG" \
+            --if-changed
 
-      # ============================================================
-      # 7. Publicar Android
-      # ============================================================
+
+      # ==========================================================
+      # 7. PUBLICAR ANDROID
+      # ==========================================================
+
       - name: Publicar Android no itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
@@ -205,13 +227,34 @@ jobs:
           echo "=========================================="
           echo "PUBLICANDO ANDROID"
           echo "=========================================="
+
           echo "Release: $TAG"
           echo "Arquivo: ChromaticVoid-Android.apk"
+          echo "Canal: android"
           echo "Destino: $ITCHIO_GAME:android"
+
           echo "=========================================="
 
           butler push \
-            --userversion "$TAG" \
-            --if-changed \
             "downloads/android/ChromaticVoid-Android.apk" \
-            "$ITCHIO_GAME:android"
+            "$ITCHIO_GAME:android" \
+            --userversion "$TAG" \
+            --if-changed
+
+
+      # ==========================================================
+      # 8. FINAL
+      # ==========================================================
+
+      - name: Publicação concluída
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "PUBLICAÇÃO CONCLUÍDA"
+          echo "=========================================="
+          echo "Release: $TAG"
+          echo "Windows: $ITCHIO_GAME:windows"
+          echo "Android: $ITCHIO_GAME:android"
+          echo "=========================================="
