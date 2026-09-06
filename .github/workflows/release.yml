@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag existente que será publicada, por exemplo v0.6.0-beta.1"
+        description: "Tag existente que será publicada. Exemplo: v0.6.0-beta.1"
         required: true
         type: string
 
@@ -16,14 +16,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref_name }}-${{ inputs.tag }}
+  group: release-${{ github.event_name }}-${{ github.ref_name }}-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   preparar:
     name: Validar tag e projeto
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
     outputs:
       tag: ${{ steps.versao.outputs.tag }}
       prerelease: ${{ steps.versao.outputs.prerelease }}
@@ -33,6 +34,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 0
 
       - name: Classificar versão
         id: versao
@@ -41,13 +43,19 @@ jobs:
           TAG_INFORMADA: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
+
           if [[ ! "$TAG_INFORMADA" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[0-9]+)?$ ]]; then
             echo "Tag inválida: $TAG_INFORMADA"
-            echo "Use vX.Y.Z, vX.Y.Z-alpha.N, vX.Y.Z-beta.N ou vX.Y.Z-rc.N."
+            echo "Use:"
+            echo "vX.Y.Z"
+            echo "vX.Y.Z-alpha.N"
+            echo "vX.Y.Z-beta.N"
+            echo "vX.Y.Z-rc.N"
             exit 1
           fi
 
           echo "tag=$TAG_INFORMADA" >> "$GITHUB_OUTPUT"
+
           if [[ "$TAG_INFORMADA" == *-* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
@@ -60,6 +68,9 @@ jobs:
           version: 4.7.0
           use-dotnet: false
           include-templates: false
+
+      - name: Confirmar versão do Godot
+        run: godot --version
 
       - name: Verificar referências de recursos
         run: python3 Tests/validar_referencias.py
@@ -76,7 +87,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           mapfile -t testes < <(find Tests -maxdepth 1 -name '*_smoke.tscn' -print | sort)
+
           if [[ ${#testes[@]} -eq 0 ]]; then
             echo "Nenhum smoke test foi encontrado."
             exit 1
@@ -84,6 +97,7 @@ jobs:
 
           for teste in "${testes[@]}"; do
             echo "Executando $teste"
+
             timeout 180s godot \
               --headless \
               --audio-driver Dummy \
@@ -91,24 +105,29 @@ jobs:
               "res://$teste"
           done
 
+
   exportar:
     name: Exportar ${{ matrix.nome }}
     needs: preparar
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
+
       matrix:
         include:
+
           - preset: Windows Desktop
             nome: Windows
             artefato: windows
             android: false
+
           - preset: Web
             nome: Web
             artefato: web
             android: false
+
           - preset: Android APK
             nome: Android APK
             artefato: android
@@ -119,30 +138,59 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ needs.preparar.outputs.tag }}
+          fetch-depth: 0
+
+
+      # ==========================================================
+      # VERSÃO
+      # ==========================================================
 
       - name: Aplicar versão da tag aos executáveis
         env:
           TAG: ${{ needs.preparar.outputs.tag }}
           VERSION_CODE: ${{ github.run_number }}
-        run: python3 Tests/aplicar_versao_release.py "$TAG" "$VERSION_CODE"
+        run: |
+          set -euo pipefail
+
+          python3 Tests/aplicar_versao_release.py \
+            "$TAG" \
+            "$VERSION_CODE"
+
+
+      # ==========================================================
+      # ANDROID
+      # ==========================================================
 
       - name: Preparar Java 17 para Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
+
 
       - name: Preparar Android SDK
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         uses: android-actions/setup-android@v4
 
-      - name: Instalar componentes Android exigidos pelo Godot
+
+      - name: Instalar componentes Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         shell: bash
-        run: sdkmanager "platform-tools" "build-tools;35.0.1" "platforms;android-35"
+        run: |
+          set -euo pipefail
 
-      - name: Preparar assinatura privada do APK
+          sdkmanager \
+            "platform-tools" \
+            "build-tools;35.0.1" \
+            "platforms;android-35"
+
+
+      # ==========================================================
+      # RESTAURAR KEYSTORE
+      # ==========================================================
+
+      - name: Restaurar keystore Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         shell: bash
         env:
@@ -151,22 +199,80 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set -euo pipefail
-          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEYSTORE_PASSWORD" ]]; then
-            echo "Configure os três secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS e ANDROID_KEYSTORE_PASSWORD."
+
+          if [[ -z "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
+            echo "ERRO: ANDROID_KEYSTORE_BASE64 não está configurado."
             exit 1
           fi
-          mkdir -p "${RUNNER_TEMP}/android-signing"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "${RUNNER_TEMP}/android-signing/chromatic-void.keystore"
-          keytool -list -keystore "${RUNNER_TEMP}/android-signing/chromatic-void.keystore" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
+          if [[ -z "${ANDROID_KEY_ALIAS:-}" ]]; then
+            echo "ERRO: ANDROID_KEY_ALIAS não está configurado."
+            exit 1
+          fi
+
+          if [[ -z "${ANDROID_KEYSTORE_PASSWORD:-}" ]]; then
+            echo "ERRO: ANDROID_KEYSTORE_PASSWORD não está configurado."
+            exit 1
+          fi
+
+          KEYSTORE_DIR="${RUNNER_TEMP}/android-signing"
+          KEYSTORE_PATH="${KEYSTORE_DIR}/chromatic-void.keystore"
+
+          mkdir -p "$KEYSTORE_DIR"
+
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" \
+            | base64 --decode \
+            > "$KEYSTORE_PATH"
+
+          if [[ ! -s "$KEYSTORE_PATH" ]]; then
+            echo "ERRO: a keystore foi criada vazia."
+            exit 1
+          fi
+
+          echo "Keystore restaurada com sucesso."
+
+
+      # ==========================================================
+      # VALIDAR KEYSTORE
+      # ==========================================================
+
+      - name: Validar assinatura Android
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        shell: bash
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          KEYSTORE_PATH="${RUNNER_TEMP}/android-signing/chromatic-void.keystore"
+
+          keytool -list \
+            -keystore "$KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            >/dev/null
+
+          echo "=========================================="
+          echo "KEYSTORE VALIDADA"
+          echo "=========================================="
+          echo "Alias encontrado e chave válida."
+
+
+      # ==========================================================
+      # EXPORTAR
+      # ==========================================================
 
       - name: Exportar ${{ matrix.nome }} com Godot
         if: matrix.android != true || vars.ANDROID_RELEASE_ENABLED == 'true'
         id: export
         uses: firebelley/godot-export@v8.0.0
+
         env:
           GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/android-signing/chromatic-void.keystore
           GODOT_ANDROID_KEYSTORE_RELEASE_USER: ${{ secrets.ANDROID_KEY_ALIAS }}
           GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+
         with:
           godot_executable_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
           godot_export_templates_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz
@@ -175,6 +281,78 @@ jobs:
           export_debug: false
           archive_output: true
           cache: true
+
+
+      # ==========================================================
+      # VERIFICAR APK
+      # ==========================================================
+
+      - name: Localizar APK Android
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APK_PATH="$(find "${{ steps.export.outputs.build_directory }}" \
+            -type f \
+            -name '*.apk' \
+            -print \
+            -quit)"
+
+          if [[ -z "$APK_PATH" ]]; then
+            echo "ERRO: nenhum APK foi encontrado."
+            exit 1
+          fi
+
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+          echo "APK encontrado:"
+          echo "$APK_PATH"
+
+          ls -lh "$APK_PATH"
+
+
+      # ==========================================================
+      # VERIFICAR ASSINATURA DO APK
+      # ==========================================================
+
+      - name: Verificar assinatura do APK
+        if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APK="${{ steps.apk.outputs.apk_path }}"
+
+          BUILD_TOOLS_DIR="$ANDROID_HOME/build-tools"
+
+          APKSIGNER="$(find "$BUILD_TOOLS_DIR" \
+            -type f \
+            -name apksigner \
+            -print \
+            | sort \
+            | tail -n 1)"
+
+          if [[ -z "$APKSIGNER" ]]; then
+            echo "ERRO: apksigner não encontrado."
+            exit 1
+          fi
+
+          echo "=========================================="
+          echo "VERIFICANDO ASSINATURA DO APK"
+          echo "=========================================="
+
+          "$APKSIGNER" verify --verbose "$APK"
+
+          echo "=========================================="
+          echo "APK ASSINADO E VALIDADO"
+          echo "=========================================="
+
+
+      # ==========================================================
+      # ARTEFATOS
+      # ==========================================================
 
       - name: Guardar build para publicação
         if: matrix.android != true
@@ -185,22 +363,25 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+
       - name: Guardar APK para publicação
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.artefato }}
-          path: ${{ steps.export.outputs.build_directory }}/**/*.apk
+          name: release-android
+          path: ${{ steps.apk.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 7
+
 
   publicar:
     name: Criar GitHub Release
     needs:
       - preparar
       - exportar
+
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Baixar o repositório na tag
@@ -209,6 +390,7 @@ jobs:
           ref: ${{ needs.preparar.outputs.tag }}
           fetch-depth: 0
 
+
       - name: Baixar builds aprovados
         uses: actions/download-artifact@v4
         with:
@@ -216,27 +398,47 @@ jobs:
           path: dist
           merge-multiple: true
 
+
       - name: Organizar arquivos e gerar checksums
         shell: bash
         run: |
           set -euo pipefail
+
           mkdir -p release-assets
+
           while IFS= read -r -d '' arquivo; do
+
             destino="release-assets/$(basename "$arquivo")"
+
             if [[ -e "$destino" ]]; then
-              echo "Dois builds geraram o mesmo nome: $destino"
+              echo "ERRO: dois builds possuem o mesmo nome:"
+              echo "$destino"
               exit 1
             fi
+
             cp "$arquivo" "$destino"
+
           done < <(find dist -type f -print0)
 
           if [[ -z "$(find release-assets -maxdepth 1 -type f -print -quit)" ]]; then
-            echo "Nenhum build foi baixado para a Release."
+            echo "ERRO: nenhum build foi encontrado."
             exit 1
           fi
 
+          echo "=========================================="
+          echo "ARQUIVOS DA RELEASE"
+          echo "=========================================="
+
+          ls -lh release-assets
+
           cd release-assets
+
           sha256sum ./* > SHA256SUMS.txt
+
+
+      # ==========================================================
+      # RELEASE ESTÁVEL
+      # ==========================================================
 
       - name: Criar Release estável
         if: needs.preparar.outputs.prerelease == 'false'
@@ -244,12 +446,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.preparar.outputs.tag }}
+        shell: bash
         run: |
+          set -euo pipefail
+
           gh release create "$TAG" release-assets/* \
             --title "Chromatic Void $TAG" \
             --generate-notes \
             --verify-tag \
             --latest
+
+
+      # ==========================================================
+      # PRÉ-RELEASE
+      # ==========================================================
 
       - name: Criar pré-lançamento
         if: needs.preparar.outputs.prerelease == 'true'
@@ -257,7 +467,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.preparar.outputs.tag }}
+        shell: bash
         run: |
+          set -euo pipefail
+
           gh release create "$TAG" release-assets/* \
             --title "Chromatic Void $TAG" \
             --generate-notes \
