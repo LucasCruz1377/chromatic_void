@@ -456,7 +456,7 @@ func processar_recuperacao(delta: float) -> void:
 
 
 func _duracao_janela_vulneravel() -> float:
-	return maxf(janela_vulneravel_base - float(fase - 1) * 0.11, 2.52)
+	return maxf(janela_vulneravel_base - float(fase - 1) * 0.11, 0.52)
 
 
 func abrir_janela_vulneravel(duracao: float) -> void:
