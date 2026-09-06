@@ -29,89 +29,107 @@ jobs:
       # ============================================================
       # 1. Instalar Butler
       # ============================================================
-
       - name: Instalar Butler
-        uses: jdno/setup-butler@v2
+        uses: remarkablegames/setup-butler@v3.0.0
 
       - name: Verificar Butler
         run: butler --version
 
       # ============================================================
-      # 2. Descobrir a Release
+      # 2. Encontrar a Release
       # ============================================================
-
       - name: Encontrar Release
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG_INFORMADA: ${{ inputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if [[ -n "${{ inputs.tag }}" ]]; then
-            TAG="${{ inputs.tag }}"
-            echo "Release escolhida manualmente: $TAG"
+          if [[ -n "$TAG_INFORMADA" ]]; then
+            TAG="$TAG_INFORMADA"
+
+            echo "Release escolhida manualmente:"
+            echo "$TAG"
+
           else
+            echo "Procurando a Release mais recente..."
+            echo "Incluindo pre-releases."
+
             TAG=$(gh release list \
               --repo "$GITHUB_REPOSITORY" \
               --limit 100 \
-              --order desc \
               --exclude-drafts \
-              --json tagName,publishedAt \
-              --jq '.[0].tagName')
+              --json tagName,publishedAt,isPrerelease \
+              --jq '
+                sort_by(.publishedAt)
+                | reverse
+                | .[0].tagName
+              ')
 
-            if [[ -z "$TAG" ]]; then
-              echo "ERRO: nenhuma Release encontrada."
+            if [[ -z "$TAG" || "$TAG" == "null" ]]; then
+              echo "ERRO: nenhuma Release publicada foi encontrada."
               exit 1
             fi
 
-            echo "Release mais recente encontrada: $TAG"
+            echo "Release mais recente encontrada:"
+            echo "$TAG"
           fi
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       # ============================================================
-      # 3. Mostrar qual Release será publicada
+      # 3. Mostrar informações da Release
       # ============================================================
-
       - name: Mostrar Release selecionada
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          echo "=========================================="
-          echo "Release selecionada: $TAG"
-          echo "=========================================="
-
-          gh release view "$TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --json tagName,name,isPrerelease,publishedAt,assets
-
-      # ============================================================
-      # 4. Baixar Windows
-      # ============================================================
-
-      - name: Baixar Windows
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
           set -euo pipefail
 
+          echo "=========================================="
+          echo "RELEASE SELECIONADA"
+          echo "=========================================="
+
+          gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json \
+              tagName \
+              name \
+              isPrerelease \
+              publishedAt \
+              assets
+
+      # ============================================================
+      # 4. Baixar Windows
+      # ============================================================
+      - name: Baixar Windows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
           mkdir -p downloads/windows
+
+          echo "=========================================="
+          echo "BAIXANDO WINDOWS"
+          echo "=========================================="
 
           gh release download "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --pattern 'Windows.Desktop.zip' \
             --dir downloads/windows
 
-          echo "=========================================="
-          echo "Asset Windows:"
-          echo "=========================================="
-
+          echo ""
+          echo "Arquivo baixado:"
           ls -lah downloads/windows
 
           if [[ ! -f "downloads/windows/Windows.Desktop.zip" ]]; then
+            echo ""
             echo "ERRO: Windows.Desktop.zip não foi encontrado."
             exit 1
           fi
@@ -119,28 +137,31 @@ jobs:
       # ============================================================
       # 5. Baixar Android
       # ============================================================
-
       - name: Baixar Android
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
         run: |
           set -euo pipefail
 
           mkdir -p downloads/android
+
+          echo "=========================================="
+          echo "BAIXANDO ANDROID"
+          echo "=========================================="
 
           gh release download "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --pattern 'ChromaticVoid-Android.apk' \
             --dir downloads/android
 
-          echo "=========================================="
-          echo "Asset Android:"
-          echo "=========================================="
-
+          echo ""
+          echo "Arquivo baixado:"
           ls -lah downloads/android
 
           if [[ ! -f "downloads/android/ChromaticVoid-Android.apk" ]]; then
+            echo ""
             echo "ERRO: ChromaticVoid-Android.apk não foi encontrado."
             exit 1
           fi
@@ -148,11 +169,11 @@ jobs:
       # ============================================================
       # 6. Publicar Windows
       # ============================================================
-
       - name: Publicar Windows no itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -173,11 +194,11 @@ jobs:
       # ============================================================
       # 7. Publicar Android
       # ============================================================
-
       - name: Publicar Android no itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
         run: |
           set -euo pipefail
 
