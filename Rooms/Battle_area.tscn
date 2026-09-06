@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c6fgnmw33h312"]
 
 [ext_resource type="Script" uid="uid://c88585sg45tkn" path="res://Scripts/battle_area.gd" id="1_iop6r"]
-[ext_resource type="AudioStream" uid="uid://cosajux0ph2yg" path="res://sounds/gamemusic.mp3" id="2_sfht8"]
+[ext_resource type="AudioStream" uid="uid://djb0n820xvpk2" path="res://sounds/OST/The Battle True Colors.ogg" id="2_kmw88"]
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_bd36c"]
 [ext_resource type="PackedScene" uid="uid://do2fi6mvjjoq1" path="res://Entities/player.tscn" id="3_xeyij"]
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="4_1s1gu"]
@@ -107,7 +107,7 @@ metadata/_edit_vertical_guides_ = [960.0]
 [node name="tocarmusica" type="AudioStreamPlayer2D" parent="." unique_id=1753205192]
 position = Vector2(453, 257)
 scale = Vector2(1.7456002, -14.767745)
-stream = ExtResource("2_sfht8")
+stream = ExtResource("2_kmw88")
 volume_db = -7.0
 autoplay = true
 bus = &"Music"
@@ -320,14 +320,14 @@ mouse_filter = 0
 expand_mode = 1
 stretch_mode = 5
 
-[node name="IndicadorBotao" type="TextureRect" parent="GUI/DisplaySkill"]
+[node name="IndicadorBotao" type="TextureRect" parent="GUI/DisplaySkill" unique_id=94651044]
+texture_filter = 2
 layout_mode = 0
 offset_left = 47.0
 offset_top = -6.0
 offset_right = 71.0
 offset_bottom = 12.0
 mouse_filter = 2
-texture_filter = 2
 expand_mode = 1
 stretch_mode = 5
 

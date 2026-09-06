@@ -1,10 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://dtp7by503hvhv"]
+[gd_scene format=3 uid="uid://dtp7by503hvhv"]
 
-[ext_resource type="Script" path="res://Scripts/shopcontroler.gd" id="1_shop"]
+[ext_resource type="Script" uid="uid://bpqiqsvffgus3" path="res://Scripts/shopcontroler.gd" id="1_shop"]
 [ext_resource type="PackedScene" uid="uid://ylhyeitfdhgc" path="res://UI/darkbackground.tscn" id="2_bg"]
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_shader"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="4_aim"]
-[ext_resource type="AudioStream" path="res://sounds/OST/Space Market.ogg" id="5_music"]
+[ext_resource type="AudioStream" uid="uid://xh35yodi5vnl" path="res://sounds/OST/Space Market.ogg" id="5_music"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_shop"]
 particle_flag_disable_z = true
@@ -16,23 +16,19 @@ initial_velocity_min = 18.0
 initial_velocity_max = 42.0
 gravity = Vector3(0, 0, 0)
 scale_min = 0.45
-scale_max = 1.0
-color = Color(0.24, 0.55, 1.0, 0.55)
+color = Color(0.24, 0.55, 1, 0.55)
 
-[sub_resource type="StyleBoxFlat" id="Unused_style_marker"]
-bg_color = Color(0, 0, 0, 0)
-
-[node name="Loja" type="Control"]
+[node name="Loja" type="Control" unique_id=2103141450]
+process_mode = 3
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-process_mode = 3
 script = ExtResource("1_shop")
 
-[node name="Fundo" type="ColorRect" parent="."]
+[node name="Fundo" type="ColorRect" parent="." unique_id=320730768]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -42,13 +38,13 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.004, 0.006, 0.022, 1)
 
-[node name="espaco" parent="." instance=ExtResource("2_bg")]
-position = Vector2(480, 270)
+[node name="espaco" parent="." unique_id=44250042 instance=ExtResource("2_bg")]
 modulate = Color(0.45, 0.55, 0.82, 0.45)
+position = Vector2(480, 270)
 
-[node name="Shader" parent="." instance=ExtResource("3_shader")]
+[node name="Shader" parent="." unique_id=784557115 instance=ExtResource("3_shader")]
 
-[node name="ParticulasFundo" type="GPUParticles2D" parent="."]
+[node name="ParticulasFundo" type="GPUParticles2D" parent="." unique_id=591258912]
 position = Vector2(988, -36)
 scale = Vector2(7.2, 5.4)
 amount = 85
@@ -56,14 +52,15 @@ lifetime = 11.0
 preprocess = 11.0
 process_material = SubResource("ParticleProcessMaterial_shop")
 
-[node name="DecoracaoSuperior" type="Polygon2D" parent="."]
+[node name="DecoracaoSuperior" type="Polygon2D" parent="." unique_id=2061712474]
 position = Vector2(480, 63)
 color = Color(0.35, 0.16, 0.72, 0.12)
 polygon = PackedVector2Array(-245, -3, -92, -3, -72, 3, 72, 3, 92, -3, 245, -3, 218, 4, 96, 4, 72, 11, -72, 11, -96, 4, -218, 4)
 
-[node name="aim" parent="." instance=ExtResource("4_aim")]
+[node name="aim" parent="." unique_id=488349692 instance=ExtResource("4_aim")]
 
-[node name="Musica" type="AudioStreamPlayer" parent="."]
+[node name="Musica" type="AudioStreamPlayer" parent="." unique_id=1276490838]
 stream = ExtResource("5_music")
+volume_db = -10.0
 autoplay = true
 bus = &"Music"

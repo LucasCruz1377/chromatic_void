@@ -1,13 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://5mebr62kw7ae"]
 
-[ext_resource type="Script" path="res://Scripts/BossCaosPrimaveril.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/miolo.svg" id="2_miolo"]
-[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/petala.svg" id="3_petala"]
-[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/espinho.svg" id="4_espinho"]
-[ext_resource type="Texture2D" path="res://Assets/Bosses/CaosPrimaveril/polen.svg" id="5_polen"]
-
-[sub_resource type="CircleShape2D" id="BossShape"]
-radius = 44.0
+[ext_resource type="Script" uid="uid://bmhivpb8awc43" path="res://Scripts/BossCaosPrimaveril.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://i3r6hb4ayrsk" path="res://Assets/Bosses/CaosPrimaveril/miolo.svg" id="2_miolo"]
+[ext_resource type="Texture2D" uid="uid://bl20pf1or5kut" path="res://Assets/Bosses/CaosPrimaveril/petala.svg" id="3_petala"]
+[ext_resource type="Texture2D" uid="uid://qcftmd714kh0" path="res://Assets/Bosses/CaosPrimaveril/espinho.svg" id="4_espinho"]
+[ext_resource type="Texture2D" uid="uid://dbv1lq450iskv" path="res://Assets/Bosses/CaosPrimaveril/polen.svg" id="5_polen"]
 
 [sub_resource type="ParticleProcessMaterial" id="PollenMaterial"]
 particle_flag_disable_z = true
@@ -16,11 +13,15 @@ emission_ring_axis = Vector3(0, 0, 1)
 emission_ring_height = 1.0
 emission_ring_radius = 76.0
 emission_ring_inner_radius = 68.0
+emission_ring_cone_angle = 90.0
 gravity = Vector3(0, 0, 0)
 scale_min = 0.45
 scale_max = 0.9
 
-[node name="BossFlorEquinocio" type="CharacterBody2D" groups=["boss", "inimigo"]]
+[sub_resource type="CircleShape2D" id="BossShape"]
+radius = 44.0
+
+[node name="BossFlorEquinocio" type="CharacterBody2D" unique_id=51650766 groups=["boss", "inimigo"]]
 z_index = 3
 collision_layer = 4
 collision_mask = 11
@@ -37,117 +38,117 @@ valor_cristais = 190
 brilho_visual = 1.25
 tremor_morte = 12.0
 
-[node name="Visual" type="Node2D" parent="."]
+[node name="Visual" type="Node2D" parent="." unique_id=482321988]
 texture_filter = 2
 scale = Vector2(0.68, 0.68)
 
-[node name="Espinhos" type="Node2D" parent="Visual"]
+[node name="Espinhos" type="Node2D" parent="Visual" unique_id=1812466325]
 
-[node name="Espinho0" type="Sprite2D" parent="Visual/Espinhos"]
+[node name="Espinho0" type="Sprite2D" parent="Visual/Espinhos" unique_id=936300499]
 position = Vector2(35.5, -64.5)
 texture = ExtResource("4_espinho")
 
-[node name="Espinho1" type="Sprite2D" parent="Visual/Espinhos"]
+[node name="Espinho1" type="Sprite2D" parent="Visual/Espinhos" unique_id=1264946942]
 position = Vector2(73.61, -1.51)
 rotation = 1.0471976
 texture = ExtResource("4_espinho")
 
-[node name="Espinho2" type="Sprite2D" parent="Visual/Espinhos"]
+[node name="Espinho2" type="Sprite2D" parent="Visual/Espinhos" unique_id=1179706093]
 position = Vector2(38.11, 62.99)
 rotation = 2.0943952
 texture = ExtResource("4_espinho")
 
-[node name="Espinho3" type="Sprite2D" parent="Visual/Espinhos"]
+[node name="Espinho3" type="Sprite2D" parent="Visual/Espinhos" unique_id=1102044350]
 position = Vector2(-35.5, 64.5)
 rotation = 3.1415927
 texture = ExtResource("4_espinho")
 
-[node name="Espinho4" type="Sprite2D" parent="Visual/Espinhos"]
+[node name="Espinho4" type="Sprite2D" parent="Visual/Espinhos" unique_id=668411386]
 position = Vector2(-73.61, 1.51)
 rotation = 4.1887903
 texture = ExtResource("4_espinho")
 
-[node name="Espinho5" type="Sprite2D" parent="Visual/Espinhos"]
+[node name="Espinho5" type="Sprite2D" parent="Visual/Espinhos" unique_id=2038967982]
 position = Vector2(-38.11, -62.99)
 rotation = 5.2359877
 texture = ExtResource("4_espinho")
 
-[node name="Petalas" type="Node2D" parent="Visual"]
+[node name="Petalas" type="Node2D" parent="Visual" unique_id=1924231391]
 
-[node name="Petala0" type="Sprite2D" parent="Visual/Petalas"]
+[node name="Petala0" type="Sprite2D" parent="Visual/Petalas" unique_id=1441696761]
 position = Vector2(0, -54)
 texture = ExtResource("3_petala")
 
-[node name="Petala1" type="Sprite2D" parent="Visual/Petalas"]
+[node name="Petala1" type="Sprite2D" parent="Visual/Petalas" unique_id=513569482]
 position = Vector2(46.765, -27)
 rotation = 1.0471976
 texture = ExtResource("3_petala")
 
-[node name="Petala2" type="Sprite2D" parent="Visual/Petalas"]
+[node name="Petala2" type="Sprite2D" parent="Visual/Petalas" unique_id=1324667821]
 position = Vector2(46.765, 27)
 rotation = 2.0943952
 texture = ExtResource("3_petala")
 
-[node name="Petala3" type="Sprite2D" parent="Visual/Petalas"]
+[node name="Petala3" type="Sprite2D" parent="Visual/Petalas" unique_id=821403413]
 position = Vector2(0, 54)
 rotation = 3.1415927
 texture = ExtResource("3_petala")
 
-[node name="Petala4" type="Sprite2D" parent="Visual/Petalas"]
+[node name="Petala4" type="Sprite2D" parent="Visual/Petalas" unique_id=2057150158]
 position = Vector2(-46.765, 27)
 rotation = 4.1887903
 texture = ExtResource("3_petala")
 
-[node name="Petala5" type="Sprite2D" parent="Visual/Petalas"]
+[node name="Petala5" type="Sprite2D" parent="Visual/Petalas" unique_id=425411414]
 position = Vector2(-46.765, -27)
 rotation = 5.2359877
 texture = ExtResource("3_petala")
 
-[node name="Miolo" type="Sprite2D" parent="Visual"]
+[node name="Miolo" type="Sprite2D" parent="Visual" unique_id=1289175752]
 texture = ExtResource("2_miolo")
 
-[node name="Polen" type="GPUParticles2D" parent="."]
+[node name="Polen" type="GPUParticles2D" parent="." unique_id=1613834533]
 z_index = 2
 amount = 44
+texture = ExtResource("5_polen")
 lifetime = 1.5
 preprocess = 1.5
 visibility_rect = Rect2(-110, -110, 220, 220)
 local_coords = true
 process_material = SubResource("PollenMaterial")
-texture = ExtResource("5_polen")
 
-[node name="AvisoEspinhos" type="Line2D" parent="."]
+[node name="AvisoEspinhos" type="Line2D" parent="." unique_id=2021485975]
 visible = false
 z_index = -1
 width = 3.0
 default_color = Color(0.75, 1, 0.55, 0.82)
 
-[node name="AvisoVinhas" type="Node2D" parent="."]
+[node name="AvisoVinhas" type="Node2D" parent="." unique_id=746817466]
 visible = false
 z_index = -2
 
-[node name="Direita" type="Line2D" parent="AvisoVinhas"]
+[node name="Direita" type="Line2D" parent="AvisoVinhas" unique_id=1992391139]
 points = PackedVector2Array(0, 0, 480, 0)
 width = 3.0
 default_color = Color(0.75, 1, 0.55, 0.72)
 
-[node name="Baixo" type="Line2D" parent="AvisoVinhas"]
+[node name="Baixo" type="Line2D" parent="AvisoVinhas" unique_id=76944485]
 points = PackedVector2Array(0, 0, 0, 270)
 width = 3.0
 default_color = Color(0.75, 1, 0.55, 0.72)
 
-[node name="Esquerda" type="Line2D" parent="AvisoVinhas"]
+[node name="Esquerda" type="Line2D" parent="AvisoVinhas" unique_id=830399371]
 points = PackedVector2Array(0, 0, -480, 0)
 width = 3.0
 default_color = Color(0.75, 1, 0.55, 0.72)
 
-[node name="Cima" type="Line2D" parent="AvisoVinhas"]
+[node name="Cima" type="Line2D" parent="AvisoVinhas" unique_id=117376172]
 points = PackedVector2Array(0, 0, 0, -270)
 width = 3.0
 default_color = Color(0.75, 1, 0.55, 0.72)
 
-[node name="VinhasPivot" type="Node2D" parent="."]
+[node name="VinhasPivot" type="Node2D" parent="." unique_id=994537725]
 z_index = -1
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2037507459]
 shape = SubResource("BossShape")

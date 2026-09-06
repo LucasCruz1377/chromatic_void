@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://ck4b1aeayj01l"]
 
 [ext_resource type="Script" uid="uid://1c0sjsk1ul32" path="res://Scripts/AstroOAsteroide.gd" id="1_ahfxv"]
-[ext_resource type="Texture2D" uid="uid://cwg1sj6khdlk3" path="res://Assets/AstroAsteroide.png" id="2_mnuoh"]
+[ext_resource type="Texture2D" uid="uid://c80o4xhw1uwuj" path="res://Assets/AstroPolido.png" id="2_mnuoh"]
 [ext_resource type="AudioStream" uid="uid://cpai61uagbdhd" path="res://sounds/AstroVoz.wav" id="3_mnuoh"]
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_6yt77"]
@@ -35,9 +35,9 @@ offset_right = -72.0
 offset_bottom = 31.0
 bbcode_enabled = true
 text = "Os criadores deste jogo estão juntos há mais de 1 ano "
+autowrap_mode = 2
 horizontal_alignment = 2
 vertical_alignment = 2
-autowrap_mode = 2
 visible_characters_behavior = 1
 
 [node name="VozAstro" type="AudioStreamPlayer2D" parent="." unique_id=2072753965]
