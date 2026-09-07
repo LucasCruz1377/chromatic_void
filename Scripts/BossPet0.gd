@@ -372,4 +372,5 @@ func morrer() -> void:
 	efeito.global_position = global_position
 
 	Global.Pontos += 5000
+	Global.registrar_recordes_partida(Global.Combo, Global.Pontos)
 	super.morrer()

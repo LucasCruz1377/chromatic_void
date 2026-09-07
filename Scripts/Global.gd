@@ -51,6 +51,9 @@ var primeira_vez_jogando: bool = true
 var Pontos := 0
 var kills_max := 0
 var Combo: int = 0
+var combo_maximo: int = 0
+var pontos_maximos: int = 0
+var tempo_maximo_sem_dano: float = 0.0
 
 # Mantidos para compatibilidade com os scripts antigos.
 var mira_mouse := true
@@ -126,15 +129,15 @@ const CONQUISTAS: Dictionary = {
 		]
 	},
 	&"boss_sentinela": {
-		"nome": "REDE DESFEITA",
-		"descricao": "Derrote a Sentinela Dourada.",
-		"tipo": &"boss", "alvo": &"sentinela_dourada", "meta": 1,
+		"nome": "CONSTELAÇÃO ACOLHIDA",
+		"descricao": "Derrote a Constelação do Amparo.",
+		"tipo": &"boss", "alvo": &"constelacao_amparo", "meta": 1,
 		"recompensas": [&"p04_espirito_protetor", &"n09_familia_satelites"]
 	},
 	&"boss_ruptura": {
-		"nome": "QUEBRE O SILÊNCIO",
-		"descricao": "Derrote a Ruptura Lilás.",
-		"tipo": &"boss", "alvo": &"ruptura_lilas", "meta": 1,
+		"nome": "NÓ DESATADO",
+		"descricao": "Derrote o Nó de Ametista.",
+		"tipo": &"boss", "alvo": &"no_ametista", "meta": 1,
 		"recompensas": [&"p06_rosa_espinhosa", &"n04_armadura_aco"]
 	},
 	&"boss_sizigia": {
@@ -170,6 +173,66 @@ const CONQUISTAS: Dictionary = {
 		"descricao": "Conclua uma partida derrotando os cinco bosses.",
 		"tipo": &"vitoria", "meta": 1,
 		"recompensas": [&"p09_recomeco"]
+	},
+	&"combo_10": {
+		"nome": "CADEIA CROMÁTICA", "descricao": "Alcance multiplicador de combo 10.",
+		"tipo": &"combo", "meta": 10, "recompensas": []
+	},
+	&"combo_25": {
+		"nome": "ÓRBITA PERFEITA", "descricao": "Alcance multiplicador de combo 25.",
+		"tipo": &"combo", "meta": 25, "recompensas": []
+	},
+	&"combo_50": {
+		"nome": "ESPECTRO COMPLETO", "descricao": "Alcance multiplicador de combo 50.",
+		"tipo": &"combo", "meta": 50, "recompensas": []
+	},
+	&"combo_200": {
+		"nome": "COMETA ININTERRUPTO", "descricao": "Alcance multiplicador de combo 200.",
+		"tipo": &"combo", "meta": 200, "recompensas": []
+	},
+	&"pontos_25000": {
+		"nome": "PRIMEIRA MARCA", "descricao": "Alcance 25.000 pontos em uma partida.",
+		"tipo": &"pontos", "meta": 25000, "recompensas": []
+	},
+	&"pontos_100000": {
+		"nome": "CEM MIL CORES", "descricao": "Alcance 100.000 pontos em uma partida.",
+		"tipo": &"pontos", "meta": 100000, "recompensas": []
+	},
+	&"pontos_500000": {
+		"nome": "ALÉM DO VAZIO", "descricao": "Alcance 500.000 pontos em uma partida.",
+		"tipo": &"pontos", "meta": 500000, "recompensas": []
+	},
+	&"pontos_1000000": {
+		"nome": "UM MILHÃO DE CORES", "descricao": "Alcance 1 milhão de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 1000000, "recompensas": []
+	},
+	&"pontos_5000000": {
+		"nome": "GALÁXIA ACESA", "descricao": "Alcance 5 milhões de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 5000000, "recompensas": []
+	},
+	&"pontos_10000000": {
+		"nome": "DEZ MILHÕES", "descricao": "Alcance 10 milhões de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 10000000, "recompensas": []
+	},
+	&"pontos_20000000": {
+		"nome": "CÉU CROMÁTICO", "descricao": "Alcance 20 milhões de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 20000000, "recompensas": []
+	},
+	&"pontos_25000000": {
+		"nome": "ALÉM DO ESPECTRO", "descricao": "Alcance 25 milhões de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 25000000, "recompensas": []
+	},
+	&"intocado_60": {
+		"nome": "BRILHO INTACTO", "descricao": "Permaneça 60 segundos sem sofrer dano.",
+		"tipo": &"sem_dano", "meta": 60, "recompensas": []
+	},
+	&"intocado_180": {
+		"nome": "DANÇA IMPECÁVEL", "descricao": "Permaneça 3 minutos sem sofrer dano.",
+		"tipo": &"sem_dano", "meta": 180, "recompensas": []
+	},
+	&"intocado_300": {
+		"nome": "LUZ INALCANÇÁVEL", "descricao": "Permaneça 5 minutos sem sofrer dano.",
+		"tipo": &"sem_dano", "meta": 300, "recompensas": []
 	},
 }
 
@@ -244,6 +307,9 @@ func carregar_economia() -> void:
 func carregar_conquistas() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
 	kills_max = maxi(int(dados.get("kills_totais", dados.get("kills_max", 0))), 0)
+	combo_maximo = maxi(int(dados.get("combo_maximo", 0)), 0)
+	pontos_maximos = maxi(int(dados.get("pontos_maximos", 0)), 0)
+	tempo_maximo_sem_dano = maxf(float(dados.get("tempo_maximo_sem_dano", 0.0)), 0.0)
 	jogos_zerados = maxi(int(dados.get("jogos_zerados", 0)), 0)
 	conquistas_desbloqueadas.clear()
 	var salvas = dados.get("conquistas_desbloqueadas", [])
@@ -257,6 +323,10 @@ func carregar_conquistas() -> void:
 	if bosses_salvos is Array:
 		for valor in bosses_salvos:
 			var id := StringName(str(valor))
+			if id == &"sentinela_dourada":
+				id = &"constelacao_amparo"
+			elif id == &"ruptura_lilas":
+				id = &"no_ametista"
 			if id not in bosses_derrotados:
 				bosses_derrotados.append(id)
 	# Migra saves antigos e concede conquistas já alcançadas sem repetir avisos.
@@ -280,6 +350,23 @@ func registrar_jogo_zerado() -> void:
 	jogos_zerados += 1
 	_verificar_conquistas(true)
 	_salvar_progresso_conquistas()
+
+
+func registrar_recordes_partida(combo: int, pontos: int, tempo_sem_dano: float = -1.0) -> void:
+	var alterou := false
+	if combo > combo_maximo:
+		combo_maximo = combo
+		alterou = true
+	if pontos > pontos_maximos:
+		pontos_maximos = pontos
+		alterou = true
+	if tempo_sem_dano >= 0.0 and tempo_sem_dano > tempo_maximo_sem_dano:
+		tempo_maximo_sem_dano = tempo_sem_dano
+		alterou = true
+	if not alterou:
+		return
+	_verificar_conquistas(true)
+	_agendar_salvamento_conquistas()
 
 
 func salvar_conquistas() -> void:
@@ -317,6 +404,9 @@ func progresso_conquista(id: StringName) -> Dictionary:
 		&"boss": atual = 1 if StringName(dados.get("alvo", &"")) in bosses_derrotados else 0
 		&"bosses_total": atual = bosses_derrotados.size()
 		&"vitoria": atual = jogos_zerados
+		&"combo": atual = combo_maximo
+		&"pontos": atual = pontos_maximos
+		&"sem_dano": atual = floori(tempo_maximo_sem_dano)
 	return {"atual": atual, "meta": int(dados.get("meta", 1))}
 
 
@@ -339,6 +429,9 @@ func _salvar_progresso_conquistas() -> void:
 	_salvamento_conquistas_agendado = false
 	GerenciadorDeSave.salvar({
 		"kills_totais": kills_max,
+		"combo_maximo": combo_maximo,
+		"pontos_maximos": pontos_maximos,
+		"tempo_maximo_sem_dano": tempo_maximo_sem_dano,
 		"bosses_derrotados": bosses_derrotados,
 		"jogos_zerados": jogos_zerados,
 		"conquistas_desbloqueadas": conquistas_desbloqueadas,

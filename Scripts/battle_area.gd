@@ -11,14 +11,38 @@ const INIMIGOS: Dictionary = {
 	&"investida": preload("res://Entities/InimigoInvestida.tscn"),
 	&"tanque": preload("res://Entities/InimigoTanque.tscn"),
 	&"atirador": preload("res://Entities/InimigoAtirador.tscn"),
+	&"estilhaco_vazio": preload("res://Entities/InimigoEstilhacoVazio.tscn"),
+	&"guarda_dourado": preload("res://Entities/InimigoGuardaDourado.tscn"),
+	&"eco_lilas": preload("res://Entities/InimigoEcoLilas.tscn"),
+	&"broto_primaveril": preload("res://Entities/InimigoBrotoPrimaveril.tscn"),
+	&"eco_astral": preload("res://Entities/InimigoEcoAstral.tscn"),
+	&"centelha_guia": preload("res://Entities/InimigoCentelhaGuia.tscn"),
+	&"elo_dourado": preload("res://Entities/InimigoEloDourado.tscn"),
+	&"prisma_amparo": preload("res://Entities/InimigoPrismaAmparo.tscn"),
+	&"satelite_berco": preload("res://Entities/InimigoSateliteBerco.tscn"),
+	&"pulso_solar": preload("res://Entities/InimigoPulsoSolar.tscn"),
+	&"fita_violeta": preload("res://Entities/InimigoFitaVioleta.tscn"),
+	&"no_flutuante": preload("res://Entities/InimigoNoFlutuante.tscn"),
+	&"eco_ametista": preload("res://Entities/InimigoEcoAmetista.tscn"),
+	&"lamina_iris": preload("res://Entities/InimigoLaminaIris.tscn"),
+	&"casulo_prismatico": preload("res://Entities/InimigoCasuloPrismatico.tscn"),
+	&"semente_canhao": preload("res://Entities/InimigoSementeCanhao.tscn"),
+	&"polen_errante": preload("res://Entities/InimigoPolenErrante.tscn"),
+	&"cipo_espiral": preload("res://Entities/InimigoCipoEspiral.tscn"),
+	&"fruto_explosivo": preload("res://Entities/InimigoFrutoExplosivo.tscn"),
+	&"fragmento_lunar": preload("res://Entities/InimigoFragmentoLunar.tscn"),
+	&"centelha_solar": preload("res://Entities/InimigoCentelhaSolar.tscn"),
+	&"meteoro_jovem": preload("res://Entities/InimigoMeteoroJovem.tscn"),
+	&"eco_gravitacional": preload("res://Entities/InimigoEcoGravitacional.tscn"),
+	&"satelite_coroa": preload("res://Entities/InimigoSateliteCoroa.tscn"),
 }
 
 const BOSSES: Dictionary = {
 	&"pet0": preload("res://Entities/BossPet0.tscn"),
 	&"flor_equinocio": preload("res://Entities/BossFlorEquinocio.tscn"),
 	&"eclipse_colheita": preload("res://Entities/BossEclipseColheita.tscn"),
-	&"sentinela_dourada": preload("res://Entities/BossSentinelaDourada.tscn"),
-	&"ruptura_lilas": preload("res://Entities/BossRupturaLilas.tscn"),
+	&"constelacao_amparo": preload("res://Entities/BossConstelacaoAmparo.tscn"),
+	&"no_ametista": preload("res://Entities/BossNoAmetista.tscn"),
 }
 
 const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
@@ -220,6 +244,8 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 			INIMIGOS[&"seguidor"]
 		]
 		if nivel >= 3:
+			opcoes_originais.append(INIMIGOS[&"estilhaco_vazio"])
+			opcoes_originais.append(INIMIGOS[&"estilhaco_vazio"])
 			opcoes_originais.append(INIMIGOS[&"melee"])
 		if nivel >= 5:
 			opcoes_originais.append(INIMIGOS[&"investida"])
@@ -437,10 +463,14 @@ func criar_hud_boss() -> void:
 	var cor: Color = dados_setor.get("cor_destaque", Color.WHITE)
 	boss_hud = VBoxContainer.new()
 	boss_hud.name = "HUD_Boss"
-	boss_hud.position = Vector2(260.0, 66.0)
-	boss_hud.size = Vector2(440.0, 88.0)
 	boss_hud.add_theme_constant_override("separation", 3)
 	$GUI.add_child(boss_hud)
+	boss_hud.anchor_left = 0.5
+	boss_hud.anchor_right = 0.5
+	boss_hud.offset_left = -220.0
+	boss_hud.offset_top = 66.0
+	boss_hud.offset_right = 220.0
+	boss_hud.offset_bottom = 154.0
 	boss_hud.visible = not (
 		tela_upgrades.has_method("esta_aberta")
 		and bool(tela_upgrades.call("esta_aberta"))
@@ -604,11 +634,63 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 	await get_tree().create_timer(1.1).timeout
 	if game_over:
 		return
-	var opcoes := DadosSetores.sortear_opcoes(setores_concluidos, setor_atual, 2)
-	if opcoes.is_empty():
+	var proximo_setor: StringName = DadosSetores.proximo_no_ciclo(setor_atual)
+	if proximo_setor.is_empty():
 		mostrar_vitoria()
 	else:
-		mostrar_escolha_setor(opcoes)
+		await apresentar_transicao_setor(proximo_setor)
+		aplicar_setor(proximo_setor)
+
+
+func apresentar_transicao_setor(id: StringName) -> void:
+	# Progressão única: a pausa curta comunica a troca sem interromper a partida
+	# com escolhas ou permitir múltiplos comandos durante a transição.
+	escolha_setor_ativa = true
+	var dados: Dictionary = DadosSetores.obter(id)
+	var cor: Color = dados.get("cor_destaque", Color.WHITE)
+	camada_escolha = CanvasLayer.new()
+	camada_escolha.layer = 80
+	add_child(camada_escolha)
+	var fundo := ColorRect.new()
+	fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fundo.color = Color(0.002, 0.004, 0.018, 0.0)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	camada_escolha.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var coluna := VBoxContainer.new()
+	coluna.alignment = BoxContainer.ALIGNMENT_CENTER
+	coluna.add_theme_constant_override("separation", 8)
+	centro.add_child(coluna)
+	var simbolo := Label.new()
+	simbolo.text = str(dados.get("simbolo", "◇"))
+	simbolo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	simbolo.add_theme_font_size_override("font_size", 52)
+	simbolo.add_theme_color_override("font_color", cor)
+	coluna.add_child(simbolo)
+	var titulo := Label.new()
+	titulo.text = str(dados.get("nome", "PRÓXIMO SETOR"))
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 25)
+	titulo.add_theme_color_override("font_color", cor)
+	coluna.add_child(titulo)
+	var subtitulo := Label.new()
+	subtitulo.text = str(dados.get("subtitulo", ""))
+	subtitulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitulo.add_theme_font_size_override("font_size", 12)
+	coluna.add_child(subtitulo)
+	coluna.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(fundo, "color:a", 0.94, 0.32)
+	tween.parallel().tween_property(coluna, "modulate:a", 1.0, 0.32)
+	tween.tween_interval(1.05)
+	tween.tween_property(coluna, "modulate:a", 0.0, 0.26)
+	tween.parallel().tween_property(fundo, "color:a", 0.0, 0.26)
+	await tween.finished
+	camada_escolha.queue_free()
+	camada_escolha = null
+	escolha_setor_ativa = false
 
 
 func criar_visual_setor() -> void:
@@ -699,7 +781,8 @@ func criar_cartao_setor(pai: HBoxContainer, dados: Dictionary) -> Button:
 	var cor: Color = dados.get("cor_destaque", Color.WHITE)
 	var botao := Button.new()
 	botao.custom_minimum_size = Vector2(300.0, 260.0)
-	botao.text = "%s\n\n%s\n\n%s" % [
+	botao.text = "%s\n%s\n\n%s\n\n%s" % [
+		dados.get("simbolo", "◇"),
 		dados.get("nome", "SETOR"),
 		dados.get("subtitulo", ""),
 		dados.get("descricao", "")
@@ -713,10 +796,12 @@ func criar_cartao_setor(pai: HBoxContainer, dados: Dictionary) -> Button:
 		var estilo := StyleBoxFlat.new()
 		estilo.bg_color = Color(0.018, 0.027, 0.070, 0.96)
 		if estado != &"normal":
-			estilo.bg_color = Color(0.035, 0.052, 0.12, 1.0)
+			estilo.bg_color = Color(cor.r * 0.10, cor.g * 0.10, cor.b * 0.14, 1.0)
 		estilo.border_color = Color(cor, 0.48) if estado == &"normal" else cor
 		estilo.set_border_width_all(2)
 		estilo.set_corner_radius_all(12)
+		estilo.shadow_color = Color(cor.r, cor.g, cor.b, 0.22)
+		estilo.shadow_size = 10 if estado != &"normal" else 5
 		estilo.content_margin_left = 18.0
 		estilo.content_margin_right = 18.0
 		estilo.content_margin_top = 20.0

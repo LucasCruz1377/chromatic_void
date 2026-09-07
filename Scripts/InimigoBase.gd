@@ -5,6 +5,7 @@ class_name InimigoBase
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const IndicadorDanoCena = preload("res://Scripts/IndicadorDano.gd")
 const ShaderHitflash = preload("res://FX/canvas_shader/enemy.gdshader")
+const MorteBossCena = preload("res://Scripts/MorteBossFX.gd")
 
 # AJUSTE GLOBAL DO BRILHO DOS INIMIGOS.
 # 1.35 recupera o neon alto antigo. Para regular, tente entre 0.80 e 1.60.
@@ -319,6 +320,8 @@ func morrer() -> void:
 			clampf(0.75 + sqrt(maxf(VidaMaxima, 1.0)) * 0.05, 0.9, 2.1),
 			velocity.normalized()
 		)
+		if is_in_group("boss"):
+			MorteBossCena.criar(cena, global_position, obter_cor_feedback())
 
 	criar_particulas_morte()
 
@@ -367,4 +370,5 @@ func conceder_recompensa() -> void:
 	Global.registrar_kill()
 	Global.Combo += 1
 	Global.Pontos += pontos_base + (pontos_base * (Global.Combo - 1))
+	Global.registrar_recordes_partida(Global.Combo, Global.Pontos)
 	Global.adicionar_cristais(valor_cristais)

@@ -1,7 +1,7 @@
 extends Control
 
 
-const VERSAO_LOJA := 7
+const VERSAO_LOJA := 9
 const HABILIDADE_INICIAL := "res://Habilidades/habilidadeRetrocesso.tres"
 const CristalIcone = preload("res://Scripts/CristalMoedaIcone.gd")
 const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
@@ -94,7 +94,8 @@ var equipamentos_loja: Dictionary = {
 	"1": &"", "2": &"", "3": &"", "4": &"c01_modelo_padrao"
 }
 var personalizacao_nave: Dictionary = {
-	"modelo": &"c01_modelo_padrao", "cor": &"c10_verde_original"
+	"modelo": &"c01_modelo_padrao", "cor": &"c10_verde_original",
+	"rastro": &"c20_rastro_padrao"
 }
 var caminho_equipado := HABILIDADE_INICIAL
 var indice_selecionado := 0
@@ -230,6 +231,17 @@ func _adicionar_texto_dica(texto: String) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventScreenDrag:
+		var arrasto := event as InputEventScreenDrag
+		var alvo: ScrollContainer = null
+		if is_instance_valid(rolagem_detalhes) and rolagem_detalhes.get_global_rect().has_point(arrasto.position):
+			alvo = rolagem_detalhes
+		elif is_instance_valid(rolagem_grade) and rolagem_grade.get_global_rect().has_point(arrasto.position):
+			alvo = rolagem_grade
+		if is_instance_valid(alvo):
+			alvo.scroll_vertical -= roundi(arrasto.relative.y)
+			get_viewport().set_input_as_handled()
+		return
 	# No controle, X/Cross confirma a habilidade focada. O foco já atualiza
 	# os detalhes; esta confirmação compra ou equipa, como o botão da direita.
 	if not event.is_action_pressed("ui_accept"):
@@ -348,16 +360,39 @@ func carregar_estado() -> void:
 		personalizacao_nave["cor"] = StringName(str(personalizacao_salva.get(
 			"cor", &"c10_verde_original"
 		)))
+		personalizacao_nave["rastro"] = StringName(str(personalizacao_salva.get(
+			"rastro", &"c20_rastro_padrao"
+		)))
+	# Conserva compras de versões anteriores, mas troca a referência licenciada
+	# pelo Modelo O original e seu rastro estelar.
+	if StringName(personalizacao_nave["modelo"]) == &"c07_skin_kirby":
+		personalizacao_nave["modelo"] = &"c07_modelo_o"
+	if StringName(personalizacao_nave["rastro"]) == &"c21_rastro_estrela_kirby":
+		personalizacao_nave["rastro"] = &"c21_rastro_estelar_o"
+	if &"c07_skin_kirby" in itens_desbloqueados and &"c07_modelo_o" not in itens_desbloqueados:
+		itens_desbloqueados.append(&"c07_modelo_o")
+	if &"c21_rastro_estrela_kirby" in itens_desbloqueados and &"c21_rastro_estelar_o" not in itens_desbloqueados:
+		itens_desbloqueados.append(&"c21_rastro_estelar_o")
 	if not _item_generico_liberado(StringName(personalizacao_nave["modelo"])):
 		personalizacao_nave["modelo"] = &"c01_modelo_padrao"
 	if not _item_generico_liberado(StringName(personalizacao_nave["cor"])):
 		personalizacao_nave["cor"] = &"c10_verde_original"
+	if not _item_generico_liberado(StringName(personalizacao_nave["rastro"])):
+		personalizacao_nave["rastro"] = &"c20_rastro_padrao"
 	var item_modelo := CatalogoMonthly.encontrar(StringName(personalizacao_nave["modelo"]))
 	var item_cor := CatalogoMonthly.encontrar(StringName(personalizacao_nave["cor"]))
+	var item_rastro := CatalogoMonthly.encontrar(StringName(personalizacao_nave["rastro"]))
 	if item_modelo.is_empty() or StringName(item_modelo.get("grupo_personalizacao", &"")) != &"modelo":
 		personalizacao_nave["modelo"] = &"c01_modelo_padrao"
 	if item_cor.is_empty() or StringName(item_cor.get("grupo_personalizacao", &"")) != &"cor":
 		personalizacao_nave["cor"] = &"c10_verde_original"
+	if item_rastro.is_empty() or StringName(item_rastro.get("grupo_personalizacao", &"")) != &"rastro":
+		personalizacao_nave["rastro"] = &"c20_rastro_padrao"
+	if (
+		StringName(personalizacao_nave["rastro"]) == &"c21_rastro_estelar_o"
+		and StringName(personalizacao_nave["modelo"]) != &"c07_modelo_o"
+	):
+		personalizacao_nave["rastro"] = &"c20_rastro_padrao"
 	equipamentos_loja["4"] = personalizacao_nave["modelo"]
 	for categoria in range(1, 5):
 		var chave := str(categoria)
@@ -966,8 +1001,8 @@ func atualizar_detalhes() -> void:
 	reconstruir_stats(dados["stats"], cor)
 
 	if caminho == caminho_equipado:
-		botao_acao.text = "EQUIPADA"
-		botao_acao.disabled = true
+		botao_acao.text = "PADRÃO" if caminho == HABILIDADE_INICIAL else "DESEQUIPAR"
+		botao_acao.disabled = caminho == HABILIDADE_INICIAL
 	elif _habilidade_liberada(caminho, StringName(dados.get("id", &""))):
 		botao_acao.text = "EQUIPAR"
 		botao_acao.disabled = false
@@ -1047,7 +1082,7 @@ func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icone.texture = load(str(item["icone"])) as Texture2D
-	icone.self_modulate = cor.lightened(0.12)
+	icone.self_modulate = Color.WHITE if bool(item.get("preservar_cores", false)) else cor.lightened(0.12)
 	coluna.add_child(icone)
 	var nome := Label.new()
 	nome.text = str(item["nome"])
@@ -1122,7 +1157,7 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_tipo.add_theme_color_override("font_color", cor)
 	detalhe_nome.text = str(item["nome"])
 	detalhe_icone.texture = load(str(item["icone"])) as Texture2D
-	detalhe_icone.self_modulate = cor.lightened(0.10)
+	detalhe_icone.self_modulate = Color.WHITE if bool(item.get("preservar_cores", false)) else cor.lightened(0.10)
 	detalhe_contexto.visible = true
 	detalhe_contexto.text = "MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
 	detalhe_descricao.text = str(item["descricao"])
@@ -1135,12 +1170,19 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_stats.visible = categoria_atual != 4
 	reconstruir_stats(item["stats"], cor)
 	var equipado := _item_generico_equipado(item)
-	if em_breve:
+	if not _personalizacao_compativel(item):
+		botao_acao.text = "EXCLUSIVO DO MODELO O"
+		botao_acao.disabled = true
+	elif em_breve:
 		botao_acao.text = "EM BREVE"
 		botao_acao.disabled = true
 	elif id == equipado:
-		botao_acao.text = "EQUIPADO"
-		botao_acao.disabled = true
+		var item_padrao := (
+			categoria_atual == 4
+			and id == _personalizacao_padrao(StringName(item.get("grupo_personalizacao", &"")))
+		)
+		botao_acao.text = "PADRÃO" if item_padrao else ("USAR PADRÃO" if categoria_atual == 4 else "DESEQUIPAR")
+		botao_acao.disabled = item_padrao
 	elif _item_generico_liberado(id):
 		botao_acao.text = "EQUIPAR"
 		botao_acao.disabled = false
@@ -1169,7 +1211,15 @@ func _on_acao_pressed() -> void:
 	var item_id := StringName(dados.get("id", habilidade.Id))
 	var conquista := StringName(dados.get("conquista", &""))
 	if caminho == caminho_equipado:
-		mensagem.text = "%s JÁ ESTÁ EQUIPADA" % habilidade.Nome.to_upper()
+		if caminho == HABILIDADE_INICIAL:
+			mensagem.text = "ESSA É A HABILIDADE PADRÃO"
+			return
+		caminho_equipado = HABILIDADE_INICIAL
+		mensagem.text = "HABILIDADE DESEQUIPADA • RETROCESSO RESTAURADO"
+		salvar_estado()
+		reconstruir_grade_habilidades()
+		atualizar_detalhes()
+		call_deferred("_focar_habilidade_selecionada")
 		return
 
 	if not _habilidade_liberada(caminho, item_id) and not Global.modo_desenvolvedor:
@@ -1208,6 +1258,12 @@ func _on_acao_item_generico() -> void:
 	var conquista := StringName(item["conquista"])
 	var chave := str(categoria_atual)
 	if StringName(equipamentos_loja.get(chave, &"")) == id:
+		equipamentos_loja[chave] = &""
+		mensagem.text = "%s DESEQUIPADO • EQUIPAMENTO PADRÃO RESTAURADO" % str(item["nome"])
+		salvar_estado()
+		reconstruir_grade_generica()
+		atualizar_detalhes_genericos()
+		call_deferred("_focar_item_selecionado")
 		return
 	if not _item_generico_liberado(id) and not Global.modo_desenvolvedor:
 		if not conquista.is_empty():
@@ -1230,9 +1286,24 @@ func _on_acao_item_generico() -> void:
 func _on_acao_personalizacao(item: Dictionary) -> void:
 	var id := StringName(item["id"])
 	var grupo := StringName(item.get("grupo_personalizacao", &""))
-	if grupo not in [&"modelo", &"cor"]:
+	if grupo not in [&"modelo", &"cor", &"rastro"]:
+		return
+	if not _personalizacao_compativel(item):
+		mensagem.text = "EQUIPE O MODELO O PARA USAR ESTE RASTRO"
 		return
 	if StringName(personalizacao_nave.get(str(grupo), &"")) == id:
+		var padrao := _personalizacao_padrao(grupo)
+		if id == padrao:
+			return
+		personalizacao_nave[str(grupo)] = padrao
+		if grupo == &"modelo":
+			personalizacao_nave["rastro"] = &"c20_rastro_padrao"
+		equipamentos_loja["4"] = personalizacao_nave["modelo"]
+		mensagem.text = "VISUAL PADRÃO RESTAURADO"
+		salvar_estado()
+		reconstruir_grade_generica()
+		atualizar_detalhes_genericos()
+		call_deferred("_focar_item_selecionado")
 		return
 	if not _item_generico_liberado(id) and not Global.modo_desenvolvedor:
 		var preco := int(item["preco"])
@@ -1245,6 +1316,11 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 	personalizacao_nave[str(grupo)] = id
 	if grupo == &"modelo":
 		equipamentos_loja["4"] = id
+		personalizacao_nave["rastro"] = (
+			&"c21_rastro_estelar_o"
+			if id == &"c07_modelo_o"
+			else &"c20_rastro_padrao"
+		)
 	salvar_estado()
 	Global.vibrar_controle(0.18, 0.32, 0.12)
 	reconstruir_grade_generica()
@@ -1264,9 +1340,29 @@ func _item_generico_liberado(id: StringName) -> bool:
 	return (
 		id == &"c01_modelo_padrao"
 		or id == &"c10_verde_original"
+		or id == &"c20_rastro_padrao"
+		or (id == &"c21_rastro_estelar_o" and &"c07_modelo_o" in itens_desbloqueados)
 		or Global.modo_desenvolvedor
 		or id in itens_desbloqueados
 		or Global.item_liberado_por_conquista(id)
+	)
+
+
+func _personalizacao_padrao(grupo: StringName) -> StringName:
+	if grupo == &"modelo":
+		return &"c01_modelo_padrao"
+	if grupo == &"cor":
+		return &"c10_verde_original"
+	if grupo == &"rastro":
+		return &"c20_rastro_padrao"
+	return &""
+
+
+func _personalizacao_compativel(item: Dictionary) -> bool:
+	var modelo_exigido := StringName(item.get("requer_modelo", &""))
+	return (
+		modelo_exigido.is_empty()
+		or StringName(personalizacao_nave.get("modelo", &"c01_modelo_padrao")) == modelo_exigido
 	)
 
 
@@ -1394,7 +1490,7 @@ func _aplicar_layout_responsivo(
 	var tamanho: Vector2 = tamanho_teste
 	if tamanho == Vector2.ZERO:
 		tamanho = get_viewport_rect().size
-	var mobile_vertical := Global.dispositivo_mobile() or forcar_mobile
+	var mobile := Global.dispositivo_mobile() or forcar_mobile
 	var compacto := tamanho.x < 820.0 or tamanho.y < 500.0
 	var margem_horizontal := 10 if compacto else 22
 	var margem_vertical := 8 if compacto else 14
@@ -1405,32 +1501,22 @@ func _aplicar_layout_responsivo(
 
 	grade_categorias.columns = 3 if tamanho.x < 720.0 else CATEGORIAS.size()
 	conteudo_principal.add_theme_constant_override("separation", 8 if compacto else 12)
-	conteudo_principal.vertical = mobile_vertical
+	# A descrição permanece à direita, como na organização anterior da loja.
+	conteudo_principal.vertical = false
 	botao_voltar.custom_minimum_size = Vector2(104 if compacto else 142, 42 if compacto else 46)
 	saldo_painel.custom_minimum_size = Vector2(140 if compacto else 176, 42 if compacto else 46)
 
 	var largura_util := tamanho.x - float(margem_horizontal * 2)
 	var largura_detalhes := clampf(largura_util * 0.30, 218.0, 292.0)
 	var largura_esquerda := largura_util - largura_detalhes - (8.0 if compacto else 12.0)
-	if mobile_vertical:
-		largura_detalhes = 0.0
-		largura_esquerda = largura_util
-		painel_detalhes.custom_minimum_size = Vector2(0, 390)
-		painel_lista_loja.custom_minimum_size.y = 340.0
-		rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-		rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), true, 28.0)
-		_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), true, 24.0)
-		_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), true, 24.0)
-	else:
-		painel_detalhes.custom_minimum_size = Vector2(largura_detalhes, 0)
-		painel_lista_loja.custom_minimum_size.y = 0.0
-		moldura_grade.custom_minimum_size.y = 0.0
-		rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-		_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), false, 12.0)
-		_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), false, 12.0)
-		_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), false, 12.0)
+	painel_detalhes.custom_minimum_size = Vector2(largura_detalhes, 0)
+	painel_lista_loja.custom_minimum_size.y = 0.0
+	moldura_grade.custom_minimum_size.y = 0.0
+	rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), mobile, 12.0)
+	_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), mobile, 22.0 if mobile else 12.0)
+	_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), mobile, 22.0 if mobile else 12.0)
 	var colunas := 3
 	if largura_esquerda < 570.0:
 		colunas = 2
@@ -1444,17 +1530,7 @@ func _aplicar_layout_responsivo(
 	for painel in paineis_cartoes:
 		if is_instance_valid(painel) and is_instance_valid(painel.get_parent()):
 			(painel.get_parent() as Control).custom_minimum_size.x = largura_cartao_atual
-	if mobile_vertical:
-		var linhas := ceili(float(maxi(grade.get_child_count(), 1)) / float(colunas))
-		moldura_grade.custom_minimum_size.y = float(linhas * 170 + maxi(linhas - 1, 0) * 8)
-		var altura_pagina := (
-			54.0 + grade_categorias.get_combined_minimum_size().y
-			+ moldura_grade.custom_minimum_size.y + painel_detalhes.custom_minimum_size.y
-			+ 150.0
-		)
-		margem_interface.custom_minimum_size = Vector2(tamanho.x, maxf(tamanho.y, altura_pagina))
-	else:
-		margem_interface.custom_minimum_size = tamanho
+	margem_interface.custom_minimum_size = tamanho
 
 
 func _configurar_barra_vertical(

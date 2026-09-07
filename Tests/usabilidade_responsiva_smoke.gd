@@ -73,6 +73,15 @@ func testar_menu_upgrades_e_boss() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	batalha.tutorial_ativo = false
+	batalha.get_node("GUI")._ajustar_hud_responsivo()
+	var centro_hud := Global.obter_retangulo_area_visivel(18.0).get_center().x
+	var barra_vida := batalha.get_node("GUI/Barra_vida") as Sprite2D
+	var barra_xp := batalha.get_node("GUI/Barra_xp") as TextureProgressBar
+	verificar(
+		is_equal_approx(barra_vida.position.x, centro_hud)
+		and is_equal_approx(barra_xp.position.x + barra_xp.size.x * 0.5, centro_hud),
+		"as barras de vida e XP não compartilham o centro seguro"
+	)
 
 	var upgrades := batalha.get_node("GUI/TelaUpgrades") as Control
 	upgrades._aplicar_layout_responsivo(Vector2(1280, 540))
@@ -93,6 +102,13 @@ func testar_menu_upgrades_e_boss() -> void:
 	)
 
 	batalha._criar_boss(&"flor_equinocio", 1, true)
+	verificar(
+		is_equal_approx(batalha.boss_hud.anchor_left, 0.5)
+		and is_equal_approx(batalha.boss_hud.anchor_right, 0.5)
+		and is_equal_approx(batalha.boss_hud.offset_left, -220.0)
+		and is_equal_approx(batalha.boss_hud.offset_right, 220.0),
+		"a barra do boss não está ancorada no centro do viewport"
+	)
 	var boss := batalha.boss_ativo as InimigoBase
 	verificar(is_instance_valid(boss), "o Florecimento não pôde ser criado no teste")
 	if is_instance_valid(boss):
@@ -120,18 +136,18 @@ func testar_loja_mobile() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	loja._aplicar_layout_responsivo(Vector2(960, 540), true)
-	verificar(loja.conteudo_principal.vertical, "a loja mobile não virou uma página vertical")
+	verificar(not loja.conteudo_principal.vertical, "a descrição da loja mobile não permaneceu à direita")
 	verificar(
-		loja.rolagem_pagina.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO,
-		"a loja mobile não permite arrastar a página para baixo"
+		loja.rolagem_grade.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO,
+		"a grade mobile não permite rolagem"
 	)
 	verificar(
-		loja.rolagem_pagina.get_v_scroll_bar().custom_minimum_size.x >= 28.0,
-		"o slider vertical mobile continua pequeno"
+		loja.rolagem_grade.get_v_scroll_bar().custom_minimum_size.x >= 22.0,
+		"o slider da grade mobile continua pequeno"
 	)
 	verificar(
-		loja.margem_interface.custom_minimum_size.y > 540.0,
-		"o conteúdo mobile não ficou maior que a tela para permitir rolagem"
+		loja.painel_detalhes.custom_minimum_size.x > 0.0,
+		"o painel de descrição mobile deixou de ocupar a direita"
 	)
 	parar_audios(loja)
 	loja.queue_free()

@@ -30,6 +30,7 @@ var painel_conquistas: PanelContainer
 var lista_conquistas: VBoxContainer
 var resumo_conquistas: Label
 var botao_fechar_conquistas: Button
+var rolagem_conquistas: ScrollContainer
 
 
 func _ready() -> void:
@@ -78,18 +79,38 @@ func _unhandled_input(event: InputEvent) -> void:
 		_fechar_menu_conquistas()
 
 
+func _pode_executar_acao_menu() -> bool:
+	return not carregando_cena and not conquistas_abertas
+
+
+func _input(event: InputEvent) -> void:
+	if not conquistas_abertas or not is_instance_valid(rolagem_conquistas):
+		return
+	if event is InputEventScreenDrag:
+		var arrasto := event as InputEventScreenDrag
+		if rolagem_conquistas.get_global_rect().has_point(arrasto.position):
+			rolagem_conquistas.scroll_vertical -= roundi(arrasto.relative.y)
+			get_viewport().set_input_as_handled()
+
+
 func _on_start_pressed() -> void:
+	if not _pode_executar_acao_menu():
+		return
 	Global.primeira_vez_jogando = false
 	click_som()
 	await _carregar_cena(CENA_BATALHA)
 
 
 func _on_shop_pressed() -> void:
+	if not _pode_executar_acao_menu():
+		return
 	click_som()
 	await _carregar_cena(CENA_LOJA)
 
 
 func _on_achievements_pressed() -> void:
+	if not _pode_executar_acao_menu():
+		return
 	click_som()
 	conquistas_abertas = true
 	_atualizar_lista_conquistas()
@@ -100,11 +121,18 @@ func _on_achievements_pressed() -> void:
 
 
 func _on_options_pressed() -> void:
+	if not _pode_executar_acao_menu():
+		return
 	click_som()
 	await _carregar_cena(CENA_CONFIGURACOES)
 
 
 func _on_exit_pressed() -> void:
+	if not _pode_executar_acao_menu():
+		return
+	carregando_cena = true
+	for botao in botoes_menu:
+		botao.disabled = true
 	click_som()
 	await get_tree().create_timer(0.5).timeout
 	get_tree().quit()
@@ -248,18 +276,19 @@ func _criar_menu_conquistas() -> void:
 	resumo_conquistas.add_theme_color_override("font_color", Color(0.48, 0.84, 1.0))
 	coluna.add_child(resumo_conquistas)
 
-	var rolagem := ScrollContainer.new()
-	rolagem.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	rolagem.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	rolagem.scroll_deadzone = 8
-	coluna.add_child(rolagem)
+	rolagem_conquistas = ScrollContainer.new()
+	rolagem_conquistas.name = "RolagemConquistas"
+	rolagem_conquistas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rolagem_conquistas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rolagem_conquistas.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem_conquistas.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	rolagem_conquistas.scroll_deadzone = 8
+	coluna.add_child(rolagem_conquistas)
 
 	lista_conquistas = VBoxContainer.new()
 	lista_conquistas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lista_conquistas.add_theme_constant_override("separation", 8)
-	rolagem.add_child(lista_conquistas)
+	rolagem_conquistas.add_child(lista_conquistas)
 
 	get_viewport().size_changed.connect(_atualizar_tamanho_menu_conquistas)
 	_atualizar_tamanho_menu_conquistas()

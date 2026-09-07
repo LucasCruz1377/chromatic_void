@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/InimigoSetorial.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 21.0
+
+[node name="CasuloPrismatico" type="CharacterBody2D" groups=["inimigo"]]
+collision_layer = 4
+collision_mask = 15
+script = ExtResource("1")
+estilo = 14
+cor_setor = Color(0.92, 0.62, 1, 1)
+intervalo_acao = 3
+VidaMaxima = 6.4
+Dano = 13.0
+Velocidade = 95.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")

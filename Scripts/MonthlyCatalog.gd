@@ -4,7 +4,6 @@ class_name MonthlyCatalog
 
 const ICONE := "res://Habilidades/Icones/monthly_cristal.svg"
 const ICONE_NAVE := "res://UI/nave_padrao_preview.svg"
-const ICONE_EM_BREVE := "res://UI/personalizacao_em_breve.svg"
 const ICONE_COR := "res://UI/cor_nave_preview.svg"
 
 # Uma única coleção reúne as luas cheias populares apresentadas pelo Astro e
@@ -182,6 +181,22 @@ static func personalizacao() -> Array[Dictionary]:
 			"caminho": "", "icone": "res://UI/nave_interceptor.svg", "em_breve": false,
 			"grupo_personalizacao": &"modelo",
 		},
+		{
+			"id": &"c06_estrela_rosa", "nome": "ESTRELA ROSA",
+			"descricao": "Chassi arredondado e estrelado, alegre e compacto, sem alterar a colisão ou os atributos.",
+			"preco": 2800, "cor": Color("ff75b8"), "raridade": "MODELO • ESTELAR",
+			"stats": [3, 3, 3], "conquista": &"", "contexto": "Uma nave original inspirada em aventuras espaciais coloridas e formas simples.",
+			"caminho": "", "icone": "res://UI/nave_estrela_rosa.svg", "em_breve": false,
+			"grupo_personalizacao": &"modelo",
+		},
+		{
+			"id": &"c07_modelo_o", "nome": "MODELO O",
+			"descricao": "Uma estrela pilotável. A nave inteira acompanha a paleta escolhida.",
+			"preco": 3200, "cor": Color("fff15a"), "raridade": "MODELO • ESTELAR",
+			"stats": [3, 3, 3], "conquista": &"", "contexto": "O contorno da estrela enviada virou uma nave original, leve e legível.",
+			"caminho": "", "icone": "res://UI/modelo_o.svg", "em_breve": false,
+			"grupo_personalizacao": &"modelo", "preservar_cores": true,
+		},
 		_cor(&"c10_verde_original", "VERDE ORIGINAL", 0, Color("8bff2a"), "A cor clássica do Chromatic Void."),
 		_cor(&"c11_ciano", "CIANO", 650, Color("39dcff"), "Um brilho frio inspirado no vazio espacial."),
 		_cor(&"c12_rosa", "ROSA", 650, Color("ff4fa3"), "Uma cor viva inspirada na primavera e no Outubro Rosa."),
@@ -189,12 +204,21 @@ static func personalizacao() -> Array[Dictionary]:
 		_cor(&"c14_dourado", "DOURADO", 950, Color("ffd447"), "O brilho acolhedor associado ao Agosto Dourado."),
 		_cor(&"c15_branco", "BRANCO LUNAR", 1100, Color("eaf7ff"), "Uma opção clara inspirada no céu e nas fases da Lua."),
 		{
-			"id": &"c20_rastros_em_breve", "nome": "RASTROS",
-			"descricao": "Rastros cosméticos para o propulsor chegarão depois, sem alterar atributos da nave.",
-			"preco": 0, "cor": Color("62ddff"), "raridade": "PROPULSOR • EM BREVE",
-			"stats": [0, 0, 0], "conquista": &"", "contexto": "Os rastros futuros serão apenas visuais e não darão vantagem de combate.",
-			"caminho": "", "icone": ICONE_EM_BREVE, "em_breve": true,
+			"id": &"c20_rastro_padrao", "nome": "RASTRO PADRÃO",
+			"descricao": "Mantém o propulsor luminoso original da nave.",
+			"preco": 0, "cor": Color("7283a8"), "raridade": "RASTRO • PADRÃO",
+			"stats": [0, 0, 0], "conquista": &"", "contexto": "O rastro clássico permanece gratuito e pode ser restaurado a qualquer momento.",
+			"caminho": "", "icone": "res://UI/rastro_sem.svg", "em_breve": false,
 			"grupo_personalizacao": &"rastro",
+		},
+		{
+			"id": &"c21_rastro_estelar_o", "nome": "RASTRO ESTELAR O",
+			"descricao": "Deixa pequenas estrelas da mesma cor da nave enquanto o Modelo O acelera.",
+			"preco": 0, "cor": Color("fff700"), "raridade": "RASTRO • EXCLUSIVO",
+			"stats": [0, 0, 0], "conquista": &"", "contexto": "Este rastro acompanha gratuitamente o Modelo O e não pode ser usado por outros modelos.",
+			"caminho": "", "icone": "res://UI/rastro_estrela_modelo_o.svg", "em_breve": false,
+			"grupo_personalizacao": &"rastro", "requer_modelo": &"c07_modelo_o",
+			"preservar_cores": true,
 		},
 	]
 
@@ -203,7 +227,7 @@ static func _cor(
 	id: StringName, nome: String, preco: int, cor: Color, contexto: String
 ) -> Dictionary:
 	return {
-		"id": id, "nome": nome, "descricao": "Troca a cor de todos os modelos de nave sem alterar seus atributos.",
+		"id": id, "nome": nome, "descricao": "Troca a paleta principal da nave sem alterar atributos. No Modelo O, colore a estrela e seu rastro.",
 		"preco": preco, "cor": cor, "raridade": "COR • PALETA",
 		"stats": [3, 3, 3], "conquista": &"", "contexto": contexto,
 		"caminho": "", "icone": ICONE_COR, "em_breve": false,

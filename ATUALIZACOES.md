@@ -1,15 +1,32 @@
 # Sistema de atualização
 
-O Chromatic Void consulta as Releases públicas do GitHub ao abrir a tela inicial. A mesma Release fornece a versão e os arquivos, evitando divergências entre o número anunciado e o download.
+## Polimento de pré-release desta versão
 
-O workflow do itch.io continua publicando esses mesmos arquivos nos canais `windows` e `android`, mas o jogo não depende mais de os dois serviços estarem sincronizados para localizar uma atualização.
+O HUD inferior usa uma única área segura responsiva para alinhar vida, XP,
+nível e habilidade. A campanha agora segue um ciclo fixo de cinco bosses, com
+transições automáticas e inimigos exclusivos por setor. O save recebeu somente
+campos adicionais para recordes de combo, pontos e tempo sem dano; saves antigos
+continuam válidos porque os valores ausentes começam em zero.
+
+Nesta revisão, os bosses provisórios foram substituídos pela Constelação do
+Amparo e pelo Nó de Ametista. Cada setor tem cinco inimigos temáticos, enquanto
+os inimigos clássicos ficaram exclusivos do PET-0. Clone Enganador e Espírito
+Protetor agora invocam ajudantes temporários reais. Projéteis teleguiados saem
+sem alvo e só travam quando uma ameaça cruza seu raio. O antigo cosmético de
+referência foi migrado para o Modelo O, uma nave formada apenas pela estrela,
+com nave e rastro recoloridos pela paleta selecionada. Também foram incluídas
+conquistas de combo 200 e de 1, 5, 10, 20 e 25 milhões de pontos.
+
+O Chromatic Void consulta a versão publicada nos canais `windows` e `android` do itch.io ao abrir a tela inicial. Quando encontra uma versão mais nova, baixa o arquivo da GitHub Release que possui a mesma tag.
+
+Por isso a ordem de publicação é importante: primeiro crie a GitHub Release e depois execute o workflow do itch.io para publicar exatamente essa tag nos dois canais.
 
 ## Fluxo por plataforma
 
 ### Windows
 
-1. O jogo procura a maior versão compatível que tenha `Windows.Desktop.zip`.
-2. O ZIP é baixado em `user://` e validado pelo tamanho e SHA-256 informados pelo GitHub.
+1. O jogo consulta a versão do canal `windows` no itch.io.
+2. O ZIP correspondente é baixado da GitHub Release em `user://`.
 3. O jogo cria um backup do save e inicia `Updater.exe`.
 4. O updater espera o jogo fechar, valida o ZIP, substitui os arquivos e abre a nova versão.
 5. Se a cópia falhar, os arquivos já substituídos são restaurados.
@@ -18,7 +35,7 @@ O `Updater.exe` é recompilado a partir de `Updater/main.py` em toda release. N�
 
 ### Android
 
-1. O jogo procura a maior versão compatível que tenha `ChromaticVoid-Android.apk`.
+1. O jogo consulta a versão do canal `android` no itch.io.
 2. O botão **Baixar APK** abre o arquivo oficial da Release no navegador.
 3. O jogador abre o APK baixado e escolhe **Atualizar**.
 

@@ -14,6 +14,7 @@ extends CanvasLayer
 @onready var status: Label = $Centralizador/Painel/Margem/Conteudo/Status
 @onready var botao_atualizar: Button = $Centralizador/Painel/Margem/Conteudo/Botoes/BotaoAtualizar
 @onready var botao_mais_tarde: Button = $Centralizador/Painel/Margem/Conteudo/Botoes/BotaoMaisTarde
+var inicio_download_msec := 0
 
 
 func _ready() -> void:
@@ -77,6 +78,7 @@ func _clicou_mais_tarde() -> void:
 
 
 func _on_download_started(total_bytes: int) -> void:
+	inicio_download_msec = Time.get_ticks_msec()
 	progresso.show()
 	progresso.value = 0.0
 	status.text = "Baixando • %s" % _formatar_bytes(total_bytes)
@@ -85,7 +87,12 @@ func _on_download_started(total_bytes: int) -> void:
 
 func _on_download_progress(baixado: int, total: int) -> void:
 	progresso.value = clampf(float(baixado) / float(total) * 100.0, 0.0, 100.0) if total > 0 else 0.0
-	status.text = "%s de %s" % [_formatar_bytes(baixado), _formatar_bytes(total)]
+	var porcentagem := int(progresso.value)
+	var decorrido := maxf(float(Time.get_ticks_msec() - inicio_download_msec) / 1000.0, 0.1)
+	var velocidade := float(baixado) / decorrido
+	var restante := int(ceil(float(maxi(total - baixado, 0)) / velocidade)) if total > 0 and velocidade > 1.0 else -1
+	var tempo := _formatar_tempo(restante) if restante >= 0 else "calculando tempo..."
+	status.text = "%d%%  •  %s de %s  •  %s restantes" % [porcentagem, _formatar_bytes(baixado), _formatar_bytes(total), tempo]
 
 
 func _on_download_failed(erro: String) -> void:
@@ -120,3 +127,9 @@ func _formatar_bytes(valor: int) -> String:
 	if valor >= 1024:
 		return "%.1f KB" % (float(valor) / 1024.0)
 	return "%d B" % valor
+
+
+func _formatar_tempo(segundos: int) -> String:
+	if segundos < 60:
+		return "%d s" % segundos
+	return "%d min %02d s" % [segundos / 60, segundos % 60]

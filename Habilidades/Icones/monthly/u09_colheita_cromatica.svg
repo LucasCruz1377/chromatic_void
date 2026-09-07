@@ -1,5 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <defs><filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <g fill="#17213d" stroke="#dff8ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><path d="M64 8l55 56-55 56L9 64Z"/></g>
-  <g fill="none" stroke="#f8fdff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><style>.a{fill:#78eaff;fill-opacity:.72}</style><path d="M64 109V38M64 54 47 42M64 66 81 51M64 78 45 66M64 90l19-13"/><path class="a" d="M31 24h14v14H31ZM87 23h14v14H87ZM22 86h14v14H22ZM93 87h14v14H93Z"/><path d="M37 31c14 4 22 8 27 17M94 30C80 34 72 39 66 48"/></g>
+  <style>
+    .base{fill:#10162e;stroke:#ffc35c;stroke-width:7}
+    .fill{fill:#ffc35c;stroke:#ffc35c;stroke-width:5}
+    .ghost{fill:#10162e;stroke:#ffc35c;stroke-width:6;opacity:.45}
+    .accent,.line{fill:none;stroke:#f9e7c7;stroke-width:6}
+    .accent{fill:#f9e7c7;fill-opacity:.22}
+    .dot{fill:#f9e7c7;stroke:#ffc35c;stroke-width:3}
+    path,circle,ellipse,rect{stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <path class="line" d="M64 114V38m0 17L46 41m18 27 19-15M64 82 43 68m21 28 21-17"/><path class="base" d="M26 18h19v19H26Zm58 0h19v19H84ZM17 85h19v19H17Zm75 2h19v19H92Z"/><path class="accent" d="M35 27c16 3 25 9 29 21m29-21C79 31 71 38 66 48"/>
 </svg>

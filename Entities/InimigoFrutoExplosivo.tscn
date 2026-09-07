@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/InimigoSetorial.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 20.0
+
+[node name="FrutoExplosivo" type="CharacterBody2D" groups=["inimigo"]]
+collision_layer = 4
+collision_mask = 15
+script = ExtResource("1")
+estilo = 19
+cor_setor = Color(1, 0.3, 0.55, 1)
+intervalo_acao = 2.9
+VidaMaxima = 5.8
+Dano = 15.0
+Velocidade = 110.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")

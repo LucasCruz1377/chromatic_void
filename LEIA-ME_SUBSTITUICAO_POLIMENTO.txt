@@ -1,0 +1,72 @@
+CHROMATIC VOID — PACOTE DE SUBSTITUIÇÃO
+
+Este pacote parte da main mais recente e também contém o menu de conquistas que
+estava somente na tag v0.7.1. Ele preserva saves, músicas, catálogo, controles,
+skins, armas, bosses e workflows.
+
+O QUE ENTROU NESTE PACOTE
+
+- Barras de vida e XP centralizadas pela área segura em qualquer proporção.
+- Ciclo único: PET-0, Constelação do Amparo, Nó de Ametista, Florecimento e
+  Sizígia. Não existe mais escolha de setor entre bosses.
+- Vinte inimigos temáticos: cinco exclusivos em cada setor posterior ao PET-0.
+  Os inimigos clássicos aparecem somente no setor inicial.
+- Transição temática automática entre setores e cartões remanescentes polidos.
+- Partículas próprias por família de habilidade e morte de boss em camadas.
+- Ícones individuais nas 14 habilidades que ainda usavam cristal genérico.
+- Os 75 ícones posteriores ao conjunto original foram descartados e desenhados
+  novamente do zero: glifo temático grande, interior azul-escuro, contorno neon
+  nítido, fundo transparente e nenhum selo de categoria. Os 11 SVGs originais
+  do commit f69845a permanecem byte por byte iguais.
+- Modelo cosmético Estrela Rosa, inspirado em formas espaciais arredondadas.
+- Modelo O criado apenas com a estrela SVG, sem personagem licenciada. A paleta
+  escolhida recolore a nave inteira e as estrelas pequenas do rastro exclusivo.
+- Personalização de rastros ativada e migração automática das compras antigas.
+- Clone Enganador e Espírito Protetor invocam ajudantes visíveis e temporários.
+- Teleguiados saem livres e adquirem somente inimigos que passam perto.
+- Projéteis das armas receberam silhuetas e movimentos próprios; presente,
+  fantasma, recomeço e Fúria da Natureza respeitam suas descrições temporais.
+- Conquistas de combo 200 e de 1, 5, 10, 20 e 25 milhões de pontos.
+- Cliques concorrentes bloqueados durante transições do menu inicial.
+
+COMO APLICAR
+
+1. Faça uma cópia de segurança da pasta atual do projeto.
+2. Extraia este ZIP.
+3. Copie todo o conteúdo extraído para a raiz do seu repositório local.
+4. Quando o Windows perguntar, escolha "Substituir os arquivos no destino".
+5. Não apague a pasta .git da sua cópia original.
+6. Abra project.godot no Godot 4.7 e faça um teste rápido.
+
+Se a pasta veio de um pacote anterior, remova os arquivos sem uso
+UI/skin_kirby.svg, UI/rastro_estrela_kirby.svg e
+FX/canvas_shader/skin_kirby_cor.gdshader. Eles não são mais referenciados pelo
+jogo nem fazem parte deste ZIP.
+
+COMO SUBIR
+
+Abra o PowerShell na pasta original do repositório e execute:
+
+git status
+git add .
+git commit -m "feat: ciclo linear, inimigos setoriais e polimento pre-release"
+git push origin main
+
+Depois confira se o CI terminou com sucesso. Crie uma tag NOVA somente depois
+do push, sempre a partir da main atualizada:
+
+git switch main
+git pull origin main
+git tag -a v0.7.2 -m "Chromatic Void v0.7.2"
+git push origin v0.7.2
+
+Quando a GitHub Release terminar, execute manualmente o workflow
+"CD - Publicar no itch.io" e informe v0.7.2. Troque v0.7.2 por sua próxima
+versão se essa tag já existir. O jogo consulta o itch.io, então a
+janela de atualização só anunciará a versão depois dessa segunda publicação.
+
+SAVE
+
+Substituir os arquivos do projeto não apaga saves. No Windows, o save fica em
+user://, fora da pasta do projeto. No Android, instale o APK por cima do anterior
+e escolha Atualizar; não desinstale o aplicativo e não altere a keystore.

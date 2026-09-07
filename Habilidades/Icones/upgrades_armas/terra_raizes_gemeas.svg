@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <defs><filter id="g" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <rect x="7" y="7" width="114" height="114" rx="24" fill="#07101f" stroke="#8ae878" stroke-width="5" opacity=".96"/>
-  <g filter="url(#g)" stroke="#8ae878" stroke-linecap="round" stroke-linejoin="round"><g fill="none" stroke="white" stroke-width="7" stroke-linecap="round"><path d="M49 108V65C49 45 37 37 23 28M49 76L27 60M79 108V65C79 45 91 37 105 28M79 76L101 60"/><path d="M19 108H109"/></g></g>
+  <style>
+    .base{fill:#10162e;stroke:#8ae878;stroke-width:7}
+    .fill{fill:#8ae878;stroke:#8ae878;stroke-width:5}
+    .accent,.line{fill:none;stroke:#d5f2d0;stroke-width:6}
+    .accent{fill:#d5f2d0;fill-opacity:.22}
+    .dot{fill:#d5f2d0;stroke:#8ae878;stroke-width:3}
+    path,circle,ellipse,rect{stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <path class="base" d="M43 113V67c0-20-10-31-27-42m27 57L22 63m63 50V67c0-20 10-31 27-42M85 82l21-19"/><path class="fill" d="m16 25 4-13 11 9Zm96 0-4-13-11 9Z"/><path class="accent" d="M13 113h102M43 96l-15 11m57-11 15 11"/>
 </svg>

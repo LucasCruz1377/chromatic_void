@@ -15,6 +15,9 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 @onready var caixa_gameover: VBoxContainer = $"caixa gameover"
 @onready var botao_tentar_novamente: Button = $"caixa gameover/Tentar de novo"
 @onready var botao_voltar_gameover: Button = $"caixa gameover/Voltarmenu2"
+@onready var barra_vida: Sprite2D = $Barra_vida
+@onready var barra_xp: TextureProgressBar = $Barra_xp
+@onready var texto_nivel: Label = $LvlText
 
 var pausa_anterior := false
 var gameover_anterior := false
@@ -51,7 +54,32 @@ func _ready() -> void:
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	Global.configuracoes_alteradas.connect(_atualizar_indicador_habilidade)
 	Input.joy_connection_changed.connect(_on_controle_conectado)
+	get_viewport().size_changed.connect(_ajustar_hud_responsivo)
 	_atualizar_indicador_habilidade()
+	call_deferred("_ajustar_hud_responsivo")
+
+
+func _ajustar_hud_responsivo() -> void:
+	# Todos os elementos inferiores partem da mesma área lógica segura. Isso evita
+	# que âncoras percentuais e posições fixas discordem em telas ultrawide/mobile.
+	var area: Rect2 = Global.obter_retangulo_area_visivel(18.0)
+	# 630 px corresponde à largura máxima real da textura da vida (64 * 9,85).
+	var largura_barra := clampf(area.size.x * 0.70, 360.0, 630.0)
+	var centro_x := area.get_center().x
+	var y_vida := area.end.y - 18.0
+	if is_instance_valid(barra_vida):
+		barra_vida.position = Vector2(centro_x, y_vida)
+	if is_instance_valid(barra_xp):
+		barra_xp.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		barra_xp.position = Vector2(centro_x - largura_barra * 0.5, y_vida - 15.0)
+		barra_xp.size = Vector2(largura_barra, 6.0)
+	if is_instance_valid(texto_nivel):
+		texto_nivel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		texto_nivel.position = Vector2(centro_x - largura_barra * 0.5, y_vida - 43.0)
+	if is_instance_valid(display_skill):
+		display_skill.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		display_skill.position = Vector2(centro_x - 32.0, y_vida - 102.0)
+		display_skill.size = Vector2(64.0, 64.0)
 
 
 func _on_dispositivo_alterado(_tipo: StringName) -> void:

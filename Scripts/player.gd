@@ -10,6 +10,10 @@ const CatalogoMonthly = preload("res://Scripts/MonthlyCatalog.gd")
 const TEXTURA_COOLDOWN_RELOGIO = preload(
 	"res://Habilidades/Icones/cooldown_relogio.svg"
 )
+const TEXTURA_MODELO_O = preload("res://UI/modelo_o.svg")
+const TEXTURA_RASTRO_MODELO_O = preload("res://UI/rastro_estrela_modelo_o.svg")
+const SHADER_COR_MODELO_O = preload("res://FX/canvas_shader/modelo_o_cor.gdshader")
+const AJUDANTE_MONTHLY = preload("res://Scripts/AjudanteMonthly.gd")
 const REROLLS_UPGRADES_INICIAIS := 3
 const BONUS_DANO_POR_NIVEL := [0.25, 0.18, 0.14, 0.10, 0.08]
 const FATOR_CADENCIA_POR_NIVEL := [0.85, 0.88, 0.91, 0.94, 0.96]
@@ -137,6 +141,9 @@ var modulo_nave: StringName = &""
 var mutacao_habilidade: StringName = &""
 var modelo_visual_nave: StringName = &"c01_modelo_padrao"
 var cor_visual_nave: StringName = &"c10_verde_original"
+var rastro_visual_nave: StringName = &"c20_rastro_padrao"
+var sprite_modelo_o: Sprite2D
+var particulas_rastro_modelo_o: GPUParticles2D
 var carga_arma := 0.0
 var calor_feixe := 0.0
 var tempo_poder_monthly := 0.0
@@ -146,6 +153,8 @@ var semente_renascimento_ativa := false
 var posicao_semente := Vector2.ZERO
 var janela_parry := 0.0
 var folhas_tempestade_ativas := false
+var tempo_eco_fantasma := 0.0
+var historico_disparos: Array[Dictionary] = []
 var sementes_vermelhas := 0
 var reserva_celulas := 0.0
 var progresso_luz_vital := 0.0
@@ -176,6 +185,7 @@ signal upgrade_adquirido(id: StringName, novo_nivel: int)
 func _ready() -> void:
 	vida = VIDA_MAXIMA
 	carregar_equipamentos_monthly()
+	criar_visual_modelo_o()
 	aplicar_personalizacao_nave()
 	carregar_habilidade_equipada()
 	criar_barra_cooldown_habilidade()
@@ -273,7 +283,21 @@ func carregar_equipamentos_monthly() -> void:
 	if personalizacao is Dictionary:
 		modelo_visual_nave = StringName(str(personalizacao.get("modelo", &"c01_modelo_padrao")))
 		cor_visual_nave = StringName(str(personalizacao.get("cor", &"c10_verde_original")))
+		rastro_visual_nave = StringName(str(personalizacao.get("rastro", &"c20_rastro_padrao")))
 	var comprados: Variant = dados.get("itens_desbloqueados", [])
+	# Migração transparente da skin de referência removida: compras e seleção
+	# antigas passam ao Modelo O sem apagar o progresso do jogador.
+	if modelo_visual_nave == &"c07_skin_kirby":
+		modelo_visual_nave = &"c07_modelo_o"
+		if equipamentos is Dictionary:
+			equipamentos["4"] = modelo_visual_nave
+	if rastro_visual_nave == &"c21_rastro_estrela_kirby":
+		rastro_visual_nave = &"c21_rastro_estelar_o"
+	if comprados is Array:
+		if &"c07_skin_kirby" in comprados and &"c07_modelo_o" not in comprados:
+			comprados.append(&"c07_modelo_o")
+		if &"c21_rastro_estrela_kirby" in comprados and &"c21_rastro_estelar_o" not in comprados:
+			comprados.append(&"c21_rastro_estelar_o")
 	# A antiga sniper foi fundida ao Canhão do Esturjão. Quem a comprou mantém
 	# a compra e já entra com a arma consolidada equipada.
 	if arma_monthly == &"a02_rifle_cacador":
@@ -288,10 +312,13 @@ func carregar_equipamentos_monthly() -> void:
 		})
 	var item_modelo := CatalogoMonthly.encontrar(modelo_visual_nave)
 	var item_cor := CatalogoMonthly.encontrar(cor_visual_nave)
+	var item_rastro := CatalogoMonthly.encontrar(rastro_visual_nave)
 	if item_modelo.is_empty() or StringName(item_modelo.get("grupo_personalizacao", &"")) != &"modelo":
 		modelo_visual_nave = &"c01_modelo_padrao"
 	if item_cor.is_empty() or StringName(item_cor.get("grupo_personalizacao", &"")) != &"cor":
 		cor_visual_nave = &"c10_verde_original"
+	if item_rastro.is_empty() or StringName(item_rastro.get("grupo_personalizacao", &"")) != &"rastro":
+		rastro_visual_nave = &"c20_rastro_padrao"
 	if (
 		modelo_visual_nave != &"c01_modelo_padrao"
 		and not Global.modo_desenvolvedor
@@ -304,6 +331,8 @@ func carregar_equipamentos_monthly() -> void:
 		and (not (comprados is Array) or cor_visual_nave not in comprados)
 	):
 		cor_visual_nave = &"c10_verde_original"
+	if rastro_visual_nave == &"c21_rastro_estelar_o" and modelo_visual_nave != &"c07_modelo_o":
+		rastro_visual_nave = &"c20_rastro_padrao"
 	for id in [arma_monthly, modulo_nave, mutacao_habilidade]:
 		if id.is_empty():
 			continue
@@ -331,6 +360,18 @@ func aplicar_personalizacao_nave() -> void:
 	detalhe_visual.color = cor_nave.lightened(0.10)
 	if is_instance_valid(luz_visual):
 		luz_visual.color = cor_nave
+	var usando_modelo_o := modelo_visual_nave == &"c07_modelo_o"
+	corpo_visual.visible = not usando_modelo_o
+	detalhe_visual.visible = not usando_modelo_o
+	if is_instance_valid(sprite_modelo_o):
+		sprite_modelo_o.visible = usando_modelo_o
+		var material_modelo_o := sprite_modelo_o.material as ShaderMaterial
+		if is_instance_valid(material_modelo_o):
+			material_modelo_o.set_shader_parameter("cor_estrela", cor_nave)
+	if is_instance_valid(particulas_rastro_modelo_o):
+		var material_particulas_o := particulas_rastro_modelo_o.material as ShaderMaterial
+		if is_instance_valid(material_particulas_o):
+			material_particulas_o.set_shader_parameter("cor_estrela", cor_nave)
 	var material_particulas := particles.process_material as ParticleProcessMaterial
 	if is_instance_valid(material_particulas):
 		material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
@@ -340,6 +381,10 @@ func aplicar_personalizacao_nave() -> void:
 	# O modelo padrão conserva os polígonos originais da cena. As variações usam
 	# a mesma caixa visual (aprox. 56 x 44 px) e nunca alteram a colisão circular.
 	if modelo_visual_nave == &"c01_modelo_padrao":
+		PontaArma.position = Vector2(17.74477, 0.0)
+		return
+	if usando_modelo_o:
+		PontaArma.position = Vector2(34.0, 0.0)
 		return
 	corpo_visual.position = Vector2.ZERO
 	corpo_visual.rotation = 0.0
@@ -386,8 +431,65 @@ func aplicar_personalizacao_nave() -> void:
 			detalhe_visual.polygon = PackedVector2Array([
 				Vector2(23, 0), Vector2(5, -5), Vector2(-3, 0), Vector2(5, 5),
 			])
+		&"c06_estrela_rosa":
+			corpo_visual.polygon = PackedVector2Array([
+				Vector2(29, 0), Vector2(15, -8), Vector2(7, -24),
+				Vector2(-2, -12), Vector2(-19, -16), Vector2(-14, -3),
+				Vector2(-27, 8), Vector2(-9, 9), Vector2(-3, 24),
+				Vector2(7, 12), Vector2(22, 16), Vector2(18, 4),
+			])
+			detalhe_visual.polygon = PackedVector2Array([
+				Vector2(20, 0), Vector2(7, -5), Vector2(1, -14),
+				Vector2(-4, -6), Vector2(-15, -7), Vector2(-8, 0),
+				Vector2(-15, 7), Vector2(-4, 6), Vector2(1, 14), Vector2(7, 5),
+			])
 		_:
 			modelo_visual_nave = &"c01_modelo_padrao"
+
+
+func criar_visual_modelo_o() -> void:
+	if is_instance_valid(sprite_modelo_o):
+		return
+	sprite_modelo_o = Sprite2D.new()
+	sprite_modelo_o.name = "ModeloO"
+	sprite_modelo_o.texture = TEXTURA_MODELO_O
+	sprite_modelo_o.scale = Vector2(0.31, 0.31)
+	sprite_modelo_o.z_index = 3
+	sprite_modelo_o.visible = false
+	var material_modelo_o := ShaderMaterial.new()
+	material_modelo_o.shader = SHADER_COR_MODELO_O
+	sprite_modelo_o.material = material_modelo_o
+	add_child(sprite_modelo_o)
+
+	particulas_rastro_modelo_o = GPUParticles2D.new()
+	particulas_rastro_modelo_o.name = "RastroEstelarModeloO"
+	particulas_rastro_modelo_o.texture = TEXTURA_RASTRO_MODELO_O
+	particulas_rastro_modelo_o.position = Vector2(-25.0, 0.0)
+	particulas_rastro_modelo_o.z_index = 2
+	particulas_rastro_modelo_o.amount = 18
+	particulas_rastro_modelo_o.lifetime = 0.72
+	particulas_rastro_modelo_o.randomness = 0.35
+	particulas_rastro_modelo_o.fixed_fps = 30
+	particulas_rastro_modelo_o.local_coords = false
+	particulas_rastro_modelo_o.visibility_rect = Rect2(-160, -160, 320, 320)
+	particulas_rastro_modelo_o.emitting = false
+	var material_rastro := ParticleProcessMaterial.new()
+	material_rastro.particle_flag_disable_z = true
+	material_rastro.direction = Vector3(-1.0, 0.0, 0.0)
+	material_rastro.spread = 24.0
+	material_rastro.initial_velocity_min = 24.0
+	material_rastro.initial_velocity_max = 58.0
+	material_rastro.angular_velocity_min = -150.0
+	material_rastro.angular_velocity_max = 150.0
+	material_rastro.scale_min = 0.035
+	material_rastro.scale_max = 0.075
+	material_rastro.gravity = Vector3.ZERO
+	material_rastro.color = Color.WHITE
+	particulas_rastro_modelo_o.process_material = material_rastro
+	var material_canvas := ShaderMaterial.new()
+	material_canvas.shader = SHADER_COR_MODELO_O
+	particulas_rastro_modelo_o.material = material_canvas
+	add_child(particulas_rastro_modelo_o)
 
 
 func atualizar_ui() -> void:
@@ -536,6 +638,9 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 	var cena := get_tree().current_scene
 	if not is_instance_valid(cena):
 		return
+	# Uma assinatura visual própria nasce em toda ativação. Os feedbacks de
+	# impacto posteriores continuam separados e não escondem a leitura do poder.
+	ExplosaoMonthlyCena.criar(cena, global_position, cor, 0.82 * potencia, efeito_id)
 	match efeito_id:
 		&"ovo":
 			var resultado := randi_range(0, 2)
@@ -548,16 +653,14 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 				_atingir_area(global_position, 155.0, 9.0 * potencia, 240.0, 0.35)
 			_criar_feedback_monthly(global_position, cor, 1.25, 5.0)
 		&"clone":
+			_invocar_ajudante_monthly(AjudanteMonthly.Tipo.CLONE, cor, potencia)
 			_criar_feedback_monthly(global_position - transform.y * 28.0, cor, 1.0, 1.0)
-			_repetir_disparo_clone(cor, potencia)
 		&"renascimento":
 			semente_renascimento_ativa = true
 			posicao_semente = global_position
 			_criar_feedback_monthly(posicao_semente, cor, 1.4, 2.0)
 		&"protetor":
-			ativar_escudo(35.0 * potencia, 7.0, cor)
-			_limpar_projeteis_inimigos(global_position, 135.0, true)
-			_disparar_radial(8, 0.55 * potencia, &"guardian", cor)
+			_invocar_ajudante_monthly(AjudanteMonthly.Tipo.GUARDIAO, cor, potencia)
 			_criar_feedback_monthly(global_position, cor, 1.35, 5.0)
 		&"florescimento":
 			_explodir_em_linha(cor, 5, 72.0, 64.0, 7.0 * potencia)
@@ -578,18 +681,14 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 				Color(0.32, 0.72, 1.0),
 				Color(0.42, 1.0, 0.62)
 			][presente]
-			_criar_feedback_monthly(global_position, cor_presente, 1.35, 3.0)
-			if presente == 0:
-				_disparar_radial(12, 0.55 * potencia, &"gift", cor_presente)
-			elif presente == 1:
-				ativar_escudo(28.0 * potencia, 6.0, cor_presente)
-			else:
-				_atingir_area(global_position, 210.0, 3.0, 80.0, 2.4)
+			# A cor da fita revela a categoria antes de o presente abrir.
+			_criar_feedback_monthly(global_position, cor_presente, 0.75, 0.0)
+			_abrir_presente_depois(presente, cor_presente, potencia)
 		&"recomeco":
 			tempo_queimadura = 0.0
 			pulsos_queimadura_restantes = 0
 			resistencia_temporaria_multiplicador = 1.0
-			_disparar_radial(16, 0.52 * potencia, &"firework", cor)
+			_repetir_disparos_recentes(cor, potencia)
 			_criar_feedback_monthly(global_position, cor, 1.6, 8.0)
 		&"laco":
 			var alvos := _inimigos_mais_proximos(2)
@@ -610,7 +709,7 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 			cor_poder_temporario = cor
 			_disparar_radial(7, 0.5, &"toy", cor)
 		&"natureza":
-			_explodir_em_linha(cor, 7, 62.0, 55.0, 8.0 * potencia)
+			_furia_natureza_em_sequencia(cor, potencia)
 			_criar_feedback_monthly(global_position, cor, 1.25, 7.0)
 		&"onda":
 			_limpar_projeteis_inimigos(global_position, 245.0, false)
@@ -627,6 +726,9 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 				_criar_feedback_monthly(global_position, cor, 0.9, 0.0)
 		&"determinacao":
 			ativar_escudo(32.0 * potencia, 6.0, cor)
+			for alvo in _inimigos_mais_proximos(6):
+				alvo.set_meta("marcado_determinacao", Time.get_ticks_msec() + 6000)
+				_criar_feedback_monthly(alvo.global_position, cor, 0.48, 0.0)
 			_atingir_area(global_position, 190.0, 13.0 * potencia, 260.0, 0.8)
 			_criar_feedback_monthly(global_position, cor, 1.7, 10.0)
 
@@ -787,6 +889,58 @@ func _repetir_disparo_clone(cor: Color, potencia: float) -> void:
 	_criar_feedback_monthly(global_position - transform.y * 28.0, cor, 0.7, 1.0)
 
 
+func _abrir_presente_depois(tipo_presente: int, cor: Color, potencia: float) -> void:
+	await get_tree().create_timer(0.48).timeout
+	if not vivo:
+		return
+	_criar_feedback_monthly(global_position, cor, 1.35, 3.0)
+	if tipo_presente == 0:
+		_disparar_radial(12, 0.55 * potencia, &"gift", cor)
+	elif tipo_presente == 1:
+		ativar_escudo(28.0 * potencia, 6.0, cor)
+	else:
+		_atingir_area(global_position, 210.0, 3.0, 80.0, 2.4)
+
+
+func _repetir_disparos_recentes(cor: Color, potencia: float) -> void:
+	var agora := Time.get_ticks_msec()
+	var recentes: Array[Dictionary] = []
+	for registro in historico_disparos:
+		if agora - int(registro.get("tempo", 0)) <= 4200:
+			recentes.append(registro.duplicate(true))
+	if recentes.is_empty():
+		_disparar_radial(10, 0.48 * potencia, &"firework", cor)
+		return
+	var inicio := maxi(recentes.size() - 10, 0)
+	for indice in range(inicio, recentes.size()):
+		var registro := recentes[indice]
+		var angulo := float(registro.get("angulo", rotation))
+		criar_projetil(angulo, 0.58 * potencia, true, null, 0.0, &"firework", cor)
+
+
+func _furia_natureza_em_sequencia(cor: Color, potencia: float) -> void:
+	for indice in range(1, 8):
+		if not vivo:
+			return
+		var ponto := global_position + transform.x * 62.0 * float(indice)
+		_atingir_area(ponto, 55.0, 8.0 * potencia, 90.0, 0.5)
+		EfeitoCombateCena.criar(get_tree().current_scene, ponto, EfeitoCombate.Tipo.MORTE, cor, 0.68, transform.x)
+		await get_tree().create_timer(0.065).timeout
+
+
+func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia: float) -> void:
+	# Cada nova ativação renova o ajudante correspondente, sem empilhar dezenas
+	# de drones e sem fingir a invocação com uma simples rajada.
+	var grupo := "ajudante_clone" if tipo == AjudanteMonthly.Tipo.CLONE else "ajudante_guardiao"
+	for antigo in get_tree().get_nodes_in_group(grupo):
+		if is_instance_valid(antigo):
+			antigo.queue_free()
+	var ajudante := AJUDANTE_MONTHLY.new() as AjudanteMonthly
+	get_tree().current_scene.add_child(ajudante)
+	ajudante.add_to_group(grupo)
+	ajudante.configurar(self, tipo, cor, potencia)
+
+
 func _mutacao_atrasada(estilo: StringName) -> void:
 	await get_tree().create_timer(0.45).timeout
 	if not vivo:
@@ -812,15 +966,16 @@ func atualizar_equipamentos_monthly(delta: float) -> void:
 	calor_feixe = maxf(calor_feixe - delta * 0.34, 0.0)
 	if tempo_poder_monthly > 0.0:
 		tempo_poder_monthly = maxf(tempo_poder_monthly - delta, 0.0)
-		if tipo_poder_temporario == &"fantasma" and fmod(tempo_poder_monthly, 0.16) < delta:
+		tempo_eco_fantasma -= delta
+		if tipo_poder_temporario == &"fantasma" and tempo_eco_fantasma <= 0.0:
+			tempo_eco_fantasma = 0.16
 			EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.RASTRO, cor_poder_temporario, 0.7, -transform.x)
-			_atingir_area(global_position, 42.0, 2.2, 45.0, 0.1)
+			_explodir_eco_fantasma(global_position, cor_poder_temporario)
 		if tempo_poder_monthly <= 0.0:
 			if tipo_poder_temporario == &"fantasma":
 				invulneravel_por_habilidade = false
 				multiplicador_velocidade_habilidade = 1.0
 			tipo_poder_temporario = &""
-
 	if modulo_nave == &"n08_motor_maia":
 		if velocity.length() > 150.0 and tempo_sem_dano > 0.4:
 			tempo_motor_maia = minf(tempo_motor_maia + delta, 12.0)
@@ -847,6 +1002,14 @@ func atualizar_equipamentos_monthly(delta: float) -> void:
 		or modulo_nave in [&"n02_luz_vital", &"n09_familia_satelites"]
 	):
 		queue_redraw()
+
+
+func _explodir_eco_fantasma(posicao: Vector2, cor: Color) -> void:
+	await get_tree().create_timer(0.42).timeout
+	if not is_inside_tree():
+		return
+	_atingir_area(posicao, 42.0, 2.2, 45.0, 0.1)
+	EfeitoCombateCena.criar(get_tree().current_scene, posicao, EfeitoCombate.Tipo.MORTE, cor, 0.56)
 
 
 func _atualizar_scanner() -> void:
@@ -967,7 +1130,14 @@ func atualizar_movimento(delta: float) -> void:
 		if Input.is_action_pressed("freio"):
 			brake(delta, fator_movimento)
 
-	particles.emitting = acelerando or UsandoHabilidade
+	var emitindo_rastro := acelerando or UsandoHabilidade
+	var usando_estrelas_modelo_o := (
+		modelo_visual_nave == &"c07_modelo_o"
+		and rastro_visual_nave == &"c21_rastro_estelar_o"
+	)
+	particles.emitting = emitindo_rastro and not usando_estrelas_modelo_o
+	if is_instance_valid(particulas_rastro_modelo_o):
+		particulas_rastro_modelo_o.emitting = emitindo_rastro and usando_estrelas_modelo_o
 	velocity = velocity.move_toward(Vector2.ZERO, friction * fator_movimento * delta)
 
 	if not UsandoHabilidade:
@@ -1167,11 +1337,9 @@ func disparar_arma_monthly() -> void:
 			cor = Color(0.72, 0.84, 1.0)
 			var quantidade := 3 + nivel_upgrade_arma(&"fogos_formacao")
 			var nivel_estouro := nivel_upgrade_arma(&"fogos_estouro")
-			var alvos := _inimigos_mais_proximos(quantidade)
 			for indice in range(quantidade):
-				var alvo: Node2D = alvos[indice % alvos.size()] if not alvos.is_empty() else null
 				var centro := float(indice) - float(quantidade - 1) * 0.5
-				criar_projetil(rotation + centro * 0.25, 0.62, false, alvo, centro * 12.0, &"missile", cor, {"homing": 4.2, "velocidade": 0.72, "explosao": 0.35 + float(nivel_estouro) * 0.18, "raio": 54.0 + float(nivel_estouro) * 12.0})
+				criar_projetil(rotation + centro * 0.25, 0.62, false, null, centro * 12.0, &"missile", cor, {"homing": 4.2, "velocidade": 0.72, "explosao": 0.35 + float(nivel_estouro) * 0.18, "raio": 54.0 + float(nivel_estouro) * 12.0})
 			recarga *= 2.8
 		&"a04_canhao_esturjao":
 			cor = Color(0.32, 0.74, 1.0)
@@ -1309,7 +1477,14 @@ func criar_projetil(
 			PontaArma.global_position
 			+ global_transform.y.normalized() * deslocamento_lateral
 		)
+	var origem_personalizada: Variant = config_monthly.get("origem_global", null)
+	if origem_personalizada is Vector2:
+		projetil.global_position = origem_personalizada
 	projetil.rotation = angulo
+	if not eh_nova:
+		historico_disparos.append({"tempo": Time.get_ticks_msec(), "angulo": angulo})
+		while historico_disparos.size() > 24:
+			historico_disparos.pop_front()
 
 	var bonus_overdrive := 1.25 if tempo_overdrive > 0.0 else 1.0
 	var velocidade_relativa := clampf(
@@ -1592,6 +1767,9 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 
 func atualizar_passivos(delta: float) -> void:
 	tempo_sem_dano += delta
+	# O método só grava quando há recorde; atualizar por segundo evita I/O por frame.
+	if floori(tempo_sem_dano) > floori(tempo_sem_dano - delta):
+		Global.registrar_recordes_partida(Global.Combo, Global.Pontos, tempo_sem_dano)
 	if tempo_reacao > 0.0:
 		tempo_reacao = maxf(tempo_reacao - delta, 0.0)
 	if (

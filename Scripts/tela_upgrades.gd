@@ -315,7 +315,7 @@ func atualizar_indicador() -> void:
 		indicador.hide()
 		return
 
-	var pontos := player.pontos_upgrade_pendentes
+	var pontos: int = int(player.pontos_upgrade_pendentes)
 	indicador.visible = pode_abrir_menu()
 	var icone := IconesControle.textura_para_acao(&"abrir_melhorias")
 	var usando_controle: bool = (

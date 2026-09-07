@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <defs><filter id="g" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <rect x="7" y="7" width="114" height="114" rx="24" fill="#07101f" stroke="#ff8f35" stroke-width="5" opacity=".96"/>
-  <g filter="url(#g)" stroke="#ff8f35" stroke-linecap="round" stroke-linejoin="round"><path d="M28 45C49 22 86 26 100 55L109 41V78L75 63L91 58C80 42 55 39 41 54C31 65 31 82 41 94" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <style>
+    .base{fill:#10162e;stroke:#ff8f35;stroke-width:7}
+    .fill{fill:#ff8f35;stroke:#ff8f35;stroke-width:5}
+    .accent,.line{fill:none;stroke:#f8d5b9;stroke-width:6}
+    .accent{fill:#f8d5b9;fill-opacity:.22}
+    .dot{fill:#f8d5b9;stroke:#ff8f35;stroke-width:3}
+    path,circle,ellipse,rect{stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <path class="base" d="M29 94c-16-25-5-59 22-72 24-11 53-1 66 22l-5-22-18 16 22 7-18 15c-8-17-29-24-46-15-17 8-23 29-14 45"/><path class="accent" d="m29 94 3-19 16 10Z"/><circle class="dot" cx="64" cy="64" r="7"/>
 </svg>

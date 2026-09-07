@@ -9,8 +9,8 @@ const PROJETIL := preload("res://Entities/ProjetilInimigo.tscn")
 enum Tema {
 	FLOR_EQUINOCIO,
 	ECLIPSE_COLHEITA,
-	SENTINELA_DOURADA,
-	RUPTURA_LILAS,
+	CONSTELACAO_AMPARO,
+	NO_AMETISTA,
 }
 
 enum Estado {
@@ -130,7 +130,7 @@ func preparar_ataque(indice: int) -> void:
 	tempo_estado = maxf(tempo_aviso - float(fase - 1) * 0.06, 0.38)
 	direcao_investida = global_position.direction_to(player.global_position)
 	linha_aviso.visible = true
-	if indice == 0 and tema in [Tema.ECLIPSE_COLHEITA, Tema.RUPTURA_LILAS]:
+	if indice == 0 and tema in [Tema.ECLIPSE_COLHEITA, Tema.NO_AMETISTA]:
 		linha_aviso.points = PackedVector2Array([
 			Vector2.ZERO, direcao_investida * 760.0
 		])
@@ -154,9 +154,9 @@ func executar_ataque(indice: int) -> void:
 			executar_floresta(indice)
 		Tema.ECLIPSE_COLHEITA:
 			executar_eclipse(indice)
-		Tema.SENTINELA_DOURADA:
+		Tema.CONSTELACAO_AMPARO:
 			executar_sentinela(indice)
-		Tema.RUPTURA_LILAS:
+		Tema.NO_AMETISTA:
 			executar_ruptura(indice)
 
 
@@ -212,12 +212,13 @@ func executar_sentinela(indice: int) -> void:
 func executar_ruptura(indice: int) -> void:
 	match indice:
 		0:
-			iniciar_investida()
+			disparar_trama_ametista(3 + fase)
+			iniciar_recuperacao(0.72)
 		1:
 			disparar_anel_com_fendas(16, 225.0, 0.40, 3)
 			iniciar_recuperacao(0.7)
 		2:
-			disparar_mira(5, 315.0, 0.47, 0.54)
+			disparar_ancoras_ametista(4 + fase)
 			iniciar_recuperacao(0.75)
 		_:
 			disparar_anel_com_fendas(24, 260.0, 0.34, 4)
@@ -302,6 +303,27 @@ func disparar_satelites() -> void:
 		criar_projetil(direcao.rotated(0.18), 245.0, 0.28)
 
 
+func disparar_trama_ametista(linhas: int) -> void:
+	if not is_instance_valid(player):
+		return
+	var base := global_position.direction_to(player.global_position)
+	var lateral := base.orthogonal()
+	for indice in range(linhas):
+		var faixa := float(indice) - float(linhas - 1) * 0.5
+		var projetil_a := criar_projetil(base.rotated(0.16), 245.0, 0.36)
+		var projetil_b := criar_projetil(base.rotated(-0.16), 245.0, 0.36)
+		if is_instance_valid(projetil_a):
+			projetil_a.global_position += lateral * faixa * 26.0
+		if is_instance_valid(projetil_b):
+			projetil_b.global_position -= lateral * faixa * 26.0
+
+
+func disparar_ancoras_ametista(quantidade: int) -> void:
+	for indice in range(quantidade):
+		var angulo := angulo_visual + TAU * float(indice) / float(quantidade)
+		criar_projetil(Vector2.from_angle(angulo), 145.0, 0.42, 1)
+
+
 func disparar_anel_com_fendas(
 	quantidade: int,
 	velocidade_projetil: float,
@@ -322,7 +344,7 @@ func criar_projetil(
 	velocidade_projetil: float,
 	multiplicador_dano: float,
 	rebotes: int = 0
-) -> void:
+) -> ProjetilInimigo:
 	var projetil := PROJETIL.instantiate() as ProjetilInimigo
 	get_tree().current_scene.add_child(projetil)
 	projetil.global_position = global_position + direcao.normalized() * 48.0
@@ -332,6 +354,7 @@ func criar_projetil(
 	if is_instance_valid(forma):
 		forma.color = cor_principal.lerp(cor_secundaria, randf_range(0.0, 0.75))
 	projetil.aplicar_glow()
+	return projetil
 
 
 func tomarDano(valor: float) -> void:
@@ -387,16 +410,24 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, 47.0, cor_principal)
 			draw_circle(Vector2(17, -7), 44.0, Color(0.008, 0.01, 0.035))
 			draw_arc(Vector2.ZERO, 55.0 * pulso, -1.25, 1.25, 32, cor_secundaria, 5.0)
-		Tema.SENTINELA_DOURADA:
+		Tema.CONSTELACAO_AMPARO:
 			var pontos := PackedVector2Array()
 			for indice in range(6):
 				pontos.append(Vector2.from_angle(angulo_visual + TAU * float(indice) / 6.0) * 38.0)
 			draw_colored_polygon(pontos, cor_principal)
 			draw_circle(Vector2.ZERO, 22.0, cor_secundaria)
-			for indice in range(4 + fase):
+			var satelites := 4 + fase
+			var anteriores: Array[Vector2] = []
+			for indice in range(satelites):
 				var angulo := -angulo_visual * 1.4 + TAU * float(indice) / float(4 + fase)
-				draw_circle(Vector2.from_angle(angulo) * 64.0, 7.0, cor_secundaria)
-		Tema.RUPTURA_LILAS:
+				var ponto := Vector2.from_angle(angulo) * 64.0
+				anteriores.append(ponto)
+				draw_circle(ponto, 7.0, cor_secundaria)
+			for indice in range(anteriores.size()):
+				draw_line(anteriores[indice], anteriores[(indice + 1) % anteriores.size()], Color(cor_principal, 0.46), 2.0)
+		Tema.NO_AMETISTA:
 			for raio in [24.0, 40.0, 56.0]:
-				draw_arc(Vector2.ZERO, raio * pulso, angulo_visual, angulo_visual + 4.8, 38, cor_principal, 5.0)
+				draw_arc(Vector2.ZERO, raio * pulso, angulo_visual + raio * 0.02, angulo_visual + raio * 0.02 + 4.8, 38, cor_principal, 5.0)
+			draw_line(Vector2(-46, -34), Vector2(46, 34), Color(cor_secundaria, 0.72), 4.0)
+			draw_line(Vector2(-46, 34), Vector2(46, -34), Color(cor_secundaria, 0.72), 4.0)
 			draw_circle(Vector2.ZERO, 15.0, cor_secundaria)

@@ -1,5 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <defs><filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <g fill="#17213d" stroke="#dff8ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"><circle cx="64" cy="64" r="53"/></g>
-  <g fill="none" stroke="#f8fdff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><style>.a{fill:#78eaff;fill-opacity:.72}</style><path d="M19 103l27-42 15 21 17-31 31 52Z"/><path class="a" d="M64 78V36M64 50L49 39M64 58l17-14M38 103l8-20M91 103l-10-22"/></g>
+  <style>
+    .base{fill:#10162e;stroke:#6ee65b;stroke-width:7}
+    .fill{fill:#6ee65b;stroke:#6ee65b;stroke-width:5}
+    .ghost{fill:#10162e;stroke:#6ee65b;stroke-width:6;opacity:.45}
+    .accent,.line{fill:none;stroke:#cbf1c5;stroke-width:6}
+    .accent{fill:#cbf1c5;fill-opacity:.22}
+    .dot{fill:#cbf1c5;stroke:#6ee65b;stroke-width:3}
+    path,circle,ellipse,rect{stroke-linecap:round;stroke-linejoin:round}
+  </style>
+  <path class="base" d="m13 106 27-49 18 25 18-42 39 66Z"/><path class="fill" d="m46 105 18-31 12 31Z"/><path class="line" d="M65 69V29m0 13L50 31m15 22 18-17"/><path class="accent" d="m64 18 7 11-7 9-7-9Z"/>
 </svg>

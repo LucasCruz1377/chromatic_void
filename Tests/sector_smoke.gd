@@ -30,6 +30,35 @@ func _ready() -> void:
 	verificar(not batalha.escolha_setor_ativa, "a escolha de setor apareceu no início")
 	verificar(batalha.proximo_nivel_boss == 10, "o primeiro boss não está configurado para o nível 10")
 
+	# O Modelo O usa apenas a estrela enviada; nave e rastro recebem a paleta.
+	batalha.player.modelo_visual_nave = &"c07_modelo_o"
+	batalha.player.cor_visual_nave = &"c11_ciano"
+	batalha.player.rastro_visual_nave = &"c21_rastro_estelar_o"
+	batalha.player.aplicar_personalizacao_nave()
+	verificar(batalha.player.sprite_modelo_o.visible, "o Modelo O não apareceu")
+	verificar(not batalha.player.corpo_visual.visible, "a nave poligonal ficou sobre o Modelo O")
+	verificar(
+		batalha.player.sprite_modelo_o.texture.resource_path.ends_with("UI/modelo_o.svg"),
+		"o Modelo O não usa a estrela enviada"
+	)
+	var material_modelo_o := batalha.player.sprite_modelo_o.material as ShaderMaterial
+	var cor_aplicada: Variant = material_modelo_o.get_shader_parameter("cor_estrela")
+	verificar(
+		cor_aplicada is Color and (cor_aplicada as Color).is_equal_approx(Color("39dcff")),
+		"a paleta escolhida não chegou à estrela do Modelo O"
+	)
+	var material_estrelas := batalha.player.particulas_rastro_modelo_o.process_material as ParticleProcessMaterial
+	verificar(
+		is_instance_valid(material_estrelas) and material_estrelas.scale_max <= 0.076,
+		"as estrelas do rastro do Modelo O não ficaram pequenas"
+	)
+	batalha.player.modelo_visual_nave = &"c01_modelo_padrao"
+	batalha.player.cor_visual_nave = &"c10_verde_original"
+	batalha.player.rastro_visual_nave = &"c20_rastro_padrao"
+	batalha.player.aplicar_personalizacao_nave()
+	verificar(not batalha.player.sprite_modelo_o.visible, "o Modelo O não saiu ao restaurar o padrão")
+	verificar(batalha.player.corpo_visual.visible, "a nave padrão não voltou após o teste do Modelo O")
+
 	batalha.tutorial_ativo = false
 	batalha.player.nivel_atual = 10
 	batalha.invocar_boss_do_setor()
@@ -40,19 +69,47 @@ func _ready() -> void:
 	if is_instance_valid(batalha.boss_ativo):
 		batalha.boss_ativo.Vida = 0.0
 		batalha.boss_ativo.morrer()
-	await get_tree().create_timer(1.35, true).timeout
+	await get_tree().create_timer(3.2, true).timeout
 	verificar(&"vazio_inicial" in batalha.setores_concluidos, "o primeiro setor não foi marcado como concluído")
-	verificar(batalha.escolha_setor_ativa, "a escolha não apareceu após derrotar o PET-0")
+	verificar(not batalha.escolha_setor_ativa, "a transição linear permaneceu bloqueando a partida")
+	verificar(batalha.setor_atual == &"constelacao_amparo", "o ciclo não avançou para a Constelação do Amparo")
 	verificar(batalha.proximo_nivel_boss == 20, "o próximo boss não foi movido para o nível 20")
 
 	var dados_setores = load("res://Scripts/SectorData.gd")
+	verificar(
+		dados_setores.ORDEM_CICLO == [
+			&"vazio_inicial", &"constelacao_amparo", &"no_ametista",
+			&"florescimento", &"lua_colheita"
+		],
+		"a ordem única dos cinco bosses foi alterada"
+	)
+	for caminho_inimigo in [
+		"res://Entities/InimigoCentelhaGuia.tscn", "res://Entities/InimigoEloDourado.tscn",
+		"res://Entities/InimigoPrismaAmparo.tscn", "res://Entities/InimigoSateliteBerco.tscn",
+		"res://Entities/InimigoPulsoSolar.tscn", "res://Entities/InimigoFitaVioleta.tscn",
+		"res://Entities/InimigoNoFlutuante.tscn", "res://Entities/InimigoEcoAmetista.tscn",
+		"res://Entities/InimigoLaminaIris.tscn", "res://Entities/InimigoCasuloPrismatico.tscn",
+		"res://Entities/InimigoBrotoPrimaveril.tscn", "res://Entities/InimigoSementeCanhao.tscn",
+		"res://Entities/InimigoPolenErrante.tscn", "res://Entities/InimigoCipoEspiral.tscn",
+		"res://Entities/InimigoFrutoExplosivo.tscn", "res://Entities/InimigoFragmentoLunar.tscn",
+		"res://Entities/InimigoCentelhaSolar.tscn", "res://Entities/InimigoMeteoroJovem.tscn",
+		"res://Entities/InimigoEcoGravitacional.tscn", "res://Entities/InimigoSateliteCoroa.tscn",
+	]:
+		var cena_setorial := load(caminho_inimigo) as PackedScene
+		verificar(cena_setorial != null, "inimigo setorial ausente: " + caminho_inimigo)
+		if cena_setorial != null:
+			var inimigo_setorial := cena_setorial.instantiate() as InimigoSetorial
+			batalha.add_child(inimigo_setorial)
+			inimigo_setorial.global_position = Vector2(700, 260)
+			await get_tree().physics_frame
+			verificar(is_instance_valid(inimigo_setorial.visual), "inimigo setorial sem visual próprio")
+			inimigo_setorial.queue_free()
 	var opcoes: Array[StringName] = dados_setores.sortear_opcoes(
 		batalha.setores_concluidos, batalha.setor_atual, 2
 	)
 	verificar(opcoes.size() == 2, "a rota não ofereceu duas opções")
 	verificar(&"vazio_inicial" not in opcoes, "o setor inicial foi repetido nas rotas")
 
-	batalha.encerrar_escolha_setor()
 	batalha.aplicar_setor(&"florescimento")
 	verificar(not batalha.fundo_original.visible, "o fundo original permaneceu no setor temático")
 	verificar(batalha.fundo_setor.visible, "o fundo minimalista do setor temático não apareceu")
@@ -85,8 +142,8 @@ func _ready() -> void:
 		await get_tree().process_frame
 
 	for caminho in [
-		"res://Entities/BossSentinelaDourada.tscn",
-		"res://Entities/BossRupturaLilas.tscn",
+		"res://Entities/BossConstelacaoAmparo.tscn",
+		"res://Entities/BossNoAmetista.tscn",
 	]:
 		var cena_boss := load(caminho) as PackedScene
 		verificar(cena_boss != null, "%s não carregou" % caminho)
@@ -188,11 +245,16 @@ func _ready() -> void:
 		await get_tree().process_frame
 		verificar(loja.painel_filtros_personalizacao.visible, "os filtros de personalização não apareceram")
 		verificar(loja.botoes_filtros_personalizacao.size() == 3, "a personalização não possui três aspectos")
-		verificar(loja.obter_itens_categoria_atual().size() == 5, "o filtro Modelos não exibiu cinco naves")
+		verificar(loja.obter_itens_categoria_atual().size() == 7, "o filtro Modelos não exibiu as sete naves")
 		loja._selecionar_filtro_personalizacao(&"cor")
 		verificar(loja.obter_itens_categoria_atual().size() == 6, "o filtro Cores não exibiu seis paletas")
 		loja._selecionar_filtro_personalizacao(&"rastro")
-		verificar(loja.obter_itens_categoria_atual().size() == 1, "o filtro Rastros não exibiu seu estado Em breve")
+		verificar(loja.obter_itens_categoria_atual().size() == 2, "o filtro Rastros não exibiu as duas opções")
+		var rastro_modelo_o := loja.obter_itens_categoria_atual()[1] as Dictionary
+		verificar(
+			StringName(rastro_modelo_o.get("requer_modelo", &"")) == &"c07_modelo_o",
+			"o rastro de estrelas não está restrito ao Modelo O"
+		)
 		loja.selecionar_categoria(0)
 
 		var aba := InputEventAction.new()

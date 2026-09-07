@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/InimigoSetorial.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 18.0
+
+[node name="EloDourado" type="CharacterBody2D" groups=["inimigo"]]
+collision_layer = 4
+collision_mask = 15
+script = ExtResource("1")
+estilo = 6
+cor_setor = Color(1, 0.7, 0.12, 1)
+intervalo_acao = 2.5
+VidaMaxima = 4.8
+Dano = 11.0
+Velocidade = 125.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")

@@ -17,13 +17,17 @@ SIZIGIA = (ROOT / "Scripts/BossSizigiaEterna.gd").read_text(encoding="utf-8")
 PROJECT = (ROOT / "project.godot").read_text(encoding="utf-8")
 UPGRADES = (ROOT / "Scripts/UpgradeData.gd").read_text(encoding="utf-8")
 CAMERA = (ROOT / "Scripts/camera.gd").read_text(encoding="utf-8")
+GLOBAL = (ROOT / "Scripts/Global.gd").read_text(encoding="utf-8")
+SETORES = (ROOT / "Scripts/SectorData.gd").read_text(encoding="utf-8")
+BATALHA = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
 
 assert '"PERSONALIZAÇÃO"' in SHOP
 assert 'botao_acao.clip_text = true' in SHOP
 assert 'func _aplicar_layout_responsivo(' in SHOP
 assert 'grade.columns = colunas' in SHOP
-assert 'rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO' in SHOP
-assert 'conteudo_principal.vertical = mobile_vertical' in SHOP
+assert 'conteudo_principal.vertical = false' in SHOP
+assert 'InputEventScreenDrag' in SHOP
+assert '"DESEQUIPAR"' in SHOP
 assert 'func _on_acao_personalizacao(item: Dictionary)' in SHOP
 assert '"personalizacao_nave": personalizacao_nave' in SHOP
 assert '"MODELOS"' in SHOP and '"CORES"' in SHOP and '"RASTROS"' in SHOP
@@ -63,10 +67,18 @@ assert (ROOT / "UI/nave_padrao_preview.svg").exists()
 assert (ROOT / "UI/personalizacao_em_breve.svg").exists()
 for nome in [
     "nave_asa_delta.svg", "nave_nucleo_orbital.svg",
-    "nave_dardo.svg", "nave_interceptor.svg", "cor_nave_preview.svg",
+    "nave_dardo.svg", "nave_interceptor.svg", "nave_estrela_rosa.svg",
+    "cor_nave_preview.svg",
 ]:
     assert (ROOT / "UI" / nome).exists(), nome
+for nome in ["modelo_o.svg", "rastro_estrela_modelo_o.svg", "rastro_sem.svg"]:
+    assert (ROOT / "UI" / nome).exists(), nome
+assert (ROOT / "FX/canvas_shader/modelo_o_cor.gdshader").exists()
 assert 'func aplicar_personalizacao_nave()' in (ROOT / "Scripts/player.gd").read_text(encoding="utf-8")
+assert 'func criar_visual_modelo_o()' in PLAYER
+assert 'material_modelo_o.set_shader_parameter("cor_estrela", cor_nave)' in PLAYER
+assert 'rastro_visual_nave == &"c21_rastro_estelar_o"' in PLAYER
+assert 'material_rastro.scale_max = 0.075' in PLAYER
 
 assert 'const DADOS_ARMAS' in UPGRADES
 assert UPGRADES.count('"arma_exclusiva":') == 25
@@ -81,5 +93,15 @@ assert 'ForcaShake = maxf(ForcaShake, alvo)' in CAMERA
 assert 'ForcaShake + magnitude' not in CAMERA
 assert 'camera_transicao.shake(18.0, true)' in SIZIGIA
 assert 'camera.shake(obter_tremor_morte(), is_in_group("boss"))' in ENEMY
+assert 'const ORDEM_CICLO' in SETORES
+for setor in ["vazio_inicial", "constelacao_amparo", "no_ametista", "florescimento", "lua_colheita"]:
+    assert f'&"{setor}"' in SETORES
+for nome in ["CentelhaGuia", "EloDourado", "FitaVioleta", "NoFlutuante", "BrotoPrimaveril", "FragmentoLunar"]:
+    assert (ROOT / "Entities" / f"Inimigo{nome}.tscn").exists(), nome
+assert 'apresentar_transicao_setor(proximo_setor)' in BATALHA
+assert 'mostrar_escolha_setor(opcoes)' not in BATALHA
+for tipo in ['&"combo"', '&"pontos"', '&"sem_dano"']:
+    assert tipo in GLOBAL, f"conquista ausente: {tipo}"
+assert 'MorteBossCena.criar' in ENEMY
 
 print("Polimento verificado: loja, filtros, skins, sinalizador, efeitos e hitflash.")

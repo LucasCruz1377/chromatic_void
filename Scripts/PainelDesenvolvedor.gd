@@ -106,8 +106,8 @@ func construir_interface() -> void:
 	adicionar_botao(grade_bosses, "PET-0", _invocar_boss.bind(&"pet0"))
 	adicionar_botao(grade_bosses, "FLOR", _invocar_boss.bind(&"flor_equinocio"))
 	adicionar_botao(grade_bosses, "SIZÍGIA", _invocar_boss.bind(&"eclipse_colheita"))
-	adicionar_botao(grade_bosses, "SENTINELA", _invocar_boss.bind(&"sentinela_dourada"))
-	adicionar_botao(grade_bosses, "RUPTURA", _invocar_boss.bind(&"ruptura_lilas"))
+	adicionar_botao(grade_bosses, "AMPARO", _invocar_boss.bind(&"constelacao_amparo"))
+	adicionar_botao(grade_bosses, "AMETISTA", _invocar_boss.bind(&"no_ametista"))
 	adicionar_botao(grade_bosses, "FECHAR", fechar)
 
 	configurar_navegacao()
