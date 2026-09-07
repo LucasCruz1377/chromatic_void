@@ -330,12 +330,12 @@ jobs:
             find "${{ steps.export.outputs.archive_directory }}" \
               -maxdepth 1 \
               -type f \
-              -name 'Windows.Desktop.zip' \
+              -name 'Windows Desktop.zip' \
               -print -quit
           )"
 
           if [[ -z "$ZIP" ]]; then
-            echo "ERRO: Windows.Desktop.zip não foi encontrado."
+            echo "ERRO: Windows Desktop.zip não foi encontrado."
 
             echo "Conteúdo da pasta de exportação:"
             find \
