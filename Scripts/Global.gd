@@ -11,7 +11,7 @@ const CONFIG_PADRAO := {
 	"mira_mouse": true,
 	"volume_master": 0.0,
 	"volume_musica": 0.0,
-	"volume_som": 0.0,MODO_DESENVOLVEDOR_EM_TESTES 
+	"volume_som": 0.0,
 	"idioma": "pt_BR",
 	"tela_cheia": true,
 	"vsync": true,
