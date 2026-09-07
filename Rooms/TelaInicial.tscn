@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cy7t6ktg1o6db" path="res://UI/botaomenuinicial.tscn" id="2_3sat0"]
 [ext_resource type="PackedScene" uid="uid://dnkx7mr03ncjq" path="res://FX/buttonfx.tscn" id="3_jstqx"]
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="4_kal6l"]
+[ext_resource type="PackedScene" uid="uid://ppkx3b4gmokr" path="res://janela_atualizacao.tscn" id="6_5uabe"]
 [ext_resource type="PackedScene" uid="uid://ck4b1aeayj01l" path="res://Entities/astro.tscn" id="6_chynn"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="6_u38va"]
 [ext_resource type="AudioStream" uid="uid://c6fawb4pnttj2" path="res://sounds/menu_click.wav" id="8_g7wv7"]
@@ -211,6 +212,8 @@ text = ""
 stream = ExtResource("10_asbdl")
 autoplay = true
 bus = &"Music"
+
+[node name="JanelaAtualizacao" parent="." unique_id=990779837 instance=ExtResource("6_5uabe")]
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
