@@ -20,8 +20,10 @@ CAMERA = (ROOT / "Scripts/camera.gd").read_text(encoding="utf-8")
 
 assert '"PERSONALIZAÇÃO"' in SHOP
 assert 'botao_acao.clip_text = true' in SHOP
-assert 'func _aplicar_layout_responsivo()' in SHOP
+assert 'func _aplicar_layout_responsivo(' in SHOP
 assert 'grade.columns = colunas' in SHOP
+assert 'rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO' in SHOP
+assert 'conteudo_principal.vertical = mobile_vertical' in SHOP
 assert 'func _on_acao_personalizacao(item: Dictionary)' in SHOP
 assert '"personalizacao_nave": personalizacao_nave' in SHOP
 assert '"MODELOS"' in SHOP and '"CORES"' in SHOP and '"RASTROS"' in SHOP

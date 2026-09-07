@@ -1455,9 +1455,18 @@ func tomar_dano(valor: float) -> void:
 		ponto_seguro_ativo = true
 		var lado_x := -1.0 if randf() < 0.5 else 1.0
 		var lado_y := -1.0 if randf() < 0.5 else 1.0
+		var area_segura := Global.obter_retangulo_area_visivel(32.0)
 		ponto_seguro = Vector2(
-			wrapf(global_position.x + randf_range(85.0, 150.0) * lado_x, 32.0, 928.0),
-			wrapf(global_position.y + randf_range(70.0, 125.0) * lado_y, 32.0, 508.0)
+			wrapf(
+				global_position.x + randf_range(85.0, 150.0) * lado_x,
+				area_segura.position.x,
+				area_segura.end.x
+			),
+			wrapf(
+				global_position.y + randf_range(70.0, 125.0) * lado_y,
+				area_segura.position.y,
+				area_segura.end.y
+			)
 		)
 
 
@@ -1936,8 +1945,9 @@ func DesbloquearGiro() -> void:
 
 
 func atualizar_limites() -> void:
-	position.x = wrapf(position.x, 0.0, 960.0)
-	position.y = wrapf(position.y, 0.0, 540.0)
+	var area := Global.obter_retangulo_area_visivel()
+	global_position.x = wrapf(global_position.x, area.position.x, area.end.x)
+	global_position.y = wrapf(global_position.y, area.position.y, area.end.y)
 
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

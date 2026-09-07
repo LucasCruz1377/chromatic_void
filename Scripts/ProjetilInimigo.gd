@@ -63,23 +63,25 @@ func _physics_process(delta: float) -> void:
 	global_position += direcao * velocidade * delta
 
 	if usa_wrap:
-		global_position.x = wrapf(global_position.x, 0.0, 960.0)
-		global_position.y = wrapf(global_position.y, 0.0, 540.0)
+		var area := Global.obter_retangulo_area_visivel()
+		global_position.x = wrapf(global_position.x, area.position.x, area.end.x)
+		global_position.y = wrapf(global_position.y, area.position.y, area.end.y)
 	else:
 		processar_bordas()
 
 
 func processar_bordas() -> void:
 	var bateu := false
+	var area := Global.obter_retangulo_area_visivel()
 
-	if global_position.x <= 0.0 or global_position.x >= 960.0:
+	if global_position.x <= area.position.x or global_position.x >= area.end.x:
 		direcao.x *= -1.0
-		global_position.x = clampf(global_position.x, 2.0, 958.0)
+		global_position.x = clampf(global_position.x, area.position.x + 2.0, area.end.x - 2.0)
 		bateu = true
 
-	if global_position.y <= 0.0 or global_position.y >= 540.0:
+	if global_position.y <= area.position.y or global_position.y >= area.end.y:
 		direcao.y *= -1.0
-		global_position.y = clampf(global_position.y, 2.0, 538.0)
+		global_position.y = clampf(global_position.y, area.position.y + 2.0, area.end.y - 2.0)
 		bateu = true
 
 	if not bateu:

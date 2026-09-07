@@ -315,7 +315,7 @@ func iniciar_danca_caules() -> void:
 
 
 func ir_ao_centro(_delta: float) -> void:
-	var centro := Vector2(480.0, 270.0)
+	var centro := Global.obter_centro_area_visivel()
 	var distancia := global_position.distance_to(centro)
 	if distancia <= 7.0:
 		global_position = centro

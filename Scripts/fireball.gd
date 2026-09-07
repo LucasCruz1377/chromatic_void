@@ -399,17 +399,22 @@ func encontrar_inimigo_mais_proximo() -> Node2D:
 
 func atualizar_bordas() -> void:
 	var rebateu := false
-	if global_position.x < 0.0 or global_position.x > 960.0:
+	var area := Global.obter_retangulo_area_visivel()
+	if global_position.x < area.position.x or global_position.x > area.end.x:
 		if ricochetes_restantes > 0:
-			global_position.x = clampf(global_position.x, 2.0, 958.0)
+			global_position.x = clampf(
+				global_position.x, area.position.x + 2.0, area.end.x - 2.0
+			)
 			global_rotation = PI - global_rotation
 			rebateu = true
 		else:
 			verificar_fora_da_arena()
 
-	if global_position.y < 0.0 or global_position.y > 540.0:
+	if global_position.y < area.position.y or global_position.y > area.end.y:
 		if ricochetes_restantes > 0:
-			global_position.y = clampf(global_position.y, 2.0, 538.0)
+			global_position.y = clampf(
+				global_position.y, area.position.y + 2.0, area.end.y - 2.0
+			)
 			global_rotation = -global_rotation
 			rebateu = true
 		else:

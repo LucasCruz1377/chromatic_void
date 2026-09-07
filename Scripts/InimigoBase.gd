@@ -119,8 +119,9 @@ func aplicar_empurrao(forca: Vector2) -> void:
 
 
 func aplicar_wrap() -> void:
-	global_position.x = wrapf(global_position.x, 0.0, 960.0)
-	global_position.y = wrapf(global_position.y, 0.0, 540.0)
+	var area := Global.obter_retangulo_area_visivel()
+	global_position.x = wrapf(global_position.x, area.position.x, area.end.x)
+	global_position.y = wrapf(global_position.y, area.position.y, area.end.y)
 
 
 func obter_velocidade_maxima() -> float:

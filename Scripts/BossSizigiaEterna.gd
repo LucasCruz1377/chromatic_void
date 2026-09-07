@@ -365,7 +365,11 @@ func criar_chuva_meteoros(quantidade: int, nova_cor: Color, novo_dano: float) ->
 
 func criar_prisao_crescente() -> void:
 	tempo_ataque = maxf(tempo_ataque, 3.15)
-	var centro: Vector2 = player.global_position if is_instance_valid(player) else Vector2(480.0, 270.0)
+	var centro: Vector2 = (
+		player.global_position
+		if is_instance_valid(player)
+		else Global.obter_centro_area_visivel()
+	)
 	for indice in 3:
 		var onda := PerigoAstralCena.new() as PerigoAstral
 		get_tree().current_scene.add_child(onda)
@@ -376,7 +380,10 @@ func criar_umbra(duracao: float, novo_dano: float, velocidade: float) -> void:
 	tempo_ataque = maxf(tempo_ataque, duracao + 0.45)
 	var umbra := PerigoAstralCena.new() as PerigoAstral
 	get_tree().current_scene.add_child(umbra)
-	umbra.configurar_umbra(Vector2(480.0, 270.0), novo_dano, duracao, randf_range(-PI, PI), velocidade)
+	umbra.configurar_umbra(
+		Global.obter_centro_area_visivel(), novo_dano, duracao,
+		randf_range(-PI, PI), velocidade
+	)
 
 
 func iniciar_investida_solar() -> void:
@@ -916,7 +923,10 @@ func preparar_troca_lua_sol() -> void:
 	visual_lua_transicao.scale = Vector2.ONE * 0.55
 	visual_lua_transicao.rotation = 0.0
 	visual_lua_transicao.visible = true
-	visual_sol_transicao.global_position = Vector2(960.0 + MARGEM_FORA_TELA, global_position.y)
+	visual_sol_transicao.global_position = Vector2(
+		Global.obter_retangulo_area_visivel().end.x + MARGEM_FORA_TELA,
+		global_position.y
+	)
 	visual_sol_transicao.scale = Vector2.ONE * 0.44
 	visual_sol_transicao.rotation = 0.34
 	visual_sol_transicao.visible = true
