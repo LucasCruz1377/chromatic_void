@@ -1,50 +1,213 @@
-[gd_scene format=3 uid="uid://ppkx3b4gmokr"]
+[gd_scene load_steps=8 format=3 uid="uid://ppkx3b4gmokr"]
 
-[ext_resource type="Script" uid="uid://dxwmhe5oq4dij" path="res://JanelaAtualizacao.gd" id="1_klipf"]
+[ext_resource type="Script" uid="uid://dxwmhe5oq4dij" path="res://JanelaAtualizacao.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="2_font"]
 
-[node name="JanelaAtualizacao" type="CanvasLayer" unique_id=748542146]
-script = ExtResource("1_klipf")
+[sub_resource type="StyleBoxFlat" id="StylePanel"]
+bg_color = Color(0.025, 0.035, 0.075, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.9, 0.82, 0.9)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.2, 0.85, 0.78, 0.25)
+shadow_size = 18
 
-[node name="PanelContainer" type="Panel" parent="." unique_id=2030807070]
-offset_right = 411.0
-offset_bottom = 203.0
-size_flags_horizontal = 4
-size_flags_vertical = 4
+[sub_resource type="StyleBoxFlat" id="StylePrimary"]
+bg_color = Color(0.18, 0.78, 0.67, 1)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+content_margin_left = 22.0
+content_margin_top = 12.0
+content_margin_right = 22.0
+content_margin_bottom = 12.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer" unique_id=653133979]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-theme_override_constants/separation = 18
+[sub_resource type="StyleBoxFlat" id="StylePrimaryHover"]
+bg_color = Color(0.28, 0.94, 0.81, 1)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+content_margin_left = 22.0
+content_margin_top = 12.0
+content_margin_right = 22.0
+content_margin_bottom = 12.0
 
-[node name="Titulo" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1139002430]
+[sub_resource type="StyleBoxFlat" id="StyleSecondary"]
+bg_color = Color(0.1, 0.13, 0.23, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.48, 0.67, 0.8)
+corner_radius_top_left = 11
+corner_radius_top_right = 11
+corner_radius_bottom_right = 11
+corner_radius_bottom_left = 11
+content_margin_left = 22.0
+content_margin_top = 12.0
+content_margin_right = 22.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleProgressBg"]
+bg_color = Color(0.07, 0.09, 0.16, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleProgressFill"]
+bg_color = Color(0.25, 0.88, 0.74, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[node name="JanelaAtualizacao" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_script")
+
+[node name="Fundo" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.005, 0.008, 0.025, 0.78)
+
+[node name="Centralizador" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Painel" type="PanelContainer" parent="Centralizador"]
+custom_minimum_size = Vector2(580, 0)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="Margem" type="MarginContainer" parent="Centralizador/Painel"]
+layout_mode = 2
+theme_override_constants/margin_left = 34
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 34
+theme_override_constants/margin_bottom = 28
+
+[node name="Conteudo" type="VBoxContainer" parent="Centralizador/Painel/Margem"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Selo" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.95, 0.81, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "✦  TRANSMISSÃO RECEBIDA  ✦"
+horizontal_alignment = 1
+
+[node name="Titulo" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
 text = "NOVA ATUALIZAÇÃO"
 horizontal_alignment = 1
 
-[node name="Mensagem" type="Label" parent="PanelContainer/VBoxContainer" unique_id=354152194]
+[node name="Mensagem" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
 layout_mode = 2
-text = "Uma nova versão do Chromatic Void está disponível!"
+theme_override_colors/font_color = Color(0.72, 0.76, 0.88, 1)
+theme_override_font_sizes/font_size = 17
+text = "Uma nova jornada pelo vazio já está pronta para você."
 horizontal_alignment = 1
+autowrap_mode = 2
 
-[node name="VersaoAtual" type="Label" parent="PanelContainer/VBoxContainer" unique_id=548226566]
+[node name="Separador" type="HSeparator" parent="Centralizador/Painel/Margem/Conteudo"]
 layout_mode = 2
-text = "Versão atual:"
-horizontal_alignment = 1
 
-[node name="NovaVersao" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1304375019]
+[node name="Versoes" type="HBoxContainer" parent="Centralizador/Painel/Margem/Conteudo"]
 layout_mode = 2
-text = "Nova versão:"
-horizontal_alignment = 1
-
-[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=1992094925]
-layout_mode = 2
+theme_override_constants/separation = 24
 alignment = 1
 
-[node name="BotaoAtualizar" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer" unique_id=459443203]
+[node name="VersaoAtual" type="Label" parent="Centralizador/Painel/Margem/Conteudo/Versoes"]
 layout_mode = 2
-text = "Atualizar"
+theme_override_colors/font_color = Color(0.55, 0.59, 0.72, 1)
+theme_override_font_sizes/font_size = 15
+text = "INSTALADA  •  v0.0.0"
 
-[node name="BotaoMaisTarde" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer" unique_id=905151420]
+[node name="Seta" type="Label" parent="Centralizador/Painel/Margem/Conteudo/Versoes"]
 layout_mode = 2
-text = "Mais tarde"
+theme_override_colors/font_color = Color(0.35, 0.95, 0.81, 1)
+theme_override_font_sizes/font_size = 18
+text = "→"
+
+[node name="NovaVersao" type="Label" parent="Centralizador/Painel/Margem/Conteudo/Versoes"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "DISPONÍVEL  •  v0.0.0"
+
+[node name="AvisoAndroid" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.42, 1)
+theme_override_font_sizes/font_size = 14
+text = "Se o Android perguntar, permita instalar desta fonte. Escolha Atualizar e não desinstale o jogo."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Progresso" type="ProgressBar" parent="Centralizador/Painel/Margem/Conteudo"]
+visible = false
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleProgressBg")
+theme_override_styles/fill = SubResource("StyleProgressFill")
+show_percentage = false
+
+[node name="Status" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.78, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Botoes" type="HBoxContainer" parent="Centralizador/Painel/Margem/Conteudo"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="BotaoMaisTarde" type="Button" parent="Centralizador/Painel/Margem/Conteudo/Botoes"]
+custom_minimum_size = Vector2(150, 46)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.85, 0.94, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleSecondary")
+theme_override_styles/hover = SubResource("StyleSecondary")
+theme_override_styles/pressed = SubResource("StyleSecondary")
+text = "MAIS TARDE"
+
+[node name="BotaoAtualizar" type="Button" parent="Centralizador/Painel/Margem/Conteudo/Botoes"]
+custom_minimum_size = Vector2(190, 46)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.015, 0.06, 0.075, 1)
+theme_override_colors/font_hover_color = Color(0.015, 0.06, 0.075, 1)
+theme_override_colors/font_pressed_color = Color(0.015, 0.06, 0.075, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StylePrimary")
+theme_override_styles/hover = SubResource("StylePrimaryHover")
+theme_override_styles/pressed = SubResource("StylePrimary")
+text = "ATUALIZAR AGORA"

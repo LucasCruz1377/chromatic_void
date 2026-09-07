@@ -2,6 +2,8 @@
 
 Este projeto usa GitHub Actions para validar o jogo, gerar builds e publicar versões.
 
+O funcionamento completo do updater, a preservação do save e o roteiro de teste em aparelho estão em [`ATUALIZACOES.md`](ATUALIZACOES.md).
+
 ## O que inicia cada automação
 
 | Gatilho | Validação e smoke tests | Builds Windows/Web | APK Android | GitHub Release |
@@ -33,7 +35,7 @@ Formatos aceitos:
 - `v0.6.0-rc.1`: candidato a lançamento, criado como prerelease.
 - `v0.6.0`: versão estável, marcada como Latest.
 
-O CD gera notas automaticamente, anexa os builds e cria `SHA256SUMS.txt` para conferir a integridade dos arquivos. A versão da tag também é aplicada automaticamente aos metadados do jogo e ao APK.
+O CD gera notas automaticamente, anexa os builds e cria `SHA256SUMS.txt` para conferir a integridade dos arquivos. A versão da tag também é aplicada automaticamente aos metadados do jogo e ao APK. O `Updater.exe` é recompilado a partir de `Updater/main.py` em toda publicação.
 
 ## Ativar a publicação do APK Android
 
@@ -89,6 +91,8 @@ git push origin v0.5.1-beta.1
 Em **Actions > CD - Publicar Chromatic Void**, aparecerão três exportações: Windows, Web e Android APK. Quando todas terminarem, o arquivo `ChromaticVoid-Android.apk` estará anexado à Release.
 
 O identificador Android é `com.lucascruz1377.chromaticvoid`. Não o altere depois da primeira publicação, pois o Android trataria o novo identificador como outro aplicativo.
+
+Também não troque a keystore. O pipeline compara a assinatura com o certificado oficial e interrompe a publicação se a chave estiver diferente.
 
 ### Criar e enviar uma versão
 

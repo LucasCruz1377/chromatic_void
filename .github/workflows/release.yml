@@ -81,6 +81,11 @@ jobs:
       - name: Verificar referências de recursos
         run: python3 Tests/validar_referencias.py
 
+      - name: Verificar sistema de atualização
+        run: |
+          python3 Tests/validar_sistema_update.py
+          python3 Tests/test_updater.py
+
       - name: Verificar catálogo, loja e feedback de combate
         run: |
           python3 Tests/validar_monthly_catalogo.py
@@ -115,12 +120,60 @@ jobs:
 
 
   # ==========================================================
+  # CRIAR UPDATER WINDOWS
+  # ==========================================================
+
+  criar_updater_windows:
+    name: Criar Updater.exe
+    needs: preparar
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Baixar a versão da tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.preparar.outputs.tag }}
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Gerar Updater.exe a partir do código-fonte
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+          python -m PyInstaller `
+            --onefile `
+            --name Updater `
+            --distpath dist-updater `
+            --workpath build-updater `
+            --specpath build-updater `
+            Updater/main.py
+
+          if (-not (Test-Path "dist-updater/Updater.exe")) {
+            throw "Updater.exe não foi gerado."
+          }
+
+      - name: Guardar Updater.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-updater-windows
+          path: dist-updater/Updater.exe
+          if-no-files-found: error
+          retention-days: 7
+
+
+  # ==========================================================
   # EXPORTAR
   # ==========================================================
 
   exportar:
     name: Exportar ${{ matrix.nome }}
-    needs: preparar
+    needs:
+      - preparar
+      - criar_updater_windows
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -257,16 +310,32 @@ jobs:
         env:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          EXPECTED_CERT_SHA256: "B153F414876403160EBD26CF19A797718B97721E14A787670FD05AC20118A962"
         run: |
           set -euo pipefail
 
           KEYSTORE_PATH="${RUNNER_TEMP}/android-signing/chromatic-void.keystore"
 
           keytool -list \
+            -v \
             -keystore "$KEYSTORE_PATH" \
             -storepass "$ANDROID_KEYSTORE_PASSWORD" \
             -alias "$ANDROID_KEY_ALIAS" \
-            >/dev/null
+            > "${RUNNER_TEMP}/android-certificate.txt"
+
+          ACTUAL_CERT_SHA256="$(
+            sed -n 's/^[[:space:]]*SHA256: //p' "${RUNNER_TEMP}/android-certificate.txt" \
+              | head -n 1 \
+              | tr -d ':' \
+              | tr '[:lower:]' '[:upper:]'
+          )"
+
+          if [[ "$ACTUAL_CERT_SHA256" != "$EXPECTED_CERT_SHA256" ]]; then
+            echo "ERRO: a keystore não é a mesma usada nas versões Android anteriores."
+            echo "Esperado: $EXPECTED_CERT_SHA256"
+            echo "Recebido: $ACTUAL_CERT_SHA256"
+            exit 1
+          fi
 
           echo "=========================================="
           echo "KEYSTORE VALIDADA"
@@ -308,6 +377,13 @@ jobs:
       # ADICIONAR UPDATER AO WINDOWS
       # ========================================================
 
+      - name: Baixar Updater.exe recém-gerado
+        if: matrix.preset == 'Windows Desktop'
+        uses: actions/download-artifact@v4
+        with:
+          name: build-updater-windows
+          path: ${{ runner.temp }}/updater-windows
+
       - name: Adicionar Updater.exe ao build Windows
         if: matrix.preset == 'Windows Desktop'
         shell: bash
@@ -318,13 +394,15 @@ jobs:
           echo "ADICIONANDO UPDATER"
           echo "=========================================="
 
-          if [[ ! -f "Updater.exe" ]]; then
-            echo "ERRO: Updater.exe não foi encontrado na raiz do projeto."
+          UPDATER="${RUNNER_TEMP}/updater-windows/Updater.exe"
+
+          if [[ ! -f "$UPDATER" ]]; then
+            echo "ERRO: o Updater.exe recém-gerado não foi encontrado."
             exit 1
           fi
 
           echo "Updater encontrado:"
-          ls -lh "Updater.exe"
+          ls -lh "$UPDATER"
 
           ZIP="$(
             find "${{ steps.export.outputs.archive_directory }}" \
@@ -361,7 +439,7 @@ jobs:
 
           echo "Copiando Updater.exe..."
 
-          cp "Updater.exe" "$TEMP_DIR/Updater.exe"
+          cp "$UPDATER" "$TEMP_DIR/Updater.exe"
 
           echo "Conteúdo do Windows após adicionar Updater:"
 
@@ -410,6 +488,12 @@ jobs:
             exit 1
           fi
 
+          APK_FINAL="$(dirname "$APK_PATH")/ChromaticVoid-Android.apk"
+          if [[ "$APK_PATH" != "$APK_FINAL" ]]; then
+            mv "$APK_PATH" "$APK_FINAL"
+            APK_PATH="$APK_FINAL"
+          fi
+
           echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
 
           echo "APK encontrado:"
@@ -425,6 +509,8 @@ jobs:
       - name: Verificar assinatura do APK
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         shell: bash
+        env:
+          EXPECTED_CERT_SHA256: "B153F414876403160EBD26CF19A797718B97721E14A787670FD05AC20118A962"
         run: |
           set -euo pipefail
 
@@ -450,7 +536,37 @@ jobs:
           echo "VERIFICANDO ASSINATURA DO APK"
           echo "=========================================="
 
-          "$APKSIGNER" verify --verbose "$APK"
+          VERIFICACAO="$($APKSIGNER verify --verbose --print-certs "$APK")"
+          echo "$VERIFICACAO"
+
+          ACTUAL_CERT_SHA256="$(
+            printf '%s\n' "$VERIFICACAO" \
+              | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' \
+              | head -n 1 \
+              | tr -d ':' \
+              | tr '[:lower:]' '[:upper:]'
+          )"
+
+          if [[ "$ACTUAL_CERT_SHA256" != "$EXPECTED_CERT_SHA256" ]]; then
+            echo "ERRO: o APK foi assinado com um certificado diferente."
+            echo "Esperado: $EXPECTED_CERT_SHA256"
+            echo "Recebido: $ACTUAL_CERT_SHA256"
+            exit 1
+          fi
+
+          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
+          BADGING="$($AAPT dump badging "$APK" | head -n 1)"
+          echo "$BADGING"
+
+          if [[ "$BADGING" != *"name='com.lucascruz1377.chromaticvoid'"* ]]; then
+            echo "ERRO: package name Android foi alterado."
+            exit 1
+          fi
+
+          if [[ "$BADGING" != *"versionCode='${{ github.run_number }}'"* ]]; then
+            echo "ERRO: versionCode do APK não corresponde ao número da execução."
+            exit 1
+          fi
 
           echo "=========================================="
           echo "APK ASSINADO E VALIDADO"
