@@ -11,7 +11,7 @@ const CONFIG_PADRAO := {
 	"mira_mouse": true,
 	"volume_master": 0.0,
 	"volume_musica": 0.0,
-	"volume_som": 0.0,
+	"volume_som": 0.0,MODO_DESENVOLVEDOR_EM_TESTES 
 	"idioma": "pt_BR",
 	"tela_cheia": true,
 	"vsync": true,
@@ -41,7 +41,7 @@ const ACOES_REMAPEAVEIS := {
 }
 
 const CRISTAIS_INICIAIS := 1250
-const MODO_DESENVOLVEDOR_EM_TESTES := false
+const MODO_DESENVOLVEDOR_EM_TESTES := true
 const FATOR_PARTICULAS_MOBILE := 0.55
 const LIMITE_PARTICULAS_MOBILE := 90
 const LIMITE_PARTICULAS_FUNDO_MOBILE := 55
