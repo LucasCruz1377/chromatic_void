@@ -4,3 +4,5 @@
 /build/
 *.keystore
 *.jks
+__pycache__/
+*.pyc

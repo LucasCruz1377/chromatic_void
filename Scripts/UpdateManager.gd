@@ -1,763 +1,420 @@
 extends Node
 
-## ============================================================
-## CHROMATIC VOID - GERENCIADOR DE ATUALIZAÇÕES
-## ============================================================
-##
-## Responsável por:
-## - Descobrir a versão instalada do jogo.
-## - Identificar o canal correto do itch.io.
-## - Consultar a última versão disponível.
-## - Comparar versões semânticas.
-## - Informar quando existe uma atualização.
-## - Baixar a atualização do Windows.
-## - Iniciar o Updater.exe.
-##
-## ============================================================
-
-
-# ============================================================
-# CONFIGURAÇÃO
-# ============================================================
-
-const ITCH_TARGET := "lukass-1377/chromatic-void"
-const CHANNEL_WINDOWS := "windows"
-const CHANNEL_ANDROID := "android"
-const ITCH_API := "https://api.itch.io/wharf/latest"
-const REQUEST_TIMEOUT := 10.0
+## Gerencia a descoberta e a instalação de novas versões do Chromatic Void.
+## O GitHub Releases é a única fonte de versão e de arquivos, evitando que o
+## catálogo do itch.io e os arquivos publicados fiquem fora de sincronia.
 
 const GITHUB_REPO := "LucasCruz1377/chromatic_void"
+const RELEASES_API := "https://api.github.com/repos/%s/releases?per_page=30" % GITHUB_REPO
+var request_headers := PackedStringArray([
+	"Accept: application/vnd.github+json",
+	"X-GitHub-Api-Version: 2022-11-28",
+	"User-Agent: Chromatic-Void-Updater",
+])
+var download_headers := PackedStringArray([
+	"User-Agent: Chromatic-Void-Updater",
+])
+const REQUEST_TIMEOUT := 15.0
+const DOWNLOAD_TIMEOUT := 600.0
+
+const PLATFORM_WINDOWS := "windows"
+const PLATFORM_ANDROID := "android"
+const ASSET_WINDOWS := "Windows.Desktop.zip"
+const ASSET_ANDROID := "ChromaticVoid-Android.apk"
 const WINDOWS_UPDATE_FILE := "user://Windows.Desktop.zip"
-const GITHUB_RELEASE_DOWNLOAD := "https://github.com/" + GITHUB_REPO + "/releases/download/"
-
-# Caminho do Updater dentro do jogo exportado.
-const UPDATER_PATH := "Updater.exe"
-
-
-# ============================================================
-# SINAIS
-# ============================================================
+const UPDATER_NAME := "Updater.exe"
 
 signal update_available(version: String)
 signal update_check_finished()
 signal update_check_failed(message: String)
+signal update_download_started(total_bytes: int)
+signal update_download_progress(downloaded_bytes: int, total_bytes: int)
+signal update_download_failed(message: String)
+signal installer_opened(platform: String)
 
-
-# ============================================================
-# ESTADO
-# ============================================================
-
-var current_version: String = ""
-var latest_version: String = ""
-
-var checking_update: bool = false
-
-
-# ============================================================
-# REFERÊNCIA HTTP
-# ============================================================
+var current_version := ""
+var latest_version := ""
+var latest_asset_url := ""
+var latest_release_url := ""
+var latest_asset_digest := ""
+var latest_asset_size := 0
+var checking_update := false
 
 var http_request: HTTPRequest
+var download_request: HTTPRequest
+var _ultimo_progresso_emitido := -1
 
-
-# ============================================================
-# INICIALIZAÇÃO
-# ============================================================
 
 func _ready() -> void:
-	_criar_http_request()
-
-
-func _criar_http_request() -> void:
 	http_request = HTTPRequest.new()
 	http_request.timeout = REQUEST_TIMEOUT
-
 	add_child(http_request)
+	http_request.request_completed.connect(_on_release_request_completed)
+	set_process(false)
 
-	http_request.request_completed.connect(
-		_on_request_completed
-	)
-
-
-# ============================================================
-# VERIFICAÇÃO PRINCIPAL
-# ============================================================
 
 func verificar_atualizacao() -> void:
-	# Evita duas verificações simultâneas.
 	if checking_update:
 		return
 
-	checking_update = true
-
-	current_version = _obter_versao_atual()
-
-	var channel := _obter_canal()
-
-	if channel.is_empty():
-		checking_update = false
-
-		update_check_failed.emit(
-			"Não foi possível identificar o canal da plataforma."
-		)
-
+	var plataforma := obter_plataforma_atual()
+	if plataforma.is_empty():
+		update_check_failed.emit("Atualizações automáticas não estão disponíveis nesta plataforma.")
 		return
 
-	var url := _criar_url(channel)
+	checking_update = true
+	current_version = _obter_versao_atual()
+	_limpar_release_selecionada()
 
-	print("========================================")
-	print("Chromatic Void - Verificação de atualização")
-	print("Versão instalada: ", current_version)
-	print("Canal: ", channel)
-	print("Consultando: ", url)
-	print("========================================")
-
-	var erro := http_request.request(url)
-
+	var erro := http_request.request(RELEASES_API, request_headers)
 	if erro != OK:
 		checking_update = false
-
-		push_error(
-			"Não foi possível iniciar a requisição HTTP. Erro: "
-			+ str(erro)
-		)
-
-		update_check_failed.emit(
-			"Não foi possível verificar atualizações."
-		)
+		update_check_failed.emit("Não foi possível iniciar a verificação de atualizações.")
 
 
-# ============================================================
-# VERSÃO INSTALADA
-# ============================================================
-
-func _obter_versao_atual() -> String:
-	var versao := str(
-		ProjectSettings.get_setting(
-			"application/config/version",
-			"0.0.0"
-		)
-	)
-
-	return versao
-
-
-# ============================================================
-# PLATAFORMA / CANAL
-# ============================================================
-
-func _obter_canal() -> String:
-	if OS.has_feature("android"):
-		return CHANNEL_ANDROID
-
-	if OS.has_feature("windows"):
-		return CHANNEL_WINDOWS
-
-	# Durante testes no editor, vamos usar Windows.
-	if OS.has_feature("editor"):
-		return CHANNEL_WINDOWS
-
-	return ""
-
-
-# ============================================================
-# URL DO ITCH.IO
-# ============================================================
-
-func _criar_url(channel: String) -> String:
-	return (
-		ITCH_API
-		+ "?target="
-		+ ITCH_TARGET.uri_encode()
-		+ "&channel_name="
-		+ channel.uri_encode()
-	)
-
-
-# ============================================================
-# RESPOSTA HTTP
-# ============================================================
-
-func _on_request_completed(
+func _on_release_request_completed(
 	result: int,
 	response_code: int,
-	headers: PackedStringArray,
+	_headers: PackedStringArray,
 	body: PackedByteArray
 ) -> void:
-
 	checking_update = false
 
-	# --------------------------------------------------------
-	# Verifica erro de conexão
-	# --------------------------------------------------------
-
 	if result != HTTPRequest.RESULT_SUCCESS:
-		push_error(
-			"Erro de conexão ao consultar o itch.io. Resultado: "
-			+ str(result)
-		)
-
-		update_check_failed.emit(
-			"Não foi possível conectar ao servidor de atualizações."
-		)
-
+		push_warning("Falha HTTP ao verificar atualização. Resultado: %d" % result)
+		update_check_failed.emit("Sem conexão com o servidor de atualizações.")
 		return
 
-
-	# --------------------------------------------------------
-	# Verifica código HTTP
-	# --------------------------------------------------------
+	if response_code == 403:
+		update_check_failed.emit("O servidor limitou temporariamente as verificações. Tente novamente mais tarde.")
+		return
 
 	if response_code != 200:
-		push_error(
-			"itch.io respondeu com HTTP "
-			+ str(response_code)
-		)
-
-		update_check_failed.emit(
-			"Servidor de atualização respondeu com erro."
-		)
-
+		update_check_failed.emit("O servidor de atualizações respondeu com erro HTTP %d." % response_code)
 		return
 
-
-	# --------------------------------------------------------
-	# Converte resposta para texto
-	# --------------------------------------------------------
-
-	var texto := body.get_string_from_utf8()
-
-	print("Resposta do itch.io:")
-	print(texto)
-
-
-	# --------------------------------------------------------
-	# Interpreta JSON
-	# --------------------------------------------------------
-
-	var dados = JSON.parse_string(texto)
-
-	if dados == null:
-		push_error(
-			"Não foi possível interpretar a resposta JSON do itch.io."
-		)
-
-		update_check_failed.emit(
-			"Resposta inválida do servidor de atualizações."
-		)
-
+	var releases = JSON.parse_string(body.get_string_from_utf8())
+	if not (releases is Array):
+		update_check_failed.emit("O servidor retornou uma lista de versões inválida.")
 		return
 
-
-	if not (dados is Dictionary):
-		push_error(
-			"A resposta do itch.io não é um objeto JSON."
-		)
-
-		update_check_failed.emit(
-			"Resposta inválida do servidor de atualizações."
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# Verifica se existe latest
-	# --------------------------------------------------------
-
-	if not dados.has("latest"):
-		print(
-			"Nenhuma user-version foi encontrada no canal."
-		)
-
-		update_check_finished.emit()
-
-		return
-
-
-	latest_version = str(
-		dados["latest"]
-	).strip_edges()
-
-
-	if latest_version.is_empty():
+	var escolhida := selecionar_melhor_release(releases, obter_plataforma_atual(), current_version)
+	if escolhida.is_empty():
 		update_check_finished.emit()
 		return
 
+	latest_version = str(escolhida["version"])
+	latest_asset_url = str(escolhida["asset_url"])
+	latest_release_url = str(escolhida["release_url"])
+	latest_asset_digest = str(escolhida["digest"])
+	latest_asset_size = int(escolhida["size"])
 
-	print("Versão instalada: ", current_version)
-	print("Última versão no itch.io: ", latest_version)
-
-
-	# --------------------------------------------------------
-	# Compara versões
-	# --------------------------------------------------------
-
-	if _versao_eh_mais_nova(
-		latest_version,
-		current_version
-	):
-
-		print(
-			"🆕 NOVA ATUALIZAÇÃO DISPONÍVEL: ",
-			latest_version
-		)
-
-		update_available.emit(
-			latest_version
-		)
-
-	else:
-
-		print(
-			"Chromatic Void já está atualizado."
-		)
-
-
+	update_available.emit(latest_version)
 	update_check_finished.emit()
 
 
-# ============================================================
-# COMPARAÇÃO DE VERSÕES
-# ============================================================
+func selecionar_melhor_release(
+	releases: Array,
+	plataforma: String,
+	versao_instalada: String
+) -> Dictionary:
+	var nome_asset := obter_nome_asset(plataforma)
+	var melhor: Dictionary = {}
+	var instalada := _analisar_versao(versao_instalada)
 
-func _versao_eh_mais_nova(
-	nova_versao: String,
-	versao_atual: String
-) -> bool:
+	if nome_asset.is_empty() or instalada.is_empty():
+		return melhor
 
+	var instalada_estavel := str(instalada["prerelease_type"]).is_empty()
+	for item in releases:
+		if not (item is Dictionary):
+			continue
+
+		var release := item as Dictionary
+		if bool(release.get("draft", false)):
+			continue
+		if instalada_estavel and bool(release.get("prerelease", false)):
+			continue
+
+		var versao := str(release.get("tag_name", "")).strip_edges()
+		if not _versao_eh_mais_nova(versao, versao_instalada):
+			continue
+
+		var asset_escolhido: Dictionary = {}
+		var assets = release.get("assets", [])
+		if assets is Array:
+			for item_asset in assets:
+				if item_asset is Dictionary and str(item_asset.get("name", "")) == nome_asset:
+					asset_escolhido = item_asset
+					break
+
+		if asset_escolhido.is_empty():
+			continue
+		if not melhor.is_empty() and not _versao_eh_mais_nova(versao, str(melhor["version"])):
+			continue
+
+		var digest := str(asset_escolhido.get("digest", ""))
+		if digest.begins_with("sha256:"):
+			digest = digest.trim_prefix("sha256:")
+
+		melhor = {
+			"version": versao.trim_prefix("v"),
+			"asset_url": str(asset_escolhido.get("browser_download_url", "")),
+			"release_url": str(release.get("html_url", "")),
+			"digest": digest.to_lower(),
+			"size": int(asset_escolhido.get("size", 0)),
+		}
+
+	return melhor
+
+
+func iniciar_atualizacao() -> void:
+	if latest_asset_url.is_empty():
+		update_download_failed.emit("O arquivo desta atualização não foi encontrado.")
+		return
+
+	# Força a gravação e cria o backup antes de sair do jogo ou abrir o APK.
+	GerenciadorDeSave.salvar({})
+
+	match obter_plataforma_atual():
+		PLATFORM_WINDOWS:
+			_baixar_atualizacao_windows()
+		PLATFORM_ANDROID:
+			_abrir_atualizacao_android()
+		_:
+			update_download_failed.emit("Esta plataforma não possui instalação automática.")
+
+
+func _abrir_atualizacao_android() -> void:
+	# O navegador/gerenciador de downloads entrega o APK ao instalador do Android.
+	# O usuário confirma a atualização do app existente; não deve desinstalá-lo.
+	var erro := OS.shell_open(latest_asset_url)
+	if erro != OK and not latest_release_url.is_empty():
+		erro = OS.shell_open(latest_release_url)
+
+	if erro != OK:
+		update_download_failed.emit("Não foi possível abrir o download do APK.")
+		return
+
+	installer_opened.emit(PLATFORM_ANDROID)
+
+
+func _baixar_atualizacao_windows() -> void:
+	if is_instance_valid(download_request):
+		return
+
+	var caminho_absoluto := ProjectSettings.globalize_path(WINDOWS_UPDATE_FILE)
+	if FileAccess.file_exists(WINDOWS_UPDATE_FILE):
+		DirAccess.remove_absolute(caminho_absoluto)
+
+	download_request = HTTPRequest.new()
+	download_request.timeout = DOWNLOAD_TIMEOUT
+	download_request.download_file = WINDOWS_UPDATE_FILE
+	add_child(download_request)
+	download_request.request_completed.connect(_on_download_windows_completed)
+
+	var erro := download_request.request(latest_asset_url, download_headers)
+	if erro != OK:
+		_encerrar_download_request()
+		update_download_failed.emit("Não foi possível iniciar o download da atualização.")
+		return
+
+	_ultimo_progresso_emitido = -1
+	set_process(true)
+	update_download_started.emit(latest_asset_size)
+
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(download_request):
+		set_process(false)
+		return
+
+	var baixado := download_request.get_downloaded_bytes()
+	var total := download_request.get_body_size()
+	if total <= 0:
+		total = latest_asset_size
+
+	var porcentagem := int(float(baixado) / float(total) * 100.0) if total > 0 else 0
+	if porcentagem != _ultimo_progresso_emitido:
+		_ultimo_progresso_emitido = porcentagem
+		update_download_progress.emit(baixado, total)
+
+
+func _on_download_windows_completed(
+	result: int,
+	response_code: int,
+	_headers: PackedStringArray,
+	_body: PackedByteArray
+) -> void:
+	_encerrar_download_request()
+
+	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
+		_apagar_download_incompleto()
+		update_download_failed.emit("Falha ao baixar a atualização (HTTP %d)." % response_code)
+		return
+
+	if not FileAccess.file_exists(WINDOWS_UPDATE_FILE):
+		update_download_failed.emit("O arquivo baixado não foi encontrado.")
+		return
+
+	var arquivo := FileAccess.open(WINDOWS_UPDATE_FILE, FileAccess.READ)
+	var tamanho := arquivo.get_length() if arquivo != null else 0
+	if arquivo != null:
+		arquivo.close()
+
+	if latest_asset_size > 0 and tamanho != latest_asset_size:
+		_apagar_download_incompleto()
+		update_download_failed.emit("O download ficou incompleto. Tente novamente.")
+		return
+
+	if not latest_asset_digest.is_empty():
+		var digest_local := FileAccess.get_sha256(WINDOWS_UPDATE_FILE).to_lower()
+		if digest_local != latest_asset_digest:
+			_apagar_download_incompleto()
+			update_download_failed.emit("A verificação de integridade da atualização falhou.")
+			return
+
+	_iniciar_updater_windows()
+
+
+func _iniciar_updater_windows() -> void:
+	var executavel := OS.get_executable_path()
+	var pasta_jogo := executavel.get_base_dir()
+	var caminho_updater := pasta_jogo.path_join(UPDATER_NAME)
+
+	if not FileAccess.file_exists(caminho_updater):
+		update_download_failed.emit("Updater.exe não foi encontrado ao lado do jogo.")
+		return
+
+	if not _pasta_instalacao_gravavel(pasta_jogo):
+		update_download_failed.emit("A pasta do jogo não permite alterações. Mova o jogo para uma pasta do seu usuário.")
+		return
+
+	var argumentos := [
+		ProjectSettings.globalize_path(WINDOWS_UPDATE_FILE),
+		pasta_jogo,
+		executavel,
+		str(OS.get_process_id()),
+	]
+	var pid := OS.create_process(caminho_updater, argumentos)
+	if pid == -1:
+		update_download_failed.emit("Não foi possível iniciar o atualizador do Windows.")
+		return
+
+	installer_opened.emit(PLATFORM_WINDOWS)
+	get_tree().quit()
+
+
+func _pasta_instalacao_gravavel(pasta: String) -> bool:
+	var teste := pasta.path_join(".chromatic_update_write_test")
+	var arquivo := FileAccess.open(teste, FileAccess.WRITE)
+	if arquivo == null:
+		return false
+	arquivo.store_8(1)
+	arquivo.close()
+	DirAccess.remove_absolute(teste)
+	return true
+
+
+func obter_plataforma_atual() -> String:
+	if OS.has_feature("android"):
+		return PLATFORM_ANDROID
+	if OS.has_feature("windows") or OS.has_feature("editor"):
+		return PLATFORM_WINDOWS
+	return ""
+
+
+func obter_nome_asset(plataforma: String) -> String:
+	match plataforma:
+		PLATFORM_WINDOWS:
+			return ASSET_WINDOWS
+		PLATFORM_ANDROID:
+			return ASSET_ANDROID
+		_:
+			return ""
+
+
+func _obter_versao_atual() -> String:
+	return str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
+
+
+func _versao_eh_mais_nova(nova_versao: String, versao_atual: String) -> bool:
 	var nova := _analisar_versao(nova_versao)
 	var atual := _analisar_versao(versao_atual)
-
 	if nova.is_empty() or atual.is_empty():
 		return false
 
+	for chave in ["major", "minor", "patch"]:
+		if int(nova[chave]) != int(atual[chave]):
+			return int(nova[chave]) > int(atual[chave])
 
-	# --------------------------------------------------------
-	# Major
-	# --------------------------------------------------------
-
-	if nova.major != atual.major:
-		return nova.major > atual.major
-
-
-	# --------------------------------------------------------
-	# Minor
-	# --------------------------------------------------------
-
-	if nova.minor != atual.minor:
-		return nova.minor > atual.minor
-
-
-	# --------------------------------------------------------
-	# Patch
-	# --------------------------------------------------------
-
-	if nova.patch != atual.patch:
-		return nova.patch > atual.patch
-
-
-	# --------------------------------------------------------
-	# Release estável > pré-release
-	# --------------------------------------------------------
-
-	if nova.prerelease_type.is_empty():
-
-		if atual.prerelease_type.is_empty():
-			return false
-
-		return true
-
-
-	if atual.prerelease_type.is_empty():
+	var tipo_novo := str(nova["prerelease_type"])
+	var tipo_atual := str(atual["prerelease_type"])
+	if tipo_novo.is_empty():
+		return not tipo_atual.is_empty()
+	if tipo_atual.is_empty():
 		return false
 
-
-	# --------------------------------------------------------
-	# Compara tipo do pré-lançamento
-	# --------------------------------------------------------
-
-	var prioridade_nova := _prioridade_prerelease(
-		nova.prerelease_type
-	)
-
-	var prioridade_atual := _prioridade_prerelease(
-		atual.prerelease_type
-	)
-
-
+	var prioridade_nova := _prioridade_prerelease(tipo_novo)
+	var prioridade_atual := _prioridade_prerelease(tipo_atual)
 	if prioridade_nova != prioridade_atual:
 		return prioridade_nova > prioridade_atual
 
+	return int(nova["prerelease_number"]) > int(atual["prerelease_number"])
 
-	# --------------------------------------------------------
-	# Compara número do pré-lançamento
-	# --------------------------------------------------------
-
-	return (
-		nova.prerelease_number
-		>
-		atual.prerelease_number
-	)
-
-
-# ============================================================
-# INTERPRETAÇÃO DE VERSÃO
-# ============================================================
 
 func _analisar_versao(versao: String) -> Dictionary:
-	var texto := versao.strip_edges()
-
-	# Aceita:
-	#
-	# 0.5.0
-	# 0.6.0-beta.1
-	# 0.6.0-rc.1
-	#
-	# Também aceita "v0.6.0".
-
-	if texto.begins_with("v"):
-		texto = texto.substr(1)
-
-
+	var texto := versao.strip_edges().trim_prefix("v")
 	var partes := texto.split("-")
-
 	var numeros := partes[0].split(".")
-
-
 	if numeros.size() != 3:
 		return {}
-
-
-	if not (
-		numeros[0].is_valid_int()
-		and numeros[1].is_valid_int()
-		and numeros[2].is_valid_int()
-	):
+	if not numeros[0].is_valid_int() or not numeros[1].is_valid_int() or not numeros[2].is_valid_int():
 		return {}
-
+	if partes.size() > 2:
+		return {}
 
 	var resultado := {
 		"major": int(numeros[0]),
 		"minor": int(numeros[1]),
 		"patch": int(numeros[2]),
 		"prerelease_type": "",
-		"prerelease_number": 0
+		"prerelease_number": 0,
 	}
-
-
-	# Versão estável.
 	if partes.size() == 1:
 		return resultado
 
-
-	# Exemplo:
-	#
-	# 0.6.0-beta.1
-
 	var prerelease := partes[1].split(".")
-
-
-	if prerelease.size() != 2:
+	if prerelease.size() != 2 or not prerelease[1].is_valid_int():
+		return {}
+	var tipo := str(prerelease[0])
+	if tipo not in ["alpha", "beta", "rc"]:
 		return {}
 
-
-	var tipo := prerelease[0]
-	var numero := prerelease[1]
-
-
-	if not numero.is_valid_int():
-		return {}
-
-
-	if not (
-		tipo == "alpha"
-		or tipo == "beta"
-		or tipo == "rc"
-	):
-		return {}
-
-
-	resultado.prerelease_type = tipo
-	resultado.prerelease_number = int(numero)
-
-
+	resultado["prerelease_type"] = tipo
+	resultado["prerelease_number"] = int(prerelease[1])
 	return resultado
 
 
-# ============================================================
-# PRIORIDADE DE PRÉ-RELEASE
-# ============================================================
-
 func _prioridade_prerelease(tipo: String) -> int:
-	match tipo:
-
-		"alpha":
-			return 1
-
-		"beta":
-			return 2
-
-		"rc":
-			return 3
-
-		_:
-			return 0
+	return {"alpha": 1, "beta": 2, "rc": 3}.get(tipo, 0)
 
 
-# ============================================================
-# DOWNLOAD DA ATUALIZAÇÃO WINDOWS
-# ============================================================
-
-func baixar_atualizacao_windows() -> void:
-
-	if latest_version.is_empty():
-		push_error(
-			"Não existe uma versão de atualização definida."
-		)
-
-		return
+func _limpar_release_selecionada() -> void:
+	latest_version = ""
+	latest_asset_url = ""
+	latest_release_url = ""
+	latest_asset_digest = ""
+	latest_asset_size = 0
 
 
-	if not OS.has_feature("windows"):
-		push_error(
-			"O atualizador do Windows só pode ser executado no Windows."
-		)
-
-		return
-
-
-	var url := (
-		GITHUB_RELEASE_DOWNLOAD
-		+ latest_version
-		+ "/Windows.Desktop.zip"
-	)
-
-
-	print("========================================")
-	print("BAIXANDO ATUALIZAÇÃO")
-	print("Versão: ", latest_version)
-	print("URL: ", url)
-	print("Destino: ", WINDOWS_UPDATE_FILE)
-	print("========================================")
-
-
-	var download_request := HTTPRequest.new()
-
-	download_request.timeout = 300.0
-	download_request.download_file = WINDOWS_UPDATE_FILE
-
-	add_child(download_request)
-
-	download_request.request_completed.connect(
-		_on_download_completed.bind(download_request)
-	)
-
-
-	var erro := download_request.request(url)
-
-
-	if erro != OK:
-
-		push_error(
-			"Não foi possível iniciar o download. Erro: "
-			+ str(erro)
-		)
-
+func _encerrar_download_request() -> void:
+	set_process(false)
+	if is_instance_valid(download_request):
 		download_request.queue_free()
+	download_request = null
 
 
-# ============================================================
-# DOWNLOAD CONCLUÍDO
-# ============================================================
-
-func _on_download_completed(
-	result: int,
-	response_code: int,
-	headers: PackedStringArray,
-	body: PackedByteArray,
-	download_request: HTTPRequest
-) -> void:
-
-	download_request.queue_free()
-
-
-	print("========================================")
-	print("DOWNLOAD FINALIZADO")
-	print("Resultado: ", result)
-	print("HTTP: ", response_code)
-	print("========================================")
-
-
-	if result != HTTPRequest.RESULT_SUCCESS:
-
-		push_error(
-			"Falha ao baixar a atualização."
-		)
-
-		return
-
-
-	if response_code != 200:
-
-		push_error(
-			"GitHub respondeu com HTTP "
-			+ str(response_code)
-		)
-
-		return
-
-
-	if not FileAccess.file_exists(
-		WINDOWS_UPDATE_FILE
-	):
-
-		push_error(
-			"O arquivo de atualização não foi encontrado."
-		)
-
-		return
-
-
-	var arquivo := FileAccess.open(
-		WINDOWS_UPDATE_FILE,
-		FileAccess.READ
-	)
-
-
-	if arquivo == null:
-
-		push_error(
-			"Não foi possível abrir o arquivo baixado."
-		)
-
-		return
-
-
-	var tamanho := arquivo.get_length()
-
-	arquivo.close()
-
-
-	print("Atualização baixada com sucesso.")
-	print("Tamanho: ", tamanho, " bytes")
-	print("Arquivo: ", WINDOWS_UPDATE_FILE)
-
-
-	# --------------------------------------------------------
-	# Inicia o Updater
-	# --------------------------------------------------------
-
-	iniciar_atualizacao_windows()
-
-
-# ============================================================
-# INICIAR UPDATER WINDOWS
-# ============================================================
-
-func iniciar_atualizacao_windows() -> void:
-
-	if not OS.has_feature("windows"):
-
-		push_error(
-			"A atualização automática só está disponível no Windows."
-		)
-
-		return
-
-
-	if not FileAccess.file_exists(
-		WINDOWS_UPDATE_FILE
-	):
-
-		push_error(
-			"ZIP da atualização não encontrado: "
-			+ WINDOWS_UPDATE_FILE
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# Localiza o Updater.exe
-	# --------------------------------------------------------
-
-	var caminho_updater := ProjectSettings.globalize_path(
-		"res://" + UPDATER_PATH
-	)
-
-
-	if not FileAccess.file_exists(caminho_updater):
-
-		push_error(
-			"Updater.exe não encontrado: "
-			+ caminho_updater
-		)
-
-		return
-
-
-	# --------------------------------------------------------
-	# Descobre onde o jogo está instalado
-	# --------------------------------------------------------
-
-	var executavel := OS.get_executable_path()
-
-	var pasta_jogo := executavel.get_base_dir()
-
-	var zip := ProjectSettings.globalize_path(
-		WINDOWS_UPDATE_FILE
-	)
-
-
-	print("========================================")
-	print("INICIANDO ATUALIZADOR")
-	print("========================================")
-	print("Updater: ", caminho_updater)
-	print("ZIP: ", zip)
-	print("Pasta do jogo: ", pasta_jogo)
-	print("Executável: ", executavel)
-	print("========================================")
-
-
-	# --------------------------------------------------------
-	# Argumentos enviados para o Updater
-	# --------------------------------------------------------
-
-	var argumentos := [
-		zip,
-		pasta_jogo,
-		executavel
-	]
-
-
-	# --------------------------------------------------------
-	# Executa Updater.exe
-	# --------------------------------------------------------
-
-	var pid := OS.create_process(
-		caminho_updater,
-		argumentos
-	)
-
-
-	if pid == -1:
-
-		push_error(
-			"Não foi possível iniciar o Updater.exe."
-		)
-
-		return
-
-
-	print(
-		"Updater.exe iniciado. PID: ",
-		pid
-	)
-
-
-	# --------------------------------------------------------
-	# Fecha o jogo
-	# --------------------------------------------------------
-
-	get_tree().quit()
+func _apagar_download_incompleto() -> void:
+	if FileAccess.file_exists(WINDOWS_UPDATE_FILE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(WINDOWS_UPDATE_FILE))
