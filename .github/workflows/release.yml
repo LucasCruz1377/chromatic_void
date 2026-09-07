@@ -20,6 +20,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+
+  # ==========================================================
+  # PREPARAR
+  # ==========================================================
+
   preparar:
     name: Validar tag e projeto
     runs-on: ubuntu-latest
@@ -30,6 +35,7 @@ jobs:
       prerelease: ${{ steps.versao.outputs.prerelease }}
 
     steps:
+
       - name: Baixar o repositório
         uses: actions/checkout@v5
         with:
@@ -88,7 +94,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          mapfile -t testes < <(find Tests -maxdepth 1 -name '*_smoke.tscn' -print | sort)
+          mapfile -t testes < <(
+            find Tests -maxdepth 1 -name '*_smoke.tscn' -print | sort
+          )
 
           if [[ ${#testes[@]} -eq 0 ]]; then
             echo "Nenhum smoke test foi encontrado."
@@ -105,6 +113,10 @@ jobs:
               "res://$teste"
           done
 
+
+  # ==========================================================
+  # EXPORTAR
+  # ==========================================================
 
   exportar:
     name: Exportar ${{ matrix.nome }}
@@ -134,6 +146,11 @@ jobs:
             android: true
 
     steps:
+
+      # ========================================================
+      # BAIXAR TAG
+      # ========================================================
+
       - name: Baixar a versão da tag
         uses: actions/checkout@v5
         with:
@@ -141,9 +158,9 @@ jobs:
           fetch-depth: 0
 
 
-      # ==========================================================
+      # ========================================================
       # VERSÃO
-      # ==========================================================
+      # ========================================================
 
       - name: Aplicar versão da tag aos executáveis
         env:
@@ -157,9 +174,9 @@ jobs:
             "$VERSION_CODE"
 
 
-      # ==========================================================
+      # ========================================================
       # ANDROID
-      # ==========================================================
+      # ========================================================
 
       - name: Preparar Java 17 para Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -168,11 +185,9 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-
       - name: Preparar Android SDK
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         uses: android-actions/setup-android@v4
-
 
       - name: Instalar componentes Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -186,9 +201,9 @@ jobs:
             "platforms;android-35"
 
 
-      # ==========================================================
+      # ========================================================
       # RESTAURAR KEYSTORE
-      # ==========================================================
+      # ========================================================
 
       - name: Restaurar keystore Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -232,9 +247,9 @@ jobs:
           echo "Keystore restaurada com sucesso."
 
 
-      # ==========================================================
+      # ========================================================
       # VALIDAR KEYSTORE
-      # ==========================================================
+      # ========================================================
 
       - name: Validar assinatura Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -259,9 +274,9 @@ jobs:
           echo "Alias encontrado e chave válida."
 
 
-      # ==========================================================
-      # EXPORTAR
-      # ==========================================================
+      # ========================================================
+      # EXPORTAR COM GODOT
+      # ========================================================
 
       - name: Exportar ${{ matrix.nome }} com Godot
         if: matrix.android != true || vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -275,17 +290,105 @@ jobs:
 
         with:
           godot_executable_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+
           godot_export_templates_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_export_templates.tpz
+
           relative_project_path: ./
+
           presets_to_export: ${{ matrix.preset }}
+
           export_debug: false
+
           archive_output: true
+
           cache: true
 
 
-      # ==========================================================
+      # ========================================================
+      # ADICIONAR UPDATER AO WINDOWS
+      # ========================================================
+
+      - name: Adicionar Updater.exe ao build Windows
+        if: matrix.preset == 'Windows Desktop'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=========================================="
+          echo "ADICIONANDO UPDATER"
+          echo "=========================================="
+
+          if [[ ! -f "Updater.exe" ]]; then
+            echo "ERRO: Updater.exe não foi encontrado na raiz do projeto."
+            exit 1
+          fi
+
+          echo "Updater encontrado:"
+          ls -lh "Updater.exe"
+
+          ZIP="$(
+            find "${{ steps.export.outputs.archive_directory }}" \
+              -maxdepth 1 \
+              -type f \
+              -name 'Windows.Desktop.zip' \
+              -print -quit
+          )"
+
+          if [[ -z "$ZIP" ]]; then
+            echo "ERRO: Windows.Desktop.zip não foi encontrado."
+
+            echo "Conteúdo da pasta de exportação:"
+            find \
+              "${{ steps.export.outputs.archive_directory }}" \
+              -maxdepth 2 \
+              -type f \
+              -print
+
+            exit 1
+          fi
+
+          echo "ZIP encontrado:"
+          echo "$ZIP"
+
+          TEMP_DIR="${RUNNER_TEMP}/windows-build"
+
+          rm -rf "$TEMP_DIR"
+          mkdir -p "$TEMP_DIR"
+
+          echo "Extraindo ZIP..."
+
+          unzip -q "$ZIP" -d "$TEMP_DIR"
+
+          echo "Copiando Updater.exe..."
+
+          cp "Updater.exe" "$TEMP_DIR/Updater.exe"
+
+          echo "Conteúdo do Windows após adicionar Updater:"
+
+          ls -lh "$TEMP_DIR"
+
+          echo "Recriando Windows.Desktop.zip..."
+
+          rm "$ZIP"
+
+          (
+            cd "$TEMP_DIR"
+            zip -q -r "$ZIP" .
+          )
+
+          echo ""
+          echo "=========================================="
+          echo "UPDATER ADICIONADO COM SUCESSO"
+          echo "=========================================="
+
+          echo "Conteúdo final do ZIP:"
+
+          unzip -l "$ZIP"
+
+
+      # ========================================================
       # VERIFICAR APK
-      # ==========================================================
+      # ========================================================
 
       - name: Localizar APK Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -294,11 +397,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          APK_PATH="$(find "${{ steps.export.outputs.build_directory }}" \
-            -type f \
-            -name '*.apk' \
-            -print \
-            -quit)"
+          APK_PATH="$(
+            find "${{ steps.export.outputs.build_directory }}" \
+              -type f \
+              -name '*.apk' \
+              -print \
+              -quit
+          )"
 
           if [[ -z "$APK_PATH" ]]; then
             echo "ERRO: nenhum APK foi encontrado."
@@ -313,9 +418,9 @@ jobs:
           ls -lh "$APK_PATH"
 
 
-      # ==========================================================
+      # ========================================================
       # VERIFICAR ASSINATURA DO APK
-      # ==========================================================
+      # ========================================================
 
       - name: Verificar assinatura do APK
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -327,12 +432,14 @@ jobs:
 
           BUILD_TOOLS_DIR="$ANDROID_HOME/build-tools"
 
-          APKSIGNER="$(find "$BUILD_TOOLS_DIR" \
-            -type f \
-            -name apksigner \
-            -print \
-            | sort \
-            | tail -n 1)"
+          APKSIGNER="$(
+            find "$BUILD_TOOLS_DIR" \
+              -type f \
+              -name apksigner \
+              -print \
+              | sort \
+              | tail -n 1
+          )"
 
           if [[ -z "$APKSIGNER" ]]; then
             echo "ERRO: apksigner não encontrado."
@@ -350,9 +457,9 @@ jobs:
           echo "=========================================="
 
 
-      # ==========================================================
+      # ========================================================
       # ARTEFATOS
-      # ==========================================================
+      # ========================================================
 
       - name: Guardar build para publicação
         if: matrix.android != true
@@ -362,7 +469,6 @@ jobs:
           path: ${{ steps.export.outputs.archive_directory }}
           if-no-files-found: error
           retention-days: 7
-
 
       - name: Guardar APK para publicação
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
@@ -374,16 +480,20 @@ jobs:
           retention-days: 7
 
 
+  # ==========================================================
+  # PUBLICAR RELEASE
+  # ==========================================================
+
   publicar:
     name: Criar GitHub Release
     needs:
       - preparar
       - exportar
-
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
+
       - name: Baixar o repositório na tag
         uses: actions/checkout@v5
         with:
@@ -407,7 +517,6 @@ jobs:
           mkdir -p release-assets
 
           while IFS= read -r -d '' arquivo; do
-
             destino="release-assets/$(basename "$arquivo")"
 
             if [[ -e "$destino" ]]; then
@@ -436,9 +545,9 @@ jobs:
           sha256sum ./* > SHA256SUMS.txt
 
 
-      # ==========================================================
+      # ========================================================
       # RELEASE ESTÁVEL
-      # ==========================================================
+      # ========================================================
 
       - name: Criar Release estável
         if: needs.preparar.outputs.prerelease == 'false'
@@ -457,9 +566,9 @@ jobs:
             --latest
 
 
-      # ==========================================================
+      # ========================================================
       # PRÉ-RELEASE
-      # ==========================================================
+      # ========================================================
 
       - name: Criar pré-lançamento
         if: needs.preparar.outputs.prerelease == 'true'
