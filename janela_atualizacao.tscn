@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://ppkx3b4gmokr"]
+
+[ext_resource type="Script" uid="uid://dxwmhe5oq4dij" path="res://JanelaAtualizacao.gd" id="1_klipf"]
+
+[node name="JanelaAtualizacao" type="CanvasLayer" unique_id=748542146]
+script = ExtResource("1_klipf")
+
+[node name="PanelContainer" type="Panel" parent="." unique_id=2030807070]
+offset_right = 411.0
+offset_bottom = 203.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer" unique_id=653133979]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/separation = 18
+
+[node name="Titulo" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1139002430]
+layout_mode = 2
+text = "NOVA ATUALIZAÇÃO"
+horizontal_alignment = 1
+
+[node name="Mensagem" type="Label" parent="PanelContainer/VBoxContainer" unique_id=354152194]
+layout_mode = 2
+text = "Uma nova versão do Chromatic Void está disponível!"
+horizontal_alignment = 1
+
+[node name="VersaoAtual" type="Label" parent="PanelContainer/VBoxContainer" unique_id=548226566]
+layout_mode = 2
+text = "Versão atual:"
+horizontal_alignment = 1
+
+[node name="NovaVersao" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1304375019]
+layout_mode = 2
+text = "Nova versão:"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=1992094925]
+layout_mode = 2
+alignment = 1
+
+[node name="BotaoAtualizar" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer" unique_id=459443203]
+layout_mode = 2
+text = "Atualizar"
+
+[node name="BotaoMaisTarde" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer" unique_id=905151420]
+layout_mode = 2
+text = "Mais tarde"
