@@ -118,6 +118,14 @@ text = "B_SHOP"
 scale_amount = Vector2(1.2, 1.2)
 color1 = Color(0.95738095, 0.3472328, 0.58676773, 1)
 
+[node name="Achievements" parent="CanvasLayer/CaixaMenu2" instance=ExtResource("2_3sat0")]
+layout_mode = 2
+text = "B_ACHIEVEMENTS"
+
+[node name="Start2" parent="CanvasLayer/CaixaMenu2/Achievements" instance=ExtResource("3_jstqx")]
+scale_amount = Vector2(1.2, 1.2)
+color1 = Color(0.72, 0.36, 1, 1)
+
 [node name="Options" parent="CanvasLayer/CaixaMenu2" unique_id=743924668 instance=ExtResource("2_3sat0")]
 layout_mode = 2
 text = "B_OPTIONS"
@@ -178,7 +186,11 @@ metadata/_edit_lock_ = true
 
 [node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("2_2p674")]
 
-[node name="aim" parent="." unique_id=525751855 instance=ExtResource("6_u38va")]
+[node name="CursorLayer" type="CanvasLayer" parent="."]
+layer = 400
+process_mode = 3
+
+[node name="aim" parent="CursorLayer" unique_id=525751855 instance=ExtResource("6_u38va")]
 
 [node name="parts_fundo" type="GPUParticles2D" parent="." unique_id=247251954]
 position = Vector2(734, -33)
@@ -216,5 +228,6 @@ bus = &"Music"
 [node name="JanelaAtualizacao" parent="." unique_id=990779837 instance=ExtResource("6_5uabe")]
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="CanvasLayer/CaixaMenu2/Achievements" to="." method="_on_achievements_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]

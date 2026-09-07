@@ -15,6 +15,7 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 
 var player: Player
 var overlay: ColorRect
+var painel_responsivo: Control
 var container_cards: HBoxContainer
 var indicador: Button
 var texto_pontos: Label
@@ -38,7 +39,9 @@ func _ready() -> void:
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	Global.configuracoes_alteradas.connect(_on_configuracoes_alteradas)
 	Input.joy_connection_changed.connect(_on_controle_conectado)
+	get_viewport().size_changed.connect(_on_tamanho_viewport_alterado)
 	_atualizar_dica_menu()
+	_aplicar_layout_responsivo()
 	call_deferred("conectar_player")
 
 
@@ -91,12 +94,18 @@ func construir_interface() -> void:
 	overlay.hide()
 	add_child(overlay)
 
+	painel_responsivo = Control.new()
+	painel_responsivo.name = "PainelResponsivoMelhorias"
+	painel_responsivo.size = Global.TAMANHO_BASE_JOGO
+	painel_responsivo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(painel_responsivo)
+
 	var faixa_topo := ColorRect.new()
 	faixa_topo.position = Vector2(0, 0)
 	faixa_topo.size = Vector2(960, 82)
 	faixa_topo.color = Color(0.025, 0.045, 0.095, 0.96)
 	faixa_topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(faixa_topo)
+	painel_responsivo.add_child(faixa_topo)
 
 	var titulo := Label.new()
 	titulo.position = Vector2(32, 12)
@@ -105,7 +114,7 @@ func construir_interface() -> void:
 	titulo.add_theme_font_size_override("font_size", 25)
 	titulo.add_theme_color_override("font_color", Color(0.58, 0.94, 1.0))
 	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(titulo)
+	painel_responsivo.add_child(titulo)
 
 	texto_habilidade = Label.new()
 	texto_habilidade.position = Vector2(32, 43)
@@ -113,7 +122,7 @@ func construir_interface() -> void:
 	texto_habilidade.add_theme_font_size_override("font_size", 11)
 	texto_habilidade.add_theme_color_override("font_color", Color(0.48, 0.58, 0.76))
 	texto_habilidade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(texto_habilidade)
+	painel_responsivo.add_child(texto_habilidade)
 
 	texto_rotas = Label.new()
 	texto_rotas.position = Vector2(32, 64)
@@ -122,7 +131,7 @@ func construir_interface() -> void:
 	texto_rotas.add_theme_font_size_override("font_size", 10)
 	texto_rotas.add_theme_color_override("font_color", Color(0.46, 0.75, 0.92))
 	texto_rotas.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(texto_rotas)
+	painel_responsivo.add_child(texto_rotas)
 
 	texto_pontos = Label.new()
 	texto_pontos.position = Vector2(590, 17)
@@ -131,7 +140,7 @@ func construir_interface() -> void:
 	texto_pontos.add_theme_font_size_override("font_size", 17)
 	texto_pontos.add_theme_color_override("font_color", Color(1.0, 0.8, 0.28))
 	texto_pontos.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(texto_pontos)
+	painel_responsivo.add_child(texto_pontos)
 
 	botao_fechar = Button.new()
 	botao_fechar.position = Vector2(830, 15)
@@ -147,7 +156,7 @@ func construir_interface() -> void:
 	botao_fechar.add_theme_stylebox_override(
 		"focus", criar_estilo_botao(Color(0.11, 0.14, 0.24), Color(0.48, 0.76, 1.0))
 	)
-	overlay.add_child(botao_fechar)
+	painel_responsivo.add_child(botao_fechar)
 
 	container_cards = HBoxContainer.new()
 	container_cards.position = Vector2(70, 88)
@@ -155,7 +164,7 @@ func construir_interface() -> void:
 	container_cards.add_theme_constant_override("separation", 20)
 	container_cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	container_cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(container_cards)
+	painel_responsivo.add_child(container_cards)
 
 	botao_rerrolar = Button.new()
 	botao_rerrolar.position = Vector2(382, 438)
@@ -171,7 +180,7 @@ func construir_interface() -> void:
 	botao_rerrolar.add_theme_stylebox_override(
 		"focus", criar_estilo_botao(Color(0.08, 0.21, 0.30), Color(0.48, 0.9, 1.0))
 	)
-	overlay.add_child(botao_rerrolar)
+	painel_responsivo.add_child(botao_rerrolar)
 
 	dica_menu = HBoxContainer.new()
 	dica_menu.position = Vector2(120, 492)
@@ -179,7 +188,7 @@ func construir_interface() -> void:
 	dica_menu.alignment = BoxContainer.ALIGNMENT_CENTER
 	dica_menu.add_theme_constant_override("separation", 5)
 	dica_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(dica_menu)
+	painel_responsivo.add_child(dica_menu)
 
 	indicador = Button.new()
 	indicador.name = "IndicadorMelhorias"
@@ -203,6 +212,27 @@ func construir_interface() -> void:
 	)
 	indicador.hide()
 	add_child(indicador)
+
+
+func _on_tamanho_viewport_alterado() -> void:
+	call_deferred("_aplicar_layout_responsivo")
+
+
+func _aplicar_layout_responsivo(tamanho_teste := Vector2.ZERO) -> void:
+	if not is_instance_valid(painel_responsivo):
+		return
+	var tamanho: Vector2 = tamanho_teste
+	if tamanho == Vector2.ZERO:
+		tamanho = get_viewport_rect().size
+	var escala := minf(
+		tamanho.x / Global.TAMANHO_BASE_JOGO.x,
+		tamanho.y / Global.TAMANHO_BASE_JOGO.y
+	)
+	escala = clampf(escala, 0.35, 2.5)
+	painel_responsivo.scale = Vector2.ONE * escala
+	painel_responsivo.position = (
+		tamanho - Global.TAMANHO_BASE_JOGO * escala
+	) * 0.5
 
 
 func criar_estilo_botao(cor: Color, borda: Color) -> StyleBoxFlat:

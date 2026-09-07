@@ -120,9 +120,12 @@ var botao_acao: Button
 var mensagem: Label
 var rolagem_grade: ScrollContainer
 var rolagem_detalhes: ScrollContainer
+var rolagem_pagina: ScrollContainer
 var botoes_habilidades: Array[Button] = []
 var dica_controles: HBoxContainer
 var margem_interface: MarginContainer
+var painel_lista_loja: VBoxContainer
+var moldura_grade: Control
 var cabecalho_loja: HBoxContainer
 var botao_voltar: Button
 var saldo_painel: PanelContainer
@@ -130,7 +133,7 @@ var grade_categorias: GridContainer
 var painel_filtros_personalizacao: PanelContainer
 var grade_filtros_personalizacao: GridContainer
 var botoes_filtros_personalizacao: Array[Button] = []
-var conteudo_principal: HBoxContainer
+var conteudo_principal: BoxContainer
 var largura_cartao_atual := 198.0
 @onready var musica_loja: AudioStreamPlayer = $Musica
 
@@ -390,14 +393,23 @@ func salvar_estado() -> void:
 
 
 func construir_interface() -> void:
+	rolagem_pagina = ScrollContainer.new()
+	rolagem_pagina.name = "RolagemPaginaLoja"
+	rolagem_pagina.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rolagem_pagina.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem_pagina.scroll_deadzone = 7
+	add_child(rolagem_pagina)
+
 	margem_interface = MarginContainer.new()
 	margem_interface.name = "InterfaceLoja"
-	margem_interface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margem_interface.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margem_interface.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margem_interface.add_theme_constant_override("margin_left", 22)
 	margem_interface.add_theme_constant_override("margin_top", 14)
 	margem_interface.add_theme_constant_override("margin_right", 22)
 	margem_interface.add_theme_constant_override("margin_bottom", 14)
-	add_child(margem_interface)
+	rolagem_pagina.add_child(margem_interface)
 
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override("separation", 8)
@@ -530,26 +542,27 @@ func construir_categorias(pai: VBoxContainer) -> void:
 
 
 func construir_conteudo(pai: VBoxContainer) -> void:
-	conteudo_principal = HBoxContainer.new()
+	conteudo_principal = BoxContainer.new()
+	conteudo_principal.vertical = false
 	conteudo_principal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	conteudo_principal.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	conteudo_principal.add_theme_constant_override("separation", 12)
 	pai.add_child(conteudo_principal)
 
-	var esquerda := VBoxContainer.new()
-	esquerda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	esquerda.add_theme_constant_override("separation", 8)
-	conteudo_principal.add_child(esquerda)
-	construir_filtros_personalizacao(esquerda)
+	painel_lista_loja = VBoxContainer.new()
+	painel_lista_loja.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	painel_lista_loja.add_theme_constant_override("separation", 8)
+	conteudo_principal.add_child(painel_lista_loja)
+	construir_filtros_personalizacao(painel_lista_loja)
 
 	# Esta moldura interrompe a propagação do tamanho mínimo da grade.
 	# Assim, o surgimento da barra de rolagem nunca alarga o painel da loja.
-	var moldura_rolagem := Control.new()
-	moldura_rolagem.custom_minimum_size = Vector2.ZERO
-	moldura_rolagem.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	moldura_rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	moldura_rolagem.clip_contents = true
-	esquerda.add_child(moldura_rolagem)
+	moldura_grade = Control.new()
+	moldura_grade.custom_minimum_size = Vector2.ZERO
+	moldura_grade.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	moldura_grade.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	moldura_grade.clip_contents = true
+	painel_lista_loja.add_child(moldura_grade)
 
 	rolagem_grade = ScrollContainer.new()
 	rolagem_grade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -557,7 +570,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	rolagem_grade.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rolagem_grade.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	moldura_rolagem.add_child(rolagem_grade)
+	moldura_grade.add_child(rolagem_grade)
 
 	grade = GridContainer.new()
 	grade.columns = 3
@@ -570,7 +583,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	dica_controles.custom_minimum_size = Vector2(0, 22)
 	dica_controles.alignment = BoxContainer.ALIGNMENT_CENTER
 	dica_controles.add_theme_constant_override("separation", 4)
-	esquerda.add_child(dica_controles)
+	painel_lista_loja.add_child(dica_controles)
 
 	painel_detalhes = PanelContainer.new()
 	painel_detalhes.custom_minimum_size = Vector2(278, 0)
@@ -739,6 +752,7 @@ func selecionar_categoria(indice: int) -> void:
 	else:
 		reconstruir_grade_generica()
 		atualizar_detalhes_genericos()
+	call_deferred("_aplicar_layout_responsivo")
 	call_deferred("_focar_primeiro_item")
 
 
@@ -751,6 +765,7 @@ func _selecionar_filtro_personalizacao(grupo: StringName) -> void:
 	atualizar_botoes_filtros_personalizacao()
 	reconstruir_grade_generica()
 	atualizar_detalhes_genericos()
+	call_deferred("_aplicar_layout_responsivo")
 	call_deferred("_focar_primeiro_item")
 
 
@@ -1371,10 +1386,15 @@ func _on_tamanho_viewport_alterado() -> void:
 	call_deferred("_aplicar_layout_responsivo")
 
 
-func _aplicar_layout_responsivo() -> void:
+func _aplicar_layout_responsivo(
+	tamanho_teste := Vector2.ZERO, forcar_mobile := false
+) -> void:
 	if not is_instance_valid(margem_interface) or not is_instance_valid(grade):
 		return
-	var tamanho := get_viewport_rect().size
+	var tamanho: Vector2 = tamanho_teste
+	if tamanho == Vector2.ZERO:
+		tamanho = get_viewport_rect().size
+	var mobile_vertical := Global.dispositivo_mobile() or forcar_mobile
 	var compacto := tamanho.x < 820.0 or tamanho.y < 500.0
 	var margem_horizontal := 10 if compacto else 22
 	var margem_vertical := 8 if compacto else 14
@@ -1385,13 +1405,32 @@ func _aplicar_layout_responsivo() -> void:
 
 	grade_categorias.columns = 3 if tamanho.x < 720.0 else CATEGORIAS.size()
 	conteudo_principal.add_theme_constant_override("separation", 8 if compacto else 12)
+	conteudo_principal.vertical = mobile_vertical
 	botao_voltar.custom_minimum_size = Vector2(104 if compacto else 142, 42 if compacto else 46)
 	saldo_painel.custom_minimum_size = Vector2(140 if compacto else 176, 42 if compacto else 46)
 
 	var largura_util := tamanho.x - float(margem_horizontal * 2)
 	var largura_detalhes := clampf(largura_util * 0.30, 218.0, 292.0)
-	painel_detalhes.custom_minimum_size = Vector2(largura_detalhes, 0)
 	var largura_esquerda := largura_util - largura_detalhes - (8.0 if compacto else 12.0)
+	if mobile_vertical:
+		largura_detalhes = 0.0
+		largura_esquerda = largura_util
+		painel_detalhes.custom_minimum_size = Vector2(0, 390)
+		painel_lista_loja.custom_minimum_size.y = 340.0
+		rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), true, 28.0)
+		_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), true, 24.0)
+		_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), true, 24.0)
+	else:
+		painel_detalhes.custom_minimum_size = Vector2(largura_detalhes, 0)
+		painel_lista_loja.custom_minimum_size.y = 0.0
+		moldura_grade.custom_minimum_size.y = 0.0
+		rolagem_pagina.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), false, 12.0)
+		_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), false, 12.0)
+		_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), false, 12.0)
 	var colunas := 3
 	if largura_esquerda < 570.0:
 		colunas = 2
@@ -1405,6 +1444,40 @@ func _aplicar_layout_responsivo() -> void:
 	for painel in paineis_cartoes:
 		if is_instance_valid(painel) and is_instance_valid(painel.get_parent()):
 			(painel.get_parent() as Control).custom_minimum_size.x = largura_cartao_atual
+	if mobile_vertical:
+		var linhas := ceili(float(maxi(grade.get_child_count(), 1)) / float(colunas))
+		moldura_grade.custom_minimum_size.y = float(linhas * 170 + maxi(linhas - 1, 0) * 8)
+		var altura_pagina := (
+			54.0 + grade_categorias.get_combined_minimum_size().y
+			+ moldura_grade.custom_minimum_size.y + painel_detalhes.custom_minimum_size.y
+			+ 150.0
+		)
+		margem_interface.custom_minimum_size = Vector2(tamanho.x, maxf(tamanho.y, altura_pagina))
+	else:
+		margem_interface.custom_minimum_size = tamanho
+
+
+func _configurar_barra_vertical(
+	barra: VScrollBar, mobile: bool, largura: float
+) -> void:
+	barra.custom_minimum_size.x = largura
+	var trilho := StyleBoxFlat.new()
+	trilho.bg_color = Color(0.025, 0.04, 0.09, 0.78)
+	trilho.set_corner_radius_all(8)
+	barra.add_theme_stylebox_override("scroll", trilho)
+	for estado in ["grabber", "grabber_highlight", "grabber_pressed"]:
+		var puxador := StyleBoxFlat.new()
+		puxador.bg_color = (
+			Color(0.42, 0.72, 1.0, 0.96)
+			if mobile
+			else Color(0.30, 0.48, 0.76, 0.90)
+		)
+		if estado != "grabber":
+			puxador.bg_color = Color(0.68, 0.46, 1.0, 1.0)
+		puxador.set_corner_radius_all(8)
+		puxador.content_margin_left = 4.0 if mobile else 2.0
+		puxador.content_margin_right = 4.0 if mobile else 2.0
+		barra.add_theme_stylebox_override(estado, puxador)
 
 
 func formatar_numero(valor: int) -> String:

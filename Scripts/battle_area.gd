@@ -78,6 +78,8 @@ var painel_desenvolvedor: PainelDesenvolvedor
 var controles_mobile: ControlesMobile
 var musica_partida_padrao: AudioStream
 var musica_boss_ativa := false
+var escala_fundo_original := Vector2.ONE
+var estado_visual_boss_pausa: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -91,6 +93,9 @@ func _ready() -> void:
 	game_over = false
 	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	caixa_gameover.visible = false
+	escala_fundo_original = fundo_original.scale
+	get_viewport().size_changed.connect(_on_tamanho_viewport_alterado)
+	call_deferred("_atualizar_area_responsiva")
 	if tela_upgrades.has_signal("estado_alterado"):
 		tela_upgrades.connect("estado_alterado", _on_menu_upgrades_estado_alterado)
 	criar_visual_setor()
@@ -272,7 +277,7 @@ func spawnar_asteroide_bonus() -> void:
 	add_child(asteroide)
 	asteroide.global_position = spawner.global_position
 	if asteroide.has_method("configurar_movimento"):
-		var destino := Vector2(480.0, 270.0) + Vector2(
+		var destino := Global.obter_centro_area_visivel() + Vector2(
 			randf_range(-180.0, 180.0),
 			randf_range(-110.0, 110.0)
 		)
@@ -318,9 +323,12 @@ func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
 		push_error("Não foi possível criar o boss %s." % boss_atual_id)
 		return
 	add_child(boss_ativo)
-	var posicao_boss := Vector2(760.0, 270.0)
+	var area := Global.obter_retangulo_area_visivel(70.0)
+	var posicao_boss := Vector2(
+		lerpf(area.position.x, area.end.x, 0.78), area.get_center().y
+	)
 	if player.global_position.distance_to(posicao_boss) < 220.0:
-		posicao_boss = Vector2(200.0, 270.0)
+		posicao_boss.x = lerpf(area.position.x, area.end.x, 0.22)
 	boss_ativo.global_position = posicao_boss
 	if boss_ativo.has_method("configurar_dificuldade"):
 		boss_ativo.call("configurar_dificuldade", dificuldade)
@@ -464,6 +472,67 @@ func criar_hud_boss() -> void:
 func _on_menu_upgrades_estado_alterado(aberto: bool) -> void:
 	if is_instance_valid(boss_hud):
 		boss_hud.visible = not aberto
+
+
+func registrar_visual_boss_antes_pausa() -> void:
+	estado_visual_boss_pausa.clear()
+	if not is_instance_valid(boss_ativo):
+		return
+	_registrar_canvas_item_boss(boss_ativo)
+	for node in boss_ativo.find_children("*", "CanvasItem", true, false):
+		if node is CanvasItem:
+			_registrar_canvas_item_boss(node as CanvasItem)
+
+
+func _registrar_canvas_item_boss(item: CanvasItem) -> void:
+	estado_visual_boss_pausa.append({
+		"item": item,
+		"visible": item.visible,
+		"modulate": item.modulate,
+		"self_modulate": item.self_modulate,
+	})
+
+
+func restaurar_visual_boss_durante_pausa() -> void:
+	# Alguns renderizadores mobile limpam o estado de CanvasItems/partículas ao
+	# trocar o SceneTree para pausado. Reaplicar exatamente o estado anterior
+	# mantém o boss visível sem revelar partes ocultas pelo ataque atual.
+	for estado_visual in estado_visual_boss_pausa:
+		var item = estado_visual.get("item")
+		if not is_instance_valid(item) or not (item is CanvasItem):
+			continue
+		item.visible = bool(estado_visual.get("visible", true))
+		item.modulate = Color(estado_visual.get("modulate", Color.WHITE))
+		item.self_modulate = Color(estado_visual.get("self_modulate", Color.WHITE))
+		item.queue_redraw()
+
+
+func limpar_estado_visual_boss_pausa() -> void:
+	estado_visual_boss_pausa.clear()
+
+
+func _on_tamanho_viewport_alterado() -> void:
+	call_deferred("_atualizar_area_responsiva")
+
+
+func _atualizar_area_responsiva() -> void:
+	var area := Global.obter_retangulo_area_visivel()
+	if is_instance_valid(fundo_original):
+		fundo_original.position = area.get_center()
+		fundo_original.scale = Vector2(
+			escala_fundo_original.x * area.size.x / Global.TAMANHO_BASE_JOGO.x,
+			escala_fundo_original.y * area.size.y / Global.TAMANHO_BASE_JOGO.y
+		)
+	var posicoes := [
+		Vector2(area.position.x + 30.0, area.position.y + 40.0),
+		Vector2(area.end.x - 44.0, area.end.y - 46.0),
+		Vector2(area.end.x - 30.0, area.position.y + 40.0),
+		Vector2(area.position.x + 40.0, area.end.y - 31.0),
+	]
+	for indice in posicoes.size():
+		var marcador := get_node_or_null("Node/spawner%d" % (indice + 1)) as Marker2D
+		if is_instance_valid(marcador):
+			marcador.position = posicoes[indice]
 
 
 func _on_boss_vida_alterada(atual: float, maxima: float) -> void:

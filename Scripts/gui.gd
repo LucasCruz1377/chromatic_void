@@ -90,14 +90,30 @@ func _process(_delta: float) -> void:
 		):
 			tela_upgrades.call("fechar_menu")
 		else:
+			if (
+				not get_tree().paused
+				and is_instance_valid(batalha)
+				and batalha.has_method("registrar_visual_boss_antes_pausa")
+			):
+				batalha.call("registrar_visual_boss_antes_pausa")
 			get_tree().paused = not get_tree().paused
 			if get_tree().paused:
 				Global.definir_emulacao_mouse_mobile(true)
 				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 				botao_despause.call_deferred("grab_focus")
+				if (
+					is_instance_valid(batalha)
+					and batalha.has_method("restaurar_visual_boss_durante_pausa")
+				):
+					batalha.call_deferred("restaurar_visual_boss_durante_pausa")
 			else:
 				Global.definir_emulacao_mouse_mobile(false)
 				Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+				if (
+					is_instance_valid(batalha)
+					and batalha.has_method("limpar_estado_visual_boss_pausa")
+				):
+					batalha.call("limpar_estado_visual_boss_pausa")
 
 	caixa_pause.visible = get_tree().paused and not escolhendo_setor
 	if get_tree().paused != pausa_anterior:
@@ -136,6 +152,9 @@ func _on_despause_pressed() -> void:
 	get_tree().paused = false
 	Global.definir_emulacao_mouse_mobile(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	var batalha = get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("limpar_estado_visual_boss_pausa"):
+		batalha.call("limpar_estado_visual_boss_pausa")
 
 
 func _on_voltarmenu_2_pressed() -> void:

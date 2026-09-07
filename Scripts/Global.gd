@@ -45,6 +45,7 @@ const MODO_DESENVOLVEDOR_EM_TESTES := true
 const FATOR_PARTICULAS_MOBILE := 0.55
 const LIMITE_PARTICULAS_MOBILE := 90
 const LIMITE_PARTICULAS_FUNDO_MOBILE := 55
+const TAMANHO_BASE_JOGO := Vector2(960.0, 540.0)
 
 var primeira_vez_jogando: bool = true
 var Pontos := 0
@@ -177,6 +178,46 @@ var conquistas_desbloqueadas: Array[StringName] = []
 var bosses_derrotados: Array[StringName] = []
 var jogos_zerados: int = 0
 var _salvamento_conquistas_agendado := false
+
+
+func obter_retangulo_area_visivel(margem: float = 0.0) -> Rect2:
+	var viewport := get_viewport()
+	var tamanho_janela := TAMANHO_BASE_JOGO
+	if is_instance_valid(viewport):
+		tamanho_janela = viewport.get_visible_rect().size
+	return calcular_retangulo_area_visivel(tamanho_janela, margem)
+
+
+func calcular_retangulo_area_visivel(
+	tamanho_janela: Vector2, margem: float = 0.0
+) -> Rect2:
+	if tamanho_janela.x <= 0.0 or tamanho_janela.y <= 0.0:
+		tamanho_janela = TAMANHO_BASE_JOGO
+
+	# O modo canvas_items + aspect expand mantém uma das dimensões-base e
+	# revela mais área na outra. Este cálculo devolve esses limites em
+	# coordenadas do mundo, independentes da resolução física da janela.
+	var escala := minf(
+		tamanho_janela.x / TAMANHO_BASE_JOGO.x,
+		tamanho_janela.y / TAMANHO_BASE_JOGO.y
+	)
+	escala = maxf(escala, 0.001)
+	var tamanho_visivel := tamanho_janela / escala
+	var retangulo := Rect2(
+		(TAMANHO_BASE_JOGO - tamanho_visivel) * 0.5,
+		tamanho_visivel
+	)
+	if margem > 0.0:
+		var margem_segura := minf(
+			margem,
+			minf(retangulo.size.x, retangulo.size.y) * 0.45
+		)
+		retangulo = retangulo.grow(-margem_segura)
+	return retangulo
+
+
+func obter_centro_area_visivel() -> Vector2:
+	return obter_retangulo_area_visivel().get_center()
 
 
 func _ready() -> void:
