@@ -93,7 +93,7 @@ func testar_hud_e_icone() -> void:
 	var vida := batalha.get_node("GUI/Barra_vida") as TextureProgressBar
 	var xp := batalha.get_node("GUI/Barra_xp") as TextureProgressBar
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
-	var centro := Global.obter_retangulo_area_visivel(18.0).get_center().x
+	var centro := batalha.get_viewport().get_visible_rect().size.x * 0.5
 	verificar(is_equal_approx(vida.position.x + vida.size.x * 0.5, centro), "a vida continua torta")
 	verificar(is_equal_approx(xp.position.x + xp.size.x * 0.5, centro), "o XP continua torto")
 	verificar(is_equal_approx(vida.size.x, xp.size.x), "vida e XP usam larguras diferentes")

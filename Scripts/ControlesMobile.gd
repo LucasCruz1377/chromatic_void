@@ -52,6 +52,14 @@ func _exit_tree() -> void:
 	_liberar_todos_os_comandos()
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		# Android/iOS podem cancelar o gesto sem enviar o evento de soltar.
+		_liberar_todos_os_comandos()
+		if is_instance_valid(superficie):
+			superficie.queue_redraw()
+
+
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return

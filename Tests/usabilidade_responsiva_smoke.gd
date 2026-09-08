@@ -74,7 +74,7 @@ func testar_menu_upgrades_e_boss() -> void:
 	await get_tree().process_frame
 	batalha.tutorial_ativo = false
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
-	var centro_hud := Global.obter_retangulo_area_visivel(18.0).get_center().x
+	var centro_hud := batalha.get_viewport().get_visible_rect().size.x * 0.5
 	var barra_vida := batalha.get_node("GUI/Barra_vida") as TextureProgressBar
 	var barra_xp := batalha.get_node("GUI/Barra_xp") as TextureProgressBar
 	verificar(

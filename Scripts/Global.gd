@@ -737,7 +737,10 @@ func aplicar_configuracoes() -> void:
 	)
 	# Evita que telas de 90/120 Hz façam o celular renderizar quadros extras sem
 	# benefício para a jogabilidade. No desktop, respeita a opção normalmente.
-	Engine.max_fps = mini(limite_fps, 60) if dispositivo_mobile() else limite_fps
+	if dispositivo_mobile():
+		Engine.max_fps = mini(limite_fps, 60) if limite_fps > 0 else 60
+	else:
+		Engine.max_fps = limite_fps
 
 	for acao in [
 		&"acelerar",
@@ -818,15 +821,25 @@ func _aplicar_ambiente(node: Node) -> void:
 	var world := node as WorldEnvironment
 	if not world.environment:
 		return
-	var neon_aplicado := neon
-	var bloom_aplicado := bloom
-	if dispositivo_mobile():
-		# Mantém a identidade neon, reduzindo o custo do HDR/glow no celular.
-		neon_aplicado = minf(neon_aplicado, 0.78)
-		bloom_aplicado = minf(bloom_aplicado, 0.06)
-	world.environment.glow_enabled = neon_aplicado > 0.01 or bloom_aplicado > 0.01
-	world.environment.glow_intensity = neon_aplicado
-	world.environment.glow_bloom = bloom_aplicado
+	configurar_glow(world.environment, RenderingServer.get_current_rendering_method())
+
+
+func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
+	# Compatibility usa glow em SDR e não interpreta os sete níveis de bloom
+	# do Mobile. Um limiar abaixo de 1 permite que os traços coloridos brilhem.
+	# Não reduzir silenciosamente os sliders salvos quando rodar num celular.
+	ambiente.glow_enabled = neon > 0.01 or bloom > 0.01
+	ambiente.glow_bloom = bloom
+	ambiente.glow_intensity = neon
+	ambiente.glow_hdr_threshold = 1.0
+	ambiente.glow_hdr_scale = 2.0
+	if renderizador == &"gl_compatibility":
+		ambiente.glow_hdr_threshold = 0.65
+		ambiente.glow_hdr_scale = 0.35
+	elif renderizador == &"mobile":
+		ambiente.glow_hdr_threshold = 0.9
+		ambiente.glow_intensity = neon * 1.5
+
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:

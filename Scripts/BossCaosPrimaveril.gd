@@ -44,6 +44,7 @@ var tempo_ataque := 1.1
 var tempo_disparo := 0.0
 var tempo_janela_vulneravel := 0.0
 var ultimo_ataque := -1
+var ataques_desde_vinhas := 3
 var indice_dificuldade := 1
 var escudo_ativo := true
 var sentido_rotacao := 1.0
@@ -140,15 +141,20 @@ func mover_livre(delta: float) -> void:
 		iniciar_proximo_ataque()
 
 
+func sortear_proximo_ataque() -> int:
+	# Nenhuma vinha na fase 1. Depois: chance de 15%, com pelo menos três
+	# ataques comuns entre duas danças, evitando sequências longas de vinhas.
+	if fase >= 2 and ataques_desde_vinhas >= 3 and randf() < 0.15:
+		ataques_desde_vinhas = 0
+		return Ataque.DANCA_CAULES
+	var opcoes: Array[int] = [Ataque.ONDA_ESPINHOS, Ataque.PETALA_BUMERANGUE]
+	opcoes.erase(ultimo_ataque)
+	ataques_desde_vinhas += 1
+	return int(opcoes.pick_random())
+
+
 func iniciar_proximo_ataque() -> void:
-	var opcoes: Array[int] = [
-		Ataque.ONDA_ESPINHOS,
-		Ataque.PETALA_BUMERANGUE,
-		Ataque.DANCA_CAULES,
-	]
-	if opcoes.size() > 1:
-		opcoes.erase(ultimo_ataque)
-	var ataque := int(opcoes.pick_random())
+	var ataque := sortear_proximo_ataque()
 	ultimo_ataque = ataque
 	match ataque:
 		Ataque.ONDA_ESPINHOS:
