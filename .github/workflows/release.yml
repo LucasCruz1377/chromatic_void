@@ -558,16 +558,24 @@ jobs:
             exit 1
           fi
 
-          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
-          BADGING="$($AAPT dump badging "$APK" | head -n 1)"
-          echo "$BADGING"
+          # Consultar os campos necessários sem usar o badging do aapt.
+          APKANALYZER="$(dirname "$(command -v sdkmanager)")/apkanalyzer"
+          if [[ ! -x "$APKANALYZER" ]]; then
+            echo "ERRO: apkanalyzer não encontrado nas ferramentas do Android SDK."
+            exit 1
+          fi
 
-          if [[ "$BADGING" != *"name='com.lucascruz1377.chromaticvoid'"* ]]; then
+          PACKAGE_NAME="$("$APKANALYZER" manifest application-id "$APK")"
+          VERSION_CODE="$("$APKANALYZER" manifest version-code "$APK")"
+          echo "Package: $PACKAGE_NAME"
+          echo "Version code: $VERSION_CODE"
+
+          if [[ "$PACKAGE_NAME" != "com.lucascruz1377.chromaticvoid" ]]; then
             echo "ERRO: package name Android foi alterado."
             exit 1
           fi
 
-          if [[ "$BADGING" != *"versionCode='${{ github.run_number }}'"* ]]; then
+          if [[ "$VERSION_CODE" != "${{ github.run_number }}" ]]; then
             echo "ERRO: versionCode do APK não corresponde ao número da execução."
             exit 1
           fi
@@ -706,4 +714,5 @@ jobs:
             --verify-tag \
             --prerelease \
             --latest=false
+
 
