@@ -42,12 +42,6 @@ const ACOES_REMAPEAVEIS := {
 
 const CRISTAIS_INICIAIS := 1250
 const MODO_DESENVOLVEDOR_EM_TESTES := true
-# Perfil visual mobile da release 0.7.1. A densidade permanece menor que no PC,
-# mas conserva a leitura e o brilho da versão que serviu como referência.
-const FATOR_PARTICULAS_MOBILE := 0.55
-const LIMITE_PARTICULAS_MOBILE := 90
-const LIMITE_PARTICULAS_FUNDO_MOBILE := 55
-const FPS_PARTICULAS_MOBILE := 30
 const TAMANHO_BASE_JOGO := Vector2(960.0, 540.0)
 
 var primeira_vez_jogando: bool = true
@@ -175,7 +169,7 @@ const CONQUISTAS: Dictionary = {
 		"nome": "CICLO CROMÁTICO",
 		"descricao": "Conclua uma partida derrotando os cinco bosses.",
 		"tipo": &"vitoria", "meta": 1,
-		"recompensas": [&"p09_recomeco"]
+		"recompensas": []
 	},
 	&"sinal_da_estrela": {
 		"nome": "SINAL DA ESTRELA",
@@ -250,6 +244,8 @@ var conquistas_desbloqueadas: Array[StringName] = []
 var bosses_derrotados: Array[StringName] = []
 var jogos_zerados: int = 0
 var _salvamento_conquistas_agendado := false
+var _tamanho_area_cache := Vector2(-1.0, -1.0)
+var _retangulo_area_cache := Rect2()
 
 
 func obter_retangulo_area_visivel(margem: float = 0.0) -> Rect2:
@@ -257,7 +253,13 @@ func obter_retangulo_area_visivel(margem: float = 0.0) -> Rect2:
 	var tamanho_janela := TAMANHO_BASE_JOGO
 	if is_instance_valid(viewport):
 		tamanho_janela = viewport.get_visible_rect().size
-	return calcular_retangulo_area_visivel(tamanho_janela, margem)
+	if tamanho_janela != _tamanho_area_cache:
+		_tamanho_area_cache = tamanho_janela
+		_retangulo_area_cache = calcular_retangulo_area_visivel(tamanho_janela)
+	if margem <= 0.0:
+		return _retangulo_area_cache
+	var margem_segura := minf(margem, minf(_retangulo_area_cache.size.x, _retangulo_area_cache.size.y) * 0.45)
+	return _retangulo_area_cache.grow(-margem_segura)
 
 
 func calcular_retangulo_area_visivel(
@@ -767,8 +769,6 @@ func _aplicar_volume(nome_bus: String, valor_db: float) -> void:
 func _on_node_adicionado(node: Node) -> void:
 	if node.is_in_group("ambiente_global"):
 		call_deferred("_aplicar_ambiente_por_id", node.get_instance_id())
-	if dispositivo_mobile() and node is GPUParticles2D:
-		call_deferred("_otimizar_particulas_por_id", node.get_instance_id())
 
 
 func _aplicar_ambiente_por_id(id_instancia: int) -> void:
@@ -777,57 +777,27 @@ func _aplicar_ambiente_por_id(id_instancia: int) -> void:
 		_aplicar_ambiente(node)
 
 
-func _otimizar_particulas_por_id(id_instancia: int) -> void:
-	var node := instance_from_id(id_instancia)
-	if is_instance_valid(node):
-		_otimizar_particulas_mobile(node)
-
-
-func _otimizar_particulas_mobile(node: Node) -> void:
-	if not is_instance_valid(node) or not (node is GPUParticles2D):
-		return
-	var particulas := node as GPUParticles2D
-	if particulas.has_meta("perfil_mobile_aplicado"):
-		return
-	particulas.set_meta("perfil_mobile_aplicado", true)
-	var nome_minusculo := str(particulas.name).to_lower()
-	var eh_fundo := (
-		nome_minusculo.contains("fundo")
-		or nome_minusculo.contains("background")
-	)
-	var limite := (
-		LIMITE_PARTICULAS_FUNDO_MOBILE
-		if eh_fundo
-		else LIMITE_PARTICULAS_MOBILE
-	)
-	particulas.amount = clampi(
-		roundi(float(particulas.amount) * FATOR_PARTICULAS_MOBILE),
-		1,
-		limite
-	)
-	particulas.fixed_fps = FPS_PARTICULAS_MOBILE
-	particulas.interpolate = false
-	particulas.fract_delta = false
-	particulas.preprocess = minf(particulas.preprocess, 1.5)
-	if eh_fundo:
-		particulas.trail_enabled = false
-
-
 func _aplicar_ambiente(node: Node) -> void:
 	if not is_instance_valid(node) or not (node is WorldEnvironment):
 		return
 	var world := node as WorldEnvironment
 	if not world.environment:
 		return
-	var neon_aplicado := neon
-	var bloom_aplicado := bloom
-	if dispositivo_mobile():
-		# Mantém a identidade neon, reduzindo o custo do HDR/glow no celular.
-		neon_aplicado = minf(neon_aplicado, 0.78)
-		bloom_aplicado = minf(bloom_aplicado, 0.06)
-	world.environment.glow_enabled = neon_aplicado > 0.01 or bloom_aplicado > 0.01
-	world.environment.glow_intensity = neon_aplicado
-	world.environment.glow_bloom = bloom_aplicado
+	configurar_glow(world.environment, RenderingServer.get_current_rendering_method())
+
+
+func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
+	ambiente.glow_enabled = neon > 0.01 or bloom > 0.01
+	ambiente.glow_bloom = bloom
+	ambiente.glow_intensity = neon
+	ambiente.glow_hdr_threshold = 1.0
+	ambiente.glow_hdr_scale = 2.0
+	if renderizador == &"gl_compatibility":
+		ambiente.glow_hdr_threshold = 0.65
+		ambiente.glow_hdr_scale = 0.35
+	elif renderizador == &"mobile":
+		ambiente.glow_hdr_threshold = 0.9
+		ambiente.glow_intensity = neon * 1.5
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:

@@ -5,7 +5,7 @@
 script = ExtResource("1")
 Id = &"p05_florescimento"
 Nome = "Florescimento"
-Descricao = "Raízes prendem inimigos à frente e desabrocham em pétalas ofensivas."
+Descricao = "Por 3 segundos, vinhas infectam e congelam inimigos próximos; as flores explodem juntas no fim."
 Icone = ExtResource("2")
 MonthlyColorsSelo = "SETEMBRO • PRIMAVERA"
 MonthlyColorsContexto = "A primavera vira movimento, raiz e floração."

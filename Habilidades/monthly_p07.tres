@@ -5,7 +5,7 @@
 script = ExtResource("1")
 Id = &"p07_forma_fantasma"
 Nome = "Forma Fantasma"
-Descricao = "Fica intangível, acelera e deixa ecos que explodem depois."
+Descricao = "Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim."
 Icone = ExtResource("2")
 MonthlyColorsSelo = "OUTUBRO • HALLOWEEN"
 MonthlyColorsContexto = "Fantasmas e o imaginário do Halloween em movimento neon."

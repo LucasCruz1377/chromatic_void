@@ -3,6 +3,7 @@ class_name IndicadorDano
 
 
 const DURACAO := 0.68
+const FONTE_DANO: Font = preload("res://Fonts/Stereohead.otf")
 
 var valor := 0.0
 var cor := Color.WHITE
@@ -50,8 +51,7 @@ func _ready() -> void:
 	label.add_theme_color_override("font_color", Color(1.2, 1.2, 1.2, 1.0))
 	label.add_theme_color_override("font_outline_color", Color(cor.r, cor.g, cor.b, 0.95))
 	label.add_theme_constant_override("outline_size", 5 if critico else 3)
-	if ResourceLoader.exists("res://Fonts/Stereohead.otf"):
-		label.add_theme_font_override("font", load("res://Fonts/Stereohead.otf") as Font)
+	label.add_theme_font_override("font", FONTE_DANO)
 	add_child(label)
 	scale = Vector2.ONE * 0.45
 

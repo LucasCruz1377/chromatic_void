@@ -5,7 +5,7 @@
 script = ExtResource("1")
 Id = &"p10_laco_uniao"
 Nome = "Laço da União"
-Descricao = "Liga dois inimigos; parte do dano sofrido por um ecoa no outro."
+Descricao = "Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez."
 Icone = ExtResource("2")
 MonthlyColorsSelo = "JUNHO VERMELHO"
 MonthlyColorsContexto = "Conexão, cuidado e responsabilidade compartilhada."

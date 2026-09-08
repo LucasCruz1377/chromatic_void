@@ -11,27 +11,22 @@ func verificar(condicao: bool, mensagem: String) -> void:
 
 
 func _ready() -> void:
-	verificar(
-		is_equal_approx(Global.FATOR_PARTICULAS_MOBILE, 0.55)
-		and Global.LIMITE_PARTICULAS_MOBILE == 90
-		and Global.LIMITE_PARTICULAS_FUNDO_MOBILE == 55
-		and Global.FPS_PARTICULAS_MOBILE == 30,
-		"limites de partículas diferentes da release 0.7.1"
-	)
-
 	var particulas := GPUParticles2D.new()
 	particulas.name = "FundoReferencia071"
 	particulas.amount = 200
 	particulas.lifetime = 10.0
 	particulas.preprocess = 10.0
 	particulas.trail_enabled = true
-	Global._otimizar_particulas_mobile(particulas)
-	verificar(particulas.amount == 55, "o fundo mobile não mantém as 55 partículas da 0.7.1")
-	verificar(particulas.fixed_fps == 30, "a simulação mobile não usa os 30 FPS da 0.7.1")
-	verificar(not particulas.interpolate and not particulas.fract_delta, "a simulação econômica deixou de ser determinística")
-	verificar(not particulas.trail_enabled, "as trilhas instáveis voltaram a formar teias")
+	particulas.fixed_fps = 30
+	particulas.interpolate = true
+	add_child(particulas)
+	await get_tree().process_frame
+	verificar(particulas.amount == 200, "o mobile reduziu a densidade definida pela cena")
+	verificar(particulas.fixed_fps == 30, "o mobile alterou o FPS definido pela cena")
+	verificar(particulas.interpolate and particulas.fract_delta, "o mobile reduziu a suavidade das partículas")
+	verificar(particulas.trail_enabled, "o mobile removeu trilhas presentes no PC")
 	verificar(is_equal_approx(particulas.lifetime, 10.0), "a vida das partículas ainda está encurtada")
-	verificar(particulas.preprocess <= 1.5, "o pico de preprocess voltou ao mobile")
+	verificar(is_equal_approx(particulas.preprocess, 10.0), "o preprocess difere do PC")
 	particulas.free()
 
 	var menu := (load("res://Rooms/TelaInicial.tscn") as PackedScene).instantiate()
@@ -62,6 +57,5 @@ func _ready() -> void:
 	)
 
 	if falhas.is_empty():
-		print("TESTE OK: perfil visual mobile equivalente à release 0.7.1")
+		print("TESTE OK: partículas, shaders e neon mobile equivalentes ao PC")
 	get_tree().quit(0 if falhas.is_empty() else 1)
-

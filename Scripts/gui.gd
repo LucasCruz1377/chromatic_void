@@ -60,29 +60,38 @@ func _ready() -> void:
 
 
 func _ajustar_hud_responsivo() -> void:
-	# Todos os elementos inferiores partem da mesma área lógica segura. Isso evita
-	# que âncoras percentuais e posições fixas discordem em telas ultrawide/mobile.
-	var area: Rect2 = Global.obter_retangulo_area_visivel(18.0)
-	# As duas texturas usam 630 px como largura lógica máxima.
-	var largura_barra := roundf(clampf(area.size.x * 0.70, 320.0, 630.0))
-	var centro_x := roundf(area.get_center().x)
-	var inicio_x := roundf(centro_x - largura_barra * 0.5)
-	var y_vida := roundf(area.end.y - 18.0)
-	if is_instance_valid(barra_vida):
-		barra_vida.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		barra_vida.position = Vector2(inicio_x, y_vida)
-		barra_vida.size = Vector2(largura_barra, 8.0)
-		barra_vida.fill_mode = TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT
-	if is_instance_valid(barra_xp):
-		barra_xp.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		barra_xp.position = Vector2(inicio_x, y_vida - 15.0)
-		barra_xp.size = Vector2(largura_barra, 6.0)
-		barra_xp.fill_mode = TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT
+	_aplicar_layout_hud(get_viewport().get_visible_rect().size)
+
+
+func _aplicar_layout_hud(tamanho: Vector2) -> void:
+	if tamanho.x <= 0.0 or tamanho.y <= 0.0:
+		return
+	var margem := minf(18.0, tamanho.x * 0.05)
+	var largura_barra := minf(630.0, tamanho.x - margem * 2.0)
+	largura_barra = minf(largura_barra, tamanho.x * 0.70)
+	var centro_x := tamanho.x * 0.5
+	var inicio_x := centro_x - largura_barra * 0.5
+	var y_vida := tamanho.y - 36.0
+	for barra in [barra_vida, barra_xp]:
+		if not is_instance_valid(barra):
+			continue
+		barra.nine_patch_stretch = true
+		barra.custom_minimum_size = Vector2.ZERO
+		barra.scale = Vector2.ONE
+		barra.rotation = 0.0
+		barra.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		barra.position = Vector2(inicio_x, y_vida if barra == barra_vida else y_vida - 15.0)
+		barra.size = Vector2(largura_barra, 8.0 if barra == barra_vida else 6.0)
+		barra.fill_mode = TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT
 	if is_instance_valid(texto_nivel):
 		texto_nivel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		texto_nivel.position = Vector2(inicio_x, y_vida - 43.0)
 	if is_instance_valid(display_skill):
 		display_skill.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		display_skill.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		display_skill.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		display_skill.scale = Vector2.ONE
+		display_skill.rotation = 0.0
 		display_skill.position = Vector2(centro_x - 32.0, y_vida - 102.0)
 		display_skill.size = Vector2(64.0, 64.0)
 

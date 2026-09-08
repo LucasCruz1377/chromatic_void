@@ -2,7 +2,7 @@ extends Node2D
 class_name AjudanteMonthly
 
 
-enum Tipo { CLONE, GUARDIAO }
+enum Tipo { CLONE, GUARDIAO, DRONE_OVO }
 
 var tipo: Tipo = Tipo.CLONE
 var dono: Node2D
@@ -13,6 +13,7 @@ var tempo_disparo := 0.32
 var fase := 0.0
 var historico: Array[Dictionary] = []
 var ultimo_angulo := 0.0
+var dano_drone_ovo := 0.8
 
 
 func configurar(dono_ref: Node2D, tipo_ref: Tipo, cor_ref: Color, potencia_ref: float) -> void:
@@ -27,6 +28,13 @@ func configurar(dono_ref: Node2D, tipo_ref: Tipo, cor_ref: Color, potencia_ref: 
 	queue_redraw()
 
 
+func configurar_drone_ovo(dono_ref: Node2D, cor_ref: Color, dano_ref: float, duracao_ref: float) -> void:
+	configurar(dono_ref, Tipo.DRONE_OVO, cor_ref, 1.0)
+	dano_drone_ovo = maxf(dano_ref, 0.1)
+	tempo_restante = maxf(duracao_ref, 1.0)
+	tempo_disparo = 0.15
+
+
 func _process(delta: float) -> void:
 	if not is_instance_valid(dono):
 		queue_free()
@@ -39,8 +47,10 @@ func _process(delta: float) -> void:
 	tempo_disparo -= delta
 	if tipo == Tipo.CLONE:
 		_processar_clone(delta)
-	else:
+	elif tipo == Tipo.GUARDIAO:
 		_processar_guardiao(delta)
+	else:
+		_processar_drone_ovo(delta)
 	modulate.a = clampf(tempo_restante * 2.0, 0.0, 1.0)
 	queue_redraw()
 
@@ -82,6 +92,18 @@ func _processar_guardiao(_delta: float) -> void:
 			tempo_disparo = 0.72
 
 
+func _processar_drone_ovo(_delta: float) -> void:
+	var angulo := fase * 1.9
+	global_position = dono.global_position + Vector2.from_angle(angulo) * 66.0
+	global_rotation = global_position.angle_to_point(_inimigo_proximo().global_position) if is_instance_valid(_inimigo_proximo()) else angulo
+	if tempo_disparo <= 0.0:
+		var alvo := _inimigo_proximo()
+		if is_instance_valid(alvo) and dono.has_method("criar_projetil"):
+			dono.call("criar_projetil", global_position.angle_to_point(alvo.global_position), dano_drone_ovo, true, alvo, 0.0, &"egg", cor, {"homing": 2.2, "origem_global": global_position})
+			_pulso(0.72)
+		tempo_disparo = 0.58
+
+
 func _inimigo_proximo() -> Node2D:
 	var melhor: Node2D
 	var menor := 360.0 * 360.0
@@ -110,10 +132,15 @@ func _draw() -> void:
 		draw_colored_polygon(corpo, Color(brilho, 0.72))
 		draw_polyline(corpo + PackedVector2Array([corpo[0]]), brilho, 2.0)
 		draw_circle(Vector2(-3, 0), 4.0, Color.WHITE)
-	else:
+	elif tipo == Tipo.GUARDIAO:
 		var raio := 15.0 + sin(fase * 7.0) * 1.5
 		draw_arc(Vector2.ZERO, raio, 0.0, TAU, 24, brilho, 3.0)
 		draw_circle(Vector2.ZERO, 7.0, cor)
 		for indice in range(3):
 			var ponto := Vector2.from_angle(fase * 1.8 + TAU * float(indice) / 3.0) * 20.0
 			draw_circle(ponto, 3.0, Color.WHITE)
+	else:
+		draw_circle(Vector2.ZERO, 18.0, Color(cor, 0.18))
+		draw_colored_polygon(PackedVector2Array([Vector2(15, 0), Vector2(-9, -11), Vector2(-14, 0), Vector2(-9, 11)]), cor)
+		draw_polyline(PackedVector2Array([Vector2(15, 0), Vector2(-9, -11), Vector2(-14, 0), Vector2(-9, 11), Vector2(15, 0)]), brilho, 2.0)
+		draw_circle(Vector2(2, 0), 4.0, Color.WHITE)

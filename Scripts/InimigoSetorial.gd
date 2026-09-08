@@ -26,7 +26,6 @@ var drones_liberados := false
 var trilha := Vector2.ZERO
 var tempo_trilha := 0.0
 var angulo_orbita := 0.0
-var tempo_ate_redesenho := 0.0
 var aliado_movimento: InimigoBase
 var tempo_busca_aliado := 0.0
 
@@ -76,11 +75,8 @@ func Mover(delta: float) -> void:
 	_atualizar_desenho(delta)
 
 
-func _atualizar_desenho(delta: float) -> void:
-	tempo_ate_redesenho -= delta
-	if not Global.dispositivo_mobile() or tempo_ate_redesenho <= 0.0:
-		queue_redraw()
-		tempo_ate_redesenho = 1.0 / 30.0
+func _atualizar_desenho(_delta: float) -> void:
+	queue_redraw()
 
 func _distancia(ate: Vector2, atual: float, ideal: float) -> Vector2:
 	if atual < ideal - 35.0: return -ate

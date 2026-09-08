@@ -25,7 +25,7 @@ static func criar(
 	pai.add_child(explosao)
 	explosao.global_position = posicao
 	explosao.z_index = 24
-	var quantidade := 10 if Global.dispositivo_mobile() else 18
+	var quantidade := 18
 	for indice in range(quantidade):
 		var angulo := TAU * float(indice) / float(quantidade) + randf_range(-0.16, 0.16)
 		explosao.posicoes.append(Vector2.ZERO)

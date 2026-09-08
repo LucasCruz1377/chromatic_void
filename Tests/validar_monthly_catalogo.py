@@ -13,12 +13,13 @@ GLOBAL = (ROOT / "Scripts/Global.gd").read_text(encoding="utf-8")
 PLAYER = (ROOT / "Scripts/player.gd").read_text(encoding="utf-8")
 
 ids = re.findall(r'_item\(&"([pan u]\d\d_[^"]+)"'.replace(" ", ""), CATALOGO)
-esperados = {"p": 15, "a": 12, "n": 10, "u": 12}
+esperados = {"p": 14, "a": 12, "n": 10, "u": 12}
 for prefixo, total in esperados.items():
     encontrados = [item for item in ids if item.startswith(prefixo)]
     assert len(encontrados) == total, (prefixo, len(encontrados), total)
 
-assert len(ids) == 49, f"Esperados 49 itens após a fusão das armas; encontrados {len(ids)}"
+assert len(ids) == 48, f"Esperados 48 itens após remover Recomeço; encontrados {len(ids)}"
+assert 'p09_recomeco' not in ids, "Recomeço voltou ao catálogo ativo"
 assert len(set(ids)) == len(ids), "Há IDs duplicados no catálogo"
 assert '"icone": "res://Habilidades/Icones/monthly/%s.svg" % String(id)' in CATALOGO
 
@@ -112,6 +113,8 @@ for item in obrigatorias_por_conquista:
     assert item in recompensas, f"Item de boss sem conquista: {item}"
 
 for indice in range(1, 16):
+    if indice == 9:
+        continue
     recurso = ROOT / "Habilidades" / f"monthly_p{indice:02d}.tres"
     assert recurso.exists(), f"Recurso ativo ausente: {recurso.name}"
     if indice > 1:
@@ -122,4 +125,4 @@ for indice in range(1, 16):
 for item in [i for i in ids if i.startswith(("a", "n", "u"))]:
     assert item in PLAYER, f"Item não conectado à jogabilidade: {item}"
 
-print("Catálogo verificado: 49 equipamentos, 12 luas, fontes do site e migração da arma.")
+print("Catálogo verificado: 48 equipamentos, Recomeço removido e 12 luas preservadas.")

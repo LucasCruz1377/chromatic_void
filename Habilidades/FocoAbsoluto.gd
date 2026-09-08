@@ -23,6 +23,8 @@ func executar(player) -> void:
 	instante_final_ms = Time.get_ticks_msec() + int(duracao_real * 1000.0)
 	Engine.time_scale = escala_tempo
 	player.multiplicador_velocidade_habilidade = movimento_anterior / escala_tempo
+	player.foco_movimento_tempo_real = true
+	player.velocity /= escala_tempo
 	player.IniciarHabilidade(false)
 	player.modulate = Color(0.65, 0.9, 1.0, 1.0)
 
@@ -44,7 +46,9 @@ func finalizar(player) -> void:
 	ativo = false
 	Engine.time_scale = escala_anterior
 	if is_instance_valid(player):
+		player.velocity *= escala_tempo
 		player.multiplicador_velocidade_habilidade = movimento_anterior
+		player.foco_movimento_tempo_real = false
 		player.modulate = Color.WHITE
 		player.EncerrarHabilidade()
 

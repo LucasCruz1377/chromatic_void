@@ -28,7 +28,6 @@ const FONTES_SITE: Dictionary = {
 	&"p06_rosa_espinhosa": "Agosto Lilás • enfrentamento à violência",
 	&"p07_forma_fantasma": "Outubro • Halloween",
 	&"p08_presente_misterioso": "Dezembro • Natal",
-	&"p09_recomeco": "Janeiro • Ano-Novo",
 	&"p10_laco_uniao": "Junho Vermelho • doação de sangue",
 	&"p11_imaginacao": "Outubro • Dia das Crianças",
 	&"p12_furia_natureza": "Abril • Dia da Terra",
@@ -73,20 +72,19 @@ const FONTES_SITE: Dictionary = {
 
 static func ativos() -> Array[Dictionary]:
 	return [
-	_item(&"p01_ovo_surpresa", "OVO SURPRESA", "O ovo anuncia pela cor se chocará um drone, uma cura ou uma explosão.", 0, Color("ffd45a"), "ABR • PÁSCOA", [3, 3, 3], &"primeiro_brilho", "A renovação e as cores da Páscoa viram uma escolha rápida em combate.", "res://Habilidades/monthly_p01.tres"),
+	_item(&"p01_ovo_surpresa", "OVO SURPRESA", "Cria um ovo no ponto de ativação: dele nasce um ajudante, uma cura perseguidora ou uma onda devastadora.", 0, Color("ffd45a"), "ABR • PÁSCOA", [3, 3, 3], &"primeiro_brilho", "A renovação e as cores da Páscoa viram uma escolha rápida em combate.", "res://Habilidades/monthly_p01.tres"),
 	_item(&"p02_clone_enganador", "CLONE ENGANADOR", "Cria um eco da nave que repete sua direção e dispara uma cópia atrasada.", 2800, Color("ff62ce"), "ABR • MENTIRA", [3, 4, 3], &"", "Uma brincadeira visual inspirada no Dia da Mentira.", "res://Habilidades/monthly_p02.tres"),
 	_item(&"p03_renascimento", "RENASCIMENTO", "Planta uma semente de retorno. Se o casco cair, você renasce nela uma vez.", 5200, Color("52ff91"), "JUL • VERDE", [4, 5, 2], &"", "Verde representa recomeço, cuidado e crescimento.", "res://Habilidades/monthly_p03.tres"),
 	_item(&"p04_espirito_protetor", "ESPÍRITO PROTETOR", "Invoca um guardião que intercepta tiros e responde com uma rajada dourada.", 0, Color("ffd65c"), "AGO • PROTEÇÃO", [3, 5, 2], &"boss_sentinela", "Proteção presente na campanha do Agosto Dourado.", "res://Habilidades/monthly_p04.tres"),
-	_item(&"p05_florescimento", "FLORESCIMENTO", "Raízes prendem inimigos à frente e desabrocham em pétalas ofensivas.", 0, Color("ff68ae"), "SET • PRIMAVERA", [5, 4, 2], &"boss_florescimento", "A primavera vira movimento, raiz e floração.", "res://Habilidades/monthly_p05.tres"),
+	_item(&"p05_florescimento", "FLORESCIMENTO", "Por 3 segundos, vinhas infectam e congelam inimigos próximos; as flores explodem juntas no fim.", 0, Color("ff68ae"), "SET • PRIMAVERA", [5, 4, 2], &"boss_florescimento", "A primavera vira movimento, raiz e floração.", "res://Habilidades/monthly_p05.tres"),
 	_item(&"p06_rosa_espinhosa", "ROSA ESPINHOSA", "Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.", 0, Color("e578ff"), "AGO • LILÁS", [5, 2, 3], &"boss_ruptura", "Uma defesa ativa que transforma ruptura em reação.", "res://Habilidades/monthly_p06.tres"),
-	_item(&"p07_forma_fantasma", "FORMA FANTASMA", "Fica intangível, acelera e deixa ecos que explodem depois.", 4700, Color("a978ff"), "OUT • HALLOWEEN", [4, 4, 2], &"", "Fantasmas e o imaginário do Halloween em movimento neon.", "res://Habilidades/monthly_p07.tres"),
-	_item(&"p08_presente_misterioso", "PRESENTE MISTERIOSO", "Abre um presente aleatório de ataque, defesa ou controle; a fita denuncia o tipo.", 3200, Color("ff4c61"), "DEZ • NATAL", [3, 3, 3], &"", "Um presente legível antes de ser aberto, sem depender apenas da sorte.", "res://Habilidades/monthly_p08.tres"),
-	_item(&"p09_recomeco", "RECOMEÇO", "Limpa efeitos negativos e repete seus disparos recentes como fogos de artifício.", 0, Color("f5f6ff"), "JAN • ANO NOVO", [4, 4, 2], &"jogo_zerado", "O fim do ciclo abre um novo começo.", "res://Habilidades/monthly_p09.tres"),
-	_item(&"p10_laco_uniao", "LAÇO DA UNIÃO", "Liga dois inimigos; parte do dano sofrido por um ecoa no outro.", 4000, Color("ff5b8d"), "JUN • VERMELHO", [4, 5, 2], &"", "Conexão, cuidado e responsabilidade compartilhada.", "res://Habilidades/monthly_p10.tres"),
+	_item(&"p07_forma_fantasma", "FORMA FANTASMA", "Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.", 4700, Color("a978ff"), "OUT • HALLOWEEN", [4, 4, 2], &"", "Fantasmas e o imaginário do Halloween em movimento neon.", "res://Habilidades/monthly_p07.tres"),
+	_item(&"p08_presente_misterioso", "PRESENTE MISTERIOSO", "Planta uma caixa que atrai inimigos e explode, derrotando quem se aproximar.", 3200, Color("ff4c61"), "DEZ • NATAL", [3, 3, 3], &"", "Um presente legível antes de abrir, sem depender apenas da sorte.", "res://Habilidades/monthly_p08.tres"),
+	_item(&"p10_laco_uniao", "LAÇO DA UNIÃO", "Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.", 4000, Color("ff5b8d"), "JUN • VERMELHO", [4, 5, 2], &"", "Conexão, cuidado e responsabilidade compartilhada.", "res://Habilidades/monthly_p10.tres"),
 	_item(&"p11_imaginacao", "IMAGINAÇÃO SEM LIMITES", "Transforma temporariamente o tiro em um brinquedo cromático imprevisível.", 3600, Color("45dfff"), "OUT • CRIANÇAS", [4, 3, 3], &"", "Formas simples e lúdicas celebram a infância.", "res://Habilidades/monthly_p11.tres"),
 	_item(&"p12_furia_natureza", "FÚRIA DA NATUREZA", "Ergue raízes, rochas e cristais em sequência na direção da mira.", 5400, Color("6ee65b"), "ABR • TERRA", [5, 3, 2], &"", "O planeta responde em camadas: solo, raiz e cristal.", "res://Habilidades/monthly_p12.tres"),
 	_item(&"p13_onda_gigante", "ONDA GIGANTE", "Uma onda larga apaga projéteis pequenos, empurra inimigos e deixa correnteza.", 4300, Color("36cfff"), "MAR • ÁGUA", [4, 4, 2], &"", "Água como força, movimento e preservação.", "res://Habilidades/monthly_p13.tres"),
-	_item(&"p14_tempestade_verde", "TEMPESTADE VERDE", "Folhas orbitam a nave e são lançadas em leque na próxima ativação.", 3900, Color("48f49a"), "JUN • AMBIENTE", [4, 5, 2], &"", "Uma pequena floresta defensiva que depois vira rajada.", "res://Habilidades/monthly_p14.tres"),
+	_item(&"p14_tempestade_verde", "TEMPESTADE VERDE", "Invoca uma chuva diagonal de folhas a 315°, com dano baixo e perfuração evolutiva.", 3900, Color("48f49a"), "JUN • AMBIENTE", [4, 5, 2], &"", "Uma frente verde transforma o ambiente em chuva ofensiva.", "res://Habilidades/monthly_p14.tres"),
 	_item(&"p15_determinacao", "DETERMINAÇÃO INABALÁVEL", "Marca ameaças próximas e libera proteção com uma explosão concentrada.", 0, Color("d879ff"), "MAR • MULHERES", [5, 4, 1], &"constelacao_1000", "Força e autonomia representadas por pressão seguida de resposta.", "res://Habilidades/monthly_p15.tres"),
 ]
 

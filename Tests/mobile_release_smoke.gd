@@ -80,24 +80,20 @@ func _ready() -> void:
 		"o antigo botão UP ainda apareceu na interface mobile"
 	)
 	var particulas_teste := GPUParticles2D.new()
-	verificar(
-		is_equal_approx(Global.FATOR_PARTICULAS_MOBILE, 0.55)
-		and Global.LIMITE_PARTICULAS_MOBILE == 90
-		and Global.LIMITE_PARTICULAS_FUNDO_MOBILE == 55
-		and Global.FPS_PARTICULAS_MOBILE == 30,
-		"o perfil visual mobile deixou de corresponder à release 0.7.1"
-	)
 	particulas_teste.name = "FundoTeste"
 	particulas_teste.amount = 200
+	particulas_teste.fixed_fps = 30
+	particulas_teste.interpolate = true
 	add_child(particulas_teste)
-	Global._otimizar_particulas_mobile(particulas_teste)
+	await get_tree().process_frame
+	await get_tree().process_frame
 	verificar(
-		particulas_teste.amount == Global.LIMITE_PARTICULAS_FUNDO_MOBILE,
-		"o perfil mobile não limitou as partículas de fundo"
+		particulas_teste.amount == 200,
+		"o mobile reduziu a quantidade de partículas definida pela cena"
 	)
 	verificar(
-		particulas_teste.fixed_fps == Global.FPS_PARTICULAS_MOBILE and not particulas_teste.interpolate,
-		"as partículas mobile não receberam a atualização econômica"
+		particulas_teste.fixed_fps == 30 and particulas_teste.interpolate,
+		"o mobile alterou a suavidade das partículas"
 	)
 	particulas_teste.queue_free()
 	verificar(

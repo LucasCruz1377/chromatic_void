@@ -5,7 +5,7 @@
 script = ExtResource("1")
 Id = &"p14_tempestade_verde"
 Nome = "Tempestade Verde"
-Descricao = "Folhas orbitam a nave e são lançadas em leque na próxima ativação."
+Descricao = "Invoca por 7 segundos uma chuva diagonal de folhas a 315°, com 5 de dano-base e perfuração evolutiva."
 Icone = ExtResource("2")
 MonthlyColorsSelo = "JUNHO • MEIO AMBIENTE"
 MonthlyColorsContexto = "Uma pequena floresta defensiva que depois vira rajada."

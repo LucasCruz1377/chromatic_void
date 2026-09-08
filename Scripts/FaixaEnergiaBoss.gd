@@ -15,6 +15,8 @@ var cor := Color("#ffd85c")
 var dano := 18
 var atraso := 0.0
 var tempo_aviso := 0.85
+var antecedencia_trava := 0.0
+var mira_travada := false
 var tempo_ativo := 1.1
 var velocidade_angular := 0.0
 var velocidade_angular_atual := 0.0
@@ -48,6 +50,7 @@ static func criar(cena: Node, dados: Dictionary) -> FaixaEnergiaBoss:
 	faixa.atraso = float(dados.get("atraso", 0.0))
 	faixa.tempo_aviso = float(dados.get("aviso", 0.85))
 	faixa.tempo_ativo = float(dados.get("duracao", 1.1))
+	faixa.antecedencia_trava = clampf(float(dados.get("antecedencia_trava", 0.0)), 0.0, faixa.tempo_aviso)
 	faixa.velocidade_angular = float(dados.get("velocidade_angular", 0.0))
 	faixa.velocidade_angular_atual = faixa.velocidade_angular
 	faixa.inverter_no_meio = bool(dados.get("inverter", false))
@@ -83,12 +86,17 @@ func _atualizar_geometria(delta: float) -> void:
 	var local := tempo - atraso
 	match movimento:
 		Movimento.RASTREADORA:
+			if mira_travada:
+				return
 			var origem := _posicao_formacao(indice_a, centro)
-			if local >= 0.0 and local < tempo_aviso and is_instance_valid(alvo):
+			var instante_trava := maxf(tempo_aviso - antecedencia_trava, 0.0)
+			if local >= 0.0 and local < instante_trava and is_instance_valid(alvo):
 				var desejado := origem.angle_to_point(alvo.global_position)
 				angulo = lerp_angle(angulo, desejado, clampf(delta * 4.4, 0.0, 1.0))
 			ponto_a = origem
 			ponto_b = origem + Vector2.RIGHT.rotated(angulo) * comprimento
+			if antecedencia_trava > 0.0 and local >= instante_trava:
+				mira_travada = true
 		Movimento.CORREDOR:
 			if local >= 0.0:
 				deslocamento += velocidade_deslocamento * _sentido_deslocamento * delta
@@ -152,7 +160,7 @@ func _draw() -> void:
 		return
 	var ativo := local >= tempo_aviso
 	if not ativo:
-		var pulso := 0.44 + sin(local * 22.0) * 0.18
+		var pulso := 0.85 if mira_travada else 0.44 + sin(local * 22.0) * 0.18
 		draw_line(ponto_a, ponto_b, Color(cor, pulso * 0.28), largura + 12.0)
 		draw_line(ponto_a, ponto_b, Color(cor, pulso), 3.0)
 		var progresso := clampf(local / maxf(tempo_aviso, 0.01), 0.0, 1.0)

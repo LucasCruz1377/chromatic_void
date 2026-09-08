@@ -14,6 +14,7 @@ const TEXTURA_MODELO_O = preload("res://UI/modelo_o.svg")
 const TEXTURA_RASTRO_MODELO_O = preload("res://UI/rastro_estrela_modelo_o.svg")
 const SHADER_COR_MODELO_O = preload("res://FX/canvas_shader/modelo_o_cor.gdshader")
 const AJUDANTE_MONTHLY = preload("res://Scripts/AjudanteMonthly.gd")
+const EFEITO_HABILIDADE_MONTHLY = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const REROLLS_UPGRADES_INICIAIS := 3
 const BONUS_DANO_POR_NIVEL := [0.25, 0.18, 0.14, 0.10, 0.08]
 const FATOR_CADENCIA_POR_NIVEL := [0.85, 0.88, 0.91, 0.94, 0.96]
@@ -69,6 +70,7 @@ var invulneravel_desenvolvedor := false
 var multiplicador_dano_recebido := 1.0
 var multiplicador_cura_recebida := 1.0
 var multiplicador_velocidade_habilidade := 1.0
+var foco_movimento_tempo_real := false
 var multiplicador_dano_habilidade := 1.0
 var multiplicador_cadencia_habilidade := 1.0
 var escudo_habilidade := 0.0
@@ -84,6 +86,7 @@ var dano_pulso_queimadura := 0.0
 var pulsos_queimadura_restantes := 0
 var dano_colisao_habilidade := 0.0
 var xp_atual: float = 0.0
+var _nivel_exibido := -1
 var nivel_atual: int = 1
 var xp_necessario: int = 2
 var invencibilidade := false
@@ -499,7 +502,9 @@ func criar_visual_modelo_o() -> void:
 
 
 func atualizar_ui() -> void:
-	lvl_text.text = "LVL: " + str(nivel_atual)
+	if _nivel_exibido != nivel_atual:
+		_nivel_exibido = nivel_atual
+		lvl_text.text = "LVL: " + str(nivel_atual)
 	if HabilidadeEquipada:
 		display_skill.texture = HabilidadeEquipada.Icone
 	else:
@@ -642,24 +647,17 @@ func ao_ativar_habilidade() -> void:
 	aplicar_mutacao_habilidade()
 
 
-func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -> void:
+func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, config: Dictionary = {}) -> void:
 	var cena := get_tree().current_scene
 	if not is_instance_valid(cena):
 		return
 	# Uma assinatura visual própria nasce em toda ativação. Os feedbacks de
 	# impacto posteriores continuam separados e não escondem a leitura do poder.
 	ExplosaoMonthlyCena.criar(cena, global_position, cor, 0.82 * potencia, efeito_id)
+	if efeito_id in [&"ovo", &"florescimento", &"fantasma", &"presente", &"laco", &"tempestade"]:
+		EFEITO_HABILIDADE_MONTHLY.criar(cena, self, efeito_id, cor, potencia, config)
+		return
 	match efeito_id:
-		&"ovo":
-			var resultado := randi_range(0, 2)
-			if resultado == 0:
-				curar(18.0 * potencia)
-				ativar_escudo(8.0, 3.0, Color(0.45, 1.0, 0.62))
-			elif resultado == 1:
-				_disparar_radial(6, 0.75 * potencia, &"missile", cor)
-			else:
-				_atingir_area(global_position, 155.0, 9.0 * potencia, 240.0, 0.35)
-			_criar_feedback_monthly(global_position, cor, 1.25, 5.0)
 		&"clone":
 			_invocar_ajudante_monthly(AjudanteMonthly.Tipo.CLONE, cor, potencia)
 			_criar_feedback_monthly(global_position - transform.y * 28.0, cor, 1.0, 1.0)
@@ -670,47 +668,9 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 		&"protetor":
 			_invocar_ajudante_monthly(AjudanteMonthly.Tipo.GUARDIAO, cor, potencia)
 			_criar_feedback_monthly(global_position, cor, 1.35, 5.0)
-		&"florescimento":
-			_explodir_em_linha(cor, 5, 72.0, 64.0, 7.0 * potencia)
-			_disparar_radial(10, 0.42 * potencia, &"petal", cor)
 		&"parry":
 			janela_parry = 1.15
 			_criar_feedback_monthly(global_position, cor, 0.85, 0.0)
-		&"fantasma":
-			tipo_poder_temporario = &"fantasma"
-			tempo_poder_monthly = 2.4
-			cor_poder_temporario = cor
-			invulneravel_por_habilidade = true
-			multiplicador_velocidade_habilidade = 1.42
-		&"presente":
-			var presente := randi_range(0, 2)
-			var cor_presente: Color = [
-				Color(1.0, 0.28, 0.34),
-				Color(0.32, 0.72, 1.0),
-				Color(0.42, 1.0, 0.62)
-			][presente]
-			# A cor da fita revela a categoria antes de o presente abrir.
-			_criar_feedback_monthly(global_position, cor_presente, 0.75, 0.0)
-			_abrir_presente_depois(presente, cor_presente, potencia)
-		&"recomeco":
-			tempo_queimadura = 0.0
-			pulsos_queimadura_restantes = 0
-			resistencia_temporaria_multiplicador = 1.0
-			_repetir_disparos_recentes(cor, potencia)
-			_criar_feedback_monthly(global_position, cor, 1.6, 8.0)
-		&"laco":
-			var alvos := _inimigos_mais_proximos(2)
-			if alvos.size() >= 2:
-				var expira := Time.get_ticks_msec() + 6000
-				alvos[0].set_meta("laco_parceiro", alvos[1])
-				alvos[1].set_meta("laco_parceiro", alvos[0])
-				alvos[0].set_meta("laco_expira", expira)
-				alvos[1].set_meta("laco_expira", expira)
-			for alvo in alvos:
-				if alvo.has_method("aplicar_atordoamento"):
-					alvo.aplicar_atordoamento(1.3)
-				_criar_feedback_monthly(alvo.global_position, cor, 0.9, 0.0)
-			_criar_feedback_monthly(global_position, cor, 1.1, 3.0)
 		&"imaginacao":
 			tipo_poder_temporario = &"imaginacao"
 			tempo_poder_monthly = 6.0
@@ -723,15 +683,6 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float) -
 			_limpar_projeteis_inimigos(global_position, 245.0, false)
 			_atingir_area(global_position, 245.0, 6.0 * potencia, 360.0, 0.45)
 			_criar_feedback_monthly(global_position + transform.x * 80.0, cor, 2.0, 8.0)
-		&"tempestade":
-			if folhas_tempestade_ativas:
-				folhas_tempestade_ativas = false
-				_disparar_leque(12, 95.0, 0.5 * potencia, &"leaf", cor)
-				_criar_feedback_monthly(global_position, cor, 1.2, 4.0)
-			else:
-				folhas_tempestade_ativas = true
-				ativar_escudo(18.0, 9.0, cor)
-				_criar_feedback_monthly(global_position, cor, 0.9, 0.0)
 		&"determinacao":
 			ativar_escudo(32.0 * potencia, 6.0, cor)
 			for alvo in _inimigos_mais_proximos(6):
@@ -1068,6 +1019,10 @@ func atualizar_movimento(delta: float) -> void:
 		return
 
 	var fator_movimento := multiplicador_velocidade_habilidade
+	# No Foco, velocidade linear compensa o time_scale, mas a rotação usa delta
+	# real. Isso mantém o controle normal sem transformar a nave em um pião.
+	var fator_rotacao := 1.0 if foco_movimento_tempo_real else fator_movimento
+	var delta_rotacao := delta / maxf(Engine.time_scale, 0.01) if foco_movimento_tempo_real else delta
 	if modulo_nave == &"n08_motor_maia":
 		fator_movimento *= 1.0 + minf(tempo_motor_maia / 12.0, 1.0) * 0.22
 	if tempo_reflexo > 0.0:
@@ -1092,7 +1047,7 @@ func atualizar_movimento(delta: float) -> void:
 			rotation = rotate_toward(
 				rotation,
 				direcao_simplificada.angle(),
-				VelocidadeVirar * fator_movimento * resposta_controle_simplificado * delta
+				VelocidadeVirar * fator_rotacao * resposta_controle_simplificado * delta_rotacao
 			)
 		if not ctrlblock:
 			# L2 tem prioridade para a ré não disputar força com a aceleração
@@ -1115,7 +1070,7 @@ func atualizar_movimento(delta: float) -> void:
 			rotation = rotate_toward(
 				rotation,
 				direcao_mira_controle.angle(),
-				VelocidadeVirar * fator_movimento * delta
+				VelocidadeVirar * fator_rotacao * delta_rotacao
 			)
 		elif (
 			mira_mouse
@@ -1126,10 +1081,10 @@ func atualizar_movimento(delta: float) -> void:
 			rotation = rotate_toward(
 				rotation,
 				target_angle,
-				VelocidadeVirar * fator_movimento * delta
+				VelocidadeVirar * fator_rotacao * delta_rotacao
 			)
 		else:
-			arrowsctrl(delta, fator_movimento)
+			arrowsctrl(delta_rotacao, fator_rotacao)
 
 	if not usando_controle_simplificado and not ctrlblock:
 		if Input.is_action_pressed("acelerar"):

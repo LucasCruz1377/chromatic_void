@@ -45,6 +45,9 @@ var tween_impacto: Tween
 var modulacao_base := Color.WHITE
 var escala_base_impacto := Vector2.ONE
 var materiais_hitflash: Array[ShaderMaterial] = []
+var _poligono_feedback: Polygon2D
+var _feedback_localizado := false
+var _feedback_com_poligono := false
 var indice_setor_dificuldade := 0
 
 @onready var player = get_tree().get_first_node_in_group("player")
@@ -97,12 +100,18 @@ func _physics_process(delta: float) -> void:
 	atualizar_estados(delta)
 	atualizar_referencia_player()
 
-	if esta_atordoado():
+	var atraido_pelo_presente := _mover_para_presente_misterioso(delta)
+	if atraido_pelo_presente:
+		pass
+	elif esta_atordoado():
 		velocity = velocity.move_toward(Vector2.ZERO, Velocidade * 4.0 * delta)
 	else:
 		Mover(delta)
 
-	velocity = velocity.limit_length(obter_velocidade_maxima())
+	var velocidade_limite := obter_velocidade_maxima()
+	if atraido_pelo_presente:
+		velocidade_limite = maxf(velocidade_limite * 1.8, 320.0)
+	velocity = velocity.limit_length(velocidade_limite)
 	move_and_slide()
 
 	if usa_wrap:
@@ -112,6 +121,30 @@ func _physics_process(delta: float) -> void:
 func atualizar_referencia_player() -> void:
 	if not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player")
+
+
+func atrair_para_presente_misterioso(presente: Node2D) -> void:
+	if morto or not is_instance_valid(presente):
+		return
+	set_meta("presente_misterioso_alvo", presente)
+
+
+func _mover_para_presente_misterioso(delta: float) -> bool:
+	if not has_meta("presente_misterioso_alvo"):
+		return false
+	var presente = get_meta("presente_misterioso_alvo")
+	if not is_instance_valid(presente) or not presente is Node2D:
+		remove_meta("presente_misterioso_alvo")
+		return false
+	var destino := (presente as Node2D).global_position
+	var distancia := global_position.distance_to(destino)
+	if distancia <= 22.0:
+		velocity = velocity.move_toward(Vector2.ZERO, 1200.0 * delta)
+	else:
+		var velocidade_atracao := maxf(Velocidade * 1.8, 320.0)
+		var desejada := global_position.direction_to(destino) * velocidade_atracao
+		velocity = velocity.move_toward(desejada, 1500.0 * delta)
+	return true
 
 
 func atualizar_estados(delta: float) -> void:
@@ -352,10 +385,17 @@ func morrer() -> void:
 
 
 func obter_cor_feedback() -> Color:
-	for node in find_children("*", "Polygon2D", true, false):
-		var poligono := node as Polygon2D
-		if is_instance_valid(poligono):
-			return poligono.color.lightened(0.18)
+	if not _feedback_localizado or (_feedback_com_poligono and not is_instance_valid(_poligono_feedback)):
+		_feedback_localizado = true
+		_poligono_feedback = null
+		_feedback_com_poligono = false
+		for node in find_children("*", "Polygon2D", true, false):
+			_poligono_feedback = node as Polygon2D
+			if is_instance_valid(_poligono_feedback):
+				_feedback_com_poligono = true
+				break
+	if is_instance_valid(_poligono_feedback):
+		return _poligono_feedback.color.lightened(0.18)
 	return Color(0.55, 0.9, 1.0)
 
 

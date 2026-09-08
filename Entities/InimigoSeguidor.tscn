@@ -62,6 +62,7 @@ script = ExtResource("1_n3r8k")
 VidaMaxima = 2.5
 Dano = 12
 Velocidade = 178
+morre_ao_colidir_player = false
 particulas_morte = ExtResource("2_ureyi")
 
 [node name="corpo" type="Polygon2D" parent="." unique_id=1427657541]

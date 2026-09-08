@@ -275,12 +275,36 @@ func _atualizar_dica_menu() -> void:
 		dica_menu.add_child(imagem)
 	else:
 		var tecla := Label.new()
-		tecla.text = "[TAB]"
+		tecla.text = "[%s]" % _texto_tecla_melhorias()
 		tecla.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		tecla.add_theme_font_size_override("font_size", 12)
 		tecla.add_theme_color_override("font_color", Color(0.62, 0.78, 1.0))
 		tecla.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		dica_menu.add_child(tecla)
+
+
+func _texto_tecla_melhorias() -> String:
+	for slot in range(Global.MAX_SLOTS_CONTROLE):
+		var evento := Global.obter_evento_mapeado(&"abrir_melhorias", slot)
+		if not evento is InputEventKey:
+			continue
+		var tecla := evento as InputEventKey
+		var codigo := tecla.physical_keycode if tecla.physical_keycode != KEY_NONE else tecla.keycode
+		var nome := OS.get_keycode_string(codigo)
+		if nome.is_empty():
+			continue
+		var partes: Array[String] = []
+		if tecla.ctrl_pressed:
+			partes.append("CTRL")
+		if tecla.alt_pressed:
+			partes.append("ALT")
+		if tecla.shift_pressed:
+			partes.append("SHIFT")
+		if tecla.meta_pressed:
+			partes.append("META")
+		partes.append(nome.to_upper())
+		return "+".join(partes)
+	return "SEM TECLA"
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -331,7 +355,7 @@ func atualizar_indicador() -> void:
 		indicador.text = (
 			"◆  MELHORIAS: %d" % pontos
 			if usando_controle
-			else "◆  MELHORIAS: %d  [TAB]" % pontos
+			else "◆  MELHORIAS: %d  [%s]" % [pontos, _texto_tecla_melhorias()]
 		)
 
 

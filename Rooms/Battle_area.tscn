@@ -284,6 +284,7 @@ offset_right = 795.0
 offset_bottom = 523.0
 mouse_filter = 2
 fill_mode = 6
+nine_patch_stretch = true
 value = 100.0
 texture_progress = SubResource("GradientTexture2D_1s1gu")
 
@@ -300,6 +301,7 @@ grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
 fill_mode = 6
+nine_patch_stretch = true
 value = 100.0
 texture_progress = SubResource("GradientTexture2D_f80io")
 tint_progress = Color(0.58431375, 1, 1, 1)
