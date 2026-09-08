@@ -21,7 +21,7 @@ const DADOS: Dictionary = {
 		"simbolo": "◇",
 		"boss": &"pet0",
 		"inimigos": [
-			[&"estilhaco_vazio", 3.0], [&"melee", 1.3], [&"investida", 1.1],
+			[&"seguidor", 3.0], [&"melee", 1.3], [&"investida", 1.1],
 			[&"tanque", 0.8], [&"atirador", 0.8]
 		]
 	},

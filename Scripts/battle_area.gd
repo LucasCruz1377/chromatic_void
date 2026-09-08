@@ -11,11 +11,7 @@ const INIMIGOS: Dictionary = {
 	&"investida": preload("res://Entities/InimigoInvestida.tscn"),
 	&"tanque": preload("res://Entities/InimigoTanque.tscn"),
 	&"atirador": preload("res://Entities/InimigoAtirador.tscn"),
-	&"estilhaco_vazio": preload("res://Entities/InimigoEstilhacoVazio.tscn"),
-	&"guarda_dourado": preload("res://Entities/InimigoGuardaDourado.tscn"),
-	&"eco_lilas": preload("res://Entities/InimigoEcoLilas.tscn"),
 	&"broto_primaveril": preload("res://Entities/InimigoBrotoPrimaveril.tscn"),
-	&"eco_astral": preload("res://Entities/InimigoEcoAstral.tscn"),
 	&"centelha_guia": preload("res://Entities/InimigoCentelhaGuia.tscn"),
 	&"elo_dourado": preload("res://Entities/InimigoEloDourado.tscn"),
 	&"prisma_amparo": preload("res://Entities/InimigoPrismaAmparo.tscn"),
@@ -244,8 +240,8 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 			INIMIGOS[&"seguidor"]
 		]
 		if nivel >= 3:
-			opcoes_originais.append(INIMIGOS[&"estilhaco_vazio"])
-			opcoes_originais.append(INIMIGOS[&"estilhaco_vazio"])
+			opcoes_originais.append(INIMIGOS[&"seguidor"])
+			opcoes_originais.append(INIMIGOS[&"melee"])
 			opcoes_originais.append(INIMIGOS[&"melee"])
 		if nivel >= 5:
 			opcoes_originais.append(INIMIGOS[&"investida"])

@@ -1,12 +1,11 @@
 extends Node
 
 ## Gerencia a descoberta e a instalação de novas versões do Chromatic Void.
-## A versão disponível é consultada no canal correspondente do itch.io.
-## Os arquivos continuam vindo da GitHub Release com a mesma tag.
+## O GitHub Releases é a única fonte de versão e de arquivos, evitando que o
+## catálogo do itch.io e os arquivos publicados fiquem fora de sincronia.
 
-const ITCH_TARGET := "lukass-1377/chromatic-void"
-const ITCH_API := "https://api.itch.io/wharf/latest"
 const GITHUB_REPO := "LucasCruz1377/chromatic_void"
+const RELEASES_API := "https://api.github.com/repos/%s/releases?per_page=30" % GITHUB_REPO
 var request_headers := PackedStringArray([
 	"Accept: application/vnd.github+json",
 	"X-GitHub-Api-Version: 2022-11-28",
@@ -50,7 +49,7 @@ func _ready() -> void:
 	http_request = HTTPRequest.new()
 	http_request.timeout = REQUEST_TIMEOUT
 	add_child(http_request)
-	http_request.request_completed.connect(_on_itch_request_completed)
+	http_request.request_completed.connect(_on_release_request_completed)
 	set_process(false)
 
 
@@ -67,17 +66,13 @@ func verificar_atualizacao() -> void:
 	current_version = _obter_versao_atual()
 	_limpar_release_selecionada()
 
-	var canal := obter_plataforma_atual()
-	var url := "%s?target=%s&channel_name=%s" % [
-		ITCH_API, ITCH_TARGET.uri_encode(), canal.uri_encode()
-	]
-	var erro := http_request.request(url, request_headers)
+	var erro := http_request.request(RELEASES_API, request_headers)
 	if erro != OK:
 		checking_update = false
 		update_check_failed.emit("Não foi possível iniciar a verificação de atualizações.")
 
 
-func _on_itch_request_completed(
+func _on_release_request_completed(
 	result: int,
 	response_code: int,
 	_headers: PackedStringArray,
@@ -90,26 +85,29 @@ func _on_itch_request_completed(
 		update_check_failed.emit("Sem conexão com o servidor de atualizações.")
 		return
 
+	if response_code == 403:
+		update_check_failed.emit("O servidor limitou temporariamente as verificações. Tente novamente mais tarde.")
+		return
+
 	if response_code != 200:
-		update_check_failed.emit("O itch.io respondeu com erro HTTP %d." % response_code)
+		update_check_failed.emit("O servidor de atualizações respondeu com erro HTTP %d." % response_code)
 		return
 
-	var dados = JSON.parse_string(body.get_string_from_utf8())
-	if not (dados is Dictionary) or not dados.has("latest"):
-		update_check_failed.emit("O itch.io retornou uma versão inválida.")
+	var releases = JSON.parse_string(body.get_string_from_utf8())
+	if not (releases is Array):
+		update_check_failed.emit("O servidor retornou uma lista de versões inválida.")
 		return
 
-	latest_version = str(dados.get("latest", "")).strip_edges()
-	if latest_version.is_empty() or not _versao_eh_mais_nova(latest_version, current_version):
+	var escolhida := selecionar_melhor_release(releases, obter_plataforma_atual(), current_version)
+	if escolhida.is_empty():
 		update_check_finished.emit()
 		return
 
-	var tag := latest_version if latest_version.begins_with("v") else "v" + latest_version
-	var nome_asset := obter_nome_asset(obter_plataforma_atual())
-	latest_asset_url = "https://github.com/%s/releases/download/%s/%s" % [GITHUB_REPO, tag, nome_asset]
-	latest_release_url = "https://github.com/%s/releases/tag/%s" % [GITHUB_REPO, tag]
-	latest_asset_digest = ""
-	latest_asset_size = 0
+	latest_version = str(escolhida["version"])
+	latest_asset_url = str(escolhida["asset_url"])
+	latest_release_url = str(escolhida["release_url"])
+	latest_asset_digest = str(escolhida["digest"])
+	latest_asset_size = int(escolhida["size"])
 
 	update_available.emit(latest_version)
 	update_check_finished.emit()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://ppkx3b4gmokr"]
+[gd_scene load_steps=9 format=3 uid="uid://ppkx3b4gmokr"]
 
 [ext_resource type="Script" uid="uid://dxwmhe5oq4dij" path="res://JanelaAtualizacao.gd" id="1_script"]
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="2_font"]
@@ -63,11 +63,27 @@ corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
 
 [sub_resource type="StyleBoxFlat" id="StyleProgressFill"]
-bg_color = Color(0.25, 0.88, 0.74, 1)
+bg_color = Color(0.35, 0.92, 0.86, 1)
 corner_radius_top_left = 7
 corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleVersions"]
+bg_color = Color(0.035, 0.05, 0.105, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.34, 0.48, 0.82, 0.55)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
 
 [node name="JanelaAtualizacao" type="CanvasLayer"]
 layer = 100
@@ -94,7 +110,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Painel" type="PanelContainer" parent="Centralizador"]
-custom_minimum_size = Vector2(580, 0)
+custom_minimum_size = Vector2(620, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StylePanel")
 
@@ -114,7 +130,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.95, 0.81, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18
-text = "✦  TRANSMISSÃO RECEBIDA  ✦"
+text = "✦  SINAL DO VAZIO RECEBIDO  ✦"
 horizontal_alignment = 1
 
 [node name="Titulo" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
@@ -136,24 +152,28 @@ autowrap_mode = 2
 [node name="Separador" type="HSeparator" parent="Centralizador/Painel/Margem/Conteudo"]
 layout_mode = 2
 
-[node name="Versoes" type="HBoxContainer" parent="Centralizador/Painel/Margem/Conteudo"]
+[node name="PainelVersoes" type="PanelContainer" parent="Centralizador/Painel/Margem/Conteudo"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleVersions")
+
+[node name="Versoes" type="HBoxContainer" parent="Centralizador/Painel/Margem/Conteudo/PainelVersoes"]
 layout_mode = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="VersaoAtual" type="Label" parent="Centralizador/Painel/Margem/Conteudo/Versoes"]
+[node name="VersaoAtual" type="Label" parent="Centralizador/Painel/Margem/Conteudo/PainelVersoes/Versoes"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.59, 0.72, 1)
 theme_override_font_sizes/font_size = 15
 text = "INSTALADA  •  v0.0.0"
 
-[node name="Seta" type="Label" parent="Centralizador/Painel/Margem/Conteudo/Versoes"]
+[node name="Seta" type="Label" parent="Centralizador/Painel/Margem/Conteudo/PainelVersoes/Versoes"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.95, 0.81, 1)
 theme_override_font_sizes/font_size = 18
 text = "→"
 
-[node name="NovaVersao" type="Label" parent="Centralizador/Painel/Margem/Conteudo/Versoes"]
+[node name="NovaVersao" type="Label" parent="Centralizador/Painel/Margem/Conteudo/PainelVersoes/Versoes"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.48, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 15
@@ -170,12 +190,30 @@ autowrap_mode = 2
 
 [node name="Progresso" type="ProgressBar" parent="Centralizador/Painel/Margem/Conteudo"]
 visible = false
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 mouse_filter = 2
 theme_override_styles/background = SubResource("StyleProgressBg")
 theme_override_styles/fill = SubResource("StyleProgressFill")
 show_percentage = false
+
+[node name="ProgressoInfo" type="HBoxContainer" parent="Centralizador/Painel/Margem/Conteudo"]
+visible = false
+layout_mode = 2
+
+[node name="Detalhes" type="Label" parent="Centralizador/Painel/Margem/Conteudo/ProgressoInfo"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.48, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0%  •  preparando"
+
+[node name="TempoRestante" type="Label" parent="Centralizador/Painel/Margem/Conteudo/ProgressoInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.62, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "CALCULANDO TEMPO..."
+horizontal_alignment = 2
 
 [node name="Status" type="Label" parent="Centralizador/Painel/Margem/Conteudo"]
 custom_minimum_size = Vector2(0, 22)

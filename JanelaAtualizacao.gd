@@ -7,14 +7,19 @@ extends CanvasLayer
 @onready var painel: PanelContainer = $Centralizador/Painel
 @onready var titulo: Label = $Centralizador/Painel/Margem/Conteudo/Titulo
 @onready var mensagem: Label = $Centralizador/Painel/Margem/Conteudo/Mensagem
-@onready var versao_atual: Label = $Centralizador/Painel/Margem/Conteudo/Versoes/VersaoAtual
-@onready var nova_versao: Label = $Centralizador/Painel/Margem/Conteudo/Versoes/NovaVersao
+@onready var versao_atual: Label = $Centralizador/Painel/Margem/Conteudo/PainelVersoes/Versoes/VersaoAtual
+@onready var nova_versao: Label = $Centralizador/Painel/Margem/Conteudo/PainelVersoes/Versoes/NovaVersao
 @onready var aviso_android: Label = $Centralizador/Painel/Margem/Conteudo/AvisoAndroid
 @onready var progresso: ProgressBar = $Centralizador/Painel/Margem/Conteudo/Progresso
+@onready var progresso_info: HBoxContainer = $Centralizador/Painel/Margem/Conteudo/ProgressoInfo
+@onready var progresso_detalhes: Label = $Centralizador/Painel/Margem/Conteudo/ProgressoInfo/Detalhes
+@onready var tempo_restante: Label = $Centralizador/Painel/Margem/Conteudo/ProgressoInfo/TempoRestante
 @onready var status: Label = $Centralizador/Painel/Margem/Conteudo/Status
 @onready var botao_atualizar: Button = $Centralizador/Painel/Margem/Conteudo/Botoes/BotaoAtualizar
 @onready var botao_mais_tarde: Button = $Centralizador/Painel/Margem/Conteudo/Botoes/BotaoMaisTarde
+
 var inicio_download_msec := 0
+var velocidade_suavizada := 0.0
 
 
 func _ready() -> void:
@@ -41,6 +46,7 @@ func _mostrar_atualizacao(version: String) -> void:
 	nova_versao.text = "DISPONÍVEL  •  v%s" % version.trim_prefix("v")
 	status.text = ""
 	progresso.hide()
+	progresso_info.hide()
 	botao_atualizar.disabled = false
 	botao_mais_tarde.disabled = false
 
@@ -70,6 +76,11 @@ func _mostrar_atualizacao(version: String) -> void:
 func _clicou_atualizar() -> void:
 	botao_atualizar.disabled = true
 	status.text = "Preparando atualização..."
+	progresso.value = 0.0
+	progresso.show()
+	progresso_info.show()
+	progresso_detalhes.text = "0%  •  preparando download"
+	tempo_restante.text = "CALCULANDO TEMPO..."
 	UpdateManager.iniciar_atualizacao()
 
 
@@ -79,25 +90,37 @@ func _clicou_mais_tarde() -> void:
 
 func _on_download_started(total_bytes: int) -> void:
 	inicio_download_msec = Time.get_ticks_msec()
+	velocidade_suavizada = 0.0
 	progresso.show()
+	progresso_info.show()
 	progresso.value = 0.0
 	status.text = "Baixando • %s" % _formatar_bytes(total_bytes)
 	botao_mais_tarde.disabled = true
 
 
 func _on_download_progress(baixado: int, total: int) -> void:
-	progresso.value = clampf(float(baixado) / float(total) * 100.0, 0.0, 100.0) if total > 0 else 0.0
-	var porcentagem := int(progresso.value)
-	var decorrido := maxf(float(Time.get_ticks_msec() - inicio_download_msec) / 1000.0, 0.1)
-	var velocidade := float(baixado) / decorrido
-	var restante := int(ceil(float(maxi(total - baixado, 0)) / velocidade)) if total > 0 and velocidade > 1.0 else -1
-	var tempo := _formatar_tempo(restante) if restante >= 0 else "calculando tempo..."
-	status.text = "%d%%  •  %s de %s  •  %s restantes" % [porcentagem, _formatar_bytes(baixado), _formatar_bytes(total), tempo]
+	var porcentagem := clampf(float(baixado) / float(total) * 100.0, 0.0, 100.0) if total > 0 else 0.0
+	progresso.value = porcentagem
+	status.text = "%s de %s" % [_formatar_bytes(baixado), _formatar_bytes(total)]
+	var segundos := maxf(float(Time.get_ticks_msec() - inicio_download_msec) / 1000.0, 0.001)
+	var velocidade_atual := float(baixado) / segundos
+	velocidade_suavizada = (
+		velocidade_atual
+		if velocidade_suavizada <= 0.0
+		else lerpf(velocidade_suavizada, velocidade_atual, 0.18)
+	)
+	progresso_detalhes.text = "%d%%  •  %s/s" % [roundi(porcentagem), _formatar_bytes(roundi(velocidade_suavizada))]
+	if total > 0 and velocidade_suavizada > 1.0:
+		var restante := float(maxi(total - baixado, 0)) / velocidade_suavizada
+		tempo_restante.text = _formatar_tempo(restante)
+	else:
+		tempo_restante.text = "CALCULANDO TEMPO..."
 
 
 func _on_download_failed(erro: String) -> void:
 	status.text = erro
 	progresso.hide()
+	progresso_info.hide()
 	botao_atualizar.disabled = false
 	botao_mais_tarde.disabled = false
 
@@ -105,18 +128,33 @@ func _on_download_failed(erro: String) -> void:
 func _on_installer_opened(plataforma: String) -> void:
 	if plataforma == UpdateManager.PLATFORM_ANDROID:
 		status.text = "Download aberto. Ao instalar, escolha Atualizar — não desinstale o jogo."
+		progresso.value = 15.0
+		progresso_detalhes.text = "DOWNLOAD EXTERNO"
+		tempo_restante.text = "ACOMPANHE NO NAVEGADOR"
 		botao_atualizar.text = "ABRIR DOWNLOAD"
 		botao_atualizar.disabled = false
 		botao_mais_tarde.text = "FECHAR"
 	else:
 		status.text = "Aplicando atualização..."
+		progresso.value = 100.0
+		progresso_detalhes.text = "100%  •  download concluído"
+		tempo_restante.text = "INSTALANDO..."
 
 
 func _ajustar_ao_viewport() -> void:
 	if not is_instance_valid(painel):
 		return
-	var largura := get_viewport().get_visible_rect().size.x
-	painel.custom_minimum_size.x = clampf(largura - 32.0, 320.0, 580.0)
+	var tamanho := get_viewport().get_visible_rect().size
+	fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centralizador.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centralizador.offset_left = 14.0
+	centralizador.offset_top = 14.0
+	centralizador.offset_right = -14.0
+	centralizador.offset_bottom = -14.0
+	painel.custom_minimum_size.x = clampf(tamanho.x - 28.0, 300.0, 620.0)
+	# O CenterContainer recalcula a posição no próximo frame; zerar qualquer
+	# deslocamento herdado impede a janela de reaparecer no canto superior.
+	painel.position = Vector2.ZERO
 
 
 func _formatar_bytes(valor: int) -> String:
@@ -129,7 +167,12 @@ func _formatar_bytes(valor: int) -> String:
 	return "%d B" % valor
 
 
-func _formatar_tempo(segundos: int) -> String:
-	if segundos < 60:
-		return "%d s" % segundos
-	return "%d min %02d s" % [segundos / 60, segundos % 60]
+func _formatar_tempo(segundos: float) -> String:
+	if segundos <= 1.0:
+		return "FINALIZANDO..."
+	var total := ceili(segundos)
+	if total < 60:
+		return "~%d s RESTANTES" % total
+	var minutos := total / 60
+	var resto := total % 60
+	return "~%d min %02d s" % [minutos, resto]

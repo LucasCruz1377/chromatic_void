@@ -37,10 +37,7 @@ func _ready() -> void:
 	batalha.add_child(alvo)
 	alvo.global_position = Vector2(430, 300)
 	projetil.definir_alvo_homing(alvo)
-	verificar(not is_instance_valid(projetil.alvo_homing), "projétil teleguiado nasceu com alvo pré-selecionado")
-	projetil.tempo_estilo = 0.20
-	projetil.atualizar_mira_gravitacional(0.1)
-	verificar(projetil.alvo_homing == alvo, "projétil não adquiriu ameaça que passou perto")
+	verificar(projetil.alvo_homing == alvo, "o comportamento antigo do tiro teleguiado não foi restaurado")
 
 	var setores = load("res://Scripts/SectorData.gd")
 	var ids_antigos := [&"seguidor", &"melee", &"investida", &"tanque", &"atirador"]
@@ -69,7 +66,7 @@ func _ready() -> void:
 	batalha.queue_free()
 	await get_tree().process_frame
 	if falhas.is_empty():
-		print("TESTE OK: ajudantes, homing por proximidade, setores e conquistas")
+		print("TESTE OK: ajudantes, tiro antigo, setores e conquistas")
 		get_tree().quit(0)
 	else:
 		get_tree().quit(1)

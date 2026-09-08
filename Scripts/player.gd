@@ -224,6 +224,13 @@ func carregar_habilidade_equipada() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
 	var caminho := str(dados.get("habilidade_equipada", ""))
 	var habilidade_carregada: Habilidade
+	# Uma chave presente e vazia representa a escolha explícita de jogar sem
+	# habilidade. Saves antigos sem a chave continuam recebendo a padrão.
+	if dados.has("habilidade_equipada") and caminho.is_empty():
+		if HabilidadeEquipada:
+			HabilidadeEquipada.ao_desequipar(self)
+		HabilidadeEquipada = null
+		return
 
 	if not Global.modo_desenvolvedor:
 		var liberadas = dados.get(

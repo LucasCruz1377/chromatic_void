@@ -56,7 +56,7 @@ func _ready() -> void:
 	var centro_tela := get_viewport().get_visible_rect().get_center()
 	verificar(centro_painel.distance_to(centro_tela) < 2.0, "a janela não ficou centralizada")
 	verificar(janela.visible, "a janela não abriu ao receber uma atualização")
-	verificar(janela._formatar_tempo(75) == "1 min 15 s", "o tempo restante não foi formatado corretamente")
+	verificar(janela._formatar_tempo(75) == "~1 min 15 s", "o tempo restante não foi formatado corretamente")
 	janela.queue_free()
 
 	if falhas.is_empty():

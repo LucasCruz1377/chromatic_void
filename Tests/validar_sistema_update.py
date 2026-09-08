@@ -24,8 +24,7 @@ def main() -> int:
 
     exigir(manager, "Windows.Desktop.zip", "UpdateManager.gd")
     exigir(manager, "ChromaticVoid-Android.apk", "UpdateManager.gd")
-    exigir(manager, "api.itch.io/wharf/latest", "UpdateManager.gd")
-    exigir(manager, "channel_name", "UpdateManager.gd")
+    exigir(manager, "api.github.com/repos/%s/releases", "UpdateManager.gd")
     exigir(manager, "FileAccess.get_sha256", "UpdateManager.gd")
     exigir(janela, "UpdateManager.iniciar_atualizacao()", "JanelaAtualizacao.gd")
     exigir(cena, 'anchor_right = 1.0', "janela_atualizacao.tscn")

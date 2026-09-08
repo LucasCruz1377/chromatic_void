@@ -1,0 +1,21 @@
+CHROMATIC VOID — REWORK DOS SETORES
+
+Base: commit 58e0764913f70af0f78120d7f6722e072a98ed9a.
+
+Extraia este ZIP na raiz do projeto e confirme a substituição. O pacote contém
+somente arquivos alterados e novos; não apaga saves nem outros assets.
+
+Mudanças centrais:
+- PET-0 usa somente Seguidor, Melee, Investida, Tanque e Atirador antigos.
+- Os quatro setores seguintes usam cinco inimigos temáticos cada.
+- Constelação do Amparo e Nó de Ametista têm scripts, modelos e fases próprios.
+- Ataques possuem aviso sem dano antes da ativação.
+- Crescente lunar retorna de verdade; drones saem quando o berço sofre dano.
+- O tiro do jogador voltou ao comportamento anterior ao último commit.
+
+Testes:
+  godot --headless --path . Tests/rework_bosses_smoke.tscn
+  godot --headless --path . Tests/sector_smoke.tscn
+  godot --headless --path . Tests/conteudo_novo_smoke.tscn
+
+Nenhum PR foi criado.

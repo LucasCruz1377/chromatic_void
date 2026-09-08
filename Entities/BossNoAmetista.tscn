@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://Scripts/BossMensal.gd" id="1"]
+[ext_resource type="Script" path="res://Scripts/BossNoAmetista.gd" id="1"]
 
 [sub_resource type="CircleShape2D" id="Shape"]
 radius = 50.0

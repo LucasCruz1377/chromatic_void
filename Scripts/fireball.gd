@@ -24,8 +24,6 @@ var cena_origem: PackedScene
 var eh_fragmento := false
 var alvo_homing: Node2D
 var alcance_homing := 0.0
-var tempo_armar_homing := 0.18
-var intervalo_busca_homing := 0.0
 var multiplicador_dano_fragmento := 0.28
 var dano_explosao := 0.0
 var raio_explosao := 0.0
@@ -90,9 +88,7 @@ func configurar(
 	scale *= maxf(escala_visual, 0.15)
 	penetracoes_restantes = maxi(penetracao, 0)
 	forca_homing = maxf(homing, 0.0)
-	# Teleguiados nascem livres e só travam numa ameaça que cruzar perto da
-	# trajetória. Isso evita mísseis que parecem conhecer um alvo antes de sair.
-	alcance_homing = clampf(125.0 + forca_homing * 22.0, 150.0, 230.0)
+	alcance_homing = clampf(240.0 + forca_homing * 70.0, 280.0, 520.0)
 	quantidade_fragmentos = maxi(fragmentos, 0)
 	ricochetes_restantes = maxi(ricochetes, 0)
 	dono_player = player_ref
@@ -109,10 +105,10 @@ func configurar(
 		aplicar_glow()
 
 func definir_alvo_homing(alvo: Node2D) -> void:
-	# Mantido para compatibilidade com chamadas antigas. A aquisição agora é
-	# exclusivamente espacial e acontece durante o voo.
-	if is_instance_valid(alvo):
-		alvo_homing = null
+	if forca_homing <= 0.0 or not is_instance_valid(alvo):
+		return
+	if global_position.distance_to(alvo.global_position) <= alcance_homing:
+		alvo_homing = alvo
 
 
 func configurar_estilo_monthly(estilo: StringName, cor: Color, config: Dictionary) -> void:
@@ -134,7 +130,6 @@ func configurar_estilo_monthly(estilo: StringName, cor: Color, config: Dictionar
 	if is_instance_valid(luz):
 		luz.color = cor
 		luz.energy = 1.35
-	_configurar_forma_visual_monthly()
 	match estilo_monthly:
 		&"mine":
 			add_to_group("monthly_mine")
@@ -190,14 +185,6 @@ func _physics_process(delta: float) -> void:
 
 func _processar_movimento_monthly(delta: float) -> bool:
 	match estilo_monthly:
-		&"missile", &"hunter", &"moon":
-			# Pequena fase de lançamento: o projétil abre a formação antes de
-			# procurar qualquer alvo próximo.
-			if tempo_estilo < 0.22:
-				global_position += transform.x * velocidade * (0.72 + tempo_estilo) * delta
-				rotation += sin(tempo_estilo * 18.0) * delta * 0.8
-				_criar_rastro_monthly()
-				return true
 		&"mine":
 			rotation += delta * 1.8
 			queue_redraw()
@@ -377,8 +364,6 @@ func _criar_feedback_monthly(intensidade: float) -> void:
 func atualizar_mira_gravitacional(delta: float) -> void:
 	if forca_homing <= 0.0:
 		return
-	if tempo_estilo < tempo_armar_homing:
-		return
 
 	if (
 		is_instance_valid(alvo_homing)
@@ -387,10 +372,6 @@ func atualizar_mira_gravitacional(delta: float) -> void:
 		alvo_homing = null
 
 	if not is_instance_valid(alvo_homing):
-		intervalo_busca_homing -= delta
-		if intervalo_busca_homing > 0.0:
-			return
-		intervalo_busca_homing = 0.075
 		alvo_homing = encontrar_inimigo_mais_proximo()
 	if not is_instance_valid(alvo_homing):
 		return
@@ -401,73 +382,6 @@ func atualizar_mira_gravitacional(delta: float) -> void:
 		angulo_alvo,
 		forca_homing * delta
 	)
-
-
-func _configurar_forma_visual_monthly() -> void:
-	if not is_instance_valid(visual) or estilo_monthly.is_empty():
-		return
-	match estilo_monthly:
-		&"missile", &"hunter", &"moon":
-			visual.polygon = PackedVector2Array([
-				Vector2(14, 0), Vector2(2, -5), Vector2(-9, -4),
-				Vector2(-5, 0), Vector2(-9, 4), Vector2(2, 5),
-			])
-		&"petal", &"leaf":
-			visual.polygon = PackedVector2Array([
-				Vector2(13, 0), Vector2(2, -6), Vector2(-9, 0), Vector2(2, 6),
-			])
-		&"wave":
-			visual.polygon = PackedVector2Array([
-				Vector2(18, 0), Vector2(6, -8), Vector2(-14, -5),
-				Vector2(-7, 0), Vector2(-14, 5), Vector2(6, 8),
-			])
-		&"beam":
-			visual.polygon = PackedVector2Array([
-				Vector2(24, 0), Vector2(-13, -3), Vector2(-13, 3),
-			])
-		&"mine":
-			visual.polygon = PackedVector2Array([
-				Vector2(0, -11), Vector2(8, -8), Vector2(11, 0), Vector2(8, 8),
-				Vector2(0, 11), Vector2(-8, 8), Vector2(-11, 0), Vector2(-8, -8),
-			])
-		&"seed":
-			visual.polygon = PackedVector2Array([
-				Vector2(11, 0), Vector2(-2, -5), Vector2(-9, 0), Vector2(-2, 5),
-			])
-		&"underground", &"branch":
-			visual.polygon = PackedVector2Array([
-				Vector2(15, 0), Vector2(3, -4), Vector2(-5, -9),
-				Vector2(-3, -2), Vector2(-13, 0), Vector2(-3, 2), Vector2(-5, 9), Vector2(3, 4),
-			])
-		&"mortar", &"firework":
-			visual.polygon = PackedVector2Array([
-				Vector2(12, 0), Vector2(5, -7), Vector2(-4, -6),
-				Vector2(-11, 0), Vector2(-4, 6), Vector2(5, 7),
-			])
-		&"orbit", &"gift", &"toy":
-			visual.polygon = PackedVector2Array([
-				Vector2(0, -11), Vector2(4, -4), Vector2(11, 0), Vector2(4, 4),
-				Vector2(0, 11), Vector2(-4, 4), Vector2(-11, 0), Vector2(-4, -4),
-			])
-		&"snow":
-			visual.polygon = PackedVector2Array([
-				Vector2(12, 0), Vector2(5, -3), Vector2(7, -10), Vector2(0, -6),
-				Vector2(-7, -10), Vector2(-5, -3), Vector2(-12, 0), Vector2(-5, 3),
-				Vector2(-7, 10), Vector2(0, 6), Vector2(7, 10), Vector2(5, 3),
-			])
-		&"clone", &"guardian":
-			visual.polygon = PackedVector2Array([
-				Vector2(13, 0), Vector2(0, -8), Vector2(-8, 0), Vector2(0, 8),
-			])
-		&"thorn":
-			visual.polygon = PackedVector2Array([
-				Vector2(14, 0), Vector2(2, -3), Vector2(-8, -7), Vector2(-4, 0), Vector2(-8, 7), Vector2(2, 3),
-			])
-		&"cold":
-			visual.polygon = PackedVector2Array([
-				Vector2(12, 0), Vector2(6, -10), Vector2(-6, -10),
-				Vector2(-12, 0), Vector2(-6, 10), Vector2(6, 10),
-			])
 
 
 func encontrar_inimigo_mais_proximo() -> Node2D:
