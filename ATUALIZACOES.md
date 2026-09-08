@@ -1,5 +1,20 @@
 # Sistema de atualização
 
+## Correções críticas de estabilidade e interface
+
+- A morte e a pausa no mesmo frame não mantêm mais referências destruídas em
+  vínculos, partículas ou ambientes.
+- O carregamento assíncrono trata falha e recurso inválido sem entrar em loop.
+- O APK inicia com o renderer Compatibility/OpenGL, evitando a dependência de
+  Vulkan instável; o preset iOS continua usando o renderer Mobile/Metal.
+- Partículas de fundo perderam as trilhas que formavam “teias”, tiveram o
+  `preprocess` reduzido e agora possuem orçamento previsível.
+- Todos os inimigos setoriais sobrevivem ao contato com o jogador; apenas seus
+  ataques próprios causam o comportamento previsto.
+- Vida e XP agora são dois `TextureProgressBar`, com exatamente o mesmo centro,
+  largura responsiva e preenchimento bilateral a partir do meio.
+- O ícone do Modelo O usa uma área menor na carta e no painel de detalhes.
+
 ## Ajustes cumulativos de mobile, progressão e portabilidade iOS
 
 Esta revisão parte do commit `6d3cb68` da `main` e reúne os ajustes solicitados

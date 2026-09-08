@@ -75,19 +75,21 @@ func testar_menu_upgrades_e_boss() -> void:
 	batalha.tutorial_ativo = false
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
 	var centro_hud := Global.obter_retangulo_area_visivel(18.0).get_center().x
-	var barra_vida := batalha.get_node("GUI/Barra_vida") as Sprite2D
+	var barra_vida := batalha.get_node("GUI/Barra_vida") as TextureProgressBar
 	var barra_xp := batalha.get_node("GUI/Barra_xp") as TextureProgressBar
 	verificar(
-		is_equal_approx(barra_vida.position.x, centro_hud)
+		is_equal_approx(barra_vida.position.x + barra_vida.size.x * 0.5, centro_hud)
 		and is_equal_approx(barra_xp.position.x + barra_xp.size.x * 0.5, centro_hud),
 		"as barras de vida e XP não compartilham o centro seguro"
 	)
 	verificar(
-		is_equal_approx(
-			float(barra_vida.texture.get_width()) * absf(barra_vida.scale.x),
-			barra_xp.size.x
-		),
+		is_equal_approx(barra_vida.size.x, barra_xp.size.x),
 		"a vida e o XP não usam a mesma largura responsiva"
+	)
+	verificar(
+		barra_vida.fill_mode == TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT
+		and barra_xp.fill_mode == TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT,
+		"as barras não crescem e diminuem a partir do centro"
 	)
 
 	var upgrades := batalha.get_node("GUI/TelaUpgrades") as Control

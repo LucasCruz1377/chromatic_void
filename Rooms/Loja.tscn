@@ -48,8 +48,11 @@ position = Vector2(480, 270)
 position = Vector2(988, -36)
 scale = Vector2(7.2, 5.4)
 amount = 85
-lifetime = 11.0
-preprocess = 11.0
+lifetime = 7.0
+preprocess = 1.5
+fixed_fps = 24
+interpolate = false
+fract_delta = false
 process_material = SubResource("ParticleProcessMaterial_shop")
 
 [node name="DecoracaoSuperior" type="Polygon2D" parent="." unique_id=2061712474]

@@ -30,7 +30,10 @@ func _process(_delta: float) -> void:
 		# MUITO IMPORTANTE: limpa antes de trocar
 		if scene is PackedScene:
 			call_deferred("_go_to_scene", scene as PackedScene)
-	elif status == ResourceLoader.THREAD_LOAD_FAILED:
+	elif status in [
+		ResourceLoader.THREAD_LOAD_FAILED,
+		ResourceLoader.THREAD_LOAD_INVALID_RESOURCE,
+	]:
 		requested = false
 		push_error("Falha durante o carregamento: %s" % path)
 

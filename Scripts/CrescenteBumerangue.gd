@@ -10,6 +10,8 @@ var tempo := 0.0
 var atingiu := false
 
 static func criar(cena: Node, dono: Node2D, dir: Vector2, dano_fx: float, cor_fx: Color) -> CrescenteBumerangue:
+	if not is_instance_valid(cena) or not is_instance_valid(dono) or cena.is_queued_for_deletion():
+		return null
 	var c := CrescenteBumerangue.new(); c.origem = dono; c.direcao = dir.normalized(); c.dano = dano_fx; c.cor = cor_fx
 	c.global_position = dono.global_position; c.z_index = 2; cena.add_child(c); return c
 

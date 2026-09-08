@@ -21,6 +21,10 @@ colors = PackedColorArray(0, 0.96862745, 0, 1, 0, 0.96862745, 0, 1)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_1s1gu"]
 gradient = SubResource("Gradient_bd36c")
+width = 630
+height = 8
+fill_from = Vector2(0, 1)
+fill_to = Vector2(1, 1)
 
 [sub_resource type="Gradient" id="Gradient_1s1gu"]
 offsets = PackedFloat32Array(1)
@@ -273,10 +277,15 @@ mouse_filter = 2
 color = Color(0, 0, 0, 1)
 metadata/_edit_lock_ = true
 
-[node name="Barra_vida" type="Sprite2D" parent="GUI" unique_id=111638542]
-position = Vector2(453, 514.99994)
-scale = Vector2(9.84963, -0.09310111)
-texture = SubResource("GradientTexture2D_1s1gu")
+[node name="Barra_vida" type="TextureProgressBar" parent="GUI" unique_id=111638542]
+offset_left = 165.0
+offset_top = 515.0
+offset_right = 795.0
+offset_bottom = 523.0
+mouse_filter = 2
+fill_mode = 6
+value = 100.0
+texture_progress = SubResource("GradientTexture2D_1s1gu")
 
 [node name="Barra_xp" type="TextureProgressBar" parent="GUI" unique_id=795297198]
 anchors_preset = -1
@@ -290,6 +299,7 @@ offset_bottom = 0.23995972
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
+fill_mode = 6
 value = 100.0
 texture_progress = SubResource("GradientTexture2D_f80io")
 tint_progress = Color(0.58431375, 1, 1, 1)

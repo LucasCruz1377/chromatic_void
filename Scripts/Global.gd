@@ -764,9 +764,21 @@ func _aplicar_volume(nome_bus: String, valor_db: float) -> void:
 
 func _on_node_adicionado(node: Node) -> void:
 	if node.is_in_group("ambiente_global"):
-		call_deferred("_aplicar_ambiente", node)
+		call_deferred("_aplicar_ambiente_por_id", node.get_instance_id())
 	if dispositivo_mobile() and node is GPUParticles2D:
-		call_deferred("_otimizar_particulas_mobile", node)
+		call_deferred("_otimizar_particulas_por_id", node.get_instance_id())
+
+
+func _aplicar_ambiente_por_id(id_instancia: int) -> void:
+	var node := instance_from_id(id_instancia)
+	if is_instance_valid(node):
+		_aplicar_ambiente(node)
+
+
+func _otimizar_particulas_por_id(id_instancia: int) -> void:
+	var node := instance_from_id(id_instancia)
+	if is_instance_valid(node):
+		_otimizar_particulas_mobile(node)
 
 
 func _otimizar_particulas_mobile(node: Node) -> void:
@@ -794,7 +806,9 @@ func _otimizar_particulas_mobile(node: Node) -> void:
 	particulas.fixed_fps = FPS_PARTICULAS_MOBILE
 	particulas.interpolate = false
 	particulas.fract_delta = false
+	particulas.preprocess = minf(particulas.preprocess, 1.5)
 	if eh_fundo:
+		particulas.lifetime = minf(particulas.lifetime, 7.0)
 		particulas.trail_enabled = false
 
 

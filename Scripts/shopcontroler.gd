@@ -1055,6 +1055,7 @@ func reconstruir_grade_generica() -> void:
 
 func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	var cor: Color = item["cor"]
+	var id_item := StringName(item["id"])
 	var wrapper := Control.new()
 	wrapper.custom_minimum_size = Vector2(largura_cartao_atual, 162)
 	grade.add_child(wrapper)
@@ -1076,7 +1077,7 @@ func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	aplicar_fonte(tipo, 8)
 	coluna.add_child(tipo)
 	var icone := TextureRect.new()
-	icone.custom_minimum_size = Vector2(68, 68)
+	icone.custom_minimum_size = tamanho_icone_item(id_item)
 	icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -1155,6 +1156,7 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_tipo.text = str(item["raridade"])
 	detalhe_tipo.add_theme_color_override("font_color", cor)
 	detalhe_nome.text = str(item["nome"])
+	detalhe_icone.custom_minimum_size = tamanho_icone_item(id, true)
 	detalhe_icone.texture = load(str(item["icone"])) as Texture2D
 	detalhe_icone.self_modulate = Color.WHITE if bool(item.get("preservar_cores", false)) else cor.lightened(0.10)
 	detalhe_contexto.visible = true
@@ -1374,6 +1376,12 @@ func _personalizacao_padrao(grupo: StringName) -> StringName:
 func requisito_compra_atendido(item: Dictionary) -> bool:
 	var requisito := StringName(item.get("requer_conquista", &""))
 	return requisito.is_empty() or Global.conquista_liberada(requisito)
+
+
+static func tamanho_icone_item(id: StringName, detalhes := false) -> Vector2:
+	if id == &"c07_modelo_o":
+		return Vector2(60, 60) if detalhes else Vector2(52, 52)
+	return Vector2(78, 78) if detalhes else Vector2(68, 68)
 
 
 func _personalizacao_compativel(item: Dictionary) -> bool:

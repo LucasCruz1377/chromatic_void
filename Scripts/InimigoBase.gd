@@ -300,7 +300,7 @@ func zerar_brilho_dos_materiais() -> void:
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
-	if morto:
+	if morto or not is_instance_valid(alvo):
 		return
 
 	if alvo.has_method("tomar_dano"):
@@ -319,6 +319,12 @@ func morrer() -> void:
 		return
 
 	morto = true
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	collision_layer = 0
+	collision_mask = 0
+	for forma in find_children("*", "CollisionShape2D", true, false):
+		(forma as CollisionShape2D).set_deferred("disabled", true)
 	morreu.emit(self)
 
 	if is_instance_valid(camera) and camera.has_method("shake"):
@@ -365,12 +371,15 @@ func criar_particulas_morte() -> void:
 	if not particulas_morte:
 		return
 
+	var cena := get_tree().current_scene
+	if not is_instance_valid(cena):
+		return
 	var partes := particulas_morte.instantiate() as Node2D
 	if not partes:
 		return
 	partes.global_position = global_position
 	partes.global_rotation = global_rotation
-	get_tree().current_scene.add_child(partes)
+	cena.add_child(partes)
 
 	if partes is GPUParticles2D:
 		var particulas := partes as GPUParticles2D

@@ -157,7 +157,7 @@ func _carregar_cena(caminho: String) -> void:
 
 	if erro != OK:
 		push_warning("Não foi possível iniciar o carregamento em segundo plano: %s" % caminho)
-		get_tree().change_scene_to_file(caminho)
+		_trocar_cena_direta_ou_recuperar(caminho)
 		return
 
 	var progresso: Array = []
@@ -169,11 +169,43 @@ func _carregar_cena(caminho: String) -> void:
 		if estado == ResourceLoader.THREAD_LOAD_LOADED:
 			var recurso: Resource = ResourceLoader.load_threaded_get(caminho)
 			if recurso is PackedScene:
-				get_tree().change_scene_to_packed(recurso as PackedScene)
+				var erro_troca := get_tree().change_scene_to_packed(recurso as PackedScene)
+				if erro_troca != OK:
+					_recuperar_falha_carregamento(caminho, erro_troca)
 				return
-		push_warning("Falha no carregamento em segundo plano: %s" % caminho)
-		get_tree().change_scene_to_file(caminho)
-		return
+		if estado_carregamento_falhou(estado):
+			push_warning("Falha no carregamento em segundo plano: %s" % caminho)
+			_trocar_cena_direta_ou_recuperar(caminho)
+			return
+		# Nunca deixa um estado inesperado girar em loop sem devolver um frame.
+		await get_tree().process_frame
+
+
+static func estado_carregamento_falhou(estado: int) -> bool:
+	return estado in [
+		ResourceLoader.THREAD_LOAD_FAILED,
+		ResourceLoader.THREAD_LOAD_INVALID_RESOURCE,
+	]
+
+
+func _trocar_cena_direta_ou_recuperar(caminho: String) -> void:
+	var erro := get_tree().change_scene_to_file(caminho)
+	if erro != OK:
+		_recuperar_falha_carregamento(caminho, erro)
+
+
+func _recuperar_falha_carregamento(caminho: String, erro: Error) -> void:
+	push_error("Não foi possível abrir %s (erro %d)." % [caminho, erro])
+	carregando_cena = false
+	if is_instance_valid(tela_carregamento):
+		tela_carregamento.hide()
+	if is_instance_valid(transition) and transition.has_animation("fade_out"):
+		transition.play("fade_out")
+	for botao in botoes_menu:
+		if is_instance_valid(botao):
+			botao.disabled = false
+	if is_instance_valid(botao_iniciar):
+		botao_iniciar.call_deferred("grab_focus")
 
 
 func _criar_tela_carregamento() -> void:

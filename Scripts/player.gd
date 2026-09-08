@@ -47,7 +47,7 @@ const XP_PROGRESSAO_INICIAL := [2, 3, 4, 6, 8, 11, 14, 18, 23]
 
 @onready var PontaArma: Marker2D = $ponta
 @onready var particles: GPUParticles2D = $particles
-@onready var barra_vida = $"../GUI/Barra_vida"
+@onready var barra_vida: TextureProgressBar = $"../GUI/Barra_vida"
 @onready var barra_xp: TextureProgressBar = $"../GUI/Barra_xp"
 @onready var display_skill: TextureRect = $"../GUI/DisplaySkill"
 @onready var lvl_text: Label = $"../GUI/LvlText"
@@ -63,7 +63,6 @@ var mira_mouse = Global.mira_mouse
 var vivo := true
 var giroblock := false
 var ctrlblock := false
-var escala_base := 9.85
 var UsandoHabilidade := false
 var invulneravel_por_habilidade := false
 var invulneravel_desenvolvedor := false
@@ -586,7 +585,9 @@ func _on_menu_melhorias_estado_alterado(aberto: bool) -> void:
 
 func atualizar_vida() -> void:
 	vida = clampf(vida, 0.0, VIDA_MAXIMA)
-	barra_vida.scale.x = escala_base * (vida / VIDA_MAXIMA)
+	if is_instance_valid(barra_vida):
+		barra_vida.max_value = VIDA_MAXIMA
+		barra_vida.value = vida
 	if vida <= 0.0 and vivo:
 		morrer()
 
@@ -2145,7 +2146,13 @@ func atualizar_limites() -> void:
 
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
-	if not vivo or not body.is_in_group("inimigo"):
+	if (
+		not vivo
+		or not is_instance_valid(body)
+		or body.is_queued_for_deletion()
+		or not body.is_in_group("inimigo")
+		or bool(body.get("morto"))
+	):
 		return
 	if UsandoHabilidade and dano_colisao_habilidade > 0.0:
 		if body.has_method("tomarDano"):
@@ -2160,5 +2167,3 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	var dano_contato = body.get("Dano")
 	if dano_contato != null:
 		tomar_dano(float(dano_contato))
-	if body.has_method("morrer"):
-		body.morrer()

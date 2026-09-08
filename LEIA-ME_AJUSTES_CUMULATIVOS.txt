@@ -9,6 +9,13 @@ COMO APLICAR
 5. Execute os smoke tests antes de gerar uma release.
 
 O PACOTE CONTÉM
+- correções de crash ao matar e pausar no mesmo frame.
+- recuperação de falhas do carregamento que antes congelavam/fechavam o jogo.
+- APK forçado para Compatibility/OpenGL, mantendo Mobile/Metal no iOS.
+- remoção das teias e dos picos de preprocess das partículas de fundo.
+- inimigos setoriais não morrem mais ao tocar o player.
+- vida e XP convertidos para barras equivalentes, preenchidas a partir do meio.
+- ícone do Modelo O reduzido na loja.
 - HUD de vida/XP centralizado e responsivo.
 - cursor nativo e aim.tscn ocultos no mobile.
 - limites de 2 a 10 inimigos regulares.
@@ -22,8 +29,8 @@ O PACOTE CONTÉM
 
 VALIDAÇÃO REALIZADA
 - importação e compilação de todos os scripts no Godot 4.7.
-- 18 cenas de smoke test aprovadas.
-- 291 referências res:// verificadas.
+- 19 cenas de smoke test aprovadas.
+- 293 referências res:// verificadas.
 - validadores do updater, catálogo, loja, iOS e CI aprovados.
 - empacotamento PCK aprovado nos presets Windows, Web, Android e iOS.
 

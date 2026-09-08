@@ -16,6 +16,8 @@ var tempo := 0.0
 var recarga := 0.0
 
 static func criar(cena: Node, tipo: Forma, inicio: Vector2, fim: Vector2, cor_fx: Color, tempo_aviso: float, tempo_ativo: float, dano_fx: float, tamanho: float, forca_fx := 0.0) -> PerigoSetorial:
+	if not is_instance_valid(cena) or cena.is_queued_for_deletion():
+		return null
 	var p := PerigoSetorial.new()
 	p.forma = tipo; p.a = inicio; p.b = fim; p.cor = cor_fx
 	p.aviso = tempo_aviso; p.ativo = tempo_ativo; p.dano = dano_fx

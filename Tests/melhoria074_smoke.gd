@@ -87,9 +87,9 @@ func testar_limites_hud_e_musica() -> void:
 	var gui := batalha.get_node("GUI")
 	gui._ajustar_hud_responsivo()
 	var centro := Global.obter_centro_area_visivel().x
-	var vida := batalha.get_node("GUI/Barra_vida") as Sprite2D
+	var vida := batalha.get_node("GUI/Barra_vida") as TextureProgressBar
 	var xp := batalha.get_node("GUI/Barra_xp") as TextureProgressBar
-	verificar(is_equal_approx(vida.position.x, centro), "a vida não está centralizada horizontalmente")
+	verificar(is_equal_approx(vida.position.x + vida.size.x * 0.5, centro), "a vida não está centralizada horizontalmente")
 	verificar(is_equal_approx(xp.position.x + xp.size.x * 0.5, centro), "o XP não está centralizado horizontalmente")
 
 	for id in [&"constelacao_amparo", &"no_ametista"]:

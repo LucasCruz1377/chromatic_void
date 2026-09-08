@@ -29,6 +29,9 @@ var angulo_orbita := 0.0
 var tempo_ate_redesenho := 0.0
 
 func _ready() -> void:
+	# As espécies setoriais atacam por padrões próprios e sobrevivem ao contato.
+	# Antes elas herdavam o comportamento descartável dos inimigos clássicos.
+	morre_ao_colidir_player = false
 	visual = self; trilha = global_position; recarga = randf_range(0.4, intervalo_acao)
 	super._ready(); queue_redraw()
 
@@ -84,26 +87,28 @@ func _distancia(ate: Vector2, atual: float, ideal: float) -> Vector2:
 
 func _mover_para_aliado(ate: Vector2, distancia: float, delta: float) -> void:
 	var aliado := _mais_proximo(false)
-	if aliado:
+	if is_instance_valid(aliado):
 		var d := global_position.distance_to(aliado.global_position)
 		velocity = velocity.move_toward(_distancia(global_position.direction_to(aliado.global_position), d, 105.0) * Velocidade, 250.0 * delta)
 	else: velocity = velocity.move_toward(_distancia(ate, distancia, 290.0) * Velocidade, 210.0 * delta)
 
 func _mover_formacao(ate: Vector2, distancia: float, delta: float) -> void:
-	if parceiro:
+	if is_instance_valid(parceiro):
 		var centro: Vector2 = (parceiro.global_position + Vector2(player.global_position)) * 0.5
 		velocity = velocity.move_toward(global_position.direction_to(centro) * Velocidade, 180.0 * delta)
 	else: velocity = velocity.move_toward(_distancia(ate, distancia, 250.0) * Velocidade, 180.0 * delta)
 
 func _orbitar_aliado(ate: Vector2, delta: float) -> void:
-	if not parceiro: parceiro = _mais_proximo(false)
-	if parceiro:
+	if not is_instance_valid(parceiro): parceiro = _mais_proximo(false)
+	if is_instance_valid(parceiro):
 		angulo_orbita += delta * 1.5
 		var alvo := parceiro.global_position + Vector2.from_angle(angulo_orbita) * 72.0
 		velocity = velocity.move_toward(global_position.direction_to(alvo) * Velocidade * 1.4, 310.0 * delta)
 	else: velocity = velocity.move_toward(ate.orthogonal() * Velocidade, 180.0 * delta)
 
 func _preparar() -> void:
+	if not is_instance_valid(player):
+		return
 	preparando = true; direcao = global_position.direction_to(player.global_position)
 	preparo = {Estilo.PULSO_SOLAR:0.85, Estilo.LAMINA_IRIS:0.72, Estilo.BROTO_PRIMAVERIL:0.72, Estilo.FRUTO_EXPLOSIVO:1.05, Estilo.CENTELHA_SOLAR:0.8, Estilo.METEORO_JOVEM:0.85}.get(estilo, 0.58)
 	_destino_e_aviso()
@@ -142,32 +147,38 @@ func _executar() -> void:
 		Estilo.CIPO_ESPIRAL: velocity = direcao.rotated(0.52) * Velocidade * 2.4
 		Estilo.FRUTO_EXPLOSIVO: _radial(8, 230.0, Dano * 0.36); Vida = 0; morrer()
 		Estilo.FRAGMENTO_LUNAR: Crescente.criar(get_tree().current_scene, self, direcao, Dano * 0.7, cor_setor)
-		Estilo.SATELITE_COROA: _disparar(parceiro.global_position.direction_to(global_position) if parceiro else -direcao, 340.0, Dano*0.68)
+		Estilo.SATELITE_COROA: _disparar(parceiro.global_position.direction_to(global_position) if is_instance_valid(parceiro) else -direcao, 340.0, Dano*0.68)
 
 func _escudar() -> void:
 	protegido = _mais_proximo(false)
-	if protegido: protegido.multiplicador_dano_recebido = 0.48; protegido.set_meta("escudo_guia", self)
+	if is_instance_valid(protegido): protegido.multiplicador_dano_recebido = 0.48; protegido.set_meta("escudo_guia", self)
 
 func _ligar(mesmo: bool) -> void:
 	parceiro = _mais_proximo(mesmo)
-	if not parceiro: return
+	if not is_instance_valid(parceiro): return
 	if mesmo:
 		set_meta("laco_parceiro", parceiro); set_meta("laco_expira", Time.get_ticks_msec()+5000)
 		parceiro.set_meta("laco_parceiro", self); parceiro.set_meta("laco_expira", Time.get_ticks_msec()+5000)
 	else: parceiro.multiplicador_dano_recebido = 0.52; parceiro.set_meta("no_protetor", self)
 
 func _manter_vinculos() -> void:
-	if protegido and global_position.distance_to(protegido.global_position)>185: _limpar_escudo()
-	if estilo == Estilo.NO_FLUTUANTE and parceiro and global_position.distance_to(parceiro.global_position)>205: parceiro.multiplicador_dano_recebido=1.0; parceiro=null
+	if protegido != null and not is_instance_valid(protegido):
+		protegido = null
+	elif is_instance_valid(protegido) and global_position.distance_to(protegido.global_position)>185:
+		_limpar_escudo()
+	if parceiro != null and not is_instance_valid(parceiro):
+		parceiro = null
+	elif estilo == Estilo.NO_FLUTUANTE and is_instance_valid(parceiro) and global_position.distance_to(parceiro.global_position)>205:
+		parceiro.multiplicador_dano_recebido=1.0; parceiro=null
 
 func _limpar_escudo() -> void:
-	if protegido and protegido.has_meta("escudo_guia") and protegido.get_meta("escudo_guia")==self: protegido.multiplicador_dano_recebido=1.0; protegido.remove_meta("escudo_guia")
+	if is_instance_valid(protegido) and protegido.has_meta("escudo_guia") and protegido.get_meta("escudo_guia")==self: protegido.multiplicador_dano_recebido=1.0; protegido.remove_meta("escudo_guia")
 	protegido=null
 
 func _mais_proximo(mesmo: bool) -> InimigoBase:
 	var melhor: InimigoBase; var menor:=INF
 	for n in get_tree().get_nodes_in_group("inimigo"):
-		if n==self or not n is InimigoBase or n.is_in_group("boss"): continue
+		if n==self or not n is InimigoBase or n.is_in_group("boss") or n.is_queued_for_deletion() or n.morto: continue
 		if mesmo and (not n is InimigoSetorial or n.estilo!=estilo): continue
 		var d:=global_position.distance_squared_to(n.global_position)
 		if d<menor: menor=d; melhor=n
@@ -181,28 +192,32 @@ func _leque(q:int, abertura:float, vel:float, dano_tiro:float)->void:
 func _radial(q:int,vel:float,dano_tiro:float)->void:
 	for i in q: _disparar(Vector2.from_angle(TAU*float(i)/float(q)),vel,dano_tiro)
 func _disparar(dir:Vector2,vel:float,dano_tiro:float)->void:
-	var p:=PROJETIL.instantiate() as ProjetilInimigo; get_tree().current_scene.add_child(p); p.global_position=global_position+dir*24
+	var cena := get_tree().current_scene
+	if not is_instance_valid(cena) or cena.is_queued_for_deletion(): return
+	var p:=PROJETIL.instantiate() as ProjetilInimigo; cena.add_child(p); p.global_position=global_position+dir*24
 	var forma:=p.get_node_or_null("Visual") as Polygon2D
 	if forma: forma.color=cor_setor
 	p.configurar(dir,dano_tiro,vel,0)
 
 func tomarDano(valor:float)->void:
 	if estilo==Estilo.SATELITE_BERCO and not drones_liberados: _soltar_drones()
-	if estilo==Estilo.PRISMA_AMPARO: multiplicador_dano_recebido=0.22 if global_position.direction_to(player.global_position).dot(direcao)>0.25 else 1.35
+	if estilo==Estilo.PRISMA_AMPARO and is_instance_valid(player): multiplicador_dano_recebido=0.22 if global_position.direction_to(player.global_position).dot(direcao)>0.25 else 1.35
 	super.tomarDano(valor)
 
 func _soltar_drones()->void:
 	drones_liberados=true; var cena:=load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
+	var batalha := get_tree().current_scene
+	if not is_instance_valid(batalha) or batalha.is_queued_for_deletion(): return
 	for lado in [-1.0,1.0]:
-		var batalha := get_tree().current_scene
-		if is_instance_valid(batalha) and batalha.has_method("contar_inimigos_regulares"):
+		if batalha.has_method("contar_inimigos_regulares"):
 			if int(batalha.call("contar_inimigos_regulares")) >= 10:
 				break
-		var d:=cena.instantiate() as InimigoBase; get_tree().current_scene.add_child(d); d.global_position=global_position+Vector2(30*lado,10); d.VidaMaxima*=0.5; d.ValorXP=0.25
+		var d:=cena.instantiate() as InimigoBase; batalha.add_child(d); d.global_position=global_position+Vector2(30*lado,10); d.VidaMaxima*=0.5; d.ValorXP=0.25
 
 func morrer()->void:
 	_limpar_escudo()
-	if estilo==Estilo.NO_FLUTUANTE and parceiro: parceiro.multiplicador_dano_recebido=1.0
+	if estilo==Estilo.NO_FLUTUANTE and is_instance_valid(parceiro): parceiro.multiplicador_dano_recebido=1.0
+	parceiro = null
 	super.morrer()
 
 func _draw()->void:
@@ -249,9 +264,9 @@ func _draw()->void:
 		for i in 5:
 			var ponto := Vector2.from_angle(float(i) * TAU / 5.0 + tempo) * (12.0 + maxf(preparo, 0.0) * 22.0)
 			draw_circle(ponto, 2.0, cor_setor.lightened(0.4))
-	if protegido:
+	if is_instance_valid(protegido):
 		_desenhar_vinculo(protegido, "ESCUDO  •  -52% DANO", Color(1.0, 0.82, 0.24), true)
-	if parceiro:
+	if is_instance_valid(parceiro):
 		if estilo == Estilo.ELO_DOURADO:
 			_desenhar_vinculo(parceiro, "ELO  •  DANO COMPARTILHADO", Color(1.0, 0.72, 0.18), false)
 		elif estilo == Estilo.NO_FLUTUANTE:

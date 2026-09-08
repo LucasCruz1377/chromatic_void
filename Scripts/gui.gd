@@ -15,7 +15,7 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 @onready var caixa_gameover: VBoxContainer = $"caixa gameover"
 @onready var botao_tentar_novamente: Button = $"caixa gameover/Tentar de novo"
 @onready var botao_voltar_gameover: Button = $"caixa gameover/Voltarmenu2"
-@onready var barra_vida: Sprite2D = $Barra_vida
+@onready var barra_vida: TextureProgressBar = $Barra_vida
 @onready var barra_xp: TextureProgressBar = $Barra_xp
 @onready var texto_nivel: Label = $LvlText
 
@@ -63,21 +63,24 @@ func _ajustar_hud_responsivo() -> void:
 	# Todos os elementos inferiores partem da mesma área lógica segura. Isso evita
 	# que âncoras percentuais e posições fixas discordem em telas ultrawide/mobile.
 	var area: Rect2 = Global.obter_retangulo_area_visivel(18.0)
-	# 630 px corresponde à largura máxima real da textura da vida (64 * 9,85).
-	var largura_barra := clampf(area.size.x * 0.70, 360.0, 630.0)
-	var centro_x := Global.obter_centro_area_visivel().x
-	var y_vida := area.end.y - 18.0
+	# As duas texturas usam 630 px como largura lógica máxima.
+	var largura_barra := roundf(clampf(area.size.x * 0.70, 320.0, 630.0))
+	var centro_x := roundf(area.get_center().x)
+	var inicio_x := roundf(centro_x - largura_barra * 0.5)
+	var y_vida := roundf(area.end.y - 18.0)
 	if is_instance_valid(barra_vida):
-		barra_vida.position = Vector2(centro_x, y_vida)
-		if is_instance_valid(barra_vida.texture):
-			barra_vida.scale.x = largura_barra / maxf(float(barra_vida.texture.get_width()), 1.0)
+		barra_vida.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		barra_vida.position = Vector2(inicio_x, y_vida)
+		barra_vida.size = Vector2(largura_barra, 8.0)
+		barra_vida.fill_mode = TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT
 	if is_instance_valid(barra_xp):
 		barra_xp.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		barra_xp.position = Vector2(centro_x - largura_barra * 0.5, y_vida - 15.0)
+		barra_xp.position = Vector2(inicio_x, y_vida - 15.0)
 		barra_xp.size = Vector2(largura_barra, 6.0)
+		barra_xp.fill_mode = TextureProgressBar.FILL_BILINEAR_LEFT_AND_RIGHT
 	if is_instance_valid(texto_nivel):
 		texto_nivel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		texto_nivel.position = Vector2(centro_x - largura_barra * 0.5, y_vida - 43.0)
+		texto_nivel.position = Vector2(inicio_x, y_vida - 43.0)
 	if is_instance_valid(display_skill):
 		display_skill.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		display_skill.position = Vector2(centro_x - 32.0, y_vida - 102.0)
