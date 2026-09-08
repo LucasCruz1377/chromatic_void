@@ -42,10 +42,12 @@ const ACOES_REMAPEAVEIS := {
 
 const CRISTAIS_INICIAIS := 1250
 const MODO_DESENVOLVEDOR_EM_TESTES := true
-const FATOR_PARTICULAS_MOBILE := 0.38
-const LIMITE_PARTICULAS_MOBILE := 52
-const LIMITE_PARTICULAS_FUNDO_MOBILE := 32
-const FPS_PARTICULAS_MOBILE := 24
+# Perfil visual mobile da release 0.7.1. A densidade permanece menor que no PC,
+# mas conserva a leitura e o brilho da versão que serviu como referência.
+const FATOR_PARTICULAS_MOBILE := 0.55
+const LIMITE_PARTICULAS_MOBILE := 90
+const LIMITE_PARTICULAS_FUNDO_MOBILE := 55
+const FPS_PARTICULAS_MOBILE := 30
 const TAMANHO_BASE_JOGO := Vector2(960.0, 540.0)
 
 var primeira_vez_jogando: bool = true
@@ -737,10 +739,7 @@ func aplicar_configuracoes() -> void:
 	)
 	# Evita que telas de 90/120 Hz façam o celular renderizar quadros extras sem
 	# benefício para a jogabilidade. No desktop, respeita a opção normalmente.
-	if dispositivo_mobile():
-		Engine.max_fps = mini(limite_fps, 60) if limite_fps > 0 else 60
-	else:
-		Engine.max_fps = limite_fps
+	Engine.max_fps = mini(limite_fps, 60) if dispositivo_mobile() else limite_fps
 
 	for acao in [
 		&"acelerar",
@@ -811,7 +810,6 @@ func _otimizar_particulas_mobile(node: Node) -> void:
 	particulas.fract_delta = false
 	particulas.preprocess = minf(particulas.preprocess, 1.5)
 	if eh_fundo:
-		particulas.lifetime = minf(particulas.lifetime, 7.0)
 		particulas.trail_enabled = false
 
 
@@ -821,25 +819,15 @@ func _aplicar_ambiente(node: Node) -> void:
 	var world := node as WorldEnvironment
 	if not world.environment:
 		return
-	configurar_glow(world.environment, RenderingServer.get_current_rendering_method())
-
-
-func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
-	# Compatibility usa glow em SDR e não interpreta os sete níveis de bloom
-	# do Mobile. Um limiar abaixo de 1 permite que os traços coloridos brilhem.
-	# Não reduzir silenciosamente os sliders salvos quando rodar num celular.
-	ambiente.glow_enabled = neon > 0.01 or bloom > 0.01
-	ambiente.glow_bloom = bloom
-	ambiente.glow_intensity = neon
-	ambiente.glow_hdr_threshold = 1.0
-	ambiente.glow_hdr_scale = 2.0
-	if renderizador == &"gl_compatibility":
-		ambiente.glow_hdr_threshold = 0.65
-		ambiente.glow_hdr_scale = 0.35
-	elif renderizador == &"mobile":
-		ambiente.glow_hdr_threshold = 0.9
-		ambiente.glow_intensity = neon * 1.5
-
+	var neon_aplicado := neon
+	var bloom_aplicado := bloom
+	if dispositivo_mobile():
+		# Mantém a identidade neon, reduzindo o custo do HDR/glow no celular.
+		neon_aplicado = minf(neon_aplicado, 0.78)
+		bloom_aplicado = minf(bloom_aplicado, 0.06)
+	world.environment.glow_enabled = neon_aplicado > 0.01 or bloom_aplicado > 0.01
+	world.environment.glow_intensity = neon_aplicado
+	world.environment.glow_bloom = bloom_aplicado
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:

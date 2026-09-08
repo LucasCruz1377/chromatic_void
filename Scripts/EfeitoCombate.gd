@@ -17,6 +17,7 @@ var duracao := 0.22
 var tempo := 0.0
 var direcao := Vector2.RIGHT
 var semente := 0
+var tempo_ate_redesenho := 0.0
 
 
 static func criar(
@@ -61,7 +62,10 @@ static func criar(
 
 func _process(delta: float) -> void:
 	tempo += delta
-	queue_redraw()
+	tempo_ate_redesenho -= delta
+	if not Global.dispositivo_mobile() or tempo_ate_redesenho <= 0.0:
+		queue_redraw()
+		tempo_ate_redesenho = 1.0 / 30.0
 	if tempo >= duracao:
 		queue_free()
 

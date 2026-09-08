@@ -123,7 +123,6 @@ func _tridente_solar() -> void:
 			"dano": Dano * 0.68,
 			"atraso": indice * 0.24,
 			"aviso": 0.88,
-			"antecedencia_trava": 0.5,
 			"duracao": 0.34,
 			"alvo": player,
 			"dono": self,

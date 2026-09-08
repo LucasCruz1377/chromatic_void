@@ -80,6 +80,13 @@ func _ready() -> void:
 		"o antigo botão UP ainda apareceu na interface mobile"
 	)
 	var particulas_teste := GPUParticles2D.new()
+	verificar(
+		is_equal_approx(Global.FATOR_PARTICULAS_MOBILE, 0.55)
+		and Global.LIMITE_PARTICULAS_MOBILE == 90
+		and Global.LIMITE_PARTICULAS_FUNDO_MOBILE == 55
+		and Global.FPS_PARTICULAS_MOBILE == 30,
+		"o perfil visual mobile deixou de corresponder à release 0.7.1"
+	)
 	particulas_teste.name = "FundoTeste"
 	particulas_teste.amount = 200
 	add_child(particulas_teste)

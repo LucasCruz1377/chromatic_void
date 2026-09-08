@@ -41,6 +41,7 @@ var direcao_investida := Vector2.RIGHT
 var angulo_visual := 0.0
 var indice_dificuldade := 1
 var linha_aviso: Line2D
+var tempo_ate_redesenho := 0.0
 
 
 func _ready() -> void:
@@ -78,7 +79,10 @@ func obter_subtitulo_boss() -> String:
 
 func Mover(delta: float) -> void:
 	angulo_visual += delta * (0.65 + fase * 0.18)
-	queue_redraw()
+	tempo_ate_redesenho -= delta
+	if not Global.dispositivo_mobile() or tempo_ate_redesenho <= 0.0:
+		queue_redraw()
+		tempo_ate_redesenho = 1.0 / 30.0
 	match estado:
 		Estado.MOVENDO:
 			mover_livre(delta)

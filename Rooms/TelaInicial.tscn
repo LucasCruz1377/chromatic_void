@@ -195,12 +195,9 @@ process_mode = 3
 [node name="parts_fundo" type="GPUParticles2D" parent="." unique_id=247251954]
 position = Vector2(734, -33)
 scale = Vector2(5.080004, 6.055698)
-amount = 72
-lifetime = 7.0
+amount = 200
+lifetime = 10.0
 preprocess = 1.5
-fixed_fps = 24
-interpolate = false
-fract_delta = false
 process_material = SubResource("ParticleProcessMaterial_kal6l")
 
 [node name="transition" type="AnimationPlayer" parent="." unique_id=1508217240]

@@ -27,6 +27,8 @@ var trilha := Vector2.ZERO
 var tempo_trilha := 0.0
 var angulo_orbita := 0.0
 var tempo_ate_redesenho := 0.0
+var aliado_movimento: InimigoBase
+var tempo_busca_aliado := 0.0
 
 func _ready() -> void:
 	# As espécies setoriais atacam por padrões próprios e sobrevivem ao contato.
@@ -86,7 +88,11 @@ func _distancia(ate: Vector2, atual: float, ideal: float) -> Vector2:
 	return ate.orthogonal()
 
 func _mover_para_aliado(ate: Vector2, distancia: float, delta: float) -> void:
-	var aliado := _mais_proximo(false)
+	tempo_busca_aliado -= delta
+	if not is_instance_valid(aliado_movimento) or tempo_busca_aliado <= 0.0:
+		aliado_movimento = protegido if is_instance_valid(protegido) else _mais_proximo(false)
+		tempo_busca_aliado = 0.28
+	var aliado := aliado_movimento
 	if is_instance_valid(aliado):
 		var d := global_position.distance_to(aliado.global_position)
 		velocity = velocity.move_toward(_distancia(global_position.direction_to(aliado.global_position), d, 105.0) * Velocidade, 250.0 * delta)

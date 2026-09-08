@@ -33,8 +33,10 @@ func _ready() -> void:
 func testar_perfil_mobile_e_particulas() -> void:
 	var presets := FileAccess.get_file_as_string("res://export_presets.cfg")
 	verificar(
-		'command_line/extra_args="--rendering-method gl_compatibility"' in presets,
-		"o Android não usa o renderer de compatibilidade"
+		'command_line/extra_args="--rendering-method gl_compatibility"' not in presets
+		and str(ProjectSettings.get_setting("rendering/renderer/rendering_method")) == "mobile"
+		and bool(ProjectSettings.get_setting("rendering/rendering_device/fallback_to_opengl3")),
+		"o Android não usa Mobile/Vulkan com fallback seguro para OpenGL"
 	)
 	verificar(
 		TelaInicialScript.estado_carregamento_falhou(ResourceLoader.THREAD_LOAD_FAILED)
@@ -46,7 +48,7 @@ func testar_perfil_mobile_e_particulas() -> void:
 	var particulas := menu.get_node("parts_fundo") as GPUParticles2D
 	verificar(not particulas.trail_enabled, "as partículas do menu ainda formam teias")
 	verificar(particulas.preprocess <= 1.5, "o menu ainda possui pico alto de preprocess")
-	verificar(particulas.amount <= 72, "o menu ainda cria partículas em excesso")
+	verificar(particulas.amount == 200, "o menu perdeu a densidade visual da 0.7.1")
 	menu.free()
 	# Reproduz a corrida que existia entre node_added e a remoção no mesmo frame.
 	var ambiente_transitorio := WorldEnvironment.new()
@@ -93,7 +95,7 @@ func testar_hud_e_icone() -> void:
 	var vida := batalha.get_node("GUI/Barra_vida") as TextureProgressBar
 	var xp := batalha.get_node("GUI/Barra_xp") as TextureProgressBar
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
-	var centro := batalha.get_viewport().get_visible_rect().size.x * 0.5
+	var centro := Global.obter_retangulo_area_visivel(18.0).get_center().x
 	verificar(is_equal_approx(vida.position.x + vida.size.x * 0.5, centro), "a vida continua torta")
 	verificar(is_equal_approx(xp.position.x + xp.size.x * 0.5, centro), "o XP continua torto")
 	verificar(is_equal_approx(vida.size.x, xp.size.x), "vida e XP usam larguras diferentes")

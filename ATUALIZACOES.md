@@ -1,5 +1,20 @@
 # Sistema de atualização
 
+## Perfil visual mobile restaurado da 0.7.1
+
+- O Android voltou a usar o renderer **Mobile**, como na 0.7.1, mantendo o
+  fallback automático para OpenGL em aparelhos sem suporte adequado a Vulkan.
+- Glow, bloom e HDR 2D usam novamente o mesmo caminho de shaders da versão de
+  PC nos aparelhos compatíveis.
+- A densidade mobile voltou ao perfil da 0.7.1: 55% das partículas, limite de
+  90 nos efeitos e 55 nos fundos, simulados a 30 FPS.
+- As quantidades-base e a duração dos fundos da tela inicial, configurações e
+  loja foram restauradas; somente trilhas instáveis e preprocess pesado seguem
+  desativados para impedir as antigas “teias” e travamentos de abertura.
+- Buscas de aliados são armazenadas por breves intervalos, efeitos procedurais
+  redesenham a 30 FPS no mobile e números de dano comuns possuem teto. Nenhuma
+  dessas otimizações reduz shaders, glow ou partículas importantes.
+
 ## Bosses reativos e novos ataques espaciais
 
 - A Constelação do Amparo alterna entre tridente solar rastreador, escudo de
@@ -18,8 +33,8 @@
 - A morte e a pausa no mesmo frame não mantêm mais referências destruídas em
   vínculos, partículas ou ambientes.
 - O carregamento assíncrono trata falha e recurso inválido sem entrar em loop.
-- O APK inicia com o renderer Compatibility/OpenGL, evitando a dependência de
-  Vulkan instável; o preset iOS continua usando o renderer Mobile/Metal.
+- O APK usa Mobile/Vulkan para preservar o neon e recorre automaticamente ao
+  renderer Compatibility/OpenGL quando Vulkan não está disponível.
 - Partículas de fundo perderam as trilhas que formavam “teias”, tiveram o
   `preprocess` reduzido e agora possuem orçamento previsível.
 - Todos os inimigos setoriais sobrevivem ao contato com o jogador; apenas seus

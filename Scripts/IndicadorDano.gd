@@ -18,7 +18,16 @@ static func criar(
 ) -> IndicadorDano:
 	if not is_instance_valid(pai) or dano <= 0.0:
 		return null
+	# Os números normais são interface, não parte do neon. Evitar centenas deles
+	# simultaneamente preserva shaders e partículas mesmo em combates intensos.
+	if (
+		Global.dispositivo_mobile()
+		and not eh_critico
+		and pai.get_tree().get_nodes_in_group("indicador_dano_mobile").size() >= 36
+	):
+		return null
 	var indicador := IndicadorDano.new()
+	indicador.add_to_group("indicador_dano_mobile")
 	indicador.valor = dano
 	indicador.cor = cor_efeito
 	indicador.critico = eh_critico

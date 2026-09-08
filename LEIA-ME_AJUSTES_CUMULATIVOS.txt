@@ -1,67 +1,54 @@
-CHROMATIC VOID — CORREÇÕES MOBILE, NEON E BOSSES
-Base atual revisada: main @ a3636bd (Godot 4.7).
+CHROMATIC VOID — AJUSTES CUMULATIVOS PARA TESTE
+Base analisada: main @ 6d3cb68c1c293997f2e7dffadc0bdc205e7f58d9
 
 COMO APLICAR
-Extraia o conteúdo na raiz do projeto, onde está project.godot, e confirme as
-substituições. O ZIP mantém as pastas originais. Faça commit e push depois de
-testar. Para publicar com o workflow atualizado, inicie uma nova execução
-manual pela main e informe a tag desejada; reexecutar uma execução antiga
-não atualiza o workflow.
+1. Faça uma cópia da pasta atual do projeto.
+2. Extraia este ZIP sobre a raiz do repositório.
+3. Confirme a substituição dos arquivos existentes.
+4. Abra o projeto no Godot 4.7 e deixe a importação terminar.
+5. Execute os smoke tests antes de gerar uma release.
 
-CORREÇÕES DESTA REVISÃO
-- HUD: vida, XP e ícone usam coordenadas do viewport da interface, não da
-  arena/Camera2D. Em ultrawide, a origem da arena pode ser negativa; usar essa
-  origem no CanvasLayer deslocava o conjunto para a esquerda.
-- Barras: nine_patch_stretch permite encolher a textura original de 630 pixels.
-  Vida e XP têm exatamente a mesma largura e centro em qualquer preenchimento.
-- Ícone: caixa quadrada de 64 pixels, proporção preservada, rotação e escala
-  normalizadas, alinhada ao mesmo centro das barras. O relógio continua filho
-  do ícone e centralizado nele.
-- Neon: mantido o Compatibility/OpenGL que o Android já usa, com o glow próprio
-  do Godot 4.7 calibrado para SDR. Removidos os cortes silenciosos de intensidade
-  e bloom no celular. O slider continua funcionando, inclusive para desligar.
-  No renderizador Mobile/Metal, aplicada a compensação de brilho recomendada
-  pelo Godot. Permanecem as otimizações de partículas e os limites visuais.
-- Mobile: comandos de movimento e tiro são liberados ao minimizar/perder foco;
-  o valor de FPS ilimitado (0) também respeita o teto de 60 no mobile.
-- Amparo: cada laser rastreador trava origem e direção 0,5 segundo antes do
-  disparo. O aviso fica estável e mais luminoso; o movimento dos satélites não
-  desloca o feixe depois da trava.
-- Flor: dança das vinhas excluída do sorteio da fase 1. Nas fases 2 e 3, chance
-  de 15% quando elegível, com ao menos três ataques comuns entre duas danças.
+O PACOTE CONTÉM
+- correções de crash ao matar e pausar no mesmo frame.
+- recuperação de falhas do carregamento que antes congelavam/fechavam o jogo.
+- Android restaurado ao renderer Mobile da 0.7.1, com fallback automático para
+  Compatibility/OpenGL; iOS permanece no caminho Mobile/Metal.
+- remoção das teias e dos picos de preprocess das partículas de fundo.
+- inimigos setoriais não morrem mais ao tocar o player.
+- vida e XP convertidos para barras equivalentes, preenchidas a partir do meio.
+- ícone do Modelo O reduzido na loja.
+- HUD de vida/XP centralizado e responsivo.
+- cursor nativo e aim.tscn ocultos no mobile.
+- limites de 2 a 10 inimigos regulares.
+- XP moderado por combo/setor e dano crescente por setor.
+- feedback explicativo para escudo, elo, nó e formação orbital.
+- música para os bosses novos e orçamento visual mobile reduzido.
+- scrollbar estreita na descrição da loja.
+- Modelo O pago, revelado somente após a conquista secreta.
+- preset/documentação/validação de projeto Xcode para iOS.
+- correção de cinco WAVs malformados herdados do último commit.
+- Constelação do Amparo refeita com quatro formações ofensivas, lasers
+  rastreadores, triângulo móvel, compressão da arena e reações dos satélites.
+- Nó de Ametista refeito com corredores móveis, fitas rastreadoras, ondas
+  vazadas, espiral reversível e contra-ataques ao romper cada amarra.
+- avisos pulsantes e perigos procedurais que deixam explícito quando o golpe
+  ainda está carregando e quando passa a causar dano.
+- glow, bloom, HDR e densidade de partículas mobile restaurados ao perfil da
+  release 0.7.1, preservando o preprocess curto e a correção das “teias”.
+- otimizações de CPU em buscas de aliados, redesenho de efeitos e números de
+  dano, sem reduzir os shaders ou as partículas principais.
 
-CONTEÚDO CUMULATIVO PRESERVADO
-O pacote inclui também os arquivos alterados na main desde 6d3cb68: limites de
-2 a 10 inimigos regulares, XP moderado por combo/setor, dano crescente, cursor
-oculto no mobile, explicações dos vínculos, bosses refeitos, melhorias de
-carregamento/partículas, WAVs corrigidos, preset iOS e workflows atuais.
-A reposição mínima de inimigos não se aplica ao tutorial, transições ou duelo
-com boss. Não há exclusões de arquivos, commit, push ou PR neste pacote.
+VALIDAÇÃO REALIZADA
+- importação e compilação de todos os scripts no Godot 4.7.
+- 21 cenas de smoke test aprovadas.
+- 107 scripts carregados e compilados no Godot 4.7.
+- 297 referências res:// verificadas.
+- validadores do updater, catálogo, loja, iOS e CI aprovados.
+- empacotamento PCK aprovado nos presets Windows, Web, Android e iOS.
 
-VALIDAÇÃO DESTA REVISÃO
-- Godot 4.7.stable.official.5b4e0cb0f: 107 scripts carregados e compilados.
-- 21 cenas de smoke test: código de saída 0, sem falhas de asserção ou parse.
-- Teste novo: seis dimensões de interface e três percentuais de preenchimento;
-  trava do laser antes/durante o disparo, sorteio de 2.000 ataques por fase,
-  perfil glow por renderizador e liberação de toque após perda de foco.
-- Teste novo executado também no PCK exportado com as features Android/mobile.
-- 297 referências res:// e os validadores de iOS, updater, catálogo e loja OK.
-- YAML e sintaxe Bash dos três workflows verificados.
-- Empacotamento PCK: Windows Desktop, Web, Android APK e iOS Xcode Project OK.
-  PCK valida recursos/compilação; não equivale a gerar um APK/IPA assinado.
+IMPORTANTE SOBRE IOS
+O preset gera o projeto Xcode, mas o IPA final precisa ser produzido em macOS
+com Xcode, templates do Godot, Apple Team ID, certificado e provisioning profile.
+Troque XXXXXXXXXX pelo Team ID somente no ambiente de assinatura.
 
-LIMITES DA VALIDAÇÃO
-Os testes locais foram headless: não foi medida a taxa de quadros nem verificado
-visualmente o glow em hardware Android/iOS. É necessário conferir neon, toque
-e HUD no seu celular após exportar. Não há garantia universal entre GPUs.
-Alguns smoke tests emitem avisos de recursos/GDScript/áudio ainda em uso durante
-o encerramento do processo. Foram registrados; não houve erro de parse nem
-falha de asserção nesses testes. Isso não é uma afirmação de ausência total de
-bugs ou de vazamentos em sessões prolongadas.
-O APK assinado e o CI remoto precisam ser executados após aplicar o pacote.
-Para iOS, veja PORTABILIDADE_IOS.md: macOS/Xcode, Team ID e assinatura Apple
-continuam necessários. O placeholder não é uma credencial válida.
-
-REFERÊNCIAS TÉCNICAS
-https://docs.godotengine.org/en/stable/classes/class_environment.html
-https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_ios.html
+Nenhum PR, commit ou push está incluído neste pacote.

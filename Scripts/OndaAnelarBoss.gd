@@ -17,6 +17,7 @@ var intensidade_impulso := 0.0
 var tempo := 0.0
 var recarga := 0.0
 var raio_atual := 0.0
+var tempo_ate_redesenho := 0.0
 
 static func criar(cena: Node, dados: Dictionary) -> OndaAnelarBoss:
 	if not is_instance_valid(cena):
@@ -46,7 +47,10 @@ func _process(delta: float) -> void:
 		var progresso := clampf((local - tempo_aviso) / maxf(tempo_ativo, 0.01), 0.0, 1.0)
 		raio_atual = lerpf(raio_inicial, raio_final, ease(progresso, -1.4))
 		_aplicar_perigo()
-	queue_redraw()
+	tempo_ate_redesenho -= delta
+	if not Global.dispositivo_mobile() or tempo_ate_redesenho <= 0.0:
+		queue_redraw()
+		tempo_ate_redesenho = 1.0 / 30.0
 	if local > tempo_aviso + tempo_ativo + 0.2:
 		queue_free()
 
