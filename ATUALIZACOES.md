@@ -1,5 +1,18 @@
 # Sistema de atualização
 
+## Bosses reativos e novos ataques espaciais
+
+- A Constelação do Amparo alterna entre tridente solar rastreador, escudo de
+  revezamento, órbita de resgate e o Abraço final que comprime a área segura.
+- Os satélites agora mudam de formação e cada quebra provoca uma reação imediata;
+  o núcleo exposto continua lançando pulsos defensivos em vez de ficar parado.
+- O Nó de Ametista tece corredores móveis, trava fitas após rastrear o jogador,
+  alterna ondas de expansão e contração e cria uma espiral que inverte o giro.
+- Cada amarra rompida solta uma reação própria, muda o alvo vulnerável e acelera
+  a movimentação do cristal.
+- Faixas e ondas usam avisos pulsantes antes da área perigosa ficar sólida; os
+  anéis são vazados para preservar uma janela justa de esquiva.
+
 ## Correções críticas de estabilidade e interface
 
 - A morte e a pausa no mesmo frame não mantêm mais referências destruídas em

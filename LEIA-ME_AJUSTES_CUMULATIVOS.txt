@@ -26,11 +26,17 @@ O PACOTE CONTÉM
 - Modelo O pago, revelado somente após a conquista secreta.
 - preset/documentação/validação de projeto Xcode para iOS.
 - correção de cinco WAVs malformados herdados do último commit.
+- Constelação do Amparo refeita com quatro formações ofensivas, lasers
+  rastreadores, triângulo móvel, compressão da arena e reações dos satélites.
+- Nó de Ametista refeito com corredores móveis, fitas rastreadoras, ondas
+  vazadas, espiral reversível e contra-ataques ao romper cada amarra.
+- avisos pulsantes e perigos procedurais que deixam explícito quando o golpe
+  ainda está carregando e quando passa a causar dano.
 
 VALIDAÇÃO REALIZADA
 - importação e compilação de todos os scripts no Godot 4.7.
-- 19 cenas de smoke test aprovadas.
-- 293 referências res:// verificadas.
+- 20 cenas de smoke test aprovadas.
+- 296 referências res:// verificadas.
 - validadores do updater, catálogo, loja, iOS e CI aprovados.
 - empacotamento PCK aprovado nos presets Windows, Web, Android e iOS.
 

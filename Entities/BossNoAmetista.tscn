@@ -13,7 +13,7 @@ script = ExtResource("1")
 VidaMaxima = 300.0
 Dano = 31.0
 ValorXP = 16.0
-Velocidade = 92.0
+Velocidade = 108.0
 resistencia_empurrao = 1.0
 morre_ao_colidir_player = false
 pontos_base = 2900
@@ -23,6 +23,8 @@ nome_exibicao = "NÓ DE AMETISTA"
 selo_monthly_colors = "AGOSTO LILÁS • DESATAR O CICLO"
 cor_principal = Color(0.78, 0.36, 1, 1)
 cor_secundaria = Color(1, 0.28, 0.68, 1)
+intervalo_ataques = 1.58
+tempo_aviso = 0.54
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Shape")

@@ -13,7 +13,7 @@ script = ExtResource("1")
 VidaMaxima = 330.0
 Dano = 28.0
 ValorXP = 16.0
-Velocidade = 76.0
+Velocidade = 90.0
 resistencia_empurrao = 1.0
 morre_ao_colidir_player = false
 pontos_base = 2800
@@ -23,6 +23,8 @@ nome_exibicao = "CONSTELAÇÃO DO AMPARO"
 selo_monthly_colors = "AGOSTO DOURADO • CUIDADO EM ÓRBITA"
 cor_principal = Color(1, 0.76, 0.17, 1)
 cor_secundaria = Color(0.35, 0.95, 1, 1)
+intervalo_ataques = 1.72
+tempo_aviso = 0.56
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Shape")
