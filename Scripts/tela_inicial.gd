@@ -34,7 +34,7 @@ var rolagem_conquistas: ScrollContainer
 
 
 func _ready() -> void:
-	Global.definir_emulacao_mouse_mobile(true)
+	Global.definir_cursor_interface(true)
 	_criar_tela_carregamento()
 	botao_sair.visible = not Global.dispositivo_mobile()
 	texto_debug.visible = Global.modo_desenvolvedor
@@ -47,7 +47,7 @@ func _ready() -> void:
 		(musica_menu.stream as AudioStreamOggVorbis).loop = true
 	if not musica_menu.playing:
 		musica_menu.play()
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Global.definir_cursor_interface(false)
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	_configurar_navegacao_menu()
 	botao_iniciar.call_deferred("grab_focus")
@@ -306,6 +306,7 @@ func _atualizar_lista_conquistas() -> void:
 		var dados: Dictionary = Global.CONQUISTAS[id]
 		var progresso := Global.progresso_conquista(id)
 		var liberada := Global.conquista_liberada(id)
+		var secreta := bool(dados.get("secreta", false))
 		var painel := PanelContainer.new()
 		painel.custom_minimum_size = Vector2(0, 76)
 		painel.add_theme_stylebox_override(
@@ -329,14 +330,22 @@ func _atualizar_lista_conquistas() -> void:
 		textos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		linha.add_child(textos)
 		var nome := Label.new()
-		nome.text = ("✓  " if liberada else "◇  ") + str(dados.get("nome", id))
+		nome.text = (
+			("✓  " + str(dados.get("nome", id)))
+			if liberada
+			else ("?  CONQUISTA SECRETA" if secreta else "◇  " + str(dados.get("nome", id)))
+		)
 		nome.add_theme_font_size_override("font_size", 15)
 		nome.add_theme_color_override(
 			"font_color", Color(0.56, 1.0, 0.76) if liberada else Color(0.72, 0.78, 0.92)
 		)
 		textos.add_child(nome)
 		var descricao := Label.new()
-		descricao.text = str(dados.get("descricao", ""))
+		descricao.text = (
+			str(dados.get("descricao", ""))
+			if liberada or not secreta
+			else "Continue explorando o ciclo cromático para revelar esta conquista."
+		)
 		descricao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		descricao.add_theme_font_size_override("font_size", 11)
 		descricao.add_theme_color_override("font_color", Color(0.48, 0.56, 0.72))
@@ -348,7 +357,7 @@ func _atualizar_lista_conquistas() -> void:
 		status.text = (
 			"LIBERADA"
 			if liberada
-			else "%d / %d" % [int(progresso["atual"]), int(progresso["meta"])]
+			else ("OCULTA" if secreta else "%d / %d" % [int(progresso["atual"]), int(progresso["meta"])])
 		)
 		status.add_theme_font_size_override("font_size", 12)
 		status.add_theme_color_override(

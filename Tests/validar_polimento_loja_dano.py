@@ -29,6 +29,8 @@ assert 'conteudo_principal.vertical = false' in SHOP
 assert 'InputEventScreenDrag' in SHOP
 assert '"DESEQUIPAR"' in SHOP
 assert 'func _on_acao_personalizacao(item: Dictionary)' in SHOP
+assert 'func requisito_compra_atendido(item: Dictionary)' in SHOP
+assert 'BLOQUEADO • CONQUISTA SECRETA' in SHOP
 assert '"personalizacao_nave": personalizacao_nave' in SHOP
 assert '"MODELOS"' in SHOP and '"CORES"' in SHOP and '"RASTROS"' in SHOP
 assert 'func obter_itens_categoria_atual()' in SHOP
@@ -103,5 +105,12 @@ assert 'mostrar_escolha_setor(opcoes)' not in BATALHA
 for tipo in ['&"combo"', '&"pontos"', '&"sem_dano"']:
     assert tipo in GLOBAL, f"conquista ausente: {tipo}"
 assert 'MorteBossCena.criar' in ENEMY
+assert 'calcular_fator_xp_combo' in ENEMY
+assert 'Dano *= 1.0 + 0.14 * indice_setor_dificuldade' in ENEMY
+assert 'const MAX_ENEMIES := 10' in BATALHA
+assert 'const MIN_ENEMIES := 2' in BATALHA
+assert '&"sinal_da_estrela"' in GLOBAL
+assert '"secreta": true' in GLOBAL
+assert '"requer_conquista": &"sinal_da_estrela"' in (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
 
 print("Polimento verificado: loja, filtros, skins, sinalizador, efeitos e hitflash.")

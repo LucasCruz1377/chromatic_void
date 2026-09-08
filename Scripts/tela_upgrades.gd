@@ -351,11 +351,10 @@ func abrir_menu() -> void:
 		return
 
 	menu_aberto = true
-	Global.definir_emulacao_mouse_mobile(true)
+	Global.definir_cursor_interface(true)
 	time_scale_anterior = Engine.time_scale
 	mouse_mode_anterior = Input.mouse_mode
 	Engine.time_scale = 0.0
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	overlay.show()
 	indicador.hide()
 	estado_alterado.emit(true)
@@ -372,8 +371,7 @@ func fechar_menu() -> void:
 	overlay.hide()
 	estado_alterado.emit(false)
 	Engine.time_scale = maxf(time_scale_anterior, 0.01)
-	Input.set_mouse_mode(mouse_mode_anterior)
-	Global.definir_emulacao_mouse_mobile(false)
+	Global.definir_cursor_interface(false)
 	limpar_cards()
 	atualizar_indicador()
 

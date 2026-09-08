@@ -193,7 +193,7 @@ static func personalizacao() -> Array[Dictionary]:
 			"id": &"c07_modelo_o", "nome": "MODELO O",
 			"descricao": "Uma estrela pilotável. A nave inteira acompanha a paleta escolhida.",
 			"preco": 3200, "cor": Color("fff15a"), "raridade": "MODELO • ESTELAR",
-			"stats": [3, 3, 3], "conquista": &"", "contexto": "O contorno da estrela enviada virou uma nave original, leve e legível.",
+			"stats": [3, 3, 3], "conquista": &"", "requer_conquista": &"sinal_da_estrela", "contexto": "O contorno da estrela enviada virou uma nave original, leve e legível.",
 			"caminho": "", "icone": "res://UI/modelo_o.svg", "em_breve": false,
 			"grupo_personalizacao": &"modelo", "preservar_cores": true,
 		},

@@ -26,6 +26,7 @@ var drones_liberados := false
 var trilha := Vector2.ZERO
 var tempo_trilha := 0.0
 var angulo_orbita := 0.0
+var tempo_ate_redesenho := 0.0
 
 func _ready() -> void:
 	visual = self; trilha = global_position; recarga = randf_range(0.4, intervalo_acao)
@@ -38,7 +39,7 @@ func Mover(delta: float) -> void:
 	if preparando:
 		velocity = velocity.move_toward(Vector2.ZERO, 420.0 * delta); preparo -= delta
 		if preparo <= 0.0: preparando = false; _executar(); recarga = intervalo_acao * randf_range(0.9, 1.12)
-		queue_redraw(); return
+		_atualizar_desenho(delta); return
 	var ate := global_position.direction_to(player.global_position)
 	var distancia := global_position.distance_to(player.global_position)
 	direcao = ate
@@ -67,7 +68,14 @@ func Mover(delta: float) -> void:
 		_: velocity = velocity.move_toward(ate * Velocidade, 220.0 * delta)
 	recarga -= delta
 	if recarga <= 0.0: _preparar()
-	queue_redraw()
+	_atualizar_desenho(delta)
+
+
+func _atualizar_desenho(delta: float) -> void:
+	tempo_ate_redesenho -= delta
+	if not Global.dispositivo_mobile() or tempo_ate_redesenho <= 0.0:
+		queue_redraw()
+		tempo_ate_redesenho = 1.0 / 30.0
 
 func _distancia(ate: Vector2, atual: float, ideal: float) -> Vector2:
 	if atual < ideal - 35.0: return -ate
@@ -186,6 +194,10 @@ func tomarDano(valor:float)->void:
 func _soltar_drones()->void:
 	drones_liberados=true; var cena:=load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
 	for lado in [-1.0,1.0]:
+		var batalha := get_tree().current_scene
+		if is_instance_valid(batalha) and batalha.has_method("contar_inimigos_regulares"):
+			if int(batalha.call("contar_inimigos_regulares")) >= 10:
+				break
 		var d:=cena.instantiate() as InimigoBase; get_tree().current_scene.add_child(d); d.global_position=global_position+Vector2(30*lado,10); d.VidaMaxima*=0.5; d.ValorXP=0.25
 
 func morrer()->void:
@@ -237,5 +249,55 @@ func _draw()->void:
 		for i in 5:
 			var ponto := Vector2.from_angle(float(i) * TAU / 5.0 + tempo) * (12.0 + maxf(preparo, 0.0) * 22.0)
 			draw_circle(ponto, 2.0, cor_setor.lightened(0.4))
-	if protegido: draw_line(Vector2.ZERO,protegido.global_position-global_position,Color(c,.55),3)
-	if parceiro: draw_line(Vector2.ZERO,parceiro.global_position-global_position,Color(c,.5),3)
+	if protegido:
+		_desenhar_vinculo(protegido, "ESCUDO  •  -52% DANO", Color(1.0, 0.82, 0.24), true)
+	if parceiro:
+		if estilo == Estilo.ELO_DOURADO:
+			_desenhar_vinculo(parceiro, "ELO  •  DANO COMPARTILHADO", Color(1.0, 0.72, 0.18), false)
+		elif estilo == Estilo.NO_FLUTUANTE:
+			_desenhar_vinculo(parceiro, "NÓ  •  RESISTÊNCIA", Color(0.82, 0.46, 1.0), true)
+		elif estilo == Estilo.SATELITE_COROA:
+			_desenhar_vinculo(parceiro, "FORMAÇÃO ORBITAL", Color(0.58, 0.72, 1.0), false)
+
+
+func obter_descricao_vinculo() -> String:
+	match estilo:
+		Estilo.CENTELHA_GUIA: return "ESCUDO  •  -52% DANO"
+		Estilo.ELO_DOURADO: return "ELO  •  DANO COMPARTILHADO"
+		Estilo.NO_FLUTUANTE: return "NÓ  •  RESISTÊNCIA"
+		Estilo.SATELITE_COROA: return "FORMAÇÃO ORBITAL"
+	return ""
+
+
+func _desenhar_vinculo(
+	alvo: Node2D, texto: String, cor_vinculo: Color, desenhar_escudo: bool
+) -> void:
+	if not is_instance_valid(alvo):
+		return
+	var fim := alvo.global_position - global_position
+	draw_line(Vector2.ZERO, fim, Color(cor_vinculo, 0.22), 8.0, true)
+	draw_line(Vector2.ZERO, fim, Color(cor_vinculo, 0.88), 2.5, true)
+	for indice in 3:
+		var progresso := fposmod(tempo * 0.72 + float(indice) / 3.0, 1.0)
+		var ponto := fim * progresso
+		draw_circle(ponto, 3.3, Color.WHITE)
+		draw_circle(ponto, 6.0, Color(cor_vinculo, 0.25))
+	if desenhar_escudo:
+		var hexagono := PackedVector2Array()
+		for indice in 6:
+			hexagono.append(fim + Vector2.from_angle(float(indice) * TAU / 6.0) * 25.0)
+		hexagono.append(hexagono[0])
+		draw_polyline(hexagono, Color(cor_vinculo, 0.92), 3.0, true)
+	var fonte := ThemeDB.fallback_font
+	var tamanho_fonte := 9
+	var medida := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho_fonte)
+	var centro := fim * 0.5 + Vector2(0.0, -14.0)
+	draw_rect(
+		Rect2(centro - Vector2(medida.x * 0.5 + 5.0, 11.0), Vector2(medida.x + 10.0, 16.0)),
+		Color(0.01, 0.015, 0.045, 0.84),
+		true
+	)
+	draw_string(
+		fonte, centro + Vector2(-medida.x * 0.5, 4.0), texto,
+		HORIZONTAL_ALIGNMENT_LEFT, -1.0, tamanho_fonte, Color.WHITE
+	)

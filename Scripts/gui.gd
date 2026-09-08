@@ -65,10 +65,12 @@ func _ajustar_hud_responsivo() -> void:
 	var area: Rect2 = Global.obter_retangulo_area_visivel(18.0)
 	# 630 px corresponde à largura máxima real da textura da vida (64 * 9,85).
 	var largura_barra := clampf(area.size.x * 0.70, 360.0, 630.0)
-	var centro_x := area.get_center().x
+	var centro_x := Global.obter_centro_area_visivel().x
 	var y_vida := area.end.y - 18.0
 	if is_instance_valid(barra_vida):
 		barra_vida.position = Vector2(centro_x, y_vida)
+		if is_instance_valid(barra_vida.texture):
+			barra_vida.scale.x = largura_barra / maxf(float(barra_vida.texture.get_width()), 1.0)
 	if is_instance_valid(barra_xp):
 		barra_xp.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		barra_xp.position = Vector2(centro_x - largura_barra * 0.5, y_vida - 15.0)
@@ -126,8 +128,7 @@ func _process(_delta: float) -> void:
 				batalha.call("registrar_visual_boss_antes_pausa")
 			get_tree().paused = not get_tree().paused
 			if get_tree().paused:
-				Global.definir_emulacao_mouse_mobile(true)
-				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+				Global.definir_cursor_interface(true)
 				botao_despause.call_deferred("grab_focus")
 				if (
 					is_instance_valid(batalha)
@@ -135,8 +136,7 @@ func _process(_delta: float) -> void:
 				):
 					batalha.call_deferred("restaurar_visual_boss_durante_pausa")
 			else:
-				Global.definir_emulacao_mouse_mobile(false)
-				Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+				Global.definir_cursor_interface(false)
 				if (
 					is_instance_valid(batalha)
 					and batalha.has_method("limpar_estado_visual_boss_pausa")
@@ -165,8 +165,7 @@ func preparar_troca_de_cena() -> void:
 		tela_upgrades.call("fechar_menu")
 	get_tree().paused = false
 	Engine.time_scale = 1.0
-	Global.definir_emulacao_mouse_mobile(true)
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	Global.definir_cursor_interface(true)
 
 
 func _on_tentar_de_novo_pressed() -> void:
@@ -178,8 +177,7 @@ func _on_tentar_de_novo_pressed() -> void:
 
 func _on_despause_pressed() -> void:
 	get_tree().paused = false
-	Global.definir_emulacao_mouse_mobile(false)
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Global.definir_cursor_interface(false)
 	var batalha = get_parent()
 	if is_instance_valid(batalha) and batalha.has_method("limpar_estado_visual_boss_pausa"):
 		batalha.call("limpar_estado_visual_boss_pausa")

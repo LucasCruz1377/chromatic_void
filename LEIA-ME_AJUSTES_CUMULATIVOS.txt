@@ -1,0 +1,35 @@
+CHROMATIC VOID — AJUSTES CUMULATIVOS PARA TESTE
+Base analisada: main @ 6d3cb68c1c293997f2e7dffadc0bdc205e7f58d9
+
+COMO APLICAR
+1. Faça uma cópia da pasta atual do projeto.
+2. Extraia este ZIP sobre a raiz do repositório.
+3. Confirme a substituição dos arquivos existentes.
+4. Abra o projeto no Godot 4.7 e deixe a importação terminar.
+5. Execute os smoke tests antes de gerar uma release.
+
+O PACOTE CONTÉM
+- HUD de vida/XP centralizado e responsivo.
+- cursor nativo e aim.tscn ocultos no mobile.
+- limites de 2 a 10 inimigos regulares.
+- XP moderado por combo/setor e dano crescente por setor.
+- feedback explicativo para escudo, elo, nó e formação orbital.
+- música para os bosses novos e orçamento visual mobile reduzido.
+- scrollbar estreita na descrição da loja.
+- Modelo O pago, revelado somente após a conquista secreta.
+- preset/documentação/validação de projeto Xcode para iOS.
+- correção de cinco WAVs malformados herdados do último commit.
+
+VALIDAÇÃO REALIZADA
+- importação e compilação de todos os scripts no Godot 4.7.
+- 18 cenas de smoke test aprovadas.
+- 291 referências res:// verificadas.
+- validadores do updater, catálogo, loja, iOS e CI aprovados.
+- empacotamento PCK aprovado nos presets Windows, Web, Android e iOS.
+
+IMPORTANTE SOBRE IOS
+O preset gera o projeto Xcode, mas o IPA final precisa ser produzido em macOS
+com Xcode, templates do Godot, Apple Team ID, certificado e provisioning profile.
+Troque XXXXXXXXXX pelo Team ID somente no ambiente de assinatura.
+
+Nenhum PR, commit ou push está incluído neste pacote.

@@ -141,8 +141,7 @@ var largura_cartao_atual := 198.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	Global.definir_emulacao_mouse_mobile(true)
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Global.definir_cursor_interface(false)
 	if musica_loja.stream is AudioStreamOggVorbis:
 		(musica_loja.stream as AudioStreamOggVorbis).loop = true
 	if not musica_loja.playing:
@@ -1169,7 +1168,12 @@ func atualizar_detalhes_genericos() -> void:
 		if categoria_atual == 4
 		else "EQUIPAMENTO ÚNICO • 1 POR CATEGORIA"
 	)
-	detalhe_preco.text = "EM BREVE" if em_breve else _texto_preco_ou_conquista(int(item["preco"]), conquista)
+	if em_breve:
+		detalhe_preco.text = "EM BREVE"
+	elif not requisito_compra_atendido(item):
+		detalhe_preco.text = "CONQUISTA SECRETA"
+	else:
+		detalhe_preco.text = _texto_preco_ou_conquista(int(item["preco"]), conquista)
 	detalhe_stats.visible = categoria_atual != 4
 	reconstruir_stats(item["stats"], cor)
 	var equipado := _item_generico_equipado(item)
@@ -1189,6 +1193,9 @@ func atualizar_detalhes_genericos() -> void:
 	elif _item_generico_liberado(id):
 		botao_acao.text = "EQUIPAR"
 		botao_acao.disabled = false
+	elif not requisito_compra_atendido(item):
+		botao_acao.text = "BLOQUEADO • CONQUISTA SECRETA"
+		botao_acao.disabled = true
 	elif not conquista.is_empty():
 		botao_acao.text = "BLOQUEADO POR CONQUISTA"
 		botao_acao.disabled = true
@@ -1294,6 +1301,9 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 	if not _personalizacao_compativel(item):
 		mensagem.text = "EQUIPE O MODELO O PARA USAR ESTE RASTRO"
 		return
+	if not requisito_compra_atendido(item):
+		mensagem.text = "CONQUISTA SECRETA AINDA NÃO DESBLOQUEADA"
+		return
 	if StringName(personalizacao_nave.get(str(grupo), &"")) == id:
 		var padrao := _personalizacao_padrao(grupo)
 		if id == padrao:
@@ -1361,6 +1371,11 @@ func _personalizacao_padrao(grupo: StringName) -> StringName:
 	return &""
 
 
+func requisito_compra_atendido(item: Dictionary) -> bool:
+	var requisito := StringName(item.get("requer_conquista", &""))
+	return requisito.is_empty() or Global.conquista_liberada(requisito)
+
+
 func _personalizacao_compativel(item: Dictionary) -> bool:
 	var modelo_exigido := StringName(item.get("requer_modelo", &""))
 	return (
@@ -1391,6 +1406,8 @@ func _texto_estado_item_generico(item: Dictionary) -> String:
 		return "EQUIPADO"
 	if _item_generico_liberado(id):
 		return "LIBERADO"
+	if not requisito_compra_atendido(item):
+		return "★ CONQUISTA SECRETA"
 	if not conquista.is_empty():
 		return "★ CONQUISTA"
 	return "◆  " + formatar_numero(preco)
@@ -1519,7 +1536,7 @@ func _aplicar_layout_responsivo(
 	rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), mobile, 12.0)
 	_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), mobile, 22.0 if mobile else 12.0)
-	_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), mobile, 22.0 if mobile else 12.0)
+	_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), mobile, 10.0 if mobile else 8.0)
 	var colunas := 3
 	if largura_esquerda < 570.0:
 		colunas = 2
@@ -1554,8 +1571,9 @@ func _configurar_barra_vertical(
 		if estado != "grabber":
 			puxador.bg_color = Color(0.68, 0.46, 1.0, 1.0)
 		puxador.set_corner_radius_all(8)
-		puxador.content_margin_left = 4.0 if mobile else 2.0
-		puxador.content_margin_right = 4.0 if mobile else 2.0
+		var margem_puxador := 1.0 if largura <= 12.0 else (4.0 if mobile else 2.0)
+		puxador.content_margin_left = margem_puxador
+		puxador.content_margin_right = margem_puxador
 		barra.add_theme_stylebox_override(estado, puxador)
 
 

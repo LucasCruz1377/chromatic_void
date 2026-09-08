@@ -53,7 +53,9 @@ jobs:
         run: godot --version
 
       - name: Verificar referências de recursos
-        run: python3 Tests/validar_referencias.py
+        run: |
+          python3 Tests/validar_referencias.py
+          python3 Tests/validar_portabilidade_ios.py
 
       - name: Verificar sistema de atualização
         run: |

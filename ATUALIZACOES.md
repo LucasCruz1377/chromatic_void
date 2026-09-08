@@ -1,5 +1,25 @@
 # Sistema de atualização
 
+## Ajustes cumulativos de mobile, progressão e portabilidade iOS
+
+Esta revisão parte do commit `6d3cb68` da `main` e reúne os ajustes solicitados
+para HUD, combate, loja e exportação:
+
+- vida e XP usam o mesmo centro horizontal e a mesma largura responsiva;
+- Android e iOS ocultam tanto o cursor nativo quanto o `aim.tscn`;
+- a arena mantém entre 2 e 10 inimigos regulares, inclusive nas invocações;
+- o XP recebe uma curva logarítmica suave por combo e setor, com teto;
+- o dano dos inimigos cresce 14% por setor;
+- vínculos exibem feixe animado, símbolo e texto da função aplicada;
+- todos os bosses recebem música de batalha válida;
+- partículas e efeitos transitórios têm orçamento menor no mobile;
+- a barra da descrição da loja ficou estreita sem perder a rolagem por toque;
+- a conquista secreta revela o preço do Modelo O, mas não concede o item;
+- o preset **iOS Xcode Project** prepara um projeto ARM64 para assinatura no Xcode.
+
+Os detalhes e pré-requisitos da exportação Apple estão em
+`PORTABILIDADE_IOS.md`.
+
 ## Polimento de pré-release desta versão
 
 O HUD inferior usa uma única área segura responsiva para alinhar vida, XP,

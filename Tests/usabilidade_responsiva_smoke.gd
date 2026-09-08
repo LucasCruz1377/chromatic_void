@@ -82,6 +82,13 @@ func testar_menu_upgrades_e_boss() -> void:
 		and is_equal_approx(barra_xp.position.x + barra_xp.size.x * 0.5, centro_hud),
 		"as barras de vida e XP não compartilham o centro seguro"
 	)
+	verificar(
+		is_equal_approx(
+			float(barra_vida.texture.get_width()) * absf(barra_vida.scale.x),
+			barra_xp.size.x
+		),
+		"a vida e o XP não usam a mesma largura responsiva"
+	)
 
 	var upgrades := batalha.get_node("GUI/TelaUpgrades") as Control
 	upgrades._aplicar_layout_responsivo(Vector2(1280, 540))
@@ -144,6 +151,10 @@ func testar_loja_mobile() -> void:
 	verificar(
 		loja.rolagem_grade.get_v_scroll_bar().custom_minimum_size.x >= 22.0,
 		"o slider da grade mobile continua pequeno"
+	)
+	verificar(
+		loja.rolagem_detalhes.get_v_scroll_bar().custom_minimum_size.x <= 10.0,
+		"a barra da descrição ainda ocupa espaço demais do texto"
 	)
 	verificar(
 		loja.painel_detalhes.custom_minimum_size.x > 0.0,

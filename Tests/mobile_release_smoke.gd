@@ -89,7 +89,7 @@ func _ready() -> void:
 		"o perfil mobile não limitou as partículas de fundo"
 	)
 	verificar(
-		particulas_teste.fixed_fps == 30 and not particulas_teste.interpolate,
+		particulas_teste.fixed_fps == Global.FPS_PARTICULAS_MOBILE and not particulas_teste.interpolate,
 		"as partículas mobile não receberam a atualização econômica"
 	)
 	particulas_teste.queue_free()

@@ -42,9 +42,10 @@ const ACOES_REMAPEAVEIS := {
 
 const CRISTAIS_INICIAIS := 1250
 const MODO_DESENVOLVEDOR_EM_TESTES := true
-const FATOR_PARTICULAS_MOBILE := 0.55
-const LIMITE_PARTICULAS_MOBILE := 90
-const LIMITE_PARTICULAS_FUNDO_MOBILE := 55
+const FATOR_PARTICULAS_MOBILE := 0.38
+const LIMITE_PARTICULAS_MOBILE := 52
+const LIMITE_PARTICULAS_FUNDO_MOBILE := 32
+const FPS_PARTICULAS_MOBILE := 24
 const TAMANHO_BASE_JOGO := Vector2(960.0, 540.0)
 
 var primeira_vez_jogando: bool = true
@@ -173,6 +174,12 @@ const CONQUISTAS: Dictionary = {
 		"descricao": "Conclua uma partida derrotando os cinco bosses.",
 		"tipo": &"vitoria", "meta": 1,
 		"recompensas": [&"p09_recomeco"]
+	},
+	&"sinal_da_estrela": {
+		"nome": "SINAL DA ESTRELA",
+		"descricao": "Conclua um ciclo cromático completo para revelar o Modelo O na loja.",
+		"tipo": &"vitoria", "meta": 1,
+		"recompensas": [], "secreta": true
 	},
 	&"combo_10": {
 		"nome": "CADEIA CROMÁTICA", "descricao": "Alcance multiplicador de combo 10.",
@@ -592,6 +599,17 @@ func definir_emulacao_mouse_mobile(interface_ativa: bool) -> void:
 		Input.emulate_mouse_from_touch = interface_ativa
 
 
+func definir_cursor_interface(interface_ativa: bool) -> void:
+	# iOS/Android não devem exibir nem o ponteiro nativo nem o aim.tscn,
+	# inclusive quando um menu pausa a partida ou um mouse está conectado.
+	definir_emulacao_mouse_mobile(interface_ativa)
+	Input.set_mouse_mode(
+		Input.MOUSE_MODE_HIDDEN
+		if dispositivo_mobile()
+		else (Input.MOUSE_MODE_VISIBLE if interface_ativa else Input.MOUSE_MODE_HIDDEN)
+	)
+
+
 func definir_direcao_toque(direcao: Vector2) -> void:
 	direcao_controle_toque = direcao.limit_length(1.0)
 	controle_toque_ativo = direcao_controle_toque.length_squared() > 0.0001
@@ -773,7 +791,7 @@ func _otimizar_particulas_mobile(node: Node) -> void:
 		1,
 		limite
 	)
-	particulas.fixed_fps = 30
+	particulas.fixed_fps = FPS_PARTICULAS_MOBILE
 	particulas.interpolate = false
 	particulas.fract_delta = false
 	if eh_fundo:

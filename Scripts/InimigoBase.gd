@@ -45,6 +45,7 @@ var tween_impacto: Tween
 var modulacao_base := Color.WHITE
 var escala_base_impacto := Vector2.ONE
 var materiais_hitflash: Array[ShaderMaterial] = []
+var indice_setor_dificuldade := 0
 
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
@@ -57,12 +58,16 @@ var materiais_hitflash: Array[ShaderMaterial] = []
 func _ready() -> void:
 	if not is_in_group("boss") and not is_in_group("asteroide_bonus"):
 		var cena := get_tree().current_scene
-		var indice := 0
 		if is_instance_valid(cena) and cena.get("setor_atual") != null:
-			indice = maxi(preload("res://Scripts/SectorData.gd").ORDEM_CICLO.find(StringName(cena.get("setor_atual"))), 0)
-		VidaMaxima *= 1.0 + 0.18 * indice
-		Dano *= 1.0 + 0.06 * indice
-		Velocidade *= 1.0 + 0.025 * indice
+			indice_setor_dificuldade = maxi(
+				preload("res://Scripts/SectorData.gd").ORDEM_CICLO.find(
+					StringName(cena.get("setor_atual"))
+				),
+				0
+			)
+		VidaMaxima *= 1.0 + 0.18 * indice_setor_dificuldade
+		Dano *= 1.0 + 0.14 * indice_setor_dificuldade
+		Velocidade *= 1.0 + 0.025 * indice_setor_dificuldade
 
 	escala_base_impacto = scale
 	modulacao_base = Color(
@@ -374,10 +379,24 @@ func criar_particulas_morte() -> void:
 
 func conceder_recompensa() -> void:
 	if is_instance_valid(player) and player.has_method("ganhar_xp"):
-		player.ganhar_xp(ValorXP)
+		var combo_apos_abate := Global.Combo + 1
+		player.ganhar_xp(
+			ValorXP * calcular_fator_xp_combo(
+				combo_apos_abate, indice_setor_dificuldade
+			)
+		)
 
 	Global.registrar_kill()
 	Global.Combo += 1
 	Global.Pontos += pontos_base + (pontos_base * (Global.Combo - 1))
 	Global.registrar_recordes_partida(Global.Combo, Global.Pontos)
 	Global.adicionar_cristais(valor_cristais)
+
+
+static func calcular_fator_xp_combo(combo: int, indice_setor: int = 0) -> float:
+	# Curva logarítmica: recompensa manter a cadeia sem usar o multiplicador
+	# bruto. O ganho cresce bastante no pós-PET-0, mas desacelera e tem teto.
+	var cadeia := maxi(combo, 1)
+	var bonus_combo := minf(log(float(cadeia)) / log(10.0) * 0.34, 0.85)
+	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.10, 0.0, 0.40)
+	return 1.0 + bonus_combo + bonus_setor

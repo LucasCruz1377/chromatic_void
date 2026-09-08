@@ -29,7 +29,14 @@ static func criar(
 ) -> EfeitoCombate:
 	if not is_instance_valid(pai):
 		return null
+	if (
+		Global.dispositivo_mobile()
+		and tipo_efeito in [Tipo.ACERTO, Tipo.RASTRO]
+		and pai.get_tree().get_nodes_in_group("efeito_combate_descartavel").size() >= 28
+	):
+		return null
 	var efeito := EfeitoCombate.new()
+	efeito.add_to_group("efeito_combate_descartavel")
 	efeito.tipo = tipo_efeito
 	efeito.cor = cor_efeito
 	efeito.intensidade = maxf(intensidade_efeito, 0.2)

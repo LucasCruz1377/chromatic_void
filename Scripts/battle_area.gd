@@ -44,13 +44,15 @@ const BOSSES: Dictionary = {
 const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
 const TIMER_MAX := 2.4
 const TIMER_MIN := 0.72
-const MAX_ENEMIES := 26
-const MAX_ENEMIES_BASE := 5
+const MIN_ENEMIES := 2
+const MAX_ENEMIES := 10
+const MAX_ENEMIES_BASE := 3
 const INTERVALO_BOSS := 10
 # Construído em duas partes porque a faixa é adicionada pelo autor ao projeto e
 # não faz parte dos pacotes de código. O caminho final continua sendo
 # res://sounds/OST/LotusDance.mp3.
 const CAMINHO_LOTUS_DANCE := "res:/" + "/sounds/OST/LotusDance.mp3"
+const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 
 @export_category("Asteroides bônus")
 @export_range(8.0, 90.0, 1.0) var intervalo_asteroide_min: float = 18.0
@@ -104,8 +106,7 @@ var estado_visual_boss_pausa: Array[Dictionary] = []
 
 func _ready() -> void:
 	get_tree().paused = false
-	Global.definir_emulacao_mouse_mobile(false)
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Global.definir_cursor_interface(false)
 	Global.Pontos = 0
 	Global.Combo = 0
 	pontos = 0.0
@@ -153,7 +154,7 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
-	Global.definir_emulacao_mouse_mobile(true)
+	Global.definir_cursor_interface(true)
 
 
 func _process(delta: float) -> void:
@@ -162,9 +163,8 @@ func _process(delta: float) -> void:
 	atualizar_pontos(delta)
 	if get_tree().get_nodes_in_group("player").is_empty():
 		game_over = true
-		Global.definir_emulacao_mouse_mobile(true)
+		Global.definir_cursor_interface(true)
 		caixa_gameover.visible = true
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		return
 	if tutorial_ativo:
 		return
@@ -177,6 +177,8 @@ func _process(delta: float) -> void:
 		return
 	if is_instance_valid(boss_ativo):
 		return
+
+	garantir_minimo_inimigos()
 
 	timer -= delta
 	if timer <= 0.0:
@@ -216,7 +218,7 @@ func spawnar_enemy() -> void:
 	var spawners := get_tree().get_nodes_in_group("spawners")
 	if spawners.is_empty():
 		return
-	if get_tree().get_nodes_in_group("inimigo").size() >= calcular_limite_inimigos():
+	if contar_inimigos_regulares() >= calcular_limite_inimigos():
 		return
 
 	var cena_escolhida := escolher_tipo_inimigo(player.nivel_atual)
@@ -228,6 +230,27 @@ func spawnar_enemy() -> void:
 		return
 	add_child(inimigo)
 	inimigo.global_position = spawner.global_position
+
+
+func contar_inimigos_regulares() -> int:
+	var quantidade := 0
+	for inimigo in get_tree().get_nodes_in_group("inimigo"):
+		if not is_instance_valid(inimigo):
+			continue
+		if inimigo.is_queued_for_deletion():
+			continue
+		if inimigo.is_in_group("boss") or inimigo.is_in_group("asteroide_bonus"):
+			continue
+		quantidade += 1
+	return quantidade
+
+
+func garantir_minimo_inimigos() -> void:
+	var faltantes := MIN_ENEMIES - contar_inimigos_regulares()
+	for _indice in range(maxi(faltantes, 0)):
+		spawnar_enemy()
+	if faltantes > 0:
+		timer = maxf(timer, 0.45)
 
 
 func escolher_tipo_inimigo(nivel: int) -> PackedScene:
@@ -271,8 +294,8 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 func calcular_limite_inimigos() -> int:
 	if not is_instance_valid(player):
 		return MAX_ENEMIES_BASE
-	var limite := MAX_ENEMIES_BASE + floori(maxi(player.nivel_atual - 1, 0) / 3.0)
-	return clampi(limite, MAX_ENEMIES_BASE, MAX_ENEMIES)
+	var limite := MAX_ENEMIES_BASE + floori(maxi(player.nivel_atual - 1, 0) / 4.0)
+	return clampi(limite, MIN_ENEMIES, MAX_ENEMIES)
 
 
 func processar_asteroides(delta: float) -> void:
@@ -398,16 +421,18 @@ func limpar_arena_teste() -> void:
 
 
 func aplicar_musica_boss(id: StringName) -> void:
-	if id != &"flor_equinocio":
-		restaurar_musica_partida()
-		return
-	if not ResourceLoader.exists(CAMINHO_LOTUS_DANCE):
-		return
-	var faixa := load(CAMINHO_LOTUS_DANCE) as AudioStream
+	var caminho := CAMINHO_LOTUS_DANCE if id == &"flor_equinocio" else CAMINHO_BATALHA_BOSS
+	var faixa: AudioStream = null
+	if ResourceLoader.exists(caminho):
+		faixa = load(caminho) as AudioStream
+	if not is_instance_valid(faixa):
+		faixa = musica_partida_padrao
 	if not is_instance_valid(faixa):
 		return
 	if faixa is AudioStreamMP3:
 		(faixa as AudioStreamMP3).loop = true
+	elif faixa is AudioStreamOggVorbis:
+		(faixa as AudioStreamOggVorbis).loop = true
 	tocarmusica.stop()
 	tocarmusica.stream = faixa
 	tocarmusica.play()
@@ -737,8 +762,7 @@ func mostrar_escolha_setor(opcoes: Array[StringName]) -> void:
 func iniciar_painel_escolha(titulo: String, subtitulo: String) -> HBoxContainer:
 	escolha_setor_ativa = true
 	get_tree().paused = true
-	Global.definir_emulacao_mouse_mobile(true)
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	Global.definir_cursor_interface(true)
 	camada_escolha = CanvasLayer.new()
 	camada_escolha.layer = 80
 	camada_escolha.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -822,8 +846,7 @@ func _on_setor_escolhido(id: StringName) -> void:
 func encerrar_escolha_setor() -> void:
 	escolha_setor_ativa = false
 	get_tree().paused = false
-	Global.definir_emulacao_mouse_mobile(false)
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Global.definir_cursor_interface(false)
 	if is_instance_valid(camada_escolha):
 		camada_escolha.queue_free()
 	camada_escolha = null
@@ -849,7 +872,7 @@ func mostrar_vitoria() -> void:
 func _on_vitoria_menu() -> void:
 	get_tree().paused = false
 	Engine.time_scale = 1.0
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	Global.definir_cursor_interface(true)
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
 
 

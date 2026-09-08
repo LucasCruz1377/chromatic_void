@@ -5,14 +5,13 @@ extends Control
 
 
 func _ready() -> void:
-	Global.definir_emulacao_mouse_mobile(true)
+	Global.definir_cursor_interface(true)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	Global.aplicar_configuracoes()
 	# A tela de configurações é interativa e precisa manter o cursor disponível,
 	# principalmente para selecionar os slots de remapeamento.
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	if janela_configuracoes.has_signal("voltar_solicitado"):
 		janela_configuracoes.connect(
