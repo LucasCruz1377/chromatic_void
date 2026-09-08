@@ -19,6 +19,7 @@ func pode_ativar(player) -> bool:
 
 
 func executar(player) -> void:
+	preload("res://Scripts/AudioCombate.gd").tocar(player, &"retrocesso")
 	recordando = true
 	iniciar_efeito_tela(player)
 	player.BloquearGiro()

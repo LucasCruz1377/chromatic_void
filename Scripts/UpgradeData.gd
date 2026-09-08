@@ -293,18 +293,17 @@ const DADOS: Dictionary = {
 		"requisitos": {&"blindagem": 1},
 		"tags": [&"passivo", &"casco", &"cura"]
 	},
-	&"capacitor_cinetico": {
-		"nome": "CAPACITOR CINÉTICO",
-		"descricao": "Acertos carregam o reator. Quando completo, a próxima salva causa dano massivo.",
-		"icone": "res://Assets/UpgradeCadencia.png",
-		"categoria": "PASSIVO • ARMA",
-		"raridade": "RARA",
-		"cor": Color(0.25, 0.95, 1.0),
-		"max_nivel": 3,
-		"peso": 0.56,
-		"tipo": TIPO_SINERGIA,
-		"requisitos": {&"cadencia": 1},
-		"tags": [&"passivo", &"arma", &"impacto"]
+	&"precisao_critica": {
+		"nome": "PRECISÃO CRÍTICA", "descricao": "+4 pontos percentuais de chance crítica por nível. Base depende da arma.",
+		"icone": "res://Assets/UpgradeCadencia.png", "categoria": "COMBATE • CRÍTICO",
+		"raridade": "INCOMUM", "cor": Color(1.0, 0.75, 0.2), "max_nivel": 3,
+		"peso": 0.7, "tipo": TIPO_SINERGIA, "requisitos": {}, "tags": [&"arma", &"critico"]
+	},
+	&"impacto_critico": {
+		"nome": "IMPACTO CRÍTICO", "descricao": "+15 pontos percentuais de dano nos acertos críticos por nível.",
+		"icone": "res://Assets/UpgradeDano.png", "categoria": "COMBATE • CRÍTICO",
+		"raridade": "RARA", "cor": Color(1.0, 0.5, 0.2), "max_nivel": 3,
+		"peso": 0.5, "tipo": TIPO_SINERGIA, "requisitos": {&"precisao_critica": 1}, "tags": [&"arma", &"critico"]
 	},
 	&"reacao_adrenal": {
 		"nome": "REAÇÃO ADRENAL",

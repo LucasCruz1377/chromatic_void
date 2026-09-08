@@ -44,6 +44,7 @@ func Mover(delta: float) -> void:
 			golpear(delta)
 		Estado.RECUPERANDO:
 			recuperar(delta)
+	visual.global_rotation = global_position.angle_to_point(player.global_position)
 
 
 func obter_velocidade_maxima() -> float:

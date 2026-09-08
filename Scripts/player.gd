@@ -848,7 +848,7 @@ func _disparar_leque_monthly(
 	for indice in range(quantidade):
 		var progresso := float(indice) / float(maxi(quantidade - 1, 1))
 		var angulo := rotation + deg_to_rad(lerpf(-abertura_graus * 0.5, abertura_graus * 0.5, progresso))
-		criar_projetil(angulo, dano_extra, true, null, 0.0, estilo, cor, config)
+		criar_projetil(angulo, dano_extra, false, null, 0.0, estilo, cor, config)
 
 
 func _explodir_em_linha(
@@ -1513,6 +1513,11 @@ func criar_projetil(
 		* bonus_chassi
 	)
 
+	if not eh_nova:
+		var critico := preload("res://Scripts/Criticos.gd").valores(arma_monthly, niveis_upgrades)
+		if randf() < critico.x:
+			dano_final *= critico.y
+			projetil.set("eh_critico", true)
 	if projetil.has_method("configurar"):
 		var velocidade_config := 1000.0 * multiplicador_velocidade_projetil * float(config_monthly.get("velocidade", 1.0))
 		var escala_config := multiplicador_escala_projetil * float(config_monthly.get("escala", 1.0))
@@ -1676,6 +1681,8 @@ func reproduzir_feedback_dano(dano_recebido: float) -> void:
 func curar(valor: float) -> void:
 	if valor <= 0.0 or not vivo:
 		return
+	if vida < VIDA_MAXIMA:
+		preload("res://Scripts/AudioCombate.gd").tocar(self, &"cura", 1.5)
 	var cura_total := valor * multiplicador_cura_recebida
 	var excedente := maxf(vida + cura_total - VIDA_MAXIMA, 0.0)
 	vida = minf(vida + cura_total, VIDA_MAXIMA)
@@ -1939,6 +1946,8 @@ func aplicar_upgrade(id: StringName) -> void:
 	if not StringName(dados_upgrade.get("arma_exclusiva", &"")).is_empty():
 		return
 	match id:
+		&"precisao_critica", &"impacto_critico":
+			pass # Consultados por Criticos.valores a cada disparo.
 		&"dano_calibrado":
 			dano *= 1.0 + _valor_tabela(
 				BONUS_DANO_POR_NIVEL, nivel_atual_upgrade, 0.04
@@ -2009,7 +2018,7 @@ func aplicar_upgrade(id: StringName) -> void:
 		&"casco_regenerativo":
 			regeneracao_casco_por_segundo += 1.25
 		&"capacitor_cinetico":
-			nivel_capacitor_cinetico += 1
+			pass # removido em v0.7.3
 		&"reacao_adrenal":
 			bonus_cadencia_reacao += 0.12
 		&"fluxo_habilidade":

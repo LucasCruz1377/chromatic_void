@@ -116,6 +116,7 @@ func _destino_e_aviso() -> void:
 	else: EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.AVISO, cor_setor, 0.85, direcao)
 
 func _executar() -> void:
+	EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.ACERTO, cor_setor, 0.55, direcao)
 	match estilo:
 		Estilo.CENTELHA_GUIA: _escudar()
 		Estilo.ELO_DOURADO: _ligar(true)
@@ -215,5 +216,26 @@ func _draw()->void:
 		Estilo.METEORO_JOVEM: draw_colored_polygon(PackedVector2Array([Vector2(17,-8),Vector2(12,13),Vector2(-8,18),Vector2(-19,2),Vector2(-8,-16)]),c)
 		Estilo.ECO_GRAVITACIONAL: draw_circle(Vector2.ZERO,8,Color(.02,.01,.08)); draw_arc(Vector2.ZERO,18,-tempo,TAU-tempo,28,c,5)
 		Estilo.SATELITE_COROA: draw_arc(Vector2.ZERO,18,0,TAU,28,c,4); for i in 4: draw_circle(Vector2.from_angle(i*TAU/4)*18,5,Color.WHITE)
+	match estilo:
+		Estilo.BROTO_PRIMAVERIL, Estilo.SEMENTE_CANHAO:
+			for lado in [-1.0, 1.0]:
+				var folha := PackedVector2Array([Vector2(-5,0), Vector2(-19, lado*13), Vector2(-20,lado*3)])
+				draw_colored_polygon(folha, cor_setor.darkened(0.3))
+				draw_line(Vector2(-6,0), Vector2(-18,lado*8), cor_setor.lightened(0.4), 1.5, true)
+		Estilo.METEORO_JOVEM:
+			draw_polyline(PackedVector2Array([Vector2(-9,-11), Vector2(0,-3), Vector2(-4,5), Vector2(8,12)]), Color(1.0,0.7,0.25), 2.0, true)
+		Estilo.LAMINA_IRIS, Estilo.ECO_AMETISTA:
+			draw_line(Vector2(-12,-4), Vector2(12,0), Color.WHITE, 1.5, true)
+			draw_line(Vector2(-12,4), Vector2(12,0), cor_setor.darkened(0.4), 2.0, true)
+		Estilo.PRISMA_AMPARO, Estilo.CASULO_PRISMATICO:
+			draw_line(Vector2(0,-12), Vector2(8,0), cor_setor.darkened(0.5), 2.0, true)
+			draw_line(Vector2(8,0), Vector2(0,12), cor_setor.darkened(0.5), 2.0, true)
+	# Núcleo e partículas de carga preservam a silhueta de cada espécie.
+	draw_circle(Vector2.ZERO, 4.0, Color(0.03, 0.04, 0.10))
+	draw_circle(direcao * 2.0, 1.8, Color.WHITE)
+	if preparando:
+		for i in 5:
+			var ponto := Vector2.from_angle(float(i) * TAU / 5.0 + tempo) * (12.0 + maxf(preparo, 0.0) * 22.0)
+			draw_circle(ponto, 2.0, cor_setor.lightened(0.4))
 	if protegido: draw_line(Vector2.ZERO,protegido.global_position-global_position,Color(c,.55),3)
 	if parceiro: draw_line(Vector2.ZERO,parceiro.global_position-global_position,Color(c,.5),3)

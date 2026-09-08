@@ -55,6 +55,15 @@ var materiais_hitflash: Array[ShaderMaterial] = []
 
 
 func _ready() -> void:
+	if not is_in_group("boss") and not is_in_group("asteroide_bonus"):
+		var cena := get_tree().current_scene
+		var indice := 0
+		if is_instance_valid(cena) and cena.get("setor_atual") != null:
+			indice = maxi(preload("res://Scripts/SectorData.gd").ORDEM_CICLO.find(StringName(cena.get("setor_atual"))), 0)
+		VidaMaxima *= 1.0 + 0.18 * indice
+		Dano *= 1.0 + 0.06 * indice
+		Velocidade *= 1.0 + 0.025 * indice
+
 	escala_base_impacto = scale
 	modulacao_base = Color(
 		minf(modulate.r, 1.0),
@@ -218,8 +227,8 @@ func reproduzir_impacto(dano_exibido: float = 0.0) -> void:
 		)
 		if dano_exibido > 0.0:
 			IndicadorDanoCena.criar(
-				cena, global_position, dano_exibido, obter_cor_feedback(),
-				dano_exibido >= maxf(obter_vida_maxima_atual() * 0.12, 4.0)
+				cena, global_position, dano_exibido, Color(1.0, 0.82, 0.24) if bool(get_meta("impacto_critico", false)) else obter_cor_feedback(),
+				bool(get_meta("impacto_critico", false))
 			)
 
 

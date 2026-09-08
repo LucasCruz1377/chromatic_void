@@ -1161,6 +1161,9 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_contexto.visible = true
 	detalhe_contexto.text = "MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
 	detalhe_descricao.text = str(item["descricao"])
+	if categoria_atual == 1:
+		var crit := preload("res://Scripts/Criticos.gd").valores(id)
+		detalhe_descricao.text += "\n\nCrítico: %d%% de chance • %d%% do dano." % [roundi(crit.x * 100.0), roundi(crit.y * 100.0)]
 	detalhe_recarga.text = (
 		"PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS"
 		if categoria_atual == 4

@@ -223,7 +223,7 @@ func testar_passivos_de_pilotagem() -> void:
 		player.aplicar_upgrade(id)
 	verificar(player.bonus_vetor_ofensivo > 0.0, "Vetor Ofensivo não alterou a pilotagem")
 	verificar(player.regeneracao_casco_por_segundo > 0.0, "Casco Regenerativo não foi ativado")
-	verificar(player.nivel_capacitor_cinetico == 1, "Capacitor Cinético não ganhou nível")
+	verificar(player.nivel_capacitor_cinetico == 0, "Capacitor legado não deve mais ser ativado")
 	verificar(player.bonus_cadencia_reacao > 0.0, "Reação Adrenal não foi ativada")
 	player.free()
 

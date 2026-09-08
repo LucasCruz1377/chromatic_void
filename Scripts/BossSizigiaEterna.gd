@@ -212,10 +212,11 @@ func atualizar_gravidade(delta: float) -> void:
 
 
 func escolher_ataque() -> void:
-	var total := 5 if fase_atual < Fase.ECLIPSE else 6
-	var escolha := randi_range(0, total - 1)
-	if escolha == ultimo_ataque:
-		escolha = (escolha + randi_range(1, total - 1)) % total
+	var opcoes: Array[int] = [0, 1, 2, 3, 4]
+	if fase_atual == Fase.LUA: opcoes.erase(3)
+	elif fase_atual == Fase.ECLIPSE: opcoes = [0, 1, 2, 4, 5]
+	opcoes.erase(ultimo_ataque)
+	var escolha: int = opcoes.pick_random()
 	ultimo_ataque = escolha
 	var frenesi := fase_atual == Fase.ECLIPSE and Vida <= obter_vida_maxima_atual() * 0.25
 	tempo_ataque = (1.65 if frenesi else 2.05) + randf_range(0.18, 0.52)
@@ -238,8 +239,7 @@ func executar_ataque_lua(indice: int) -> void:
 			anunciar_ataque("CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS")
 			criar_chuva_meteoros(4, Color(0.52, 0.68, 1.0), Dano * 0.38)
 		3:
-			anunciar_ataque("PRISÃO CRESCENTE — PROCURE A LACUNA AZUL")
-			criar_prisao_crescente()
+			lancar_crescentes(4, 0.21, false, false)
 		_:
 			anunciar_ataque("ONDA LUNAR — ATRAVESSE A LACUNA VERDE")
 			criar_corona(2, false)
@@ -276,8 +276,7 @@ func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
 			anunciar_ataque("CHUVA DA TOTALIDADE — FUJA DAS MIRAS")
 			criar_chuva_meteoros(4 if frenesi else 3, Color(0.80, 0.32, 1.0), Dano * 0.30)
 		3:
-			anunciar_ataque("FRATURA DA CORONA — ONDAS ALTERNADAS")
-			criar_corona(4 if frenesi else 3, true)
+			criar_reflexos_astrais(frenesi)
 		4:
 			anunciar_ataque("REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS")
 			criar_reflexos_astrais(frenesi)

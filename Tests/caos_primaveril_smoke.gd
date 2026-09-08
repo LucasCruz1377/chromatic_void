@@ -38,8 +38,8 @@ func _ready() -> void:
 	verificar(boss.Dano >= 34.0, "o dano do boss voltou ao valor fácil anterior")
 	verificar(boss.intervalo_ataques <= 1.2, "o intervalo entre ataques está lento demais")
 	verificar(
-		boss._duracao_janela_vulneravel() <= 0.82,
-		"a janela vulnerável da primeira fase ainda permite derreter o boss"
+		is_equal_approx(boss._duracao_janela_vulneravel(), 3.0),
+		"a primeira fase deve oferecer três segundos de vulnerabilidade"
 	)
 	var escala_boss := boss.scale
 	boss.reproduzir_impacto()
@@ -91,6 +91,7 @@ func _ready() -> void:
 	await get_tree().create_timer(2.25).timeout
 	verificar(boss.petalas_em_voo == 0, "as pétalas não voltaram ao boss em linha reta")
 	verificar(contar_petalas_ocultas() == 0, "as pétalas não reencaixaram no corpo")
+	boss.processar_janela_vulneravel(2.4) # Boss está desativado neste teste.
 	boss.processar_petalas(0.0)
 	verificar(
 		boss.escudo_ativo,

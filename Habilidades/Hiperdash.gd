@@ -33,6 +33,7 @@ func executar_dash(player) -> void:
 		return
 	Engine.time_scale = 1.0
 	player.BloquearGiro()
+	preload("res://Scripts/AudioCombate.gd").tocar(player, &"dash")
 	player.IniciarHabilidade(true)
 	player.dano_colisao_habilidade = dano_dash
 	player.velocity = player.transform.x * velocidade_dash

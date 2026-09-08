@@ -26,7 +26,7 @@ static func criar(cena: Node, tipo: Forma, inicio: Vector2, fim: Vector2, cor_fx
 func _process(delta: float) -> void:
 	tempo += delta; recarga = maxf(0.0, recarga - delta); queue_redraw()
 	if tempo >= aviso and tempo < aviso + ativo: _aplicar(delta)
-	elif tempo >= aviso + ativo: queue_free()
+	elif tempo >= aviso + ativo + 0.18: queue_free()
 
 func _aplicar(delta: float) -> void:
 	var alvo := get_tree().get_first_node_in_group("player") as Node2D
@@ -44,10 +44,19 @@ func _aplicar(delta: float) -> void:
 func _draw() -> void:
 	var ligado := tempo >= aviso
 	var alpha := 0.95 if ligado else 0.3 + absf(sin(tempo * 15.0)) * 0.55
+	alpha *= 1.0 - clampf((tempo - aviso - ativo) / 0.18, 0.0, 1.0)
 	if forma == Forma.LINHA:
+		if not ligado:
+			var lateral := (b - a).normalized().orthogonal() * largura * 0.5
+			draw_line(a, b, Color(cor, 0.12), largura, true)
+			draw_line(a + lateral, b + lateral, Color(cor, 0.5), 1.0, true)
+			draw_line(a - lateral, b - lateral, Color(cor, 0.5), 1.0, true)
+			draw_circle(a.lerp(b, clampf(tempo / maxf(aviso, 0.01), 0.0, 1.0)), 4.0, Color.WHITE)
 		draw_line(a, b, Color(cor, alpha), largura if ligado else 3.0, true)
 		if not ligado: draw_line(a, b, Color(1,1,1,0.7), 1.0, true)
 	else:
+		if not ligado:
+			draw_arc(a, raio + 5.0, -PI / 2.0, -PI / 2.0 + TAU * clampf(tempo / maxf(aviso, 0.01), 0.0, 1.0), 48, Color.WHITE, 2.0, true)
 		draw_circle(a, raio, Color(cor, 0.28 if ligado else 0.08))
 		draw_arc(a, raio, 0, TAU, 64, Color(cor, alpha), 5.0 if ligado else 2.0, true)
 

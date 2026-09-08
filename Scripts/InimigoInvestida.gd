@@ -26,6 +26,8 @@ var tempo_rastro := 0.0
 
 
 func Mover(delta: float) -> void:
+	if is_instance_valid(player):
+		visual.global_rotation = global_position.angle_to_point(player.global_position)
 	match estado:
 		Estado.PERSEGUINDO:
 			mover_perseguindo(delta)
@@ -86,6 +88,7 @@ func atualizar_aviso(delta: float) -> void:
 	linha_aviso.modulate.a = 0.35 + absf(sin(Time.get_ticks_msec() * 0.018)) * 0.65
 
 	if tempo_estado <= 0.0:
+		preload("res://Scripts/AudioCombate.gd").tocar(self, &"investida")
 		estado = Estado.INVESTINDO
 		tempo_estado = duracao_investida
 		linha_aviso.visible = false

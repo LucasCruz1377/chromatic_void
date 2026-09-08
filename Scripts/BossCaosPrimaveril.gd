@@ -35,7 +35,7 @@ enum Estado {
 @export_range(0.5, 5.0, 0.1) var intervalo_ataques := 1.15
 @export_range(0.4, 2.0, 0.1) var tempo_aviso_espinhos := 0.78
 @export_range(0.5, 2.5, 0.1) var tempo_aviso_vinhas := 1.0
-@export_range(0.35, 1.5, 0.05) var janela_vulneravel_base := 0.82
+@export_range(1.5, 3.0, 0.05) var janela_vulneravel_base := 3.0
 
 var fase := 1
 var estado := Estado.MOVENDO
@@ -215,6 +215,7 @@ func disparar_anel_espinhos() -> void:
 
 
 func iniciar_petalas_bumerangue() -> void:
+	preload("res://Scripts/AudioCombate.gd").tocar(self, &"petalas")
 	estado = Estado.PETALAS_ATIVAS
 	tempo_estado = 4.8
 	velocity = Vector2.ZERO
@@ -439,7 +440,10 @@ func iniciar_recuperacao(duracao: float, abrir_vulnerabilidade := true) -> void:
 	tempo_estado = duracao
 	velocity = Vector2.ZERO
 	if abrir_vulnerabilidade:
-		abrir_janela_vulneravel(minf(duracao, _duracao_janela_vulneravel()))
+		tempo_estado = maxf(duracao, _duracao_janela_vulneravel())
+		abrir_janela_vulneravel(tempo_estado)
+	elif tempo_janela_vulneravel > 0.0:
+		tempo_estado = maxf(duracao, tempo_janela_vulneravel)
 	else:
 		ativar_escudo(true)
 
@@ -456,7 +460,7 @@ func processar_recuperacao(delta: float) -> void:
 
 
 func _duracao_janela_vulneravel() -> float:
-	return maxf(janela_vulneravel_base - float(fase - 1) * 0.11, 0.52)
+	return clampf(janela_vulneravel_base - float(fase - 1) * 0.75, 1.5, 3.0)
 
 
 func abrir_janela_vulneravel(duracao: float) -> void:

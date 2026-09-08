@@ -13,6 +13,7 @@ const TEMPO_ARMAR_SINALIZADOR := 0.30
 @export_range(0.0, 4.0, 0.05) var energia_luz: float = 1.15
 
 var dmg := 1.0
+var eh_critico := false
 var velocidade := 1000.0
 var tempo_vida := 5.0
 var penetracoes_restantes := 0
@@ -329,7 +330,7 @@ func _atingir_com_bumerangue(body: Node2D) -> void:
 	if alvos_da_fase.has(id_alvo):
 		return
 	alvos_da_fase[id_alvo] = true
-	body.tomarDano(dmg)
+	_aplicar_dano_critico(body, dmg)
 	EfeitoCombateCena.criar(
 		get_tree().current_scene,
 		body.global_position,
@@ -456,7 +457,7 @@ func _on_body_entered(body: Node2D) -> void:
 		_atingir_com_bumerangue(body)
 		return
 
-	body.tomarDano(dmg)
+	_aplicar_dano_critico(body, dmg)
 	if estilo_monthly == &"snow" and body.has_method("aplicar_atordoamento"):
 		body.aplicar_atordoamento(duracao_lentidao)
 	if body is CharacterBody2D:
@@ -533,7 +534,7 @@ func aplicar_onda_de_impacto(alvo_direto: Node2D) -> void:
 			continue
 		var alvo := inimigo as Node2D
 		if global_position.distance_to(alvo.global_position) <= raio_explosao:
-			alvo.tomarDano(dmg * dano_explosao)
+			_aplicar_dano_critico(alvo, dmg * dano_explosao)
 
 
 func criar_fragmentos() -> void:
@@ -553,6 +554,7 @@ func criar_fragmentos() -> void:
 
 		var fragmento = cena_origem.instantiate()
 		get_tree().current_scene.add_child(fragmento)
+		fragmento.eh_critico = eh_critico
 		fragmento.global_rotation = base + deslocamento
 		fragmento.global_position = global_position + fragmento.transform.x * 16.0
 
@@ -579,3 +581,9 @@ func criar_fragmentos() -> void:
 func _on_visible_on_screen_notifier_3d_screen_exited() -> void:
 	if ricochetes_restantes <= 0:
 		verificar_fora_da_arena()
+
+
+func _aplicar_dano_critico(alvo: Node2D, valor: float) -> void:
+	alvo.set_meta("impacto_critico", eh_critico)
+	alvo.tomarDano(valor)
+	if is_instance_valid(alvo): alvo.remove_meta("impacto_critico")
