@@ -51,6 +51,14 @@ var bumerangue_alcance_ida := 390.0
 var bumerangue_graca_retorno := 0.0
 var bumerangue_alvos_ida: Dictionary = {}
 var bumerangue_alvos_retorno: Dictionary = {}
+var id_disparo_rede := ""
+var somente_visual_rede := false
+var intervalo_estado_rede := 0.05
+var posicao_estado_rede := Vector2.ZERO
+var rotacao_estado_rede := 0.0
+var escala_estado_rede := Vector2.ONE
+var visibilidade_estado_rede := true
+var recebeu_estado_rede := false
 
 @onready var visual: Polygon2D = $Polygon2D
 @onready var luz: PointLight2D = $PointLight2D
@@ -58,6 +66,43 @@ var bumerangue_alvos_retorno: Dictionary = {}
 
 func _ready() -> void:
 	aplicar_glow()
+
+
+func _exit_tree() -> void:
+	if somente_visual_rede or id_disparo_rede.is_empty() or not Rede.esta_conectado():
+		return
+	var batalha := _obter_batalha_rede()
+	if is_instance_valid(batalha) and batalha.has_method("finalizar_disparo_rede"):
+		batalha.call("finalizar_disparo_rede", id_disparo_rede)
+
+
+func _obter_batalha_rede() -> Node:
+	var pai := get_parent()
+	if is_instance_valid(pai) and pai.has_method("replicar_estado_disparo"):
+		return pai
+	if is_instance_valid(dono_player):
+		var pai_player := dono_player.get_parent()
+		if is_instance_valid(pai_player) and pai_player.has_method("replicar_estado_disparo"):
+			return pai_player
+	return null
+
+
+func configurar_id_disparo_rede(novo_id: String, visual_remoto: bool) -> void:
+	id_disparo_rede = novo_id
+	somente_visual_rede = visual_remoto
+	set_meta("apenas_visual_rede", visual_remoto)
+
+
+func aplicar_estado_visual_rede(
+	nova_posicao: Vector2, nova_rotacao: float,
+	nova_escala: Vector2, nova_visibilidade: bool
+) -> void:
+	posicao_estado_rede = nova_posicao
+	rotacao_estado_rede = nova_rotacao
+	escala_estado_rede = nova_escala
+	visibilidade_estado_rede = nova_visibilidade
+	recebeu_estado_rede = true
+	set_meta("estado_rede_recebido", true)
 
 
 func aplicar_glow() -> void:
@@ -177,11 +222,40 @@ func _physics_process(delta: float) -> void:
 
 	atualizar_mira_gravitacional(delta)
 	if _processar_movimento_monthly(delta):
+		_atualizar_estado_rede(delta)
 		atualizar_bordas()
 		return
 	global_position += transform.x * velocidade * delta
 	_criar_rastro_monthly()
+	_atualizar_estado_rede(delta)
 	atualizar_bordas()
+
+
+func _atualizar_estado_rede(delta: float) -> void:
+	if id_disparo_rede.is_empty() or not Rede.esta_conectado():
+		return
+	if somente_visual_rede:
+		if not recebeu_estado_rede:
+			return
+		var distancia := global_position.distance_to(posicao_estado_rede)
+		global_position = posicao_estado_rede if distancia > 90.0 else global_position.lerp(posicao_estado_rede, 0.72)
+		global_rotation = lerp_angle(global_rotation, rotacao_estado_rede, 0.78)
+		scale = scale.lerp(escala_estado_rede, 0.72)
+		visible = visibilidade_estado_rede
+		return
+	intervalo_estado_rede -= delta
+	if intervalo_estado_rede > 0.0:
+		return
+	intervalo_estado_rede = 0.05
+	var batalha := _obter_batalha_rede()
+	if is_instance_valid(batalha) and batalha.has_method("replicar_estado_disparo"):
+		batalha.call("replicar_estado_disparo", {
+			"id_disparo": id_disparo_rede,
+			"posicao": global_position,
+			"rotacao": global_rotation,
+			"escala": scale,
+			"visivel": visible,
+		})
 
 
 func _processar_movimento_monthly(delta: float) -> bool:
@@ -249,10 +323,11 @@ func _processar_movimento_monthly(delta: float) -> bool:
 			return true
 		&"cold":
 			global_position += transform.x * velocidade * delta
-			for node in get_tree().get_nodes_in_group("projetil_inimigo"):
-				if is_instance_valid(node) and node is Node2D and global_position.distance_to((node as Node2D).global_position) < raio_absorcao:
-					EfeitoCombateCena.criar(get_tree().current_scene, (node as Node2D).global_position, EfeitoCombate.Tipo.ACERTO, cor_monthly, 0.45)
-					node.queue_free()
+			if not bool(get_meta("apenas_visual_rede", false)):
+				for node in get_tree().get_nodes_in_group("projetil_inimigo"):
+					if is_instance_valid(node) and node is Node2D and global_position.distance_to((node as Node2D).global_position) < raio_absorcao:
+						EfeitoCombateCena.criar(get_tree().current_scene, (node as Node2D).global_position, EfeitoCombate.Tipo.ACERTO, cor_monthly, 0.45)
+						node.queue_free()
 			_criar_rastro_monthly()
 			return true
 	return false
@@ -312,7 +387,7 @@ func _iniciar_retorno_bumerangue() -> void:
 		EfeitoCombate.Tipo.AVISO,
 		cor_monthly,
 		0.55,
-		-bumerangue_direcao_ida
+		-bumerangue_direcao_ida, -1, not somente_visual_rede
 	)
 
 
@@ -351,10 +426,14 @@ func _criar_rastro_monthly() -> void:
 	if estilo_monthly.is_empty() or rastro_contador > 0.0:
 		return
 	rastro_contador = 0.055 if estilo_monthly in [&"beam", &"sniper"] else 0.09
-	EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.RASTRO, cor_monthly, 0.42 if estilo_monthly != &"cold" else 0.72, -transform.x)
+	# O próprio projétil remoto gera o rastro na posição corrigida pela rede;
+	# enviar cada partícula saturaria a conexão em armas de alta cadência.
+	EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.RASTRO, cor_monthly, 0.42 if estilo_monthly != &"cold" else 0.72, -transform.x, -1, false)
 
 
 func _criar_feedback_monthly(intensidade: float) -> void:
+	if somente_visual_rede:
+		return
 	EfeitoCombateCena.criar(get_tree().current_scene, global_position, EfeitoCombate.Tipo.MORTE, cor_monthly, intensidade, transform.x)
 	ExplosaoMonthlyCena.criar(get_tree().current_scene, global_position, cor_monthly, intensidade)
 	var camera := get_tree().get_first_node_in_group("camera") as Camera2D
@@ -431,7 +510,7 @@ func atualizar_bordas() -> void:
 			EfeitoCombate.Tipo.ACERTO,
 			Color(0.24, 1.0, 0.9),
 			0.7,
-			transform.x
+			transform.x, -1, not somente_visual_rede
 		)
 		alvo_homing = null
 
@@ -447,6 +526,8 @@ func verificar_fora_da_arena() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
+	if bool(get_meta("apenas_visual_rede", false)):
+		return
 	if not body.has_method("tomarDano"):
 		return
 	# Minas não causam dano por toque. Elas só explodem pelo temporizador ou
@@ -516,6 +597,8 @@ func detonar_mina() -> void:
 
 
 func aplicar_onda_de_impacto(alvo_direto: Node2D) -> void:
+	if somente_visual_rede:
+		return
 	EfeitoCombateCena.criar(
 		get_tree().current_scene,
 		global_position,
@@ -575,6 +658,8 @@ func criar_fragmentos() -> void:
 				0.0,
 				bonus_dano_por_ricochete * 0.5
 			)
+		if Rede.esta_conectado() and is_instance_valid(dono_player) and dono_player.has_method("registrar_projetil_rede"):
+			dono_player.call("registrar_projetil_rede", fragmento, &"", Color.WHITE, {"fragmento_visual": true})
 
 
 # Mantida para compatibilidade com a conexão existente na cena.

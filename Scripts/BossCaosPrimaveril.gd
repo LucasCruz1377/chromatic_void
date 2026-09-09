@@ -210,7 +210,7 @@ func disparar_anel_espinhos() -> void:
 		var angulo := deslocamento + TAU * float(indice) / float(quantidade)
 		var direcao := Vector2.from_angle(angulo)
 		var espinho := ESPINHO.instantiate() as ProjetilInimigo
-		get_tree().current_scene.add_child(espinho)
+		get_tree().current_scene.add_child(espinho, true)
 		espinho.global_position = global_position + direcao * 54.0
 		espinho.configurar(
 			direcao,
@@ -265,7 +265,7 @@ func lancar_petala(indice: int) -> void:
 		petalas.global_rotation + TAU * float(indice) / 6.0
 	)
 	var petala := PETALA_BUMERANGUE.instantiate() as PetalaBumerangue
-	get_tree().current_scene.add_child(petala)
+	get_tree().current_scene.add_child(petala, true)
 	petala.configurar(
 		global_position + direcao * 38.0,
 		direcao,

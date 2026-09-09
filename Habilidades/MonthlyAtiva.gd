@@ -13,7 +13,9 @@ var nivel_upgrade_3 := 0
 
 func executar(player) -> void:
 	if is_instance_valid(player) and player.has_method("aplicar_poder_monthly"):
-		player.call("aplicar_poder_monthly", efeito_id, cor_efeito, potencia, _config_rework())
+		var configuracao := _config_rework()
+		configuracao["semente_visual"] = randi()
+		player.call("aplicar_poder_monthly", efeito_id, cor_efeito, potencia, configuracao)
 
 
 func _config_rework() -> Dictionary:

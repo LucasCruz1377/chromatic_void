@@ -72,7 +72,16 @@ func _on_configuracoes_alteradas() -> void:
 
 
 func conectar_player() -> void:
-	player = get_tree().get_first_node_in_group("player") as Player
+	definir_player_local(get_tree().get_first_node_in_group("player") as Player)
+
+
+func definir_player_local(novo_player: Player) -> void:
+	if is_instance_valid(player):
+		if player.pontos_upgrade_alterados.is_connected(_on_pontos_alterados):
+			player.pontos_upgrade_alterados.disconnect(_on_pontos_alterados)
+		if player.subiuDeNivel.is_connected(_on_player_subiu_de_nivel):
+			player.subiuDeNivel.disconnect(_on_player_subiu_de_nivel)
+	player = novo_player
 	if not is_instance_valid(player):
 		push_warning("O menu de melhorias não encontrou o Player.")
 		return
@@ -323,7 +332,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_player_subiu_de_nivel() -> void:
-	# O menu não abre sozinho. Apenas chama atenção para o ponto pendente.
 	atualizar_indicador()
 	pulsar_indicador()
 
@@ -378,7 +386,8 @@ func abrir_menu() -> void:
 	Global.definir_cursor_interface(true)
 	time_scale_anterior = Engine.time_scale
 	mouse_mode_anterior = Input.mouse_mode
-	Engine.time_scale = 0.0
+	if not Rede.modo_multiplayer:
+		Engine.time_scale = 0.0
 	overlay.show()
 	indicador.hide()
 	estado_alterado.emit(true)
@@ -394,7 +403,8 @@ func fechar_menu() -> void:
 	get_viewport().gui_release_focus()
 	overlay.hide()
 	estado_alterado.emit(false)
-	Engine.time_scale = maxf(time_scale_anterior, 0.01)
+	if not Rede.modo_multiplayer:
+		Engine.time_scale = maxf(time_scale_anterior, 0.01)
 	Global.definir_cursor_interface(false)
 	limpar_cards()
 	atualizar_indicador()

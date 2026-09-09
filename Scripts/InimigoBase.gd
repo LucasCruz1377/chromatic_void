@@ -59,7 +59,12 @@ var indice_setor_dificuldade := 0
 
 
 func _ready() -> void:
-	if not is_in_group("boss") and not is_in_group("asteroide_bonus"):
+	_configurar_sincronizador_multiplayer()
+	if is_in_group("boss"):
+		# Bosses preservam todo o balanceamento existente e recebem 175% da
+		# vida que possuíam antes deste ajuste.
+		VidaMaxima *= 1.75
+	elif not is_in_group("asteroide_bonus"):
 		var cena := get_tree().current_scene
 		if is_instance_valid(cena) and cena.get("setor_atual") != null:
 			indice_setor_dificuldade = maxi(
@@ -91,9 +96,39 @@ func _ready() -> void:
 
 	Vida = VidaMaxima + bonus_vida
 	vida_alterada.emit(Vida, VidaMaxima + bonus_vida)
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		set_physics_process(false)
+
+
+func _configurar_sincronizador_multiplayer() -> void:
+	if not Rede.modo_multiplayer or has_node("MultiplayerSynchronizer"):
+		return
+	var sincronizador := MultiplayerSynchronizer.new()
+	sincronizador.name = "MultiplayerSynchronizer"
+	sincronizador.root_path = NodePath("..")
+	var configuracao := SceneReplicationConfig.new()
+	for caminho in [
+		NodePath(".:position"),
+		NodePath(".:rotation"),
+		NodePath(".:velocity"),
+		NodePath(".:Vida"),
+		NodePath(".:VidaMaxima"),
+		NodePath(".:morto"),
+		NodePath(".:visible"),
+	]:
+		configuracao.add_property(caminho)
+		configuracao.property_set_spawn(caminho, true)
+		configuracao.property_set_replication_mode(
+			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
+		)
+	sincronizador.replication_config = configuracao
+	sincronizador.replication_interval = 0.033
+	add_child(sincronizador)
 
 
 func _physics_process(delta: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto:
 		return
 
@@ -119,8 +154,18 @@ func _physics_process(delta: float) -> void:
 
 
 func atualizar_referencia_player() -> void:
-	if not is_instance_valid(player):
-		player = get_tree().get_first_node_in_group("player")
+	var melhor: Node2D
+	var melhor_distancia := INF
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(candidato) or not candidato is Node2D:
+			continue
+		if candidato.get("vivo") == false or not (candidato as Node2D).visible:
+			continue
+		var distancia := global_position.distance_squared_to((candidato as Node2D).global_position)
+		if distancia < melhor_distancia:
+			melhor_distancia = distancia
+			melhor = candidato as Node2D
+	player = melhor
 
 
 func atrair_para_presente_misterioso(presente: Node2D) -> void:
@@ -181,6 +226,9 @@ func Mover(_delta: float) -> void:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto or valor <= 0.0:
 		return
 
@@ -195,6 +243,16 @@ func tomarDano(valor: float) -> void:
 
 	if Vida <= 0.0:
 		morrer()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_dano_ao_host(valor: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	tomarDano(clampf(valor, 0.0, 10000.0))
 
 
 func receber_eco_laco(valor: float) -> void:
@@ -333,6 +391,8 @@ func zerar_brilho_dos_materiais() -> void:
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or not is_instance_valid(alvo):
 		return
 
@@ -424,16 +484,24 @@ func criar_particulas_morte() -> void:
 	if partes is GPUParticles2D:
 		var particulas := partes as GPUParticles2D
 		particulas.emitting = true
+	if Rede.esta_conectado() and cena.has_method("replicar_feedback_visual"):
+		cena.call("replicar_feedback_visual", {
+			"classe": &"particula_cena",
+			"cena": particulas_morte.resource_path,
+			"posicao": global_position,
+			"rotacao": global_rotation,
+			"cor": Color.WHITE,
+		})
 
 
 func conceder_recompensa() -> void:
-	if is_instance_valid(player) and player.has_method("ganhar_xp"):
-		var combo_apos_abate := Global.Combo + 1
-		player.ganhar_xp(
-			ValorXP * calcular_fator_xp_combo(
-				combo_apos_abate, indice_setor_dificuldade
-			)
-		)
+	var combo_apos_abate := Global.Combo + 1
+	var recompensa_xp := ValorXP * calcular_fator_xp_combo(
+		combo_apos_abate, indice_setor_dificuldade
+	)
+	for jogador in get_tree().get_nodes_in_group("player"):
+		if is_instance_valid(jogador) and jogador.has_method("conceder_xp_rede"):
+			jogador.call("conceder_xp_rede", recompensa_xp)
 
 	Global.registrar_kill()
 	Global.Combo += 1

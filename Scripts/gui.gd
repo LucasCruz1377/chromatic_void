@@ -24,7 +24,7 @@ var gameover_anterior := false
 
 
 func _ready() -> void:
-	player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
+	definir_player_local(player)
 	pausa_anterior = get_tree().paused
 	gameover_anterior = caixa_gameover.visible
 	botao_tentar_novamente.focus_neighbor_bottom = (
@@ -57,6 +57,14 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_ajustar_hud_responsivo)
 	_atualizar_indicador_habilidade()
 	call_deferred("_ajustar_hud_responsivo")
+
+
+func definir_player_local(novo_player: Player) -> void:
+	if is_instance_valid(player) and player.subiuDeNivel.is_connected(_on_player_subiu_de_nivel):
+		player.subiuDeNivel.disconnect(_on_player_subiu_de_nivel)
+	player = novo_player
+	if is_instance_valid(player) and not player.subiuDeNivel.is_connected(_on_player_subiu_de_nivel):
+		player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
 
 
 func _ajustar_hud_responsivo() -> void:
@@ -184,7 +192,11 @@ func _on_tentar_de_novo_pressed() -> void:
 	preparar_troca_de_cena()
 	Global.Pontos = 0
 	Global.Combo = 0
-	get_tree().reload_current_scene()
+	var batalha := get_parent()
+	if Rede.modo_multiplayer and is_instance_valid(batalha) and batalha.has_method("solicitar_reinicio_multiplayer"):
+		batalha.call("solicitar_reinicio_multiplayer")
+	else:
+		get_tree().reload_current_scene()
 
 
 func _on_despause_pressed() -> void:

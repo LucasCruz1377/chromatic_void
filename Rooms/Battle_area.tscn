@@ -108,6 +108,13 @@ script = ExtResource("1_iop6r")
 metadata/_edit_horizontal_guides_ = [540.0]
 metadata/_edit_vertical_guides_ = [960.0]
 
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("..")
+spawn_limit = 2
+
+[node name="WorldSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("..")
+
 [node name="tocarmusica" type="AudioStreamPlayer2D" parent="." unique_id=1753205192]
 position = Vector2(453, 257)
 scale = Vector2(1.7456002, -14.767745)

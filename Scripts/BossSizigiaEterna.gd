@@ -33,6 +33,7 @@ enum Estado {
 
 
 const VIDA_BASE_FASES := [330.0, 390.0, 520.0]
+const MULTIPLICADOR_VIDA_BOSS := 1.75
 const CENTRO_FUSAO := Vector2(480.0, 188.0)
 const POSICAO_LUA_FUSAO := CENTRO_FUSAO + Vector2(-108.0, 0.0)
 const POSICAO_SOL_FUSAO := CENTRO_FUSAO + Vector2(108.0, 0.0)
@@ -73,6 +74,8 @@ var desenhar_corona_transicao := false
 func _ready() -> void:
 	super._ready()
 	add_to_group("boss_sizigia")
+	for indice in vidas_fases.size():
+		vidas_fases[indice] = float(vidas_fases[indice]) * MULTIPLICADOR_VIDA_BOSS
 	VidaMaxima = vidas_fases[0]
 	Vida = VidaMaxima
 	escala_base_impacto = scale
@@ -89,7 +92,7 @@ func configurar_dificuldade(nivel_dificuldade: int) -> void:
 	var fator_dano := 1.0 + float(dificuldade_atual - 1) * 0.09
 	vidas_fases = []
 	for vida_base in VIDA_BASE_FASES:
-		vidas_fases.append(float(vida_base) * fator_vida)
+		vidas_fases.append(float(vida_base) * MULTIPLICADOR_VIDA_BOSS * fator_vida)
 	Dano = 34.0 * fator_dano
 	VidaMaxima = vidas_fases[fase_atual - 1]
 	Vida = VidaMaxima
@@ -356,7 +359,7 @@ func criar_chuva_meteoros(quantidade: int, nova_cor: Color, novo_dano: float) ->
 	tempo_ataque = maxf(tempo_ataque, 3.25)
 	for indice in quantidade:
 		var perigo := PerigoAstralCena.new() as PerigoAstral
-		get_tree().current_scene.add_child(perigo)
+		get_tree().current_scene.add_child(perigo, true)
 		var antecipacao: Vector2 = player.velocity * (0.18 + indice * 0.035)
 		var desloc := Vector2(randf_range(-160.0, 160.0), randf_range(-120.0, 120.0))
 		perigo.configurar_meteoro(player.global_position + antecipacao + desloc, novo_dano, nova_cor, 1.55 + indice * 0.16, 58.0)
@@ -418,7 +421,7 @@ func criar_raio_solar(eclipse: bool) -> void:
 	var raio := RaioAstralCena.new() as RaioAstral
 	var tempo_carga := 2.35 if eclipse else 2.70
 	tempo_ataque = maxf(tempo_ataque, tempo_carga + 1.05)
-	get_tree().current_scene.add_child(raio)
+	get_tree().current_scene.add_child(raio, true)
 	raio.configurar(self, global_position.direction_to(player.global_position), Dano * (0.70 if eclipse else 0.66), Color(1.0, 0.34, 0.12) if eclipse else Color(1.0, 0.74, 0.18), tempo_carga, 0.10, 38.0 if eclipse else 32.0, true, 0.0, Dano * 0.23, 2.7)
 
 
@@ -448,7 +451,7 @@ func criar_manchas_solares(quantidade: int) -> void:
 	tempo_ataque = maxf(tempo_ataque, 4.0)
 	for indice in quantidade:
 		var orbe := OrbeAstralCena.new() as OrbeAstral
-		get_tree().current_scene.add_child(orbe)
+		get_tree().current_scene.add_child(orbe, true)
 		orbe.configurar(self, TAU * indice / quantidade, Dano * 0.27)
 
 

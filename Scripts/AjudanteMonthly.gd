@@ -14,6 +14,7 @@ var fase := 0.0
 var historico: Array[Dictionary] = []
 var ultimo_angulo := 0.0
 var dano_drone_ovo := 0.8
+var somente_visual_rede := false
 
 
 func configurar(dono_ref: Node2D, tipo_ref: Tipo, cor_ref: Color, potencia_ref: float) -> void:
@@ -33,6 +34,15 @@ func configurar_drone_ovo(dono_ref: Node2D, cor_ref: Color, dano_ref: float, dur
 	dano_drone_ovo = maxf(dano_ref, 0.1)
 	tempo_restante = maxf(duracao_ref, 1.0)
 	tempo_disparo = 0.15
+
+
+func configurar_visual_rede(
+	dono_ref: Node2D, tipo_ref: Tipo, cor_ref: Color, duracao_ref: float
+) -> void:
+	somente_visual_rede = true
+	configurar(dono_ref, tipo_ref, cor_ref, 1.0)
+	tempo_restante = maxf(duracao_ref, 1.0)
+	add_to_group("ajudante_visual_rede")
 
 
 func _process(delta: float) -> void:
@@ -64,7 +74,7 @@ func _processar_clone(_delta: float) -> void:
 		global_rotation = ultimo_angulo
 	if tempo_disparo <= 0.0:
 		tempo_disparo = 0.48
-		if dono.has_method("criar_projetil"):
+		if not somente_visual_rede and dono.has_method("criar_projetil"):
 			dono.call("criar_projetil", ultimo_angulo, 0.72 * potencia, true, null, 0.0, &"clone", cor, {"velocidade": 0.92, "origem_global": global_position + Vector2.from_angle(ultimo_angulo) * 17.0})
 		_pulso(0.62)
 
@@ -73,6 +83,8 @@ func _processar_guardiao(_delta: float) -> void:
 	var angulo := fase * 2.45
 	global_position = dono.global_position + Vector2.from_angle(angulo) * 54.0
 	global_rotation = angulo + PI * 0.5
+	if somente_visual_rede:
+		return
 	var interceptou := false
 	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
 		if node is Node2D and is_instance_valid(node):
@@ -96,6 +108,8 @@ func _processar_drone_ovo(_delta: float) -> void:
 	var angulo := fase * 1.9
 	global_position = dono.global_position + Vector2.from_angle(angulo) * 66.0
 	global_rotation = global_position.angle_to_point(_inimigo_proximo().global_position) if is_instance_valid(_inimigo_proximo()) else angulo
+	if somente_visual_rede:
+		return
 	if tempo_disparo <= 0.0:
 		var alvo := _inimigo_proximo()
 		if is_instance_valid(alvo) and dono.has_method("criar_projetil"):

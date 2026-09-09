@@ -93,6 +93,14 @@ var invencibilidade := false
 var invencibilidade_cd := 0.0
 var invencibilidade_cd_max := 1.15
 var save := false
+var peer_id_dono := 1
+var nickname_rede := "PILOTO"
+var configuracao_visual_rede: Dictionary = {}
+var suporte_nickname_rede: Node2D
+var rotulo_nickname_rede: Label
+var habilidade_rede_path := ""
+var niveis_upgrades_rede: Dictionary = {}
+var contador_disparos_rede := 0
 
 # Pontos não interrompem a partida. O jogador abre o menu quando quiser.
 var pontos_upgrade_pendentes := 0
@@ -146,6 +154,7 @@ var cor_visual_nave: StringName = &"c10_verde_original"
 var rastro_visual_nave: StringName = &"c20_rastro_padrao"
 var sprite_modelo_o: Sprite2D
 var particulas_rastro_modelo_o: GPUParticles2D
+var rastro_ativo_rede := false
 var carga_arma := 0.0
 var calor_feixe := 0.0
 var tempo_poder_monthly := 0.0
@@ -186,11 +195,20 @@ signal upgrade_adquirido(id: StringName, novo_nivel: int)
 
 func _ready() -> void:
 	vida = VIDA_MAXIMA
-	carregar_equipamentos_monthly()
+	if configuracao_visual_rede.is_empty():
+		carregar_equipamentos_monthly()
+	else:
+		_aplicar_campos_configuracao_rede()
 	criar_visual_modelo_o()
 	aplicar_personalizacao_nave()
+	_criar_nickname_rede()
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		set_physics_process(false)
+		return
 	carregar_habilidade_equipada()
 	criar_barra_cooldown_habilidade()
+	if Rede.modo_multiplayer:
+		call_deferred("_sincronizar_loadout_rede")
 	var menu := get_node_or_null("../GUI/TelaUpgrades")
 	if (
 		is_instance_valid(menu)
@@ -208,6 +226,10 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
+	_atualizar_nickname_rede()
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		_atualizar_efeitos_visuais_rede()
+		return
 	mira_mouse = Global.mira_mouse
 	atualizar_ui()
 	atualizar_invencibilidade(delta)
@@ -222,9 +244,124 @@ func _process(delta: float) -> void:
 	atualizar_vida()
 
 
+func _atualizar_efeitos_visuais_rede() -> void:
+	if is_instance_valid(particles):
+		particles.emitting = rastro_ativo_rede and visible
+	if is_instance_valid(particulas_rastro_modelo_o):
+		particulas_rastro_modelo_o.emitting = rastro_ativo_rede and visible
+	queue_redraw()
+
+
+func configurar_jogador_multiplayer(
+	id_dono: int,
+	novo_nickname: String,
+	configuracao: Dictionary
+) -> void:
+	peer_id_dono = id_dono
+	nickname_rede = Rede.sanitizar_nickname(novo_nickname)
+	configuracao_visual_rede = configuracao.duplicate(true)
+	if is_inside_tree():
+		aplicar_configuracao_visual_rede()
+
+
+func aplicar_configuracao_visual_rede() -> void:
+	if not configuracao_visual_rede.is_empty():
+		_aplicar_campos_configuracao_rede()
+		aplicar_personalizacao_nave()
+	if is_instance_valid(rotulo_nickname_rede):
+		rotulo_nickname_rede.text = nickname_rede
+
+
+func _aplicar_campos_configuracao_rede() -> void:
+	arma_monthly = StringName(str(configuracao_visual_rede.get("arma", "")))
+	modulo_nave = StringName(str(configuracao_visual_rede.get("modulo", "")))
+	mutacao_habilidade = StringName(str(configuracao_visual_rede.get("mutacao", "")))
+	modelo_visual_nave = StringName(str(configuracao_visual_rede.get("modelo", "c01_modelo_padrao")))
+	cor_visual_nave = StringName(str(configuracao_visual_rede.get("cor", "c10_verde_original")))
+	rastro_visual_nave = StringName(str(configuracao_visual_rede.get("rastro", "c20_rastro_padrao")))
+	habilidade_rede_path = str(configuracao_visual_rede.get("habilidade", ""))
+	var upgrades_variant: Variant = configuracao_visual_rede.get("upgrades", {})
+	niveis_upgrades_rede = upgrades_variant.duplicate(true) if upgrades_variant is Dictionary else {}
+
+
+func _criar_nickname_rede() -> void:
+	if not Rede.modo_multiplayer or is_instance_valid(suporte_nickname_rede):
+		return
+	suporte_nickname_rede = Node2D.new()
+	suporte_nickname_rede.name = "NicknameRede"
+	suporte_nickname_rede.set_as_top_level(true)
+	add_child(suporte_nickname_rede)
+	rotulo_nickname_rede = Label.new()
+	rotulo_nickname_rede.position = Vector2(-80.0, -58.0)
+	rotulo_nickname_rede.size = Vector2(160.0, 28.0)
+	rotulo_nickname_rede.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rotulo_nickname_rede.add_theme_font_size_override("font_size", 14)
+	rotulo_nickname_rede.add_theme_color_override("font_color", obter_cor_personalizacao())
+	rotulo_nickname_rede.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	rotulo_nickname_rede.add_theme_constant_override("shadow_offset_x", 1)
+	rotulo_nickname_rede.add_theme_constant_override("shadow_offset_y", 2)
+	rotulo_nickname_rede.text = nickname_rede
+	rotulo_nickname_rede.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	suporte_nickname_rede.add_child(rotulo_nickname_rede)
+	_atualizar_nickname_rede()
+
+
+func _atualizar_nickname_rede() -> void:
+	if is_instance_valid(suporte_nickname_rede):
+		suporte_nickname_rede.global_position = global_position
+		suporte_nickname_rede.global_rotation = 0.0
+		suporte_nickname_rede.visible = visible
+
+
+func obter_cor_personalizacao() -> Color:
+	var dados_cor := CatalogoMonthly.encontrar(cor_visual_nave)
+	var cor_nave := Color("8bff2a")
+	if not dados_cor.is_empty():
+		var cor_catalogo: Variant = dados_cor.get("cor", cor_nave)
+		if typeof(cor_catalogo) == TYPE_COLOR:
+			cor_nave = cor_catalogo
+	return cor_nave
+
+
+func obter_estado_loadout_rede() -> Dictionary:
+	return {
+		"arma": str(arma_monthly),
+		"modulo": str(modulo_nave),
+		"mutacao": str(mutacao_habilidade),
+		"modelo": str(modelo_visual_nave),
+		"cor": str(cor_visual_nave),
+		"rastro": str(rastro_visual_nave),
+		"habilidade": habilidade_rede_path,
+		"upgrades": niveis_upgrades.duplicate(true),
+	}
+
+
+func aplicar_estado_loadout_rede(configuracao: Dictionary) -> void:
+	configuracao_visual_rede = configuracao.duplicate(true)
+	_aplicar_campos_configuracao_rede()
+	aplicar_personalizacao_nave()
+	if is_instance_valid(rotulo_nickname_rede):
+		rotulo_nickname_rede.add_theme_color_override(
+			"font_color", obter_cor_personalizacao()
+		)
+
+
+func _sincronizar_loadout_rede() -> void:
+	if not Rede.esta_conectado() or not is_multiplayer_authority():
+		return
+	var batalha := get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("replicar_loadout_player"):
+		batalha.call("replicar_loadout_player", obter_estado_loadout_rede())
+
+
 func carregar_habilidade_equipada() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
-	var caminho := str(dados.get("habilidade_equipada", ""))
+	var caminho := (
+		habilidade_rede_path
+		if not configuracao_visual_rede.is_empty()
+		else str(dados.get("habilidade_equipada", ""))
+	)
+	habilidade_rede_path = caminho
 	var habilidade_carregada: Habilidade
 	# Uma chave presente e vazia representa a escolha explícita de jogar sem
 	# habilidade. Saves antigos sem a chave continuam recebendo a padrão.
@@ -277,6 +414,8 @@ func carregar_habilidade_equipada() -> void:
 		return
 
 	HabilidadeEquipada = copia
+	if habilidade_rede_path.is_empty() and not habilidade_carregada.resource_path.is_empty():
+		habilidade_rede_path = habilidade_carregada.resource_path
 	HabilidadeEquipada.reiniciar_estado()
 	HabilidadeEquipada.ao_equipar(self)
 
@@ -359,16 +498,13 @@ func carregar_equipamentos_monthly() -> void:
 func aplicar_personalizacao_nave() -> void:
 	if not is_instance_valid(corpo_visual) or not is_instance_valid(detalhe_visual):
 		return
-	var dados_cor := CatalogoMonthly.encontrar(cor_visual_nave)
-	var cor_nave := Color("8bff2a")
-	if not dados_cor.is_empty():
-		var cor_catalogo: Variant = dados_cor.get("cor", cor_nave)
-		if typeof(cor_catalogo) == TYPE_COLOR:
-			cor_nave = cor_catalogo
+	var cor_nave := obter_cor_personalizacao()
 	corpo_visual.color = cor_nave
 	detalhe_visual.color = cor_nave.lightened(0.10)
 	if is_instance_valid(luz_visual):
 		luz_visual.color = cor_nave
+	if is_instance_valid(rotulo_nickname_rede):
+		rotulo_nickname_rede.add_theme_color_override("font_color", cor_nave)
 	var usando_modelo_o := modelo_visual_nave == &"c07_modelo_o"
 	corpo_visual.visible = not usando_modelo_o
 	detalhe_visual.visible = not usando_modelo_o
@@ -582,9 +718,11 @@ func _menu_melhorias_aberto() -> bool:
 
 func _on_menu_melhorias_estado_alterado(aberto: bool) -> void:
 	if aberto:
+		ctrlblock = true
 		if is_instance_valid(barra_cooldown_habilidade):
 			barra_cooldown_habilidade.hide()
 		return
+	ctrlblock = false
 	atualizar_barra_cooldown_habilidade()
 
 
@@ -626,6 +764,8 @@ func atualizar_habilidade(delta: float) -> void:
 
 
 func ao_ativar_habilidade() -> void:
+	if not (HabilidadeEquipada is HabilidadeMonthly):
+		_replicar_habilidade_visual_generica()
 	if duracao_overdrive > 0.0:
 		var multiplicador_duracao := 2.0 if reator_sincronizado else 1.0
 		tempo_overdrive = duracao_overdrive * multiplicador_duracao
@@ -653,7 +793,15 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 		return
 	# Uma assinatura visual própria nasce em toda ativação. Os feedbacks de
 	# impacto posteriores continuam separados e não escondem a leitura do poder.
-	ExplosaoMonthlyCena.criar(cena, global_position, cor, 0.82 * potencia, efeito_id)
+	# A ativação já é recriada pelo evento da habilidade no outro peer.
+	ExplosaoMonthlyCena.criar(cena, global_position, cor, 0.82 * potencia, efeito_id, -1, false)
+	_replicar_habilidade_visual({
+		"monthly": true,
+		"efeito_id": efeito_id,
+		"cor": cor,
+		"potencia": potencia,
+		"config": config.duplicate(true),
+	})
 	if efeito_id in [&"ovo", &"florescimento", &"fantasma", &"presente", &"laco", &"tempestade"]:
 		EFEITO_HABILIDADE_MONTHLY.criar(cena, self, efeito_id, cor, potencia, config)
 		return
@@ -1094,6 +1242,7 @@ func atualizar_movimento(delta: float) -> void:
 			brake(delta, fator_movimento)
 
 	var emitindo_rastro := acelerando or UsandoHabilidade
+	rastro_ativo_rede = emitindo_rastro
 	var usando_estrelas_modelo_o := (
 		modelo_visual_nave == &"c07_modelo_o"
 		and rastro_visual_nave == &"c21_rastro_estelar_o"
@@ -1506,6 +1655,74 @@ func criar_projetil(
 	else:
 		projetil.dmg = dano_final
 
+	if Rede.esta_conectado():
+		registrar_projetil_rede(projetil, estilo_monthly, cor_monthly, config_monthly)
+
+
+func registrar_projetil_rede(
+	projetil: Node2D, estilo: StringName, cor: Color, config: Dictionary
+) -> void:
+	var batalha := get_parent()
+	if not is_instance_valid(batalha) or not batalha.has_method("replicar_disparo_player"):
+		return
+	contador_disparos_rede += 1
+	var id_disparo := "%d:%d" % [peer_id_dono, contador_disparos_rede]
+	projetil.set_meta("id_disparo_rede", id_disparo)
+	if projetil.has_method("configurar_id_disparo_rede"):
+		projetil.call("configurar_id_disparo_rede", id_disparo, false)
+	var cena_path := "res://Entities/fireball.tscn"
+	if tiro and not tiro.resource_path.is_empty():
+		cena_path = tiro.resource_path
+	batalha.call("replicar_disparo_player", {
+		"peer_id": peer_id_dono,
+		"id_disparo": id_disparo,
+		"cena": cena_path,
+		"posicao": projetil.global_position,
+		"rotacao": projetil.global_rotation,
+		"velocidade": float(projetil.get("velocidade")),
+		"escala": projetil.scale,
+		"tempo_vida": float(projetil.get("tempo_vida")),
+		"estilo": estilo,
+		"cor": cor,
+		"config": config.duplicate(true),
+		"fragmento": bool(projetil.get("eh_fragmento")),
+		"critico": bool(projetil.get("eh_critico")),
+	})
+
+
+func _replicar_habilidade_visual_generica() -> void:
+	if not HabilidadeEquipada:
+		return
+	var caminho_icone := ""
+	if HabilidadeEquipada.Icone:
+		caminho_icone = HabilidadeEquipada.Icone.resource_path
+	_replicar_habilidade_visual({
+		"monthly": false,
+		"habilidade_id": HabilidadeEquipada.Id,
+		"icone": caminho_icone,
+		"cor": _cor_visual_habilidade(HabilidadeEquipada.Id),
+	})
+
+
+func _replicar_habilidade_visual(dados: Dictionary) -> void:
+	if not Rede.esta_conectado():
+		return
+	var batalha := get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("replicar_habilidade_player"):
+		dados["peer_id"] = peer_id_dono
+		batalha.call("replicar_habilidade_player", dados)
+
+
+func _cor_visual_habilidade(id: StringName) -> Color:
+	match id:
+		&"foco_absoluto": return Color(0.3, 0.68, 1.0)
+		&"hiperdash": return Color(0.1, 0.82, 1.0)
+		&"transfusao": return Color(1.0, 0.08, 0.28)
+		&"fogueira_ardente": return Color(1.0, 0.52, 0.1)
+		&"escudo_protetor": return Color(0.72, 0.42, 1.0)
+		&"abraco_materno": return Color(1.0, 0.42, 0.68)
+		_: return Color(0.55, 0.92, 1.0)
+
 func obter_alvos_para_multitiro(quantidade: int) -> Array[Node2D]:
 	var alvos: Array[Node2D] = []
 	if forca_mira_gravitacional <= 0.0:
@@ -1544,6 +1761,10 @@ func registrar_acerto_projetil() -> void:
 
 
 func tomar_dano(valor: float) -> void:
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		if multiplayer.is_server() and peer_id_dono > 1:
+			_receber_dano_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+		return
 	if (
 		invencibilidade
 		or invulneravel_por_habilidade
@@ -1593,6 +1814,7 @@ func tomar_dano(valor: float) -> void:
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
 	Global.vibrar_controle(0.35, 0.75, 0.2)
+
 	reproduzir_feedback_dano(dano_final)
 	if modulo_nave == &"n03_rede_apoio":
 		ponto_seguro_ativo = true
@@ -1611,6 +1833,12 @@ func tomar_dano(valor: float) -> void:
 				area_segura.end.y
 			)
 		)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_dano_autoritativo(valor: float) -> void:
+	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
+		tomar_dano(clampf(valor, 0.0, 10000.0))
 
 
 func reproduzir_feedback_dano(dano_recebido: float) -> void:
@@ -1837,11 +2065,28 @@ func ganhar_xp(valor: float) -> void:
 		subir_de_nivel()
 
 
+func conceder_xp_rede(valor: float) -> void:
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		if multiplayer.is_server() and peer_id_dono > 1:
+			_receber_xp_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+		return
+	ganhar_xp(valor)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_xp_autoritativo(valor: float) -> void:
+	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
+		ganhar_xp(clampf(valor, 0.0, 10000.0))
+
+
 func subir_de_nivel() -> void:
 	nivel_atual += 1
 	xp_necessario = calcular_xp_proximo_nivel(nivel_atual)
-	pontos_upgrade_pendentes += 1
-	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+	# Uma escolha a cada dois níveis: 2, 4, 6... Sem acumular um ponto oculto
+	# nos níveis intermediários.
+	if nivel_atual % 2 == 0:
+		pontos_upgrade_pendentes += 1
+		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()
 
 
@@ -1865,6 +2110,7 @@ func comprar_upgrade(id: StringName) -> bool:
 	aplicar_upgrade(id)
 	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	upgrade_adquirido.emit(id, novo_nivel)
+	_sincronizar_loadout_rede()
 	return true
 
 
@@ -2071,10 +2317,24 @@ func morrer() -> void:
 		var particle = ParticulaMorte.instantiate()
 		particle.position = global_position
 		particle.rotation = global_rotation
+		particle.modulate = obter_cor_personalizacao()
 		particle.emitting = true
 		get_tree().current_scene.add_child(particle)
+	var batalha := get_parent()
+	if Rede.esta_conectado() and is_instance_valid(batalha) and batalha.has_method("replicar_feedback_visual"):
+		batalha.call("replicar_feedback_visual", {
+			"classe": &"particula_cena",
+			"cena": "res://FX/player_death_parts.tscn",
+			"posicao": global_position,
+			"rotacao": global_rotation,
+			"cor": obter_cor_personalizacao(),
+		})
+	if is_instance_valid(batalha) and batalha.has_method("_on_player_morreu"):
+		batalha.call("_on_player_morreu", self)
 
 	await get_tree().create_timer(1.5).timeout
+	if Rede.modo_multiplayer:
+		return
 	queue_free()
 
 

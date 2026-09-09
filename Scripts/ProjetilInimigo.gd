@@ -21,6 +21,29 @@ var rebotes: int = 0
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	aplicar_glow()
+	_configurar_sincronizador_multiplayer()
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		monitoring = false
+		monitorable = false
+		set_physics_process(false)
+
+
+func _configurar_sincronizador_multiplayer() -> void:
+	if not Rede.modo_multiplayer or has_node("MultiplayerSynchronizer"):
+		return
+	var sincronizador := MultiplayerSynchronizer.new()
+	sincronizador.name = "MultiplayerSynchronizer"
+	sincronizador.root_path = NodePath("..")
+	var configuracao := SceneReplicationConfig.new()
+	for caminho in [NodePath(".:position"), NodePath(".:rotation"), NodePath(".:direcao")]:
+		configuracao.add_property(caminho)
+		configuracao.property_set_spawn(caminho, true)
+		configuracao.property_set_replication_mode(
+			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
+		)
+	sincronizador.replication_config = configuracao
+	sincronizador.replication_interval = 0.033
+	add_child(sincronizador)
 
 
 func aplicar_glow() -> void:
@@ -55,6 +78,8 @@ func configurar(
 
 
 func _physics_process(delta: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
 		queue_free()

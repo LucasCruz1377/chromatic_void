@@ -4,6 +4,12 @@ extends Node2D
 const DadosSetores = preload("res://Scripts/SectorData.gd")
 const PainelDesenvolvedorCena = preload("res://Scripts/PainelDesenvolvedor.gd")
 const ControlesMobileCena = preload("res://Scripts/ControlesMobile.gd")
+const JOGADOR_CENA := preload("res://Entities/player.tscn")
+const EfeitoHabilidadeRedeCena = preload("res://Scripts/EfeitoHabilidadeRede.gd")
+const EfeitoMonthlyRedeCena = preload("res://Scripts/MonthlyAbilityEffect.gd")
+const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
+const EfeitoCombateRedeCena = preload("res://Scripts/EfeitoCombate.gd")
+const IndicadorDanoRedeCena = preload("res://Scripts/IndicadorDano.gd")
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
@@ -71,6 +77,8 @@ const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 @onready var astro = $GUI/Astro
 @onready var fundo_original: CanvasItem = $espaco
 @onready var tela_upgrades: Control = $GUI/TelaUpgrades
+@onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
+@onready var world_spawner: MultiplayerSpawner = $WorldSpawner
 
 var pontos: float = 0.0
 var timer: float = TIMER_MAX
@@ -102,10 +110,19 @@ var musica_partida_padrao: AudioStream
 var musica_boss_ativa := false
 var escala_fundo_original := Vector2.ONE
 var estado_visual_boss_pausa: Array[Dictionary] = []
+var jogadores_rede: Dictionary = {}
+var tempo_nova_solicitacao_rede := 0.0
+var aviso_rede: Label
+var texto_aguardando_morte: Label
+var painel_morte_local_exibido := false
+var preservar_conexao_ao_sair := false
+var disparos_visuais_rede: Dictionary = {}
 
 
 func _ready() -> void:
 	get_tree().paused = false
+	_configurar_spawners_multiplayer()
+	_configurar_jogadores_multiplayer()
 	Global.definir_cursor_interface(false)
 	Global.Pontos = 0
 	Global.Combo = 0
@@ -114,6 +131,7 @@ func _ready() -> void:
 	game_over = false
 	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	caixa_gameover.visible = false
+	_criar_aviso_rede()
 	escala_fundo_original = fundo_original.scale
 	get_viewport().size_changed.connect(_on_tamanho_viewport_alterado)
 	call_deferred("_atualizar_area_responsiva")
@@ -155,12 +173,514 @@ func _exit_tree() -> void:
 	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
 	Global.definir_cursor_interface(true)
+	if Rede.modo_multiplayer and not preservar_conexao_ao_sair:
+		Rede.encerrar_lobby()
+
+
+func _configurar_jogadores_multiplayer() -> void:
+	if not Rede.modo_multiplayer:
+		return
+	if not Rede.jogador_desconectado.is_connected(_on_jogador_rede_desconectado):
+		Rede.jogador_desconectado.connect(_on_jogador_rede_desconectado)
+	if not Rede.desconexao_detectada.is_connected(_on_desconexao_detectada):
+		Rede.desconexao_detectada.connect(_on_desconexao_detectada)
+	var peer_local := Rede.peer_local()
+	player.configurar_jogador_multiplayer(
+		1,
+		str(Rede.jogadores.get(1, "PILOTO")),
+		Rede.obter_configuracao_nave_local() if multiplayer.is_server() else {}
+	)
+	player.global_position = _posicao_inicial_peer(1)
+	jogadores_rede[1] = player
+	if multiplayer.is_server():
+		player.call_deferred("aplicar_configuracao_visual_rede")
+	else:
+		_enviar_solicitacao_entrada()
+	call_deferred("_vincular_jogador_local")
+
+
+func _configurar_spawners_multiplayer() -> void:
+	player_spawner.spawn_function = _instanciar_jogador_rede
+	for cena in INIMIGOS.values():
+		world_spawner.add_spawnable_scene((cena as PackedScene).resource_path)
+	for cena in BOSSES.values():
+		world_spawner.add_spawnable_scene((cena as PackedScene).resource_path)
+	for caminho in [
+		"res://Entities/AsteroideBonus.tscn",
+		"res://Entities/ProjetilInimigo.tscn",
+		"res://Entities/EspinhoPrimaveril.tscn",
+		"res://Entities/PetalaBumerangue.tscn",
+		"res://Entities/VinhaEspinhosa.tscn",
+	]:
+		if ResourceLoader.exists(caminho):
+			world_spawner.add_spawnable_scene(caminho)
+
+
+func _posicao_inicial_peer(id: int) -> Vector2:
+	return Vector2(175.0, 234.0) if id == 1 else Vector2(785.0, 306.0)
+
+
+func _enviar_solicitacao_entrada() -> void:
+	tempo_nova_solicitacao_rede = 0.5
+	_solicitar_entrada_partida.rpc_id(
+		1, Rede.nickname_local, Rede.obter_configuracao_nave_local()
+	)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if id <= 1 or jogadores_rede.has(id):
+		return
+	_configurar_player_host.rpc_id(
+		id,
+		str(Rede.jogadores.get(1, Rede.nickname_local)),
+		Rede.obter_configuracao_nave_local()
+	)
+	var novo := player_spawner.spawn({
+		"peer_id": id,
+		"nickname": Rede.sanitizar_nickname(nickname),
+		"configuracao": configuracao.duplicate(true),
+	}) as Player
+	if is_instance_valid(novo):
+		jogadores_rede[id] = novo
+
+
+@rpc("authority", "call_remote", "reliable")
+func _configurar_player_host(nickname: String, configuracao: Dictionary) -> void:
+	player.configurar_jogador_multiplayer(1, nickname, configuracao)
+	player.aplicar_configuracao_visual_rede()
+
+
+func _instanciar_jogador_rede(dados: Variant) -> Node:
+	if not dados is Dictionary:
+		return null
+	var id := int(dados.get("peer_id", 0))
+	if id <= 1:
+		return null
+	var novo := JOGADOR_CENA.instantiate() as Player
+	novo.name = "Player_%d" % id
+	novo.configurar_jogador_multiplayer(
+		id,
+		str(dados.get("nickname", "PILOTO")),
+		Dictionary(dados.get("configuracao", {}))
+	)
+	novo.position = _posicao_inicial_peer(id)
+	novo.set_multiplayer_authority(id, true)
+	jogadores_rede[id] = novo
+	call_deferred("_vincular_jogador_local")
+	return novo
+
+
+func replicar_disparo_player(dados: Dictionary) -> void:
+	if not Rede.esta_conectado():
+		return
+	if multiplayer.is_server():
+		_enviar_disparo_visual_para_outros(dados, 1)
+	else:
+		_encaminhar_disparo_visual.rpc_id(1, dados)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _encaminhar_disparo_visual(dados: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	dados["peer_id"] = remetente
+	_criar_disparo_visual_rede(dados)
+	_enviar_disparo_visual_para_outros(dados, remetente)
+
+
+func _enviar_disparo_visual_para_outros(dados: Dictionary, remetente: int) -> void:
+	for chave in Rede.jogadores:
+		var id := int(chave)
+		if id != 1 and id != remetente:
+			_receber_disparo_visual.rpc_id(id, dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_disparo_visual(dados: Dictionary) -> void:
+	_criar_disparo_visual_rede(dados)
+
+
+func _criar_disparo_visual_rede(dados: Dictionary) -> void:
+	var caminho := str(dados.get("cena", "res://Entities/fireball.tscn"))
+	if caminho != "res://Entities/fireball.tscn":
+		return
+	var cena := load(caminho) as PackedScene
+	if not cena:
+		return
+	var projetil := cena.instantiate() as Area2D
+	var id_disparo := str(dados.get("id_disparo", ""))
+	if id_disparo.is_empty() or disparos_visuais_rede.has(id_disparo):
+		return
+	projetil.name = "TiroVisual_%s" % id_disparo.replace(":", "_")
+	projetil.set_meta("apenas_visual_rede", true)
+	projetil.set_meta("id_disparo_rede", id_disparo)
+	projetil.collision_layer = 0
+	projetil.collision_mask = 0
+	projetil.monitoring = false
+	projetil.monitorable = false
+	add_child(projetil, true)
+	disparos_visuais_rede[id_disparo] = projetil
+	projetil.global_position = Vector2(dados.get("posicao", Vector2.ZERO))
+	projetil.global_rotation = float(dados.get("rotacao", 0.0))
+	projetil.scale = Vector2(dados.get("escala", Vector2.ONE))
+	projetil.set("velocidade", clampf(float(dados.get("velocidade", 1000.0)), 0.0, 2400.0))
+	projetil.set("tempo_vida", clampf(float(dados.get("tempo_vida", 5.0)), 0.05, 15.0))
+	projetil.set("eh_fragmento", bool(dados.get("fragmento", false)))
+	projetil.set("eh_critico", bool(dados.get("critico", false)))
+	projetil.set("dono_player", jogadores_rede.get(int(dados.get("peer_id", 0))))
+	if bool(dados.get("fragmento", false)):
+		var visual_fragmento := projetil.get_node_or_null("Polygon2D") as Polygon2D
+		var luz_fragmento := projetil.get_node_or_null("PointLight2D") as PointLight2D
+		if is_instance_valid(visual_fragmento):
+			visual_fragmento.color = Color(0.92, 0.20, 1.0, 1.0)
+		if is_instance_valid(luz_fragmento):
+			luz_fragmento.color = Color(0.95, 0.30, 1.0, 1.0)
+	var estilo := StringName(str(dados.get("estilo", "")))
+	var cor := Color(dados.get("cor", Color.WHITE))
+	var config_variant: Variant = dados.get("config", {})
+	var config: Dictionary = config_variant if config_variant is Dictionary else {}
+	if not estilo.is_empty() and projetil.has_method("configurar_estilo_monthly"):
+		projetil.call("configurar_estilo_monthly", estilo, cor, config)
+	if projetil.has_method("configurar_id_disparo_rede"):
+		projetil.call("configurar_id_disparo_rede", id_disparo, true)
+
+
+func replicar_estado_disparo(dados: Dictionary) -> void:
+	if not Rede.esta_conectado():
+		return
+	if multiplayer.is_server():
+		_enviar_estado_disparo_para_outros(dados, 1)
+	else:
+		_encaminhar_estado_disparo.rpc_id(1, dados)
+
+
+@rpc("any_peer", "call_remote", "unreliable_ordered", 2)
+func _encaminhar_estado_disparo(dados: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	dados["peer_id"] = remetente
+	_aplicar_estado_disparo_visual(dados)
+	_enviar_estado_disparo_para_outros(dados, remetente)
+
+
+func _enviar_estado_disparo_para_outros(dados: Dictionary, remetente: int) -> void:
+	for chave in Rede.jogadores:
+		var id := int(chave)
+		if id != 1 and id != remetente:
+			_receber_estado_disparo.rpc_id(id, dados)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered", 2)
+func _receber_estado_disparo(dados: Dictionary) -> void:
+	_aplicar_estado_disparo_visual(dados)
+
+
+func _aplicar_estado_disparo_visual(dados: Dictionary) -> void:
+	var id_disparo := str(dados.get("id_disparo", ""))
+	var projetil := disparos_visuais_rede.get(id_disparo) as Node2D
+	if not is_instance_valid(projetil):
+		return
+	if projetil.has_method("aplicar_estado_visual_rede"):
+		projetil.call(
+			"aplicar_estado_visual_rede",
+			Vector2(dados.get("posicao", projetil.global_position)),
+			float(dados.get("rotacao", projetil.global_rotation)),
+			Vector2(dados.get("escala", projetil.scale)),
+			bool(dados.get("visivel", projetil.visible))
+		)
+
+
+func finalizar_disparo_rede(id_disparo: String) -> void:
+	if id_disparo.is_empty() or not Rede.esta_conectado():
+		return
+	var dados := {"id_disparo": id_disparo}
+	if multiplayer.is_server():
+		_enviar_fim_disparo_para_outros(dados, 1)
+	else:
+		_encaminhar_fim_disparo.rpc_id(1, dados)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _encaminhar_fim_disparo(dados: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	_finalizar_disparo_visual(str(dados.get("id_disparo", "")))
+	_enviar_fim_disparo_para_outros(dados, remetente)
+
+
+func _enviar_fim_disparo_para_outros(dados: Dictionary, remetente: int) -> void:
+	for chave in Rede.jogadores:
+		var id := int(chave)
+		if id != 1 and id != remetente:
+			_receber_fim_disparo.rpc_id(id, dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_fim_disparo(dados: Dictionary) -> void:
+	_finalizar_disparo_visual(str(dados.get("id_disparo", "")))
+
+
+func _finalizar_disparo_visual(id_disparo: String) -> void:
+	var projetil := disparos_visuais_rede.get(id_disparo) as Node
+	disparos_visuais_rede.erase(id_disparo)
+	if is_instance_valid(projetil):
+		projetil.queue_free()
+
+
+func replicar_habilidade_player(dados: Dictionary) -> void:
+	if not Rede.esta_conectado():
+		return
+	if multiplayer.is_server():
+		_enviar_habilidade_visual_para_outros(dados, 1)
+	else:
+		_encaminhar_habilidade_visual.rpc_id(1, dados)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _encaminhar_habilidade_visual(dados: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	dados["peer_id"] = remetente
+	_criar_habilidade_visual_rede(dados)
+	_enviar_habilidade_visual_para_outros(dados, remetente)
+
+
+func _enviar_habilidade_visual_para_outros(dados: Dictionary, remetente: int) -> void:
+	for chave in Rede.jogadores:
+		var id := int(chave)
+		if id != 1 and id != remetente:
+			_receber_habilidade_visual.rpc_id(id, dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_habilidade_visual(dados: Dictionary) -> void:
+	_criar_habilidade_visual_rede(dados)
+
+
+func _criar_habilidade_visual_rede(dados: Dictionary) -> void:
+	var id := int(dados.get("peer_id", 0))
+	var alvo := jogadores_rede.get(id) as Player
+	if not is_instance_valid(alvo):
+		return
+	var cor := Color(dados.get("cor", Color(0.55, 0.92, 1.0)))
+	if bool(dados.get("monthly", false)):
+		var config_variant: Variant = dados.get("config", {})
+		var config: Dictionary = config_variant if config_variant is Dictionary else {}
+		EfeitoMonthlyRedeCena.criar_visual_rede(
+			self, alvo, StringName(str(dados.get("efeito_id", ""))), cor,
+			clampf(float(dados.get("potencia", 1.0)), 0.25, 3.0), config
+		)
+	else:
+		EfeitoHabilidadeRedeCena.criar(
+			self, alvo, StringName(str(dados.get("habilidade_id", ""))),
+			cor, str(dados.get("icone", "")), 1.0
+		)
+	ExplosaoMonthlyCena.criar(self, alvo.global_position, cor, 0.82, &"", -1, false)
+
+
+func replicar_loadout_player(configuracao: Dictionary) -> void:
+	if not Rede.esta_conectado():
+		return
+	var dados := {
+		"peer_id": Rede.peer_local(),
+		"configuracao": configuracao.duplicate(true),
+	}
+	if multiplayer.is_server():
+		_enviar_loadout_para_outros(dados, 1)
+	else:
+		_encaminhar_loadout.rpc_id(1, dados)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _encaminhar_loadout(dados: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	dados["peer_id"] = remetente
+	_aplicar_loadout_rede(dados)
+	_enviar_loadout_para_outros(dados, remetente)
+
+
+func _enviar_loadout_para_outros(dados: Dictionary, remetente: int) -> void:
+	for chave in Rede.jogadores:
+		var id := int(chave)
+		if id != 1 and id != remetente:
+			_receber_loadout.rpc_id(id, dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_loadout(dados: Dictionary) -> void:
+	_aplicar_loadout_rede(dados)
+
+
+func _aplicar_loadout_rede(dados: Dictionary) -> void:
+	var id := int(dados.get("peer_id", 0))
+	if id == Rede.peer_local():
+		return
+	var alvo := jogadores_rede.get(id) as Player
+	var configuracao_variant: Variant = dados.get("configuracao", {})
+	if is_instance_valid(alvo) and configuracao_variant is Dictionary:
+		alvo.aplicar_estado_loadout_rede(configuracao_variant)
+
+
+func replicar_feedback_visual(dados: Dictionary) -> void:
+	if not Rede.esta_conectado():
+		return
+	if multiplayer.is_server():
+		_enviar_feedback_para_outros(dados, 1)
+	else:
+		_encaminhar_feedback_visual.rpc_id(1, dados)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _encaminhar_feedback_visual(dados: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	_criar_feedback_visual_rede(dados)
+	_enviar_feedback_para_outros(dados, remetente)
+
+
+func _enviar_feedback_para_outros(dados: Dictionary, remetente: int) -> void:
+	for chave in Rede.jogadores:
+		var id := int(chave)
+		if id != 1 and id != remetente:
+			_receber_feedback_visual.rpc_id(id, dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_feedback_visual(dados: Dictionary) -> void:
+	_criar_feedback_visual_rede(dados)
+
+
+func _criar_feedback_visual_rede(dados: Dictionary) -> void:
+	var classe := StringName(str(dados.get("classe", "")))
+	var posicao := Vector2(dados.get("posicao", Vector2.ZERO))
+	var cor := Color(dados.get("cor", Color.WHITE))
+	var semente := int(dados.get("semente", 1))
+	match classe:
+		&"efeito_combate":
+			var tipo_efeito := clampi(int(dados.get("tipo", 0)), 0, EfeitoCombate.Tipo.size() - 1)
+			var intensidade := clampf(float(dados.get("intensidade", 1.0)), 0.2, 4.0)
+			var efeito := EfeitoCombateRedeCena.criar(
+				self, posicao,
+				tipo_efeito, cor, intensidade,
+				Vector2(dados.get("direcao", Vector2.RIGHT)), semente, false
+			)
+			if is_instance_valid(efeito):
+				efeito.set_meta("efeito_visual_rede", true)
+			if tipo_efeito in [EfeitoCombate.Tipo.MORTE, EfeitoCombate.Tipo.DANO_PLAYER]:
+				var camera := get_tree().get_first_node_in_group("camera") as Camera2D
+				if is_instance_valid(camera) and camera.has_method("shake"):
+					camera.shake(2.5 + intensidade * 1.5)
+		&"monthly_burst":
+			var explosao := ExplosaoMonthlyCena.criar(
+				self, posicao, cor,
+				clampf(float(dados.get("intensidade", 1.0)), 0.25, 4.0),
+				StringName(str(dados.get("estilo", ""))), semente, false
+			)
+			if is_instance_valid(explosao):
+				explosao.set_meta("efeito_visual_rede", true)
+		&"indicador_dano":
+			var indicador := IndicadorDanoRedeCena.criar(
+				self, posicao, clampf(float(dados.get("dano", 0.0)), 0.0, 100000.0),
+				cor, bool(dados.get("critico", false)), semente, false
+			)
+			if is_instance_valid(indicador):
+				indicador.set_meta("efeito_visual_rede", true)
+		&"particula_cena":
+			var caminho := str(dados.get("cena", ""))
+			if caminho not in [
+				"res://FX/player_death_parts.tscn",
+				"res://FX/ParticulasMorteInimigo.tscn",
+			]:
+				return
+			var cena_particula := load(caminho) as PackedScene
+			if not cena_particula:
+				return
+			var particula := cena_particula.instantiate() as Node2D
+			if not particula:
+				return
+			add_child(particula)
+			particula.global_position = posicao
+			particula.global_rotation = float(dados.get("rotacao", 0.0))
+			particula.modulate = cor
+			particula.set_meta("efeito_visual_rede", true)
+			if particula is GPUParticles2D:
+				(particula as GPUParticles2D).emitting = true
+
+
+func _vincular_jogador_local() -> void:
+	if not Rede.modo_multiplayer:
+		return
+	var local := jogadores_rede.get(Rede.peer_local()) as Player
+	if not is_instance_valid(local):
+		return
+	player = local
+	if $GUI.has_method("definir_player_local"):
+		$GUI.definir_player_local(player)
+	if tela_upgrades.has_method("definir_player_local"):
+		tela_upgrades.definir_player_local(player)
+	if is_instance_valid(controles_mobile):
+		controles_mobile.configurar(self, player)
+
+
+func _on_jogador_rede_desconectado(id: int) -> void:
+	if not jogadores_rede.has(id):
+		return
+	var remoto: Variant = jogadores_rede[id]
+	var nome := "O OUTRO PILOTO"
+	if is_instance_valid(remoto):
+		nome = str((remoto as Node).get("nickname_rede"))
+		(remoto as Node).queue_free()
+	jogadores_rede.erase(id)
+	_mostrar_aviso_rede("%s DESCONECTOU • A PARTIDA CONTINUA" % nome.to_upper(), false)
+
+
+func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
+	_mostrar_aviso_rede(mensagem, true)
+	if host_perdido:
+		game_over = true
+		painel_morte_local_exibido = true
+		caixa_gameover.visible = true
+		$"GUI/caixa gameover/Tentatdenovotext".text = "HOST DESCONECTADO"
+		$"GUI/caixa gameover/Tentar de novo".visible = false
+		$"GUI/caixa gameover/Voltarmenu2".text = "VOLTAR AO MENU"
+		Global.definir_cursor_interface(true)
 
 
 func _process(delta: float) -> void:
+	if Rede.modo_multiplayer:
+		_atualizar_estado_morte_multiplayer()
 	if game_over or escolha_setor_ativa:
 		return
 	atualizar_pontos(delta)
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		if not jogadores_rede.has(Rede.peer_local()):
+			tempo_nova_solicitacao_rede -= delta
+			if tempo_nova_solicitacao_rede <= 0.0:
+				_enviar_solicitacao_entrada()
+		return
 	if get_tree().get_nodes_in_group("player").is_empty():
 		game_over = true
 		Global.definir_cursor_interface(true)
@@ -184,6 +704,118 @@ func _process(delta: float) -> void:
 	if timer <= 0.0:
 		spawnar_enemy()
 		timer = calcular_tempo_spawn()
+
+
+func _on_player_morreu(jogador: Player) -> void:
+	if not Rede.modo_multiplayer or jogador.peer_id_dono != Rede.peer_local():
+		return
+	if not multiplayer.is_server():
+		_notificar_morte_ao_host.rpc_id(1)
+	_mostrar_painel_morte_local()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _notificar_morte_ao_host() -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not jogadores_rede.has(remetente):
+		return
+	var jogador := jogadores_rede[remetente] as Player
+	if is_instance_valid(jogador):
+		jogador.vivo = false
+		jogador.vida = 0.0
+		jogador.visible = false
+
+
+func _atualizar_estado_morte_multiplayer() -> void:
+	var vivos := 0
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if candidato is Player and candidato.vivo and candidato.visible:
+			vivos += 1
+	if is_instance_valid(player) and not player.vivo and not painel_morte_local_exibido:
+		_mostrar_painel_morte_local()
+	if multiplayer.is_server() and vivos == 0:
+		game_over = true
+
+
+func _mostrar_painel_morte_local() -> void:
+	painel_morte_local_exibido = true
+	caixa_gameover.visible = true
+	$"GUI/caixa gameover/Tentatdenovotext".text = "SUA NAVE FOI DESTRUÍDA"
+	var botao_reiniciar := $"GUI/caixa gameover/Tentar de novo" as Button
+	botao_reiniciar.visible = multiplayer.is_server()
+	botao_reiniciar.text = "REINICIAR PARTIDA"
+	$"GUI/caixa gameover/Voltarmenu2".text = "SAIR DA PARTIDA"
+	if not is_instance_valid(texto_aguardando_morte):
+		texto_aguardando_morte = Label.new()
+		texto_aguardando_morte.name = "AguardandoOutroPiloto"
+		texto_aguardando_morte.text = "A partida continua • você pode aguardar o outro piloto"
+		texto_aguardando_morte.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		texto_aguardando_morte.add_theme_font_size_override("font_size", 15)
+		texto_aguardando_morte.add_theme_color_override("font_color", Color(0.55, 0.9, 1.0))
+		caixa_gameover.add_child(texto_aguardando_morte)
+		caixa_gameover.move_child(texto_aguardando_morte, 1)
+	Global.definir_cursor_interface(true)
+
+
+func solicitar_reinicio_multiplayer() -> void:
+	if not Rede.modo_multiplayer:
+		get_tree().reload_current_scene()
+		return
+	if not multiplayer.is_server():
+		_mostrar_aviso_rede("APENAS O HOST PODE REINICIAR A PARTIDA", false)
+		return
+	_reiniciar_partida_rede.rpc()
+
+
+@rpc("authority", "call_local", "reliable")
+func _reiniciar_partida_rede() -> void:
+	preservar_conexao_ao_sair = true
+	get_tree().paused = false
+	Engine.time_scale = 1.0
+	Global.Pontos = 0
+	Global.Combo = 0
+	get_tree().call_deferred("change_scene_to_file", "res://Rooms/Battle_area.tscn")
+
+
+func _criar_aviso_rede() -> void:
+	aviso_rede = Label.new()
+	aviso_rede.name = "AvisoRede"
+	aviso_rede.z_index = 80
+	aviso_rede.visible = false
+	aviso_rede.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aviso_rede.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	aviso_rede.add_theme_font_size_override("font_size", 17)
+	aviso_rede.add_theme_color_override("font_color", Color.WHITE)
+	var fundo := StyleBoxFlat.new()
+	fundo.bg_color = Color(0.05, 0.015, 0.08, 0.94)
+	fundo.border_color = Color(1.0, 0.26, 0.48, 0.9)
+	fundo.set_border_width_all(2)
+	fundo.set_corner_radius_all(9)
+	aviso_rede.add_theme_stylebox_override("normal", fundo)
+	$GUI.add_child(aviso_rede)
+	aviso_rede.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	aviso_rede.position = Vector2(-260.0, 24.0)
+	aviso_rede.size = Vector2(520.0, 48.0)
+
+
+func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
+	if not is_instance_valid(aviso_rede):
+		return
+	aviso_rede.text = mensagem
+	aviso_rede.visible = true
+	if persistente:
+		return
+	var token := Time.get_ticks_msec()
+	aviso_rede.set_meta("token_aviso", token)
+	_ocultar_aviso_rede_depois(token)
+
+
+func _ocultar_aviso_rede_depois(token: int) -> void:
+	await get_tree().create_timer(4.0).timeout
+	if is_instance_valid(aviso_rede) and int(aviso_rede.get_meta("token_aviso", -1)) == token:
+		aviso_rede.visible = false
 
 
 func atualizar_pontos(delta: float) -> void:
@@ -228,7 +860,7 @@ func spawnar_enemy() -> void:
 		if is_instance_valid(inimigo):
 			inimigo.queue_free()
 		return
-	add_child(inimigo)
+	add_child(inimigo, true)
 	inimigo.global_position = spawner.global_position
 
 
@@ -319,7 +951,7 @@ func spawnar_asteroide_bonus() -> void:
 	var asteroide := ASTEROIDE_BONUS.instantiate() as InimigoBase
 	if not is_instance_valid(asteroide) or not is_instance_valid(spawner):
 		return
-	add_child(asteroide)
+	add_child(asteroide, true)
 	asteroide.global_position = spawner.global_position
 	if asteroide.has_method("configurar_movimento"):
 		var destino := Global.obter_centro_area_visivel() + Vector2(
@@ -367,7 +999,7 @@ func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
 		boss_em_teste = false
 		push_error("Não foi possível criar o boss %s." % boss_atual_id)
 		return
-	add_child(boss_ativo)
+	add_child(boss_ativo, true)
 	var area := Global.obter_retangulo_area_visivel(70.0)
 	var posicao_boss := Vector2(
 		lerpf(area.position.x, area.end.x, 0.78), area.get_center().y

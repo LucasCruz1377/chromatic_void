@@ -26,7 +26,9 @@ static func criar(
 	tipo_efeito: Tipo,
 	cor_efeito: Color,
 	intensidade_efeito := 1.0,
-	direcao_efeito := Vector2.RIGHT
+	direcao_efeito := Vector2.RIGHT,
+	semente_efeito := -1,
+	replicar_rede := true
 ) -> EfeitoCombate:
 	if not is_instance_valid(pai):
 		return null
@@ -36,7 +38,7 @@ static func criar(
 	efeito.cor = cor_efeito
 	efeito.intensidade = maxf(intensidade_efeito, 0.2)
 	efeito.direcao = direcao_efeito.normalized()
-	efeito.semente = randi()
+	efeito.semente = randi() if semente_efeito < 0 else semente_efeito
 	match tipo_efeito:
 		Tipo.MORTE:
 			efeito.duracao = 0.42
@@ -51,6 +53,16 @@ static func criar(
 	pai.add_child(efeito)
 	efeito.global_position = posicao_global
 	efeito.z_index = 20
+	if replicar_rede and Rede.esta_conectado() and pai.has_method("replicar_feedback_visual"):
+		pai.call("replicar_feedback_visual", {
+			"classe": &"efeito_combate",
+			"posicao": posicao_global,
+			"tipo": int(tipo_efeito),
+			"cor": cor_efeito,
+			"intensidade": efeito.intensidade,
+			"direcao": efeito.direcao,
+			"semente": efeito.semente,
+		})
 	return efeito
 
 

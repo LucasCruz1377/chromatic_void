@@ -195,7 +195,7 @@ func disparar_tampinhas() -> void:
 		var abertura := (float(indice) - float(quantidade - 1) * 0.5) * 0.22
 		var direcao := direcao_base.rotated(abertura)
 		var projetil := PROJETIL.instantiate() as ProjetilInimigo
-		get_tree().current_scene.add_child(projetil)
+		get_tree().current_scene.add_child(projetil, true)
 		projetil.global_position = global_position + direcao * 55.0
 		projetil.scale = Vector2(1.5, 1.5)
 		projetil.modulate = Color(1.0, 0.25, 0.2, 1.0)
@@ -229,7 +229,7 @@ func liberar_pressao() -> void:
 	for indice in quantidade:
 		var angulo := TAU * float(indice) / float(quantidade)
 		var projetil := PROJETIL.instantiate() as ProjetilInimigo
-		get_tree().current_scene.add_child(projetil)
+		get_tree().current_scene.add_child(projetil, true)
 		projetil.global_position = global_position
 		projetil.scale = Vector2(0.75, 0.75)
 		projetil.modulate = Color(0.3, 1.0, 0.65, 1.0)

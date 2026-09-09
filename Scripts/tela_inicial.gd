@@ -31,6 +31,16 @@ var lista_conquistas: VBoxContainer
 var resumo_conquistas: Label
 var botao_fechar_conquistas: Button
 var rolagem_conquistas: ScrollContainer
+var painel_nickname: PanelContainer
+var campo_nickname: LineEdit
+var camada_fluxo: CanvasLayer
+var fundo_fluxo: ColorRect
+var conteudo_fluxo: VBoxContainer
+var campo_ip: LineEdit
+var etapa_fluxo := &""
+var fluxo_aberto := false
+var mensagem_rede := ""
+var mensagem_rede_erro := false
 
 
 func _ready() -> void:
@@ -42,6 +52,7 @@ func _ready() -> void:
 		botoes_menu.erase(botao_sair)
 	$Astro.apresentar()
 	Global.aplicar_configuracoes()
+	_criar_interface_nickname_e_multiplayer()
 	_criar_menu_conquistas()
 	if musica_menu.stream is AudioStreamOggVorbis:
 		(musica_menu.stream as AudioStreamOggVorbis).loop = true
@@ -54,6 +65,10 @@ func _ready() -> void:
 
 	if not botao_loja.pressed.is_connected(_on_shop_pressed):
 		botao_loja.pressed.connect(_on_shop_pressed)
+	if not Rede.lobby_alterado.is_connected(_on_lobby_alterado):
+		Rede.lobby_alterado.connect(_on_lobby_alterado)
+	if not Rede.status_alterado.is_connected(_on_status_rede_alterado):
+		Rede.status_alterado.connect(_on_status_rede_alterado)
 
 
 func _configurar_navegacao_menu() -> void:
@@ -74,13 +89,17 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if fluxo_aberto and event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_voltar_fluxo()
+		return
 	if conquistas_abertas and event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_fechar_menu_conquistas()
 
 
 func _pode_executar_acao_menu() -> bool:
-	return not carregando_cena and not conquistas_abertas
+	return not carregando_cena and not conquistas_abertas and not fluxo_aberto
 
 
 func _input(event: InputEvent) -> void:
@@ -96,9 +115,292 @@ func _input(event: InputEvent) -> void:
 func _on_start_pressed() -> void:
 	if not _pode_executar_acao_menu():
 		return
+	click_som()
+	_mostrar_escolha_modo()
+
+
+func _on_solo_pressed() -> void:
+	Rede.iniciar_solo()
 	Global.primeira_vez_jogando = false
 	click_som()
 	await _carregar_cena(CENA_BATALHA)
+
+
+func _on_multiplayer_pressed() -> void:
+	click_som()
+	_mostrar_escolha_multiplayer()
+
+
+func _on_criar_lobby_pressed() -> void:
+	click_som()
+	var erro := Rede.criar_lobby(_salvar_nickname())
+	if erro == OK:
+		_mostrar_lobby()
+
+
+func _on_entrar_lobby_pressed() -> void:
+	click_som()
+	_mostrar_entrada_ip()
+
+
+func _on_conectar_ip_pressed() -> void:
+	if not is_instance_valid(campo_ip):
+		return
+	click_som()
+	var erro := Rede.entrar_lobby(campo_ip.text, _salvar_nickname())
+	if erro == OK:
+		_mostrar_lobby()
+
+
+func _on_iniciar_lobby_pressed() -> void:
+	click_som()
+	Global.primeira_vez_jogando = false
+	Rede.solicitar_inicio_partida()
+
+
+func _criar_interface_nickname_e_multiplayer() -> void:
+	painel_nickname = PanelContainer.new()
+	painel_nickname.name = "PainelNickname"
+	painel_nickname.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	painel_nickname.offset_left = -306.0
+	painel_nickname.offset_top = 18.0
+	painel_nickname.offset_right = -18.0
+	painel_nickname.offset_bottom = 91.0
+	painel_nickname.add_theme_stylebox_override(
+		"panel", _estilo_conquistas(Color(0.012, 0.022, 0.065, 0.94), Color(0.28, 0.92, 0.78), 10, 2)
+	)
+	$CanvasLayer.add_child(painel_nickname)
+	var margem_nick := MarginContainer.new()
+	for lado in ["margin_left", "margin_right"]:
+		margem_nick.add_theme_constant_override(lado, 12)
+	margem_nick.add_theme_constant_override("margin_top", 7)
+	margem_nick.add_theme_constant_override("margin_bottom", 7)
+	painel_nickname.add_child(margem_nick)
+	var coluna_nick := VBoxContainer.new()
+	coluna_nick.add_theme_constant_override("separation", 3)
+	margem_nick.add_child(coluna_nick)
+	var rotulo_nick := Label.new()
+	rotulo_nick.text = "NICKNAME DO PILOTO"
+	rotulo_nick.add_theme_font_size_override("font_size", 11)
+	rotulo_nick.add_theme_color_override("font_color", Color(0.45, 0.96, 0.82))
+	coluna_nick.add_child(rotulo_nick)
+	campo_nickname = LineEdit.new()
+	campo_nickname.name = "Nickname"
+	campo_nickname.text = Rede.nickname_local
+	campo_nickname.placeholder_text = "PILOTO"
+	campo_nickname.max_length = 16
+	campo_nickname.select_all_on_focus = true
+	campo_nickname.add_theme_font_size_override("font_size", 16)
+	campo_nickname.focus_exited.connect(_salvar_nickname)
+	campo_nickname.text_submitted.connect(_on_nickname_enviado)
+	coluna_nick.add_child(campo_nickname)
+
+	camada_fluxo = CanvasLayer.new()
+	camada_fluxo.name = "CamadaMultiplayer"
+	camada_fluxo.layer = 170
+	camada_fluxo.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(camada_fluxo)
+	fundo_fluxo = ColorRect.new()
+	fundo_fluxo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fundo_fluxo.color = Color(0.002, 0.005, 0.022, 0.94)
+	fundo_fluxo.mouse_filter = Control.MOUSE_FILTER_STOP
+	camada_fluxo.add_child(fundo_fluxo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fundo_fluxo.add_child(centro)
+	var painel := PanelContainer.new()
+	painel.custom_minimum_size = Vector2(460.0, 360.0)
+	painel.add_theme_stylebox_override(
+		"panel", _estilo_conquistas(Color(0.015, 0.026, 0.078, 0.99), Color(0.30, 0.92, 1.0), 16, 2)
+	)
+	centro.add_child(painel)
+	var margem := MarginContainer.new()
+	for lado in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+		margem.add_theme_constant_override(lado, 24)
+	painel.add_child(margem)
+	conteudo_fluxo = VBoxContainer.new()
+	conteudo_fluxo.alignment = BoxContainer.ALIGNMENT_CENTER
+	conteudo_fluxo.add_theme_constant_override("separation", 12)
+	margem.add_child(conteudo_fluxo)
+	camada_fluxo.hide()
+
+
+func _on_nickname_enviado(_texto: String) -> void:
+	_salvar_nickname()
+	if is_instance_valid(botao_iniciar):
+		botao_iniciar.grab_focus()
+
+
+func _salvar_nickname() -> String:
+	if not is_instance_valid(campo_nickname):
+		return Rede.nickname_local
+	var nickname := Rede.definir_nickname(campo_nickname.text)
+	campo_nickname.text = nickname
+	return nickname
+
+
+func _limpar_fluxo() -> void:
+	for filho in conteudo_fluxo.get_children():
+		conteudo_fluxo.remove_child(filho)
+		filho.queue_free()
+	campo_ip = null
+
+
+func _adicionar_titulo_fluxo(titulo: String, subtitulo: String = "") -> void:
+	var rotulo := Label.new()
+	rotulo.text = titulo
+	rotulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rotulo.add_theme_font_size_override("font_size", 28)
+	rotulo.add_theme_color_override("font_color", Color(0.52, 0.95, 1.0))
+	conteudo_fluxo.add_child(rotulo)
+	if not subtitulo.is_empty():
+		var detalhe := Label.new()
+		detalhe.text = subtitulo
+		detalhe.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detalhe.add_theme_font_size_override("font_size", 12)
+		detalhe.add_theme_color_override("font_color", Color(0.58, 0.68, 0.86))
+		conteudo_fluxo.add_child(detalhe)
+
+
+func _adicionar_botao_fluxo(texto: String, acao: Callable, destaque := false) -> Button:
+	var botao := Button.new()
+	botao.custom_minimum_size = Vector2(310.0, 48.0)
+	botao.text = texto
+	botao.add_theme_font_size_override("font_size", 18)
+	var borda := Color(0.34, 1.0, 0.72) if destaque else Color(0.32, 0.68, 1.0)
+	botao.add_theme_stylebox_override("normal", _estilo_conquistas(Color(0.03, 0.06, 0.14), borda, 9, 2))
+	botao.add_theme_stylebox_override("hover", _estilo_conquistas(Color(0.07, 0.14, 0.24), borda.lightened(0.2), 9, 2))
+	botao.add_theme_stylebox_override("focus", _estilo_conquistas(Color(0.07, 0.14, 0.24), Color.WHITE, 9, 2))
+	botao.pressed.connect(acao)
+	conteudo_fluxo.add_child(botao)
+	return botao
+
+
+func _adicionar_status_rede() -> void:
+	if mensagem_rede.is_empty():
+		return
+	var status := Label.new()
+	status.text = mensagem_rede
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status.add_theme_font_size_override("font_size", 12)
+	status.add_theme_color_override(
+		"font_color", Color(1.0, 0.42, 0.48) if mensagem_rede_erro else Color(0.42, 1.0, 0.72)
+	)
+	conteudo_fluxo.add_child(status)
+
+
+func _abrir_fluxo(etapa: StringName) -> void:
+	fluxo_aberto = true
+	etapa_fluxo = etapa
+	camada_fluxo.show()
+	for botao in botoes_menu:
+		botao.disabled = true
+	campo_nickname.editable = not Rede.em_lobby
+
+
+func _mostrar_escolha_modo() -> void:
+	_abrir_fluxo(&"modo")
+	_limpar_fluxo()
+	_adicionar_titulo_fluxo("INICIAR PARTIDA", "Escolha como deseja entrar no Vazio Cromático.")
+	var solo := _adicionar_botao_fluxo("JOGAR SOLO", _on_solo_pressed, true)
+	_adicionar_botao_fluxo("MULTIPLAYER", _on_multiplayer_pressed)
+	_adicionar_botao_fluxo("VOLTAR", _voltar_fluxo)
+	solo.call_deferred("grab_focus")
+
+
+func _mostrar_escolha_multiplayer() -> void:
+	_abrir_fluxo(&"multiplayer")
+	_limpar_fluxo()
+	_adicionar_titulo_fluxo("MULTIPLAYER", "Sala para 2 jogadores • conexão direta por IP")
+	var criar := _adicionar_botao_fluxo("CRIAR LOBBY", _on_criar_lobby_pressed, true)
+	_adicionar_botao_fluxo("ENTRAR POR IP", _on_entrar_lobby_pressed)
+	_adicionar_botao_fluxo("VOLTAR", _mostrar_escolha_modo)
+	criar.call_deferred("grab_focus")
+
+
+func _mostrar_entrada_ip() -> void:
+	_abrir_fluxo(&"ip")
+	_limpar_fluxo()
+	_adicionar_titulo_fluxo("ENTRAR NO LOBBY", "Digite o IPv4 informado pelo host. Porta UDP %d." % Rede.PORTA)
+	campo_ip = LineEdit.new()
+	campo_ip.name = "EnderecoIP"
+	campo_ip.custom_minimum_size = Vector2(330.0, 46.0)
+	campo_ip.placeholder_text = "Ex.: 192.168.0.10"
+	campo_ip.text = "127.0.0.1"
+	campo_ip.select_all_on_focus = true
+	campo_ip.add_theme_font_size_override("font_size", 18)
+	campo_ip.text_submitted.connect(func(_texto: String) -> void: _on_conectar_ip_pressed())
+	conteudo_fluxo.add_child(campo_ip)
+	_adicionar_status_rede()
+	_adicionar_botao_fluxo("CONECTAR", _on_conectar_ip_pressed, true)
+	_adicionar_botao_fluxo("VOLTAR", _mostrar_escolha_multiplayer)
+	campo_ip.call_deferred("grab_focus")
+
+
+func _mostrar_lobby() -> void:
+	_abrir_fluxo(&"lobby")
+	_limpar_fluxo()
+	_adicionar_titulo_fluxo("LOBBY", "HOST UDP %d • %d/%d JOGADORES" % [Rede.PORTA, Rede.jogadores.size(), Rede.MAX_JOGADORES])
+	var ids: Array = Rede.jogadores.keys()
+	ids.sort()
+	for id in ids:
+		var jogador := Label.new()
+		jogador.text = "◆  %s%s" % [str(Rede.jogadores[id]), "  [HOST]" if int(id) == 1 else ""]
+		jogador.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		jogador.add_theme_font_size_override("font_size", 18)
+		jogador.add_theme_color_override("font_color", Color(0.56, 1.0, 0.78))
+		conteudo_fluxo.add_child(jogador)
+	if Rede.jogadores.size() < Rede.MAX_JOGADORES:
+		var espera := Label.new()
+		espera.text = "AGUARDANDO OUTRO PILOTO..."
+		espera.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		espera.add_theme_color_override("font_color", Color(0.68, 0.72, 0.92))
+		conteudo_fluxo.add_child(espera)
+	_adicionar_status_rede()
+	if Rede.hospedando:
+		var iniciar := _adicionar_botao_fluxo("INICIAR PARTIDA", _on_iniciar_lobby_pressed, true)
+		iniciar.disabled = not Rede.pode_iniciar_partida()
+	_adicionar_botao_fluxo("SAIR DO LOBBY", _sair_do_lobby)
+
+
+func _sair_do_lobby() -> void:
+	Rede.encerrar_lobby()
+	campo_nickname.editable = true
+	_mostrar_escolha_multiplayer()
+
+
+func _voltar_fluxo() -> void:
+	match etapa_fluxo:
+		&"lobby":
+			_sair_do_lobby()
+		&"ip":
+			_mostrar_escolha_multiplayer()
+		&"multiplayer":
+			_mostrar_escolha_modo()
+		_:
+			fluxo_aberto = false
+			etapa_fluxo = &""
+			camada_fluxo.hide()
+			campo_nickname.editable = true
+			for botao in botoes_menu:
+				botao.disabled = false
+			botao_iniciar.call_deferred("grab_focus")
+
+
+func _on_lobby_alterado(_jogadores: Dictionary) -> void:
+	if fluxo_aberto and etapa_fluxo == &"lobby":
+		_mostrar_lobby()
+
+
+func _on_status_rede_alterado(mensagem: String, erro: bool) -> void:
+	mensagem_rede = mensagem
+	mensagem_rede_erro = erro
+	if fluxo_aberto and etapa_fluxo == &"lobby":
+		_mostrar_lobby()
+	elif fluxo_aberto and etapa_fluxo == &"ip" and erro:
+		_mostrar_entrada_ip()
 
 
 func _on_shop_pressed() -> void:

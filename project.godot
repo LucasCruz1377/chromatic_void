@@ -22,13 +22,13 @@ config/icon="res://Icon_Splash/PolyIcon.png"
 
 Global="*res://Scripts/Global.gd"
 GerenciadorDeSave="*res://Scripts/GerenciadorDeSave.gd"
+Rede="*res://Scripts/GerenciadorMultiplayer.gd"
 UpdateManager="*uid://b4o54bqn8mj2s"
 
 [display]
 
 window/size/viewport_width=960
 window/size/viewport_height=540
-window/size/mode=3
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=4
@@ -189,6 +189,5 @@ locale/locale_filter_mode=1
 
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
-renderer/rendering_method.mobile="mobile"
 textures/vram_compression/import_etc2_astc=true
 viewport/hdr_2d=true

@@ -10,11 +10,13 @@ var posicoes: Array[Vector2] = []
 var velocidades: Array[Vector2] = []
 var tamanhos: Array[float] = []
 var estilo: StringName = &""
+var semente := 0
 
 
 static func criar(
 	pai: Node, posicao: Vector2, cor_efeito: Color, forca := 1.0,
-	estilo_efeito: StringName = &""
+	estilo_efeito: StringName = &"", semente_efeito := -1,
+	replicar_rede := true
 ) -> MonthlyBurst:
 	if not is_instance_valid(pai):
 		return null
@@ -22,15 +24,27 @@ static func criar(
 	explosao.cor = cor_efeito
 	explosao.intensidade = maxf(forca, 0.25)
 	explosao.estilo = estilo_efeito
+	explosao.semente = randi() if semente_efeito < 0 else semente_efeito
 	pai.add_child(explosao)
 	explosao.global_position = posicao
 	explosao.z_index = 24
+	var rng := RandomNumberGenerator.new()
+	rng.seed = explosao.semente
 	var quantidade := 18
 	for indice in range(quantidade):
-		var angulo := TAU * float(indice) / float(quantidade) + randf_range(-0.16, 0.16)
+		var angulo := TAU * float(indice) / float(quantidade) + rng.randf_range(-0.16, 0.16)
 		explosao.posicoes.append(Vector2.ZERO)
-		explosao.velocidades.append(Vector2.from_angle(angulo) * randf_range(58.0, 155.0) * explosao.intensidade)
-		explosao.tamanhos.append(randf_range(1.8, 4.8) * sqrt(explosao.intensidade))
+		explosao.velocidades.append(Vector2.from_angle(angulo) * rng.randf_range(58.0, 155.0) * explosao.intensidade)
+		explosao.tamanhos.append(rng.randf_range(1.8, 4.8) * sqrt(explosao.intensidade))
+	if replicar_rede and Rede.esta_conectado() and pai.has_method("replicar_feedback_visual"):
+		pai.call("replicar_feedback_visual", {
+			"classe": &"monthly_burst",
+			"posicao": posicao,
+			"cor": cor_efeito,
+			"intensidade": explosao.intensidade,
+			"estilo": estilo_efeito,
+			"semente": explosao.semente,
+		})
 	return explosao
 
 

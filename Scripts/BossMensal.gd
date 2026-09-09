@@ -350,7 +350,7 @@ func criar_projetil(
 	rebotes: int = 0
 ) -> ProjetilInimigo:
 	var projetil := PROJETIL.instantiate() as ProjetilInimigo
-	get_tree().current_scene.add_child(projetil)
+	get_tree().current_scene.add_child(projetil, true)
 	projetil.global_position = global_position + direcao.normalized() * 48.0
 	projetil.configurar(direcao, Dano * multiplicador_dano, velocidade_projetil, rebotes)
 	projetil.modulate = Color.WHITE

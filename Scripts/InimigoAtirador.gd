@@ -89,7 +89,7 @@ func disparar() -> void:
 		direcao_tiro
 	)
 	var projetil := PROJETIL.instantiate() as ProjetilInimigo
-	get_tree().current_scene.add_child(projetil)
+	get_tree().current_scene.add_child(projetil, true)
 	projetil.global_position = global_position + direcao_tiro * 24.0
 	projetil.modulate = Color(1.0, 0.2, 0.85, 1.0)
 	projetil.configurar(direcao_tiro, Dano, velocidade_projetil, 0)

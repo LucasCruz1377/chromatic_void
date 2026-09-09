@@ -214,7 +214,7 @@ func _soltar_drones()->void:
 		if batalha.has_method("contar_inimigos_regulares"):
 			if int(batalha.call("contar_inimigos_regulares")) >= 10:
 				break
-		var d:=cena.instantiate() as InimigoBase; batalha.add_child(d); d.global_position=global_position+Vector2(30*lado,10); d.VidaMaxima*=0.5; d.ValorXP=0.25
+		var d:=cena.instantiate() as InimigoBase; batalha.add_child(d, true); d.global_position=global_position+Vector2(30*lado,10); d.VidaMaxima*=0.5; d.ValorXP=0.25
 
 func morrer()->void:
 	_limpar_escudo()

@@ -15,7 +15,8 @@ var label: Label
 
 static func criar(
 	pai: Node, posicao_global: Vector2, dano: float,
-	cor_efeito: Color = Color.WHITE, eh_critico: bool = false
+	cor_efeito: Color = Color.WHITE, eh_critico: bool = false,
+	semente_efeito := -1, replicar_rede := true
 ) -> IndicadorDano:
 	if not is_instance_valid(pai) or dano <= 0.0:
 		return null
@@ -32,10 +33,22 @@ static func criar(
 	indicador.valor = dano
 	indicador.cor = cor_efeito
 	indicador.critico = eh_critico
-	indicador.velocidade = Vector2(randf_range(-18.0, 18.0), -72.0 if eh_critico else -58.0)
+	var semente := randi() if semente_efeito < 0 else semente_efeito
+	var rng := RandomNumberGenerator.new()
+	rng.seed = semente
+	indicador.velocidade = Vector2(rng.randf_range(-18.0, 18.0), -72.0 if eh_critico else -58.0)
 	pai.add_child(indicador)
-	indicador.global_position = posicao_global + Vector2(randf_range(-8.0, 8.0), -16.0)
+	indicador.global_position = posicao_global + Vector2(rng.randf_range(-8.0, 8.0), -16.0)
 	indicador.z_index = 110
+	if replicar_rede and Rede.esta_conectado() and pai.has_method("replicar_feedback_visual"):
+		pai.call("replicar_feedback_visual", {
+			"classe": &"indicador_dano",
+			"posicao": posicao_global,
+			"dano": dano,
+			"cor": cor_efeito,
+			"critico": eh_critico,
+			"semente": semente,
+		})
 	return indicador
 
 

@@ -88,7 +88,7 @@ func disparar_pulso() -> void:
 	for indice in quantidade_projeteis_pulso:
 		var angulo := TAU * float(indice) / float(quantidade_projeteis_pulso)
 		var projetil := PROJETIL.instantiate() as ProjetilInimigo
-		get_tree().current_scene.add_child(projetil)
+		get_tree().current_scene.add_child(projetil, true)
 		projetil.global_position = global_position
 		projetil.scale = Vector2(0.7, 0.7)
 		projetil.modulate = Color.WHITE

@@ -1,0 +1,107 @@
+extends Node
+
+
+var falhas: Array[String] = []
+
+
+func verificar(condicao: bool, mensagem: String) -> void:
+	if not condicao:
+		falhas.append(mensagem)
+		push_error("MULTIPLAYER/PROGRESSÃO: " + mensagem)
+
+
+func _ready() -> void:
+	verificar(Rede.sanitizar_nickname("  Lucas  ") == "Lucas", "nickname não é normalizado")
+	verificar(Rede.sanitizar_nickname("") == Rede.NICK_PADRAO, "nickname vazio não recebe padrão")
+	var erro_lobby := Rede.criar_lobby("Teste Host")
+	verificar(erro_lobby == OK, "servidor ENet não criou o lobby")
+	verificar(Rede.hospedando and Rede.jogadores.size() == 1, "host não aparece na lista do lobby")
+	verificar(not Rede.pode_iniciar_partida(), "lobby iniciou sem o segundo jogador")
+	Rede.encerrar_lobby()
+
+	var cena_menu := load("res://Rooms/TelaInicial.tscn") as PackedScene
+	var menu := cena_menu.instantiate()
+	add_child(menu)
+	await get_tree().process_frame
+	verificar(menu.get("campo_nickname") is LineEdit, "tela inicial não criou o campo de nickname")
+	menu.call("_mostrar_escolha_modo")
+	var conteudo := menu.get("conteudo_fluxo") as VBoxContainer
+	var textos: Array[String] = []
+	for filho in conteudo.get_children():
+		if filho is Button:
+			textos.append((filho as Button).text)
+	verificar(textos.size() >= 2 and textos[0] == "JOGAR SOLO" and textos[1] == "MULTIPLAYER", "Start não mostra Solo acima de Multiplayer")
+	menu.queue_free()
+	await get_tree().process_frame
+
+	Rede.modo_multiplayer = true
+	Rede.jogadores = {1: "HOST_TESTE", 2: "CLIENTE_TESTE"}
+	var batalha := (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate()
+	add_child(batalha)
+	await get_tree().process_frame
+	batalha.tutorial_ativo = false
+	verificar(batalha.get_node_or_null("PlayerSpawner") is MultiplayerSpawner, "faltou MultiplayerSpawner dos jogadores")
+	verificar(batalha.get_node_or_null("WorldSpawner") is MultiplayerSpawner, "faltou MultiplayerSpawner do mundo")
+	var remoto := batalha._instanciar_jogador_rede({
+		"peer_id": 2,
+		"nickname": "CLIENTE_TESTE",
+		"configuracao": {
+			"modelo": "c02_asa_delta", "cor": "c11_azul_neon",
+			"rastro": "c20_rastro_padrao",
+		},
+	}) as Player
+	batalha.add_child(remoto)
+	await get_tree().process_frame
+	verificar(remoto is Player, "segundo piloto não usa a cena Player real")
+	verificar(remoto.get_node_or_null("MultiplayerSynchronizer") is MultiplayerSynchronizer, "Player real não possui MultiplayerSynchronizer")
+	verificar(remoto.nickname_rede == "CLIENTE_TESTE", "nickname não foi aplicado à nave real")
+	verificar(remoto.modelo_visual_nave == &"c02_asa_delta", "modelo equipado foi substituído por uma nave genérica")
+	verificar(remoto.get_node_or_null("NicknameRede") != null, "nickname não aparece sobre a nave")
+	batalha._on_jogador_rede_desconectado(2)
+	var aviso_rede := batalha.get_node("GUI/AvisoRede") as Label
+	verificar(aviso_rede.visible and "DESCONECTOU" in aviso_rede.text, "desconexão não mostra aviso durante a partida")
+	var jogador := batalha.get_node("Player") as Player
+	var menu_upgrades := batalha.get_node("GUI/TelaUpgrades") as Control
+	var pontos_iniciais := jogador.pontos_upgrade_pendentes
+	jogador.subir_de_nivel()
+	await get_tree().process_frame
+	verificar(jogador.nivel_atual == 2, "primeiro level up não chegou ao nível 2")
+	verificar(jogador.pontos_upgrade_pendentes == pontos_iniciais + 1, "nível 2 não concedeu a melhoria")
+	verificar(not bool(menu_upgrades.call("esta_aberta")), "tela de melhorias abriu sem o jogador pedir")
+	menu_upgrades.call("abrir_menu")
+	verificar(bool(menu_upgrades.call("esta_aberta")), "jogador não conseguiu abrir seu menu individual")
+	verificar(is_equal_approx(Engine.time_scale, 1.0), "menu individual pausou a partida multiplayer")
+	menu_upgrades.call("fechar_menu")
+	jogador.subir_de_nivel()
+	await get_tree().process_frame
+	verificar(jogador.nivel_atual == 3, "segundo level up não chegou ao nível 3")
+	verificar(jogador.pontos_upgrade_pendentes == pontos_iniciais + 1, "nível ímpar concedeu melhoria indevida")
+
+	for caminho_boss in [
+		"res://Entities/BossPet0.tscn",
+		"res://Entities/BossFlorEquinocio.tscn",
+		"res://Entities/BossEclipseColheita.tscn",
+		"res://Entities/BossConstelacaoAmparo.tscn",
+		"res://Entities/BossNoAmetista.tscn",
+	]:
+		var boss := (load(caminho_boss) as PackedScene).instantiate() as InimigoBase
+		var vida_anterior := boss.VidaMaxima
+		batalha.add_child(boss)
+		await get_tree().process_frame
+		boss.process_mode = Node.PROCESS_MODE_DISABLED
+		verificar(
+			float(boss.call("obter_vida_maxima_atual")) >= vida_anterior * 1.75,
+			"%s não recebeu 175%% da vida anterior" % caminho_boss
+		)
+		boss.queue_free()
+		await get_tree().process_frame
+
+	batalha._on_player_morreu(jogador)
+	verificar(batalha.caixa_gameover.visible, "morte local não abriu o painel de espera")
+	verificar(batalha.get_node("GUI/caixa gameover/Tentar de novo").visible, "host morto não pode reiniciar a partida")
+
+	batalha.queue_free()
+	await get_tree().process_frame
+	if falhas.is_empty():
+		print("TESTE OK: lobby, Player real, spawners, synchronizer, melhoria bianível e bosses")
+	get_tree().quit(0 if falhas.is_empty() else 1)
