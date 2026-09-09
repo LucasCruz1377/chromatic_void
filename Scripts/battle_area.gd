@@ -10,6 +10,7 @@ const EfeitoMonthlyRedeCena = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 const EfeitoCombateRedeCena = preload("res://Scripts/EfeitoCombate.gd")
 const IndicadorDanoRedeCena = preload("res://Scripts/IndicadorDano.gd")
+const LimiteArenaCoopCena = preload("res://Scripts/LimiteArenaCoop.gd")
 const DURACAO_COMBO := 3.0
 
 const INIMIGOS: Dictionary = {
@@ -120,12 +121,18 @@ var preservar_conexao_ao_sair := false
 var disparos_visuais_rede: Dictionary = {}
 var tempo_combo_restante := 0.0
 var combo_observado := 0
+var tamanhos_viewport_rede: Dictionary = {}
+var limite_arena_coop: LimiteArenaCoop
+var area_coop_recebida := false
+var tempo_reenvio_viewport := 0.0
 
 
 func _ready() -> void:
 	get_tree().paused = false
+	Global.limpar_area_multiplayer()
 	_configurar_spawners_multiplayer()
 	_configurar_jogadores_multiplayer()
+	_configurar_area_coop()
 	Global.definir_cursor_interface(false)
 	Global.Pontos = 0
 	Global.Combo = 0
@@ -176,6 +183,7 @@ func _exit_tree() -> void:
 	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
 	Global.definir_cursor_interface(true)
+	Global.limpar_area_multiplayer()
 	if Rede.modo_multiplayer and not preservar_conexao_ao_sair:
 		Rede.encerrar_lobby()
 
@@ -677,6 +685,9 @@ func _vincular_jogador_local() -> void:
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
+	if multiplayer.is_server() and tamanhos_viewport_rede.has(id):
+		tamanhos_viewport_rede.erase(id)
+		_publicar_area_coop()
 	if not jogadores_rede.has(id):
 		return
 	var remoto: Variant = jogadores_rede[id]
@@ -703,6 +714,7 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 func _process(delta: float) -> void:
 	_processar_combo(delta)
 	if Rede.modo_multiplayer:
+		_processar_sincronizacao_area_coop(delta)
 		_atualizar_hud_boss_cliente()
 		_atualizar_estado_morte_multiplayer()
 	if game_over or escolha_setor_ativa:
@@ -1299,7 +1311,105 @@ func limpar_estado_visual_boss_pausa() -> void:
 
 
 func _on_tamanho_viewport_alterado() -> void:
+	if Rede.modo_multiplayer:
+		_enviar_tamanho_viewport_local()
 	call_deferred("_atualizar_area_responsiva")
+
+
+func _configurar_area_coop() -> void:
+	if not Rede.modo_multiplayer:
+		return
+	limite_arena_coop = LimiteArenaCoopCena.new()
+	limite_arena_coop.name = "LimiteArenaCoop"
+	add_child(limite_arena_coop)
+	if multiplayer.is_server():
+		_registrar_tamanho_viewport(1, get_viewport().get_visible_rect().size)
+	else:
+		call_deferred("_enviar_tamanho_viewport_local")
+
+
+func _processar_sincronizacao_area_coop(delta: float) -> void:
+	if multiplayer.is_server() or area_coop_recebida:
+		return
+	tempo_reenvio_viewport -= delta
+	if tempo_reenvio_viewport <= 0.0:
+		tempo_reenvio_viewport = 1.0
+		_enviar_tamanho_viewport_local()
+
+
+func _enviar_tamanho_viewport_local() -> void:
+	if not Rede.modo_multiplayer:
+		return
+	var tamanho := get_viewport().get_visible_rect().size
+	if multiplayer.is_server():
+		_registrar_tamanho_viewport(1, tamanho)
+	elif Rede.esta_conectado():
+		_registrar_tamanho_viewport_remoto.rpc_id(1, tamanho)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _registrar_tamanho_viewport_remoto(tamanho: Vector2) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	_registrar_tamanho_viewport(remetente, tamanho)
+
+
+func _registrar_tamanho_viewport(peer_id: int, tamanho: Vector2) -> void:
+	if not multiplayer.is_server() or tamanho.x <= 0.0 or tamanho.y <= 0.0:
+		return
+	tamanhos_viewport_rede[peer_id] = tamanho
+	_publicar_area_coop()
+
+
+func _publicar_area_coop() -> void:
+	if tamanhos_viewport_rede.is_empty():
+		return
+	var tamanhos: Array[Vector2] = []
+	for valor in tamanhos_viewport_rede.values():
+		tamanhos.append(Vector2(valor))
+	var area := calcular_area_comum(tamanhos)
+	var diferentes := resolucoes_sao_diferentes(tamanhos)
+	if Rede.esta_conectado():
+		_receber_area_coop.rpc(area.position, area.size, diferentes)
+	else:
+		_receber_area_coop(area.position, area.size, diferentes)
+
+
+@rpc("authority", "call_local", "reliable")
+func _receber_area_coop(posicao: Vector2, tamanho: Vector2, diferentes: bool) -> void:
+	var area := Rect2(posicao, tamanho)
+	Global.definir_area_multiplayer(area)
+	area_coop_recebida = true
+	if is_instance_valid(limite_arena_coop):
+		var area_local := Global.calcular_retangulo_area_visivel(get_viewport().get_visible_rect().size)
+		limite_arena_coop.configurar(area, area_local, diferentes)
+	_atualizar_area_responsiva()
+
+
+static func calcular_area_comum(tamanhos_viewport: Array[Vector2]) -> Rect2:
+	if tamanhos_viewport.is_empty():
+		return Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
+	var tamanho_comum := Vector2(INF, INF)
+	for tamanho_viewport in tamanhos_viewport:
+		var area_peer := Global.calcular_retangulo_area_visivel(tamanho_viewport)
+		tamanho_comum.x = minf(tamanho_comum.x, area_peer.size.x)
+		tamanho_comum.y = minf(tamanho_comum.y, area_peer.size.y)
+	tamanho_comum.x = maxf(tamanho_comum.x, 320.0)
+	tamanho_comum.y = maxf(tamanho_comum.y, 180.0)
+	return Rect2((Global.TAMANHO_BASE_JOGO - tamanho_comum) * 0.5, tamanho_comum)
+
+
+static func resolucoes_sao_diferentes(tamanhos_viewport: Array[Vector2]) -> bool:
+	if tamanhos_viewport.size() < 2:
+		return false
+	var referencia := tamanhos_viewport[0]
+	for tamanho in tamanhos_viewport.slice(1):
+		if not tamanho.is_equal_approx(referencia):
+			return true
+	return false
 
 
 func _atualizar_area_responsiva() -> void:

@@ -387,15 +387,15 @@ func _configuracao_teste_local() -> Dictionary:
 	if papel == "host":
 		return {
 			"arma": "a04_canhao_esturjao", "modulo": "", "mutacao": "",
-			"modelo": "c02_asa_delta", "cor": "c11_ciano",
-			"rastro": "c20_rastro_padrao",
+			"modelo": "c08_modelo_spectrum", "cor": "c11_ciano",
+			"rastro": "c22_rastro_spectrum",
 			"habilidade": "res://Habilidades/habilidadeHiperdash.tres",
 			"upgrades": {},
 		}
 	return {
 		"arma": "a10_rajada_morango", "modulo": "", "mutacao": "",
-		"modelo": "c04_dardo", "cor": "c12_rosa",
-		"rastro": "c20_rastro_padrao",
+		"modelo": "c09_modelo_fspeed", "cor": "c12_rosa",
+		"rastro": "c23_rastro_fspeed",
 		"habilidade": "res://Habilidades/habilidadeFocoAbsoluto.tres",
 		"upgrades": {},
 	}
@@ -407,16 +407,19 @@ func _personalizacoes_distintas_corretas() -> bool:
 	for jogador in get_tree().get_nodes_in_group("player"):
 		if not jogador is Player:
 			continue
-		var esperado_modelo: StringName = &"c02_asa_delta" if jogador.peer_id_dono == 1 else &"c04_dardo"
+		var esperado_modelo: StringName = &"c08_modelo_spectrum" if jogador.peer_id_dono == 1 else &"c09_modelo_fspeed"
 		var esperada_cor: StringName = &"c11_ciano" if jogador.peer_id_dono == 1 else &"c12_rosa"
 		var esperado_poder := "res://Habilidades/habilidadeHiperdash.tres" if jogador.peer_id_dono == 1 else "res://Habilidades/habilidadeFocoAbsoluto.tres"
 		var label := jogador.get_node_or_null("NicknameRede")
 		var texto := label.get_child(0) as Label if is_instance_valid(label) and label.get_child_count() > 0 else null
+		var barra := jogador.get_node_or_null("NicknameRede/BarraVidaRede") as ProgressBar
 		if jogador.modelo_visual_nave != esperado_modelo or jogador.cor_visual_nave != esperada_cor:
 			return false
-		if jogador.habilidade_rede_path != esperado_poder or not is_instance_valid(texto):
+		if jogador.habilidade_rede_path != esperado_poder or not is_instance_valid(texto) or not is_instance_valid(barra):
 			return false
 		if not texto.get_theme_color("font_color").is_equal_approx(jogador.obter_cor_personalizacao()):
+			return false
+		if jogador.particulas_rastro_modelo_o.emitting:
 			return false
 		viu_host = viu_host or jogador.peer_id_dono == 1
 		viu_cliente = viu_cliente or jogador.peer_id_dono != 1

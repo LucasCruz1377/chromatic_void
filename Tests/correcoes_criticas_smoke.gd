@@ -160,11 +160,18 @@ func testar_combo_habilidade_e_loja() -> void:
 	loja._aplicar_layout_responsivo(Vector2(640, 360), true)
 	await get_tree().process_frame
 	verificar(loja.botao_acao.custom_minimum_size.y >= 44.0, "o botão Equipar ainda pode ser cortado verticalmente")
+	verificar(not loja.botao_acao.clip_text, "o texto Equipar/Desequipar ainda pode ser truncado")
+	loja.botao_acao.text = "BLOQUEADO • CONQUISTA SECRETA"
+	loja._ajustar_fonte_botao_acao()
+	verificar(
+		loja.botao_acao.get_theme_font_size("font_size") <= 10,
+		"o botão de estado longo não reduziu a fonte para caber inteiro"
+	)
 	verificar(not loja.detalhe_descricao.clip_text, "a descrição da loja ainda recorta o texto")
 	var slider := loja.rolagem_detalhes.get_v_scroll_bar() as VScrollBar
 	verificar(slider.custom_minimum_size.x <= 10.0, "o slider da descrição ocupa largura excessiva")
 	verificar(
-		loja.coluna_detalhes.get_combined_minimum_size().x <= loja.rolagem_detalhes.size.x + 1.0,
+		loja.coluna_detalhes.size.x <= loja.rolagem_detalhes.size.x + 1.0,
 		"o conteúdo da loja continua mais largo que a caixa e corta o lado direito"
 	)
 	loja.free()

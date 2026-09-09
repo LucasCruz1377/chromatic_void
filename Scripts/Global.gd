@@ -193,6 +193,11 @@ const CONQUISTAS: Dictionary = {
 		"nome": "COMETA ININTERRUPTO", "descricao": "Alcance multiplicador de combo 200.",
 		"tipo": &"combo", "meta": 200, "recompensas": []
 	},
+	&"combo_300_spectrum": {
+		"nome": "ESPECTRO INFINITO", "descricao": "Alcance multiplicador de combo 300.",
+		"tipo": &"combo", "meta": 300,
+		"recompensas": [&"c08_modelo_spectrum", &"c22_rastro_spectrum"]
+	},
 	&"pontos_25000": {
 		"nome": "PRIMEIRA MARCA", "descricao": "Alcance 25.000 pontos em uma partida.",
 		"tipo": &"pontos", "meta": 25000, "recompensas": []
@@ -225,6 +230,11 @@ const CONQUISTAS: Dictionary = {
 		"nome": "ALÉM DO ESPECTRO", "descricao": "Alcance 25 milhões de pontos em uma partida.",
 		"tipo": &"pontos", "meta": 25000000, "recompensas": []
 	},
+	&"pontos_38000000_fspeed": {
+		"nome": "VELOCIDADE MÁXIMA", "descricao": "Alcance 38 milhões de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 38000000,
+		"recompensas": [&"c09_modelo_fspeed", &"c23_rastro_fspeed"]
+	},
 	&"intocado_60": {
 		"nome": "BRILHO INTACTO", "descricao": "Permaneça 60 segundos sem sofrer dano.",
 		"tipo": &"sem_dano", "meta": 60, "recompensas": []
@@ -246,9 +256,19 @@ var jogos_zerados: int = 0
 var _salvamento_conquistas_agendado := false
 var _tamanho_area_cache := Vector2(-1.0, -1.0)
 var _retangulo_area_cache := Rect2()
+var _area_multiplayer_ativa := false
+var _retangulo_area_multiplayer := Rect2()
 
 
 func obter_retangulo_area_visivel(margem: float = 0.0) -> Rect2:
+	if _area_multiplayer_ativa:
+		if margem <= 0.0:
+			return _retangulo_area_multiplayer
+		var margem_coop := minf(
+			margem,
+			minf(_retangulo_area_multiplayer.size.x, _retangulo_area_multiplayer.size.y) * 0.45
+		)
+		return _retangulo_area_multiplayer.grow(-margem_coop)
 	var viewport := get_viewport()
 	var tamanho_janela := TAMANHO_BASE_JOGO
 	if is_instance_valid(viewport):
@@ -288,6 +308,20 @@ func calcular_retangulo_area_visivel(
 		)
 		retangulo = retangulo.grow(-margem_segura)
 	return retangulo
+
+
+func definir_area_multiplayer(retangulo: Rect2) -> void:
+	if retangulo.size.x <= 0.0 or retangulo.size.y <= 0.0:
+		limpar_area_multiplayer()
+		return
+	_retangulo_area_multiplayer = retangulo
+	_area_multiplayer_ativa = true
+
+
+func limpar_area_multiplayer() -> void:
+	_area_multiplayer_ativa = false
+	_retangulo_area_multiplayer = Rect2()
+	_tamanho_area_cache = Vector2(-1.0, -1.0)
 
 
 func obter_centro_area_visivel() -> Vector2:

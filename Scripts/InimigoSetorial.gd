@@ -235,7 +235,10 @@ func _draw()->void:
 		Estilo.ELO_DOURADO: draw_arc(Vector2(-7,0),11,-2.2,2.2,18,c,5); draw_arc(Vector2(7,0),11,.94,5.34,18,c,5)
 		Estilo.PRISMA_AMPARO: draw_colored_polygon(PackedVector2Array([Vector2(22,0),Vector2(0,-17),Vector2(-15,0),Vector2(0,17)]),c); draw_line(Vector2(17,-18),Vector2(17,18),Color.WHITE,4)
 		Estilo.SATELITE_BERCO: draw_arc(Vector2.ZERO,18,.35,TAU-.35,28,c,6); draw_circle(Vector2(-8,0),5,Color.WHITE); draw_circle(Vector2(8,0),5,Color.WHITE)
-		Estilo.PULSO_SOLAR: draw_circle(Vector2.ZERO,12,c); for i in 8: draw_line(Vector2.from_angle(i*TAU/8)*16,Vector2.from_angle(i*TAU/8)*24,c,3)
+		Estilo.PULSO_SOLAR:
+			draw_circle(Vector2.ZERO,12,c)
+			for i in 8:
+				draw_line(Vector2.from_angle(i*TAU/8)*16,Vector2.from_angle(i*TAU/8)*24,c,3)
 		Estilo.FITA_VIOLETA: draw_polyline(PackedVector2Array([Vector2(-24,0),Vector2(-12,-9),Vector2(0,8),Vector2(12,-8),Vector2(24,0)]),c,7,true)
 		Estilo.NO_FLUTUANTE: draw_arc(Vector2(-5,0),13,-1.2,4.2,24,c,5); draw_arc(Vector2(5,0),13,1.9,7.3,24,Color.WHITE,4)
 		Estilo.ECO_AMETISTA: draw_polyline(PackedVector2Array([Vector2(-16,-15),Vector2(0,0),Vector2(-16,15)]),c,5)
@@ -243,14 +246,19 @@ func _draw()->void:
 		Estilo.CASULO_PRISMATICO: draw_colored_polygon(PackedVector2Array([Vector2(0,-22),Vector2(15,0),Vector2(0,22),Vector2(-15,0)]),c); draw_arc(Vector2.ZERO,20,0,TAU,28,Color.WHITE,3)
 		Estilo.BROTO_PRIMAVERIL: draw_circle(Vector2.ZERO,10,c); draw_colored_polygon(PackedVector2Array([Vector2(0,-22),Vector2(9,-7),Vector2(-9,-7)]),Color(.45,1,.55))
 		Estilo.SEMENTE_CANHAO: draw_circle(Vector2.ZERO,14,c); draw_line(Vector2.ZERO,direcao*26,Color.WHITE,8)
-		Estilo.POLEN_ERRANTE: for i in 7: draw_circle(Vector2.from_angle(i*2.4+tempo)*float(5+i*2),3.5,c)
+		Estilo.POLEN_ERRANTE:
+			for i in 7:
+				draw_circle(Vector2.from_angle(i*2.4+tempo)*float(5+i*2),3.5,c)
 		Estilo.CIPO_ESPIRAL: draw_arc(Vector2.ZERO,18,tempo,tempo+5.2,32,c,6)
 		Estilo.FRUTO_EXPLOSIVO: draw_circle(Vector2.ZERO,16+sin(tempo*7)*2,c); draw_arc(Vector2.ZERO,22,0,TAU,28,Color.WHITE,2)
 		Estilo.FRAGMENTO_LUNAR: draw_arc(Vector2.ZERO,20,-1.3,1.3,24,c,7); draw_circle(Vector2(7,0),15,Color(.01,.02,.08))
 		Estilo.CENTELHA_SOLAR: draw_circle(Vector2.ZERO,9,c); draw_line(Vector2(-18,0),Vector2(18,0),Color.WHITE,3)
 		Estilo.METEORO_JOVEM: draw_colored_polygon(PackedVector2Array([Vector2(17,-8),Vector2(12,13),Vector2(-8,18),Vector2(-19,2),Vector2(-8,-16)]),c)
 		Estilo.ECO_GRAVITACIONAL: draw_circle(Vector2.ZERO,8,Color(.02,.01,.08)); draw_arc(Vector2.ZERO,18,-tempo,TAU-tempo,28,c,5)
-		Estilo.SATELITE_COROA: draw_arc(Vector2.ZERO,18,0,TAU,28,c,4); for i in 4: draw_circle(Vector2.from_angle(i*TAU/4)*18,5,Color.WHITE)
+		Estilo.SATELITE_COROA:
+			draw_arc(Vector2.ZERO,18,0,TAU,28,c,4)
+			for i in 4:
+				draw_circle(Vector2.from_angle(i*TAU/4)*18,5,Color.WHITE)
 	match estilo:
 		Estilo.BROTO_PRIMAVERIL, Estilo.SEMENTE_CANHAO:
 			for lado in [-1.0, 1.0]:

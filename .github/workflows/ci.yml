@@ -87,6 +87,7 @@ jobs:
               --audio-driver Dummy \
               --path . \
               "res://$teste"
+          done
 
       - name: Validar partida host e cliente
         shell: bash
@@ -109,7 +110,6 @@ jobs:
           cat "$pasta_logs/client.log"
           test "$status_host" -eq 0
           test "$status_client" -eq 0
-          done
 
   exportar:
     name: Exportar ${{ matrix.nome }}

@@ -6,11 +6,16 @@ signal status_alterado(mensagem: String, erro: bool)
 signal conexao_alterada(conectado: bool)
 signal jogador_desconectado(peer_id: int)
 signal desconexao_detectada(mensagem: String, host_perdido: bool)
+signal lobbies_lan_alterados(lobbies: Array)
 
 
 const PORTA := 24567
 const MAX_JOGADORES := 2
 const NICK_PADRAO := "PILOTO"
+const PORTA_DESCOBERTA := 24568
+const ASSINATURA_DESCOBERTA := "CHROMATIC_VOID_LAN_V1"
+const INTERVALO_ANUNCIO_LAN := 0.75
+const EXPIRACAO_LOBBY_LAN := 3.0
 
 
 var nickname_local := NICK_PADRAO
@@ -20,16 +25,30 @@ var em_lobby := false
 var modo_multiplayer := false
 var peer_enet: ENetMultiplayerPeer
 var configuracao_teste: Dictionary = {}
+var emissor_lan: PacketPeerUDP
+var receptor_lan: PacketPeerUDP
+var lobbies_lan: Dictionary = {}
+var tempo_anuncio_lan := 0.0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process(true)
 	_carregar_nickname()
 	multiplayer.peer_connected.connect(_on_peer_conectado)
 	multiplayer.peer_disconnected.connect(_on_peer_desconectado)
 	multiplayer.connected_to_server.connect(_on_conectado_ao_servidor)
 	multiplayer.connection_failed.connect(_on_falha_conexao)
 	multiplayer.server_disconnected.connect(_on_servidor_desconectado)
+
+
+func _process(delta: float) -> void:
+	if hospedando and em_lobby and is_instance_valid(emissor_lan):
+		tempo_anuncio_lan -= delta
+		if tempo_anuncio_lan <= 0.0:
+			tempo_anuncio_lan = INTERVALO_ANUNCIO_LAN
+			_anunciar_lobby_lan()
+	_processar_descoberta_lan()
 
 
 func sanitizar_nickname(valor: String) -> String:
@@ -72,7 +91,12 @@ func criar_lobby(nickname: String) -> Error:
 	jogadores = {1: nickname_local}
 	lobby_alterado.emit(jogadores.duplicate())
 	conexao_alterada.emit(true)
-	status_alterado.emit("Sala criada • porta UDP %d" % PORTA, false)
+	_iniciar_anuncio_lan()
+	var ips := obter_enderecos_host()
+	status_alterado.emit(
+		"Sala criada • IP %s • porta UDP %d" % [ips[0] if not ips.is_empty() else "indisponível", PORTA],
+		false
+	)
 	return OK
 
 
@@ -83,6 +107,8 @@ func entrar_lobby(endereco: String, nickname: String) -> Error:
 	if host.is_empty():
 		status_alterado.emit("Digite o IP do host.", true)
 		return ERR_INVALID_PARAMETER
+	_encerrar_descoberta_lan()
+	GerenciadorDeSave.salvar({"ultimo_ip_host": host})
 	peer_enet = ENetMultiplayerPeer.new()
 	var erro := peer_enet.create_client(host, PORTA)
 	if erro != OK:
@@ -100,6 +126,8 @@ func entrar_lobby(endereco: String, nickname: String) -> Error:
 
 
 func encerrar_lobby() -> void:
+	_encerrar_anuncio_lan()
+	_encerrar_descoberta_lan()
 	if is_instance_valid(peer_enet):
 		peer_enet.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
@@ -110,6 +138,128 @@ func encerrar_lobby() -> void:
 	jogadores.clear()
 	lobby_alterado.emit({})
 	conexao_alterada.emit(false)
+
+
+func obter_enderecos_host() -> Array[String]:
+	var enderecos: Array[String] = []
+	for endereco in IP.get_local_addresses():
+		var valor := str(endereco)
+		if ":" in valor or valor.begins_with("127.") or valor == "0.0.0.0":
+			continue
+		if valor.count(".") == 3 and valor not in enderecos:
+			enderecos.append(valor)
+	enderecos.sort()
+	return enderecos
+
+
+func iniciar_busca_lan() -> Error:
+	if is_instance_valid(receptor_lan):
+		return OK
+	_encerrar_anuncio_lan()
+	receptor_lan = PacketPeerUDP.new()
+	receptor_lan.set_broadcast_enabled(true)
+	var erro := receptor_lan.bind(PORTA_DESCOBERTA, "*")
+	if erro != OK:
+		receptor_lan = null
+		status_alterado.emit("Busca automática indisponível; ainda é possível digitar o IP.", true)
+		return erro
+	lobbies_lan.clear()
+	lobbies_lan_alterados.emit([])
+	return OK
+
+
+func parar_busca_lan() -> void:
+	_encerrar_descoberta_lan()
+
+
+func obter_lobbies_lan() -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	for dados in lobbies_lan.values():
+		if not dados is Dictionary:
+			continue
+		var lobby := dados as Dictionary
+		var ocupacao := int(lobby.get("jogadores", 1))
+		var capacidade := maxi(int(lobby.get("capacidade", MAX_JOGADORES)), 1)
+		if ocupacao >= capacidade:
+			continue
+		resultado.append(lobby.duplicate(true))
+	resultado.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a.get("ip", "")) < str(b.get("ip", "")))
+	return resultado
+
+
+func _iniciar_anuncio_lan() -> void:
+	_encerrar_descoberta_lan()
+	emissor_lan = PacketPeerUDP.new()
+	emissor_lan.set_broadcast_enabled(true)
+	emissor_lan.set_dest_address("255.255.255.255", PORTA_DESCOBERTA)
+	tempo_anuncio_lan = 0.0
+
+
+func _encerrar_anuncio_lan() -> void:
+	if is_instance_valid(emissor_lan):
+		emissor_lan.close()
+	emissor_lan = null
+
+
+func _encerrar_descoberta_lan() -> void:
+	if is_instance_valid(receptor_lan):
+		receptor_lan.close()
+	receptor_lan = null
+	if not lobbies_lan.is_empty():
+		lobbies_lan.clear()
+
+
+func _anunciar_lobby_lan() -> void:
+	if not is_instance_valid(emissor_lan):
+		return
+	var anuncio := {
+		"assinatura": ASSINATURA_DESCOBERTA,
+		"nickname": nickname_local,
+		"porta": PORTA,
+		"jogadores": jogadores.size(),
+		"capacidade": MAX_JOGADORES,
+	}
+	emissor_lan.put_packet(JSON.stringify(anuncio).to_utf8_buffer())
+
+
+func _processar_descoberta_lan() -> void:
+	if not is_instance_valid(receptor_lan):
+		return
+	var alterou := false
+	while receptor_lan.get_available_packet_count() > 0:
+		var pacote := receptor_lan.get_packet().get_string_from_utf8()
+		var recebido: Variant = JSON.parse_string(pacote)
+		if not recebido is Dictionary or str(recebido.get("assinatura", "")) != ASSINATURA_DESCOBERTA:
+			continue
+		var endereco := receptor_lan.get_packet_ip()
+		if endereco.is_empty():
+			continue
+		var novos_dados := {
+			"ip": endereco,
+			"nickname": sanitizar_nickname(str(recebido.get("nickname", NICK_PADRAO))),
+			"porta": int(recebido.get("porta", PORTA)),
+			"jogadores": clampi(int(recebido.get("jogadores", 1)), 1, MAX_JOGADORES),
+			"capacidade": maxi(int(recebido.get("capacidade", MAX_JOGADORES)), 1),
+			"ultimo_anuncio": Time.get_ticks_msec(),
+		}
+		var anterior: Dictionary = lobbies_lan.get(endereco, {})
+		alterou = alterou or _dados_lobby_mudaram(anterior, novos_dados)
+		lobbies_lan[endereco] = novos_dados
+	var agora := Time.get_ticks_msec()
+	for endereco in lobbies_lan.keys():
+		var dados: Dictionary = lobbies_lan[endereco]
+		if float(agora - int(dados.get("ultimo_anuncio", 0))) / 1000.0 > EXPIRACAO_LOBBY_LAN:
+			lobbies_lan.erase(endereco)
+			alterou = true
+	if alterou:
+		lobbies_lan_alterados.emit(obter_lobbies_lan())
+
+
+func _dados_lobby_mudaram(anterior: Dictionary, atual: Dictionary) -> bool:
+	for campo in ["ip", "nickname", "porta", "jogadores", "capacidade"]:
+		if anterior.get(campo) != atual.get(campo):
+			return true
+	return false
 
 
 func esta_conectado() -> bool:

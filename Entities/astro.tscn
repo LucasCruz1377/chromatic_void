@@ -29,9 +29,9 @@ texture = ExtResource("2_mnuoh")
 
 [node name="DialogoAstro" type="RichTextLabel" parent="." unique_id=1104691161]
 layout_mode = 0
-offset_left = -345.0
+offset_left = -486.0
 offset_top = -88.0
-offset_right = -72.0
+offset_right = -76.0
 offset_bottom = 31.0
 bbcode_enabled = true
 text = "Os criadores deste jogo estão juntos há mais de 1 ano "

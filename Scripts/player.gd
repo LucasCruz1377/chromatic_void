@@ -13,6 +13,10 @@ const TEXTURA_COOLDOWN_RELOGIO = preload(
 const TEXTURA_MODELO_O = preload("res://UI/modelo_o.svg")
 const TEXTURA_RASTRO_MODELO_O = preload("res://UI/rastro_estrela_modelo_o.svg")
 const SHADER_COR_MODELO_O = preload("res://FX/canvas_shader/modelo_o_cor.gdshader")
+const TEXTURA_MODELO_SPECTRUM = preload("res://UI/modelo_spectrum.svg")
+const TEXTURA_MODELO_FSPEED = preload("res://UI/modelo_fspeed.svg")
+const SHADER_SPECTRUM = preload("res://FX/canvas_shader/spectrum_rgb.gdshader")
+const RASTRO_EXCLUSIVO_CENA = preload("res://Scripts/RastroExclusivo.gd")
 const AJUDANTE_MONTHLY = preload("res://Scripts/AjudanteMonthly.gd")
 const EFEITO_HABILIDADE_MONTHLY = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const REROLLS_UPGRADES_INICIAIS := 3
@@ -98,6 +102,8 @@ var nickname_rede := "PILOTO"
 var configuracao_visual_rede: Dictionary = {}
 var suporte_nickname_rede: Node2D
 var rotulo_nickname_rede: Label
+var barra_vida_rede: ProgressBar
+var estilo_vida_rede: StyleBoxFlat
 var habilidade_rede_path := ""
 var niveis_upgrades_rede: Dictionary = {}
 var contador_disparos_rede := 0
@@ -154,6 +160,8 @@ var cor_visual_nave: StringName = &"c10_verde_original"
 var rastro_visual_nave: StringName = &"c20_rastro_padrao"
 var sprite_modelo_o: Sprite2D
 var particulas_rastro_modelo_o: GPUParticles2D
+var sprites_modelos_exclusivos: Dictionary = {}
+var rastro_exclusivo: RastroExclusivo
 var rastro_ativo_rede := false
 var carga_arma := 0.0
 var calor_feixe := 0.0
@@ -200,6 +208,7 @@ func _ready() -> void:
 	else:
 		_aplicar_campos_configuracao_rede()
 	criar_visual_modelo_o()
+	criar_visuais_modelos_exclusivos()
 	aplicar_personalizacao_nave()
 	_criar_nickname_rede()
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
@@ -245,10 +254,14 @@ func _process(delta: float) -> void:
 
 
 func _atualizar_efeitos_visuais_rede() -> void:
+	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
+	var usando_rastro_especial := _usa_rastro_exclusivo()
 	if is_instance_valid(particles):
-		particles.emitting = rastro_ativo_rede and visible
+		particles.emitting = rastro_ativo_rede and visible and not usando_estrelas_modelo_o and not usando_rastro_especial
 	if is_instance_valid(particulas_rastro_modelo_o):
-		particulas_rastro_modelo_o.emitting = rastro_ativo_rede and visible
+		particulas_rastro_modelo_o.emitting = rastro_ativo_rede and visible and usando_estrelas_modelo_o
+	if is_instance_valid(rastro_exclusivo):
+		rastro_exclusivo.definir_estado(rastro_ativo_rede and visible and usando_rastro_especial, obter_cor_personalizacao())
 	queue_redraw()
 
 
@@ -303,6 +316,25 @@ func _criar_nickname_rede() -> void:
 	rotulo_nickname_rede.text = nickname_rede
 	rotulo_nickname_rede.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	suporte_nickname_rede.add_child(rotulo_nickname_rede)
+	barra_vida_rede = ProgressBar.new()
+	barra_vida_rede.name = "BarraVidaRede"
+	barra_vida_rede.position = Vector2(-43.0, -31.0)
+	barra_vida_rede.size = Vector2(86.0, 7.0)
+	barra_vida_rede.max_value = VIDA_MAXIMA
+	barra_vida_rede.value = vida
+	barra_vida_rede.show_percentage = false
+	barra_vida_rede.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fundo_vida := StyleBoxFlat.new()
+	fundo_vida.bg_color = Color(0.015, 0.02, 0.06, 0.86)
+	fundo_vida.border_color = Color(0.55, 0.68, 0.88, 0.7)
+	fundo_vida.set_border_width_all(1)
+	fundo_vida.set_corner_radius_all(3)
+	estilo_vida_rede = StyleBoxFlat.new()
+	estilo_vida_rede.bg_color = obter_cor_personalizacao()
+	estilo_vida_rede.set_corner_radius_all(3)
+	barra_vida_rede.add_theme_stylebox_override("background", fundo_vida)
+	barra_vida_rede.add_theme_stylebox_override("fill", estilo_vida_rede)
+	suporte_nickname_rede.add_child(barra_vida_rede)
 	_atualizar_nickname_rede()
 
 
@@ -311,9 +343,19 @@ func _atualizar_nickname_rede() -> void:
 		suporte_nickname_rede.global_position = global_position
 		suporte_nickname_rede.global_rotation = 0.0
 		suporte_nickname_rede.visible = visible
+		var cor_identidade := obter_cor_personalizacao()
+		if is_instance_valid(rotulo_nickname_rede):
+			rotulo_nickname_rede.add_theme_color_override("font_color", cor_identidade)
+		if is_instance_valid(barra_vida_rede):
+			barra_vida_rede.max_value = maxf(VIDA_MAXIMA, 1.0)
+			barra_vida_rede.value = clampf(vida, 0.0, VIDA_MAXIMA)
+		if is_instance_valid(estilo_vida_rede):
+			estilo_vida_rede.bg_color = cor_identidade
 
 
 func obter_cor_personalizacao() -> Color:
+	if modelo_visual_nave == &"c08_modelo_spectrum":
+		return Color.from_hsv(fmod(float(Time.get_ticks_msec()) / 9000.0, 1.0), 0.72, 1.0)
 	var dados_cor := CatalogoMonthly.encontrar(cor_visual_nave)
 	var cor_nave := Color("8bff2a")
 	if not dados_cor.is_empty():
@@ -471,6 +513,7 @@ func carregar_equipamentos_monthly() -> void:
 		modelo_visual_nave != &"c01_modelo_padrao"
 		and not Global.modo_desenvolvedor
 		and (not (comprados is Array) or modelo_visual_nave not in comprados)
+		and not Global.item_liberado_por_conquista(modelo_visual_nave)
 	):
 		modelo_visual_nave = &"c01_modelo_padrao"
 	if (
@@ -479,7 +522,16 @@ func carregar_equipamentos_monthly() -> void:
 		and (not (comprados is Array) or cor_visual_nave not in comprados)
 	):
 		cor_visual_nave = &"c10_verde_original"
-	if rastro_visual_nave == &"c21_rastro_estelar_o" and modelo_visual_nave != &"c07_modelo_o":
+	if (
+		rastro_visual_nave == &"c21_rastro_estelar_o"
+		and modelo_visual_nave != &"c07_modelo_o"
+	) or (
+		rastro_visual_nave == &"c22_rastro_spectrum"
+		and modelo_visual_nave != &"c08_modelo_spectrum"
+	) or (
+		rastro_visual_nave == &"c23_rastro_fspeed"
+		and modelo_visual_nave != &"c09_modelo_fspeed"
+	):
 		rastro_visual_nave = &"c20_rastro_padrao"
 	for id in [arma_monthly, modulo_nave, mutacao_habilidade]:
 		if id.is_empty():
@@ -506,13 +558,25 @@ func aplicar_personalizacao_nave() -> void:
 	if is_instance_valid(rotulo_nickname_rede):
 		rotulo_nickname_rede.add_theme_color_override("font_color", cor_nave)
 	var usando_modelo_o := modelo_visual_nave == &"c07_modelo_o"
-	corpo_visual.visible = not usando_modelo_o
-	detalhe_visual.visible = not usando_modelo_o
+	var usando_modelo_spectrum := modelo_visual_nave == &"c08_modelo_spectrum"
+	var usando_modelo_fspeed := modelo_visual_nave == &"c09_modelo_fspeed"
+	var usando_sprite_exclusivo := usando_modelo_o or usando_modelo_spectrum or usando_modelo_fspeed
+	corpo_visual.visible = not usando_sprite_exclusivo
+	detalhe_visual.visible = not usando_sprite_exclusivo
 	if is_instance_valid(sprite_modelo_o):
 		sprite_modelo_o.visible = usando_modelo_o
 		var material_modelo_o := sprite_modelo_o.material as ShaderMaterial
 		if is_instance_valid(material_modelo_o):
 			material_modelo_o.set_shader_parameter("cor_estrela", cor_nave)
+	for id_modelo in sprites_modelos_exclusivos:
+		var sprite := sprites_modelos_exclusivos[id_modelo] as Sprite2D
+		if not is_instance_valid(sprite):
+			continue
+		sprite.visible = StringName(id_modelo) == modelo_visual_nave
+		if StringName(id_modelo) == &"c09_modelo_fspeed":
+			var material_fspeed := sprite.material as ShaderMaterial
+			if is_instance_valid(material_fspeed):
+				material_fspeed.set_shader_parameter("cor_estrela", cor_nave)
 	if is_instance_valid(particulas_rastro_modelo_o):
 		var material_particulas_o := particulas_rastro_modelo_o.material as ShaderMaterial
 		if is_instance_valid(material_particulas_o):
@@ -522,6 +586,7 @@ func aplicar_personalizacao_nave() -> void:
 		material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
 		particles.process_material = material_particulas
 		material_particulas.color = cor_nave
+	_configurar_rastro_exclusivo(cor_nave)
 
 	# O modelo padrão conserva os polígonos originais da cena. As variações usam
 	# a mesma caixa visual (aprox. 56 x 44 px) e nunca alteram a colisão circular.
@@ -530,6 +595,12 @@ func aplicar_personalizacao_nave() -> void:
 		return
 	if usando_modelo_o:
 		PontaArma.position = Vector2(34.0, 0.0)
+		return
+	if usando_modelo_spectrum:
+		PontaArma.position = Vector2(37.0, 0.0)
+		return
+	if usando_modelo_fspeed:
+		PontaArma.position = Vector2(36.0, 0.0)
 		return
 	corpo_visual.position = Vector2.ZERO
 	corpo_visual.rotation = 0.0
@@ -635,6 +706,62 @@ func criar_visual_modelo_o() -> void:
 	material_canvas.shader = SHADER_COR_MODELO_O
 	particulas_rastro_modelo_o.material = material_canvas
 	add_child(particulas_rastro_modelo_o)
+
+
+func criar_visuais_modelos_exclusivos() -> void:
+	if not sprites_modelos_exclusivos.is_empty():
+		return
+	var spectrum := Sprite2D.new()
+	spectrum.name = "ModeloSpectrum"
+	spectrum.texture = TEXTURA_MODELO_SPECTRUM
+	spectrum.scale = Vector2(0.31, 0.31)
+	spectrum.z_index = 3
+	spectrum.visible = false
+	var material_spectrum := ShaderMaterial.new()
+	material_spectrum.shader = SHADER_SPECTRUM
+	spectrum.material = material_spectrum
+	add_child(spectrum)
+	sprites_modelos_exclusivos[&"c08_modelo_spectrum"] = spectrum
+
+	var fspeed := Sprite2D.new()
+	fspeed.name = "ModeloFspeed"
+	fspeed.texture = TEXTURA_MODELO_FSPEED
+	fspeed.scale = Vector2(0.36, 0.36)
+	fspeed.z_index = 3
+	fspeed.visible = false
+	var material_fspeed := ShaderMaterial.new()
+	material_fspeed.shader = SHADER_COR_MODELO_O
+	fspeed.material = material_fspeed
+	add_child(fspeed)
+	sprites_modelos_exclusivos[&"c09_modelo_fspeed"] = fspeed
+
+	rastro_exclusivo = RASTRO_EXCLUSIVO_CENA.new()
+	rastro_exclusivo.name = "RastroExclusivo"
+	add_child(rastro_exclusivo)
+	rastro_exclusivo.configurar(self, &"", obter_cor_personalizacao())
+
+
+func _configurar_rastro_exclusivo(cor: Color) -> void:
+	if not is_instance_valid(rastro_exclusivo):
+		return
+	var tipo: StringName = &""
+	if modelo_visual_nave == &"c08_modelo_spectrum" and rastro_visual_nave == &"c22_rastro_spectrum":
+		tipo = &"spectrum"
+	elif modelo_visual_nave == &"c09_modelo_fspeed" and rastro_visual_nave == &"c23_rastro_fspeed":
+		tipo = &"fspeed"
+	rastro_exclusivo.configurar(self, tipo, cor)
+
+
+func _usa_rastro_modelo_o() -> bool:
+	return modelo_visual_nave == &"c07_modelo_o" and rastro_visual_nave == &"c21_rastro_estelar_o"
+
+
+func _usa_rastro_exclusivo() -> bool:
+	return (
+		modelo_visual_nave == &"c08_modelo_spectrum" and rastro_visual_nave == &"c22_rastro_spectrum"
+	) or (
+		modelo_visual_nave == &"c09_modelo_fspeed" and rastro_visual_nave == &"c23_rastro_fspeed"
+	)
 
 
 func atualizar_ui() -> void:
@@ -1243,13 +1370,13 @@ func atualizar_movimento(delta: float) -> void:
 
 	var emitindo_rastro := acelerando or UsandoHabilidade
 	rastro_ativo_rede = emitindo_rastro
-	var usando_estrelas_modelo_o := (
-		modelo_visual_nave == &"c07_modelo_o"
-		and rastro_visual_nave == &"c21_rastro_estelar_o"
-	)
-	particles.emitting = emitindo_rastro and not usando_estrelas_modelo_o
+	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
+	var usando_rastro_especial := _usa_rastro_exclusivo()
+	particles.emitting = emitindo_rastro and not usando_estrelas_modelo_o and not usando_rastro_especial
 	if is_instance_valid(particulas_rastro_modelo_o):
 		particulas_rastro_modelo_o.emitting = emitindo_rastro and usando_estrelas_modelo_o
+	if is_instance_valid(rastro_exclusivo):
+		rastro_exclusivo.definir_estado(emitindo_rastro and usando_rastro_especial, obter_cor_personalizacao())
 	velocity = velocity.move_toward(Vector2.ZERO, friction * fator_movimento * delta)
 
 	if not UsandoHabilidade:
@@ -2096,9 +2223,9 @@ func _receber_xp_autoritativo(valor: float) -> void:
 func subir_de_nivel() -> void:
 	nivel_atual += 1
 	xp_necessario = calcular_xp_proximo_nivel(nivel_atual)
-	# Uma escolha a cada dois níveis: 2, 4, 6... Sem acumular um ponto oculto
-	# nos níveis intermediários.
-	if nivel_atual % 2 == 0:
+	# Solo mantém uma escolha em todo level up. No coop cada piloto recebe uma
+	# escolha nos níveis pares (2, 4, 6...), preservando a progressão compartilhada.
+	if not Rede.modo_multiplayer or nivel_atual % 2 == 0:
 		pontos_upgrade_pendentes += 1
 		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()

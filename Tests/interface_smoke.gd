@@ -45,8 +45,8 @@ func _ready() -> void:
 			painel_dev._subir_niveis(1)
 			verificar(
 				player.nivel_atual == nivel_antes + 1
-				and player.pontos_upgrade_pendentes == pontos_antes + (1 if (nivel_antes + 1) % 2 == 0 else 0),
-				"o atalho de nível do laboratório não ajustou a progressão"
+					and player.pontos_upgrade_pendentes == pontos_antes + 1,
+				"o modo solo não concedeu um ponto de melhoria por nível"
 			)
 			painel_dev._alternar_invulnerabilidade()
 			verificar(

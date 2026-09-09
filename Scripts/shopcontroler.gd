@@ -388,10 +388,7 @@ func carregar_estado() -> void:
 		personalizacao_nave["cor"] = &"c10_verde_original"
 	if item_rastro.is_empty() or StringName(item_rastro.get("grupo_personalizacao", &"")) != &"rastro":
 		personalizacao_nave["rastro"] = &"c20_rastro_padrao"
-	if (
-		StringName(personalizacao_nave["rastro"]) == &"c21_rastro_estelar_o"
-		and StringName(personalizacao_nave["modelo"]) != &"c07_modelo_o"
-	):
+	if not item_rastro.is_empty() and not _personalizacao_compativel(item_rastro):
 		personalizacao_nave["rastro"] = &"c20_rastro_padrao"
 	equipamentos_loja["4"] = personalizacao_nave["modelo"]
 	for categoria in range(1, 5):
@@ -728,14 +725,16 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 
 	detalhe_preco = Label.new()
 	detalhe_preco.custom_minimum_size.x = 0.0
-	detalhe_preco.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	detalhe_preco.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalhe_preco.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalhe_preco.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	detalhe_preco.add_theme_color_override("font_color", Color(0.75, 0.70, 1.0))
 	aplicar_fonte(detalhe_preco, 16)
 	preco_box.add_child(detalhe_preco)
 
 	botao_acao = Button.new()
 	botao_acao.focus_mode = Control.FOCUS_ALL
-	botao_acao.clip_text = true
+	botao_acao.clip_text = false
 	botao_acao.custom_minimum_size = Vector2(0, 44)
 	botao_acao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	estilizar_botao(
@@ -1022,6 +1021,7 @@ func atualizar_detalhes() -> void:
 	else:
 		botao_acao.text = "SALDO INSUFICIENTE"
 		botao_acao.disabled = true
+	call_deferred("_ajustar_fonte_botao_acao")
 
 
 func reconstruir_stats(valores: Array, cor: Color) -> void:
@@ -1188,7 +1188,7 @@ func atualizar_detalhes_genericos() -> void:
 	reconstruir_stats(item["stats"], cor)
 	var equipado := _item_generico_equipado(item)
 	if not _personalizacao_compativel(item):
-		botao_acao.text = "EXCLUSIVO DO MODELO O"
+		botao_acao.text = "EXCLUSIVO DO MODELO"
 		botao_acao.disabled = true
 	elif em_breve:
 		botao_acao.text = "EM BREVE"
@@ -1309,7 +1309,7 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 	if grupo not in [&"modelo", &"cor", &"rastro"]:
 		return
 	if not _personalizacao_compativel(item):
-		mensagem.text = "EQUIPE O MODELO O PARA USAR ESTE RASTRO"
+		mensagem.text = "EQUIPE O MODELO CORRESPONDENTE PARA USAR ESTE RASTRO"
 		return
 	if not requisito_compra_atendido(item):
 		mensagem.text = "CONQUISTA SECRETA AINDA NÃO DESBLOQUEADA"
@@ -1339,11 +1339,7 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 	personalizacao_nave[str(grupo)] = id
 	if grupo == &"modelo":
 		equipamentos_loja["4"] = id
-		personalizacao_nave["rastro"] = (
-			&"c21_rastro_estelar_o"
-			if id == &"c07_modelo_o"
-			else &"c20_rastro_padrao"
-		)
+		personalizacao_nave["rastro"] = _rastro_padrao_do_modelo(id)
 	salvar_estado()
 	Global.vibrar_controle(0.18, 0.32, 0.12)
 	reconstruir_grade_generica()
@@ -1365,6 +1361,8 @@ func _item_generico_liberado(id: StringName) -> bool:
 		or id == &"c10_verde_original"
 		or id == &"c20_rastro_padrao"
 		or (id == &"c21_rastro_estelar_o" and &"c07_modelo_o" in itens_desbloqueados)
+		or (id == &"c22_rastro_spectrum" and Global.item_liberado_por_conquista(&"c08_modelo_spectrum"))
+		or (id == &"c23_rastro_fspeed" and Global.item_liberado_por_conquista(&"c09_modelo_fspeed"))
 		or Global.modo_desenvolvedor
 		or id in itens_desbloqueados
 		or Global.item_liberado_por_conquista(id)
@@ -1389,7 +1387,19 @@ func requisito_compra_atendido(item: Dictionary) -> bool:
 static func tamanho_icone_item(id: StringName, detalhes := false) -> Vector2:
 	if id == &"c07_modelo_o":
 		return Vector2(60, 60) if detalhes else Vector2(52, 52)
+	if id == &"c08_modelo_spectrum":
+		return Vector2(50, 70) if detalhes else Vector2(42, 60)
+	if id == &"c09_modelo_fspeed":
+		return Vector2(92, 44) if detalhes else Vector2(76, 38)
 	return Vector2(78, 78) if detalhes else Vector2(68, 68)
+
+
+static func _rastro_padrao_do_modelo(modelo: StringName) -> StringName:
+	match modelo:
+		&"c07_modelo_o": return &"c21_rastro_estelar_o"
+		&"c08_modelo_spectrum": return &"c22_rastro_spectrum"
+		&"c09_modelo_fspeed": return &"c23_rastro_fspeed"
+	return &"c20_rastro_padrao"
 
 
 func _personalizacao_compativel(item: Dictionary) -> bool:
@@ -1557,6 +1567,7 @@ func _aplicar_layout_responsivo(
 		# O scrollbar já reserva sua faixa. Nenhuma margem adicional nem texto
 		# sem quebra deve alargar a coluna além da área realmente visível.
 		coluna_detalhes.custom_minimum_size.x = 0.0
+		call_deferred("_ajustar_largura_coluna_detalhes")
 	var colunas := 3
 	if largura_esquerda < 570.0:
 		colunas = 2
@@ -1570,7 +1581,34 @@ func _aplicar_layout_responsivo(
 	for painel in paineis_cartoes:
 		if is_instance_valid(painel) and is_instance_valid(painel.get_parent()):
 			(painel.get_parent() as Control).custom_minimum_size.x = largura_cartao_atual
-	margem_interface.custom_minimum_size = tamanho
+	margem_interface.custom_minimum_size = Vector2(
+		maxf(tamanho.x - float(margem_horizontal * 2), 0.0),
+		maxf(tamanho.y - float(margem_vertical * 2), 0.0)
+	)
+
+
+func _ajustar_largura_coluna_detalhes() -> void:
+	if not is_instance_valid(coluna_detalhes) or not is_instance_valid(rolagem_detalhes):
+		return
+	var barra := rolagem_detalhes.get_v_scroll_bar()
+	var largura_barra := barra.size.x if is_instance_valid(barra) and barra.visible else 0.0
+	# Define uma largura real, não apenas mínima. Isso impede qualquer Label de
+	# ampliar o filho do ScrollContainer e desaparecer atrás da borda direita.
+	var largura := maxf(rolagem_detalhes.size.x - largura_barra - 4.0, 80.0)
+	coluna_detalhes.custom_minimum_size.x = largura
+	coluna_detalhes.size.x = largura
+	_ajustar_fonte_botao_acao()
+
+
+func _ajustar_fonte_botao_acao() -> void:
+	if not is_instance_valid(botao_acao) or botao_acao.text.is_empty():
+		return
+	var largura_disponivel := maxf(coluna_detalhes.size.x - 18.0, 70.0)
+	# A fonte customizada é larga. Reduz somente o botão quando a frase de
+	# estado for longa, preservando o texto inteiro até nos painéis estreitos.
+	var largura_estimada_por_ponto := maxf(float(botao_acao.text.length()) * 0.62, 1.0)
+	var tamanho := clampi(floori(largura_disponivel / largura_estimada_por_ponto), 8, 13)
+	botao_acao.add_theme_font_size_override("font_size", tamanho)
 
 
 func _configurar_barra_vertical(

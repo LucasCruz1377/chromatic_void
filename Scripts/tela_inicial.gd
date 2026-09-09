@@ -35,7 +35,11 @@ var painel_nickname: PanelContainer
 var campo_nickname: LineEdit
 var camada_fluxo: CanvasLayer
 var fundo_fluxo: ColorRect
+var painel_fluxo: PanelContainer
+var rolagem_fluxo: ScrollContainer
 var conteudo_fluxo: VBoxContainer
+var lista_lobbies_lan: VBoxContainer
+var mensagem_lobbies_lan: Label
 var campo_ip: LineEdit
 var etapa_fluxo := &""
 var fluxo_aberto := false
@@ -71,6 +75,10 @@ func _ready() -> void:
 		Rede.lobby_alterado.connect(_on_lobby_alterado)
 	if not Rede.status_alterado.is_connected(_on_status_rede_alterado):
 		Rede.status_alterado.connect(_on_status_rede_alterado)
+	if not Rede.lobbies_lan_alterados.is_connected(_on_lobbies_lan_alterados):
+		Rede.lobbies_lan_alterados.connect(_on_lobbies_lan_alterados)
+	if not get_viewport().size_changed.is_connected(_on_viewport_menu_alterado):
+		get_viewport().size_changed.connect(_on_viewport_menu_alterado)
 
 
 func _configurar_navegacao_menu() -> void:
@@ -211,20 +219,29 @@ func _criar_interface_nickname_e_multiplayer() -> void:
 	var centro := CenterContainer.new()
 	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fundo_fluxo.add_child(centro)
-	var painel := PanelContainer.new()
-	painel.custom_minimum_size = Vector2(460.0, 360.0)
-	painel.add_theme_stylebox_override(
+	painel_fluxo = PanelContainer.new()
+	painel_fluxo.custom_minimum_size = Vector2(460.0, 360.0)
+	painel_fluxo.add_theme_stylebox_override(
 		"panel", _estilo_conquistas(Color(0.015, 0.026, 0.078, 0.99), Color(0.30, 0.92, 1.0), 16, 2)
 	)
-	centro.add_child(painel)
+	centro.add_child(painel_fluxo)
 	var margem := MarginContainer.new()
 	for lado in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
 		margem.add_theme_constant_override(lado, 24)
-	painel.add_child(margem)
+	painel_fluxo.add_child(margem)
+	rolagem_fluxo = ScrollContainer.new()
+	rolagem_fluxo.name = "RolagemFluxo"
+	rolagem_fluxo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rolagem_fluxo.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rolagem_fluxo.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem_fluxo.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	margem.add_child(rolagem_fluxo)
 	conteudo_fluxo = VBoxContainer.new()
+	conteudo_fluxo.name = "ConteudoFluxo"
 	conteudo_fluxo.alignment = BoxContainer.ALIGNMENT_CENTER
+	conteudo_fluxo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	conteudo_fluxo.add_theme_constant_override("separation", 12)
-	margem.add_child(conteudo_fluxo)
+	rolagem_fluxo.add_child(conteudo_fluxo)
 	camada_fluxo.hide()
 
 
@@ -262,6 +279,10 @@ func _limpar_fluxo() -> void:
 		conteudo_fluxo.remove_child(filho)
 		filho.queue_free()
 	campo_ip = null
+	lista_lobbies_lan = null
+	mensagem_lobbies_lan = null
+	if is_instance_valid(rolagem_fluxo):
+		rolagem_fluxo.scroll_vertical = 0
 
 
 func _adicionar_titulo_fluxo(titulo: String, subtitulo: String = "") -> void:
@@ -281,9 +302,16 @@ func _adicionar_titulo_fluxo(titulo: String, subtitulo: String = "") -> void:
 		conteudo_fluxo.add_child(detalhe)
 
 
-func _adicionar_botao_fluxo(texto: String, acao: Callable, destaque := false) -> Button:
+func _adicionar_botao_fluxo(
+	texto: String,
+	acao: Callable,
+	destaque := false,
+	pai: Container = null,
+	tamanho_minimo := Vector2(0.0, 48.0)
+) -> Button:
 	var botao := Button.new()
-	botao.custom_minimum_size = Vector2(310.0, 48.0)
+	botao.custom_minimum_size = tamanho_minimo
+	botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	botao.text = texto
 	botao.add_theme_font_size_override("font_size", 18)
 	var borda := Color(0.34, 1.0, 0.72) if destaque else Color(0.32, 0.68, 1.0)
@@ -291,7 +319,8 @@ func _adicionar_botao_fluxo(texto: String, acao: Callable, destaque := false) ->
 	botao.add_theme_stylebox_override("hover", _estilo_conquistas(Color(0.07, 0.14, 0.24), borda.lightened(0.2), 9, 2))
 	botao.add_theme_stylebox_override("focus", _estilo_conquistas(Color(0.07, 0.14, 0.24), Color.WHITE, 9, 2))
 	botao.pressed.connect(acao)
-	conteudo_fluxo.add_child(botao)
+	var destino: Container = pai if is_instance_valid(pai) else conteudo_fluxo
+	destino.add_child(botao)
 	return botao
 
 
@@ -313,6 +342,7 @@ func _abrir_fluxo(etapa: StringName) -> void:
 	fluxo_aberto = true
 	etapa_fluxo = etapa
 	camada_fluxo.show()
+	_ajustar_painel_fluxo(etapa)
 	for botao in botoes_menu:
 		botao.disabled = true
 	campo_nickname.editable = not Rede.em_lobby
@@ -331,11 +361,139 @@ func _mostrar_escolha_modo() -> void:
 func _mostrar_escolha_multiplayer() -> void:
 	_abrir_fluxo(&"multiplayer")
 	_limpar_fluxo()
-	_adicionar_titulo_fluxo("MULTIPLAYER", "Sala para 2 jogadores • conexão direta por IP")
-	var criar := _adicionar_botao_fluxo("CRIAR LOBBY", _on_criar_lobby_pressed, true)
-	_adicionar_botao_fluxo("ENTRAR POR IP", _on_entrar_lobby_pressed)
+	Rede.iniciar_busca_lan()
+	_adicionar_titulo_fluxo(
+		"MULTIPLAYER",
+		"Jogue com outro piloto na mesma rede Wi-Fi ou informe o IP manualmente."
+	)
+	var opcoes := HBoxContainer.new()
+	opcoes.name = "OpcoesMultiplayer"
+	opcoes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	opcoes.add_theme_constant_override("separation", 12)
+	conteudo_fluxo.add_child(opcoes)
+	var criar := _adicionar_botao_fluxo(
+		"CRIAR LOBBY", _on_criar_lobby_pressed, true, opcoes, Vector2(0.0, 54.0)
+	)
+	var entrar_ip := _adicionar_botao_fluxo(
+		"ENTRAR POR IP", _on_entrar_lobby_pressed, false, opcoes, Vector2(0.0, 54.0)
+	)
+	criar.add_theme_font_size_override("font_size", 13)
+	entrar_ip.add_theme_font_size_override("font_size", 13)
+	_criar_area_lobbies_lan()
+	_atualizar_lista_lobbies_lan(Rede.obter_lobbies_lan())
 	_adicionar_botao_fluxo("VOLTAR", _mostrar_escolha_modo)
 	criar.call_deferred("grab_focus")
+
+
+func _criar_area_lobbies_lan() -> void:
+	var painel_lobbies := PanelContainer.new()
+	painel_lobbies.name = "PainelLobbiesLan"
+	painel_lobbies.custom_minimum_size = Vector2(0.0, 220.0)
+	painel_lobbies.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	painel_lobbies.add_theme_stylebox_override(
+		"panel",
+		_estilo_conquistas(
+			Color(0.01, 0.022, 0.06, 0.96), Color(0.18, 0.48, 0.68), 11, 1
+		)
+	)
+	conteudo_fluxo.add_child(painel_lobbies)
+	var margem := MarginContainer.new()
+	for lado in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+		margem.add_theme_constant_override(lado, 12)
+	painel_lobbies.add_child(margem)
+	var coluna := VBoxContainer.new()
+	coluna.add_theme_constant_override("separation", 7)
+	margem.add_child(coluna)
+	var titulo := Label.new()
+	titulo.text = "LOBBIES DISPONÍVEIS NESTA REDE"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 13)
+	titulo.add_theme_color_override("font_color", Color(0.45, 1.0, 0.76))
+	coluna.add_child(titulo)
+	var rolagem := ScrollContainer.new()
+	rolagem.name = "RolagemLobbiesLan"
+	rolagem.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	coluna.add_child(rolagem)
+	lista_lobbies_lan = VBoxContainer.new()
+	lista_lobbies_lan.name = "ListaLobbiesLan"
+	lista_lobbies_lan.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lista_lobbies_lan.add_theme_constant_override("separation", 6)
+	rolagem.add_child(lista_lobbies_lan)
+
+
+func _atualizar_lista_lobbies_lan(lobbies: Array) -> void:
+	if not is_instance_valid(lista_lobbies_lan):
+		return
+	for filho in lista_lobbies_lan.get_children():
+		lista_lobbies_lan.remove_child(filho)
+		filho.queue_free()
+	if lobbies.is_empty():
+		mensagem_lobbies_lan = Label.new()
+		mensagem_lobbies_lan.text = "PROCURANDO LOBBIES DISPONÍVEIS NO WI-FI..."
+		mensagem_lobbies_lan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		mensagem_lobbies_lan.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		mensagem_lobbies_lan.custom_minimum_size.y = 116.0
+		mensagem_lobbies_lan.add_theme_font_size_override("font_size", 12)
+		mensagem_lobbies_lan.add_theme_color_override("font_color", Color(0.64, 0.72, 0.92))
+		lista_lobbies_lan.add_child(mensagem_lobbies_lan)
+		return
+	for dados_variant in lobbies:
+		if not dados_variant is Dictionary:
+			continue
+		var dados := dados_variant as Dictionary
+		var ip := str(dados.get("ip", ""))
+		var nick := Rede.sanitizar_nickname(str(dados.get("nickname", Rede.NICK_PADRAO)))
+		var linha := HBoxContainer.new()
+		linha.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		linha.add_theme_constant_override("separation", 10)
+		lista_lobbies_lan.add_child(linha)
+		var informacoes := VBoxContainer.new()
+		informacoes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		linha.add_child(informacoes)
+		var criador := Label.new()
+		criador.text = "HOST: %s" % nick
+		criador.add_theme_font_size_override("font_size", 15)
+		criador.add_theme_color_override("font_color", Color(0.56, 1.0, 0.78))
+		informacoes.add_child(criador)
+		var endereco := Label.new()
+		endereco.text = "%s:%d  •  %d/%d JOGADORES" % [
+			ip,
+			int(dados.get("porta", Rede.PORTA)),
+			int(dados.get("jogadores", 1)),
+			int(dados.get("capacidade", Rede.MAX_JOGADORES)),
+		]
+		endereco.add_theme_font_size_override("font_size", 10)
+		endereco.add_theme_color_override("font_color", Color(0.60, 0.70, 0.88))
+		informacoes.add_child(endereco)
+		_adicionar_botao_fluxo(
+			"ENTRAR", _conectar_lobby_lan.bind(ip), true, linha, Vector2(126.0, 46.0)
+		)
+
+
+func _ajustar_painel_fluxo(etapa: StringName = etapa_fluxo) -> void:
+	if not is_instance_valid(painel_fluxo):
+		return
+	var viewport := get_viewport().get_visible_rect().size
+	var desejado := Vector2(760.0, 470.0) if etapa == &"multiplayer" else Vector2(460.0, 360.0)
+	painel_fluxo.custom_minimum_size = Vector2(
+		minf(desejado.x, maxf(viewport.x - 32.0, 1.0)),
+		minf(desejado.y, maxf(viewport.y - 28.0, 1.0))
+	)
+
+
+func _on_viewport_menu_alterado() -> void:
+	if fluxo_aberto:
+		_ajustar_painel_fluxo()
+
+
+func _conectar_lobby_lan(ip: String) -> void:
+	click_som()
+	var erro := Rede.entrar_lobby(ip, _salvar_nickname())
+	if erro == OK:
+		_mostrar_lobby()
 
 
 func _mostrar_entrada_ip() -> void:
@@ -346,7 +504,13 @@ func _mostrar_entrada_ip() -> void:
 	campo_ip.name = "EnderecoIP"
 	campo_ip.custom_minimum_size = Vector2(330.0, 46.0)
 	campo_ip.placeholder_text = "Ex.: 192.168.0.10"
-	campo_ip.text = "127.0.0.1"
+	var lobbies := Rede.obter_lobbies_lan()
+	var dados_save: Dictionary = GerenciadorDeSave.carregar()
+	campo_ip.text = (
+		str(lobbies[0].get("ip", ""))
+		if not lobbies.is_empty()
+		else str(dados_save.get("ultimo_ip_host", "127.0.0.1"))
+	)
 	campo_ip.select_all_on_focus = true
 	_configurar_campo_texto_mobile(campo_ip)
 	campo_ip.add_theme_font_size_override("font_size", 18)
@@ -377,11 +541,29 @@ func _mostrar_lobby() -> void:
 		espera.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		espera.add_theme_color_override("font_color", Color(0.68, 0.72, 0.92))
 		conteudo_fluxo.add_child(espera)
+	if Rede.hospedando:
+		var enderecos := Rede.obter_enderecos_host()
+		if not enderecos.is_empty():
+			var instrucao := Label.new()
+			instrucao.text = "SE O LOBBY NÃO APARECER, TOQUE NO IP PARA COPIAR:"
+			instrucao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			instrucao.add_theme_font_size_override("font_size", 11)
+			instrucao.add_theme_color_override("font_color", Color(0.60, 0.72, 0.92))
+			conteudo_fluxo.add_child(instrucao)
+			for endereco in enderecos.slice(0, 4):
+				_adicionar_botao_fluxo("COPIAR IP  %s" % endereco, _copiar_ip_host.bind(endereco))
 	_adicionar_status_rede()
 	if Rede.hospedando:
 		var iniciar := _adicionar_botao_fluxo("INICIAR PARTIDA", _on_iniciar_lobby_pressed, true)
 		iniciar.disabled = not Rede.pode_iniciar_partida()
 	_adicionar_botao_fluxo("SAIR DO LOBBY", _sair_do_lobby)
+
+
+func _copiar_ip_host(endereco: String) -> void:
+	DisplayServer.clipboard_set(endereco)
+	mensagem_rede = "IP %s COPIADO" % endereco
+	mensagem_rede_erro = false
+	_mostrar_lobby()
 
 
 func _sair_do_lobby() -> void:
@@ -397,6 +579,7 @@ func _voltar_fluxo() -> void:
 		&"ip":
 			_mostrar_escolha_multiplayer()
 		&"multiplayer":
+			Rede.parar_busca_lan()
 			_mostrar_escolha_modo()
 		_:
 			fluxo_aberto = false
@@ -411,6 +594,11 @@ func _voltar_fluxo() -> void:
 func _on_lobby_alterado(_jogadores: Dictionary) -> void:
 	if fluxo_aberto and etapa_fluxo == &"lobby":
 		_mostrar_lobby()
+
+
+func _on_lobbies_lan_alterados(_lobbies: Array) -> void:
+	if fluxo_aberto and etapa_fluxo == &"multiplayer":
+		_atualizar_lista_lobbies_lan(_lobbies)
 
 
 func _on_status_rede_alterado(mensagem: String, erro: bool) -> void:

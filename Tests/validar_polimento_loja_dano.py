@@ -21,10 +21,14 @@ GLOBAL = (ROOT / "Scripts/Global.gd").read_text(encoding="utf-8")
 SETORES = (ROOT / "Scripts/SectorData.gd").read_text(encoding="utf-8")
 BATALHA = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
 CATALOGO = (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
+MENU = (ROOT / "Scripts/tela_inicial.gd").read_text(encoding="utf-8")
+REDE = (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
 
 assert '"PERSONALIZAÇÃO"' in SHOP
-assert 'botao_acao.clip_text = true' in SHOP
+assert 'botao_acao.clip_text = false' in SHOP
 assert 'func _aplicar_layout_responsivo(' in SHOP
+assert 'func _ajustar_largura_coluna_detalhes()' in SHOP
+assert 'func _ajustar_fonte_botao_acao()' in SHOP
 assert 'grade.columns = colunas' in SHOP
 assert 'conteudo_principal.vertical = false' in SHOP
 assert '"preco": 15000' in SHOP
@@ -40,6 +44,13 @@ assert '"MODELOS"' in SHOP and '"CORES"' in SHOP and '"RASTROS"' in SHOP
 assert 'func obter_itens_categoria_atual()' in SHOP
 assert 'filtro_personalizacao' in SHOP
 assert 'window/stretch/aspect="expand"' in PROJECT
+assert 'opcoes.name = "OpcoesMultiplayer"' in MENU
+assert 'painel_lobbies.name = "PainelLobbiesLan"' in MENU
+assert '_atualizar_lista_lobbies_lan(_lobbies)' in MENU
+assert 'Vector2(760.0, 470.0)' in MENU
+assert 'if ocupacao >= capacidade:' in REDE
+assert '"jogadores": jogadores.size()' in REDE
+assert 'func _dados_lobby_mudaram(' in REDE
 
 assert '&"a05_minas_castor"' in PLAYER
 assert '"explosao": 1.2' in PLAYER
@@ -85,6 +96,19 @@ assert 'func criar_visual_modelo_o()' in PLAYER
 assert 'material_modelo_o.set_shader_parameter("cor_estrela", cor_nave)' in PLAYER
 assert 'rastro_visual_nave == &"c21_rastro_estelar_o"' in PLAYER
 assert 'material_rastro.scale_max = 0.075' in PLAYER
+for nome in [
+    "modelo_spectrum.svg", "modelo_fspeed.svg",
+    "rastro_spectrum.svg", "rastro_fspeed.svg",
+]:
+    assert (ROOT / "UI" / nome).exists(), nome
+assert (ROOT / "FX/canvas_shader/spectrum_rgb.gdshader").exists()
+assert (ROOT / "Scripts/RastroExclusivo.gd").exists()
+assert 'c08_modelo_spectrum' in PLAYER and 'c09_modelo_fspeed' in PLAYER
+assert '_usa_rastro_modelo_o()' in PLAYER
+assert 'BarraVidaRede' in PLAYER
+assert 'PORTA_DESCOBERTA := 24568' in (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
+assert 'calcular_area_comum' in BATALHA
+assert 'LimiteArenaCoop' in BATALHA
 
 assert 'const DADOS_ARMAS' in UPGRADES
 assert UPGRADES.count('"arma_exclusiva":') == 25
@@ -130,5 +154,7 @@ assert 'const MIN_ENEMIES := 2' in BATALHA
 assert '&"sinal_da_estrela"' in GLOBAL
 assert '"secreta": true' in GLOBAL
 assert '"requer_conquista": &"sinal_da_estrela"' in (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
+assert '&"combo_300_spectrum"' in GLOBAL
+assert '&"pontos_38000000_fspeed"' in GLOBAL
 
 print("Polimento verificado: loja, filtros, skins, sinalizador, efeitos e hitflash.")

@@ -84,12 +84,16 @@ for item in ids:
 
 assert '"id": &"c01_modelo_padrao"' in CATALOGO
 assert CATALOGO.count('"em_breve": true') == 0
-assert CATALOGO.count('"grupo_personalizacao": &"modelo"') == 7
+assert CATALOGO.count('"grupo_personalizacao": &"modelo"') == 9
 assert CATALOGO.count('"grupo_personalizacao": &"cor"') == 1  # As outras cores usam _cor().
-assert CATALOGO.count('"grupo_personalizacao": &"rastro"') == 2
+assert CATALOGO.count('"grupo_personalizacao": &"rastro"') == 4
 assert '&"c07_modelo_o"' in CATALOGO
 assert '&"c21_rastro_estelar_o"' in CATALOGO
 assert '"requer_modelo": &"c07_modelo_o"' in CATALOGO
+assert '&"c08_modelo_spectrum"' in CATALOGO
+assert '&"c09_modelo_fspeed"' in CATALOGO
+assert '"requer_modelo": &"c08_modelo_spectrum"' in CATALOGO
+assert '"requer_modelo": &"c09_modelo_fspeed"' in CATALOGO
 assert CATALOGO.count('_cor(&"c1') == 6
 assert '4: return personalizacao()' in CATALOGO
 

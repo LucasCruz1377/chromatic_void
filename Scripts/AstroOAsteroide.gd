@@ -118,10 +118,24 @@ func apresentar() -> void:
 
 
 func _atualizar_tela_preta_responsiva() -> void:
+	_atualizar_dialogo_responsivo()
 	if not is_instance_valid(tela_preta):
 		return
 	tela_preta.global_position = Vector2.ZERO
 	tela_preta.size = get_viewport_rect().size
+
+
+func _atualizar_dialogo_responsivo() -> void:
+	if not is_instance_valid(texto_label):
+		return
+	var largura_viewport := get_viewport_rect().size.x
+	var largura_dialogo := clampf(largura_viewport * 0.68, 220.0, 410.0)
+	var margem_esquerda := 8.0
+	var espaco_astro := 88.0
+	var x_global := maxf(margem_esquerda, largura_viewport - largura_dialogo - espaco_astro)
+	texto_label.position.x = x_global - global_position.x
+	texto_label.size.x = largura_dialogo
+	texto_label.clip_contents = false
 
 
 func _deve_se_apresentar(dados: Dictionary) -> bool:

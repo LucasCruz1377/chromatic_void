@@ -44,6 +44,14 @@ func _testar_astro() -> void:
 	verificar(primeira != segunda, "o sorteio repetiu imediatamente a mesma curiosidade")
 
 	astro.set("modo_menu", true)
+	astro.call("_atualizar_dialogo_responsivo")
+	var texto_completo: RichTextLabel = astro.get_node("DialogoAstro") as RichTextLabel
+	var retangulo_dialogo := texto_completo.get_global_rect()
+	verificar(retangulo_dialogo.position.x >= 7.0, "o diálogo do Astro ainda corta do lado esquerdo")
+	verificar(
+		retangulo_dialogo.end.x <= get_viewport().get_visible_rect().end.x + 1.0,
+		"o diálogo do Astro ultrapassa o lado direito da tela"
+	)
 	astro.call("falar", "Frase de teste")
 	await get_tree().process_frame
 	var clique := InputEventMouseButton.new()
@@ -51,7 +59,6 @@ func _testar_astro() -> void:
 	clique.pressed = true
 	astro.call("_input", clique)
 	verificar(not bool(astro.get("escrevendo")), "o primeiro clique não completou a digitação")
-	var texto_completo: RichTextLabel = astro.get_node("DialogoAstro") as RichTextLabel
 	verificar(texto_completo.visible_ratio >= 1.0, "o primeiro clique não revelou toda a frase")
 	astro.call("_input", clique)
 	verificar(bool(astro.get("escrevendo")), "o segundo clique não iniciou outra curiosidade")
