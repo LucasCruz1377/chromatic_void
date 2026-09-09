@@ -1874,6 +1874,20 @@ func curar(valor: float) -> void:
 		reserva_celulas = minf(reserva_celulas + excedente, 35.0)
 
 
+func conceder_cura_rede(valor: float) -> void:
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		if multiplayer.is_server() and peer_id_dono > 1:
+			_receber_cura_autoritativa.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+		return
+	curar(valor)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_cura_autoritativa(valor: float) -> void:
+	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
+		curar(clampf(valor, 0.0, 10000.0))
+
+
 func sacrificar_vida(valor: float) -> bool:
 	var custo := maxf(valor, 0.0)
 	if not vivo or custo <= 0.0 or vida <= custo + 1.0:

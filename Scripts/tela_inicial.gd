@@ -58,7 +58,9 @@ func _ready() -> void:
 		(musica_menu.stream as AudioStreamOggVorbis).loop = true
 	if not musica_menu.playing:
 		musica_menu.play()
-	Global.definir_cursor_interface(false)
+	# No mobile o cursor continua invisível, mas a emulação de clique precisa
+	# permanecer ativa para LineEdit receber toque e abrir o teclado virtual.
+	Global.definir_cursor_interface(Global.dispositivo_mobile())
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	_configurar_navegacao_menu()
 	botao_iniciar.call_deferred("grab_focus")
@@ -190,6 +192,7 @@ func _criar_interface_nickname_e_multiplayer() -> void:
 	campo_nickname.placeholder_text = "PILOTO"
 	campo_nickname.max_length = 16
 	campo_nickname.select_all_on_focus = true
+	_configurar_campo_texto_mobile(campo_nickname)
 	campo_nickname.add_theme_font_size_override("font_size", 16)
 	campo_nickname.focus_exited.connect(_salvar_nickname)
 	campo_nickname.text_submitted.connect(_on_nickname_enviado)
@@ -229,6 +232,21 @@ func _on_nickname_enviado(_texto: String) -> void:
 	_salvar_nickname()
 	if is_instance_valid(botao_iniciar):
 		botao_iniciar.grab_focus()
+
+
+func _configurar_campo_texto_mobile(campo: LineEdit) -> void:
+	campo.mouse_filter = Control.MOUSE_FILTER_STOP
+	campo.focus_mode = Control.FOCUS_ALL
+	campo.virtual_keyboard_enabled = true
+	if Global.dispositivo_mobile():
+		campo.gui_input.connect(_on_campo_texto_mobile_input.bind(campo))
+
+
+func _on_campo_texto_mobile_input(event: InputEvent, campo: LineEdit) -> void:
+	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+		campo.grab_focus()
+		campo.caret_column = campo.text.length()
+		campo.accept_event()
 
 
 func _salvar_nickname() -> String:
@@ -330,6 +348,7 @@ func _mostrar_entrada_ip() -> void:
 	campo_ip.placeholder_text = "Ex.: 192.168.0.10"
 	campo_ip.text = "127.0.0.1"
 	campo_ip.select_all_on_focus = true
+	_configurar_campo_texto_mobile(campo_ip)
 	campo_ip.add_theme_font_size_override("font_size", 18)
 	campo_ip.text_submitted.connect(func(_texto: String) -> void: _on_conectar_ip_pressed())
 	conteudo_fluxo.add_child(campo_ip)

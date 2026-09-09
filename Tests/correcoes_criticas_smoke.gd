@@ -27,6 +27,7 @@ func _ready() -> void:
 	await testar_perfil_mobile_e_particulas()
 	await testar_contato_vinculos_e_pausa()
 	await testar_hud_e_icone()
+	await testar_combo_habilidade_e_loja()
 	await finalizar()
 
 
@@ -125,6 +126,48 @@ func testar_hud_e_icone() -> void:
 	var tamanho_padrao := LojaController.tamanho_icone_item(&"c01_modelo_padrao")
 	var tamanho_estrela := LojaController.tamanho_icone_item(&"c07_modelo_o")
 	verificar(tamanho_estrela.x < tamanho_padrao.x, "o ícone da estrela continua maior que os layouts")
+
+
+func testar_combo_habilidade_e_loja() -> void:
+	var cena_batalha := load("res://Rooms/Battle_area.tscn") as PackedScene
+	var batalha := cena_batalha.instantiate() as Node2D
+	add_child(batalha)
+	batalha.tutorial_ativo = false
+	Global.Combo = 4
+	batalha._processar_combo(0.1)
+	batalha.player.ao_ativar_habilidade()
+	batalha._processar_combo(0.35)
+	verificar(Global.Combo == 4, "usar a habilidade ativa zerou o combo no singleplayer")
+
+	var inimigo := load("res://Entities/InimigoSeguidor.tscn").instantiate() as InimigoBase
+	batalha.add_child(inimigo)
+	inimigo.global_position = Vector2(420, 240)
+	await get_tree().process_frame
+	inimigo.criar_particulas_morte()
+	var encontrou_cor := false
+	for filho in batalha.get_children():
+		if filho is GPUParticles2D and (filho as CanvasItem).modulate != Color.WHITE:
+			encontrou_cor = true
+	verificar(encontrou_cor, "as partículas locais de inimigo continuam brancas")
+	batalha.free()
+	Global.Combo = 0
+	await get_tree().process_frame
+
+	var cena_loja := load("res://Rooms/Loja.tscn") as PackedScene
+	var loja = cena_loja.instantiate()
+	add_child(loja)
+	await get_tree().process_frame
+	loja._aplicar_layout_responsivo(Vector2(640, 360), true)
+	await get_tree().process_frame
+	verificar(loja.botao_acao.custom_minimum_size.y >= 44.0, "o botão Equipar ainda pode ser cortado verticalmente")
+	verificar(not loja.detalhe_descricao.clip_text, "a descrição da loja ainda recorta o texto")
+	var slider := loja.rolagem_detalhes.get_v_scroll_bar() as VScrollBar
+	verificar(slider.custom_minimum_size.x <= 10.0, "o slider da descrição ocupa largura excessiva")
+	verificar(
+		loja.coluna_detalhes.get_combined_minimum_size().x <= loja.rolagem_detalhes.size.x + 1.0,
+		"o conteúdo da loja continua mais largo que a caixa e corta o lado direito"
+	)
+	loja.free()
 
 
 func finalizar() -> void:

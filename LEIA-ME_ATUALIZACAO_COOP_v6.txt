@@ -1,0 +1,41 @@
+CHROMATIC VOID — PACOTE CUMULATIVO COOP v6
+
+COMO APLICAR
+1. Faça backup da pasta atual do projeto.
+2. Extraia este ZIP na raiz do repositório.
+3. Confirme a substituição de todos os arquivos existentes.
+4. Não apague seus segredos/keystores locais: eles não fazem parte do pacote.
+5. Importe o projeto com Godot 4.7 antes de criar a nova tag/release.
+
+CORREÇÕES DESTA REVISÃO
+- Coluna de detalhes da loja agora ocupa a largura real do ScrollContainer.
+- Textos, recarga, preço e botão Equipar se ajustam sem corte lateral.
+- Barra de vida dos bosses é criada também no client e acompanha a vida replicada.
+- Meteoro bônus concede cura e XP a todos os jogadores vivos da sessão.
+- Nickname e IP aceitam toque, foco e teclado virtual no mobile.
+- Nó de Ametista recebeu mais vida, dano, velocidade e agressividade.
+- Após perder a defesa, Ametista se move e ataca mais rápido e lança mais lasers.
+- Lasers de Ametista travam a mira 0,3 segundo antes do disparo.
+
+PREÇOS ATUALIZADOS
+- Frenesi Carnavalesco: 15.000
+- Laço da União: 18.000
+- Tempestade/Chuva Verde: 18.000
+- Presente Misterioso: 20.000
+- Renascimento: 22.000
+- Mísseis Lobo / Alcateia de Mísseis: 28.000
+
+VALIDAÇÃO EXECUTADA
+- Importação headless Godot 4.7: OK, sem parse errors.
+- 24 smoke tests: OK.
+- Integração real com dois processos (host/client): OK nos dois peers.
+- Cura do meteoro nos dois jogadores: OK.
+- HUD do boss visível e sincronizado no client: OK.
+- Loja responsiva e campos mobile: OK.
+- Validadores de referências, catálogo, updater, loja e iOS: OK.
+- YAML dos workflows CI/CD e git diff: OK.
+
+OBSERVAÇÃO SOBRE EXPORTAÇÃO LOCAL
+O ambiente de montagem não contém os templates de exportação do Godot, Android
+SDK/JDK ou credenciais Apple. Por isso os binários não foram gerados localmente.
+Os presets foram validados e o CI baixa os templates oficiais durante a execução.

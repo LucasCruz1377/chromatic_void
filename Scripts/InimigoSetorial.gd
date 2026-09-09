@@ -33,8 +33,13 @@ func _ready() -> void:
 	# As espécies setoriais atacam por padrões próprios e sobrevivem ao contato.
 	# Antes elas herdavam o comportamento descartável dos inimigos clássicos.
 	morre_ao_colidir_player = false
-	visual = self; trilha = global_position; recarga = randf_range(0.4, intervalo_acao)
-	super._ready(); queue_redraw()
+	visual = self; trilha = global_position
+	super._ready()
+	intervalo_acao = calcular_intervalo_ataque(intervalo_acao)
+	if estilo == Estilo.FITA_VIOLETA:
+		Velocidade *= 1.35
+	recarga = randf_range(0.4, intervalo_acao)
+	queue_redraw()
 
 func Mover(delta: float) -> void:
 	if not is_instance_valid(player): return
@@ -55,8 +60,8 @@ func Mover(delta: float) -> void:
 		Estilo.PULSO_SOLAR: velocity = velocity.move_toward(_distancia(ate, distancia, 250.0) * Velocidade, 220.0 * delta)
 		Estilo.FITA_VIOLETA:
 			velocity = velocity.move_toward(ate.rotated(sin(tempo * 2.5) * 0.92) * Velocidade, 270.0 * delta)
-			if tempo_trilha <= 0.0 and global_position.distance_to(trilha) > 30.0:
-				Perigo.criar(get_tree().current_scene, Perigo.Forma.LINHA, trilha, global_position, cor_setor, 0.08, 0.55, Dano * 0.35, 10.0); trilha = global_position; tempo_trilha = 0.15
+			if tempo_trilha <= 0.0 and global_position.distance_to(trilha) > 24.0:
+				Perigo.criar(get_tree().current_scene, Perigo.Forma.LINHA, trilha, global_position, cor_setor, 0.06, 1.1, Dano * 0.35, 11.0); trilha = global_position; tempo_trilha = 0.11
 		Estilo.ECO_AMETISTA: velocity = velocity.move_toward(_distancia(ate, distancia, 290.0) * Velocidade, 220.0 * delta)
 		Estilo.LAMINA_IRIS: velocity = velocity.move_toward(ate.orthogonal() * Velocidade, 250.0 * delta)
 		Estilo.CASULO_PRISMATICO: velocity = velocity.move_toward(_distancia(ate, distancia, 265.0) * Velocidade, 150.0 * delta)
@@ -112,7 +117,8 @@ func _preparar() -> void:
 	if not is_instance_valid(player):
 		return
 	preparando = true; direcao = global_position.direction_to(player.global_position)
-	preparo = {Estilo.PULSO_SOLAR:0.85, Estilo.LAMINA_IRIS:0.72, Estilo.BROTO_PRIMAVERIL:0.72, Estilo.FRUTO_EXPLOSIVO:1.05, Estilo.CENTELHA_SOLAR:0.8, Estilo.METEORO_JOVEM:0.85}.get(estilo, 0.58)
+	var preparo_base: float = {Estilo.PULSO_SOLAR:0.85, Estilo.LAMINA_IRIS:0.72, Estilo.BROTO_PRIMAVERIL:0.72, Estilo.FRUTO_EXPLOSIVO:1.05, Estilo.CENTELHA_SOLAR:0.8, Estilo.METEORO_JOVEM:0.85}.get(estilo, 0.58)
+	preparo = maxf(preparo_base * pow(0.90, indice_setor_dificuldade), 0.28)
 	_destino_e_aviso()
 
 func _destino_e_aviso() -> void:
@@ -138,7 +144,7 @@ func _executar() -> void:
 		Estilo.PRISMA_AMPARO: fechado = true; multiplicador_dano_recebido = 0.22; get_tree().create_timer(1.1).timeout.connect(_abrir_prisma)
 		Estilo.SATELITE_BERCO: pass
 		Estilo.PULSO_SOLAR, Estilo.LAMINA_IRIS: velocity = direcao * Velocidade * 3.2
-		Estilo.FITA_VIOLETA: velocity = direcao.rotated(0.68) * Velocidade * 2.0
+		Estilo.FITA_VIOLETA: velocity = direcao.rotated(0.68) * Velocidade * 2.7
 		Estilo.NO_FLUTUANTE: _ligar(false)
 		Estilo.ECO_AMETISTA: _disparar(direcao_memorizada, 360.0, Dano * 0.75)
 		Estilo.CASULO_PRISMATICO:

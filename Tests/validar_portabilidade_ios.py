@@ -16,6 +16,7 @@ assert 'architectures/arm64=true' in PRESETS
 assert 'application/bundle_identifier="com.lucascruz1377.chromaticvoid"' in PRESETS
 assert 'application/app_store_team_id="XXXXXXXXXX"' in PRESETS
 assert 'application/export_project_only=true' in PRESETS
+assert 'application/min_ios_version="14.0"' in PRESETS
 assert 'OS.get_name() in ["Android", "iOS"]' in GLOBAL
 assert 'func definir_cursor_interface(' in GLOBAL
 assert 'if Global.dispositivo_mobile()' in AIM

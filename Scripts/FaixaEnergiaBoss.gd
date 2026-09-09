@@ -57,8 +57,12 @@ static func criar(cena: Node, dados: Dictionary) -> FaixaEnergiaBoss:
 	faixa.deslocamento = float(dados.get("deslocamento", 0.0))
 	faixa.velocidade_deslocamento = float(dados.get("velocidade_deslocamento", 0.0))
 	faixa.amplitude_deslocamento = float(dados.get("amplitude", 80.0))
-	faixa.alvo = dados.get("alvo") as Node2D
-	faixa.dono_formacao = dados.get("dono") as Node
+	var alvo_candidato: Variant = dados.get("alvo")
+	if is_instance_valid(alvo_candidato) and alvo_candidato is Node2D:
+		faixa.alvo = alvo_candidato as Node2D
+	var dono_candidato: Variant = dados.get("dono")
+	if is_instance_valid(dono_candidato) and dono_candidato is Node:
+		faixa.dono_formacao = dono_candidato as Node
 	faixa.indice_a = int(dados.get("indice_a", -1))
 	faixa.indice_b = int(dados.get("indice_b", -1))
 	faixa.acompanha_origem = bool(dados.get("acompanha_origem", false))

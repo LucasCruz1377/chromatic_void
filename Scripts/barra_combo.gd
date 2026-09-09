@@ -4,33 +4,28 @@ extends ProgressBar
 @onready var anim: AnimationPlayer = $anim
 
 
-var combotarget = 0
-const max_timer = 3*60
-var timer = max_timer
+var combotarget := 0
+const DURACAO_COMBO := 3.0
+var timer := 0.0
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if Global.Combo <= 0:
 		visible = false
 	else:
 		visible = true
-		
-	if combotarget < Global.Combo:
-		anim.play("combo_pop")
-		combotarget += 1
-		timer = max_timer
-		
-	if timer > 0 and Global.Combo != 0:
-		timer -= 1
-	else:
-		visible = false
-	
-	if timer == 0 :
-		Global.Combo = 0
-		combotarget = 0
-		timer = -2
-	
-	if Global.Combo != 0:
-		visible = true
 
-	value = timer
-	textocombo.text = "[shake]" + str(combotarget) + "x" + "[/shake]"
+	if combotarget != Global.Combo:
+		if Global.Combo > combotarget:
+			anim.play("combo_pop")
+			timer = DURACAO_COMBO
+		combotarget = Global.Combo
+
+	if Global.Combo > 0:
+		timer = maxf(timer - delta, 0.0)
+	else:
+		timer = 0.0
+
+	# A HUD apenas representa o combo. A duração e a autoridade pertencem à
+	# batalha/host; assim câmera lenta, FPS e habilidades não zeram o estado.
+	value = timer / DURACAO_COMBO * max_value
+	textocombo.text = "[shake]" + str(combotarget) + "x[/shake]"

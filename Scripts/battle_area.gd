@@ -10,6 +10,7 @@ const EfeitoMonthlyRedeCena = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 const EfeitoCombateRedeCena = preload("res://Scripts/EfeitoCombate.gd")
 const IndicadorDanoRedeCena = preload("res://Scripts/IndicadorDano.gd")
+const DURACAO_COMBO := 3.0
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
@@ -117,6 +118,8 @@ var texto_aguardando_morte: Label
 var painel_morte_local_exibido := false
 var preservar_conexao_ao_sair := false
 var disparos_visuais_rede: Dictionary = {}
+var tempo_combo_restante := 0.0
+var combo_observado := 0
 
 
 func _ready() -> void:
@@ -232,7 +235,7 @@ func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> v
 	if not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
-	if id <= 1 or jogadores_rede.has(id):
+	if id <= 1 or is_instance_valid(_obter_jogador_rede(id)):
 		return
 	_configurar_player_host.rpc_id(
 		id,
@@ -311,13 +314,13 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	var caminho := str(dados.get("cena", "res://Entities/fireball.tscn"))
 	if caminho != "res://Entities/fireball.tscn":
 		return
+	var id_disparo := str(dados.get("id_disparo", ""))
+	if id_disparo.is_empty() or is_instance_valid(_obter_disparo_visual(id_disparo)):
+		return
 	var cena := load(caminho) as PackedScene
 	if not cena:
 		return
 	var projetil := cena.instantiate() as Area2D
-	var id_disparo := str(dados.get("id_disparo", ""))
-	if id_disparo.is_empty() or disparos_visuais_rede.has(id_disparo):
-		return
 	projetil.name = "TiroVisual_%s" % id_disparo.replace(":", "_")
 	projetil.set_meta("apenas_visual_rede", true)
 	projetil.set_meta("id_disparo_rede", id_disparo)
@@ -327,6 +330,7 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	projetil.monitorable = false
 	add_child(projetil, true)
 	disparos_visuais_rede[id_disparo] = projetil
+	projetil.tree_exiting.connect(_remover_referencia_disparo.bind(id_disparo))
 	projetil.global_position = Vector2(dados.get("posicao", Vector2.ZERO))
 	projetil.global_rotation = float(dados.get("rotacao", 0.0))
 	projetil.scale = Vector2(dados.get("escala", Vector2.ONE))
@@ -334,7 +338,7 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	projetil.set("tempo_vida", clampf(float(dados.get("tempo_vida", 5.0)), 0.05, 15.0))
 	projetil.set("eh_fragmento", bool(dados.get("fragmento", false)))
 	projetil.set("eh_critico", bool(dados.get("critico", false)))
-	projetil.set("dono_player", jogadores_rede.get(int(dados.get("peer_id", 0))))
+	projetil.set("dono_player", _obter_jogador_rede(int(dados.get("peer_id", 0))))
 	if bool(dados.get("fragmento", false)):
 		var visual_fragmento := projetil.get_node_or_null("Polygon2D") as Polygon2D
 		var luz_fragmento := projetil.get_node_or_null("PointLight2D") as PointLight2D
@@ -387,7 +391,7 @@ func _receber_estado_disparo(dados: Dictionary) -> void:
 
 func _aplicar_estado_disparo_visual(dados: Dictionary) -> void:
 	var id_disparo := str(dados.get("id_disparo", ""))
-	var projetil := disparos_visuais_rede.get(id_disparo) as Node2D
+	var projetil := _obter_disparo_visual(id_disparo)
 	if not is_instance_valid(projetil):
 		return
 	if projetil.has_method("aplicar_estado_visual_rede"):
@@ -434,10 +438,31 @@ func _receber_fim_disparo(dados: Dictionary) -> void:
 
 
 func _finalizar_disparo_visual(id_disparo: String) -> void:
-	var projetil := disparos_visuais_rede.get(id_disparo) as Node
+	var candidato: Variant = disparos_visuais_rede.get(id_disparo)
 	disparos_visuais_rede.erase(id_disparo)
-	if is_instance_valid(projetil):
+	if is_instance_valid(candidato) and candidato is Node:
+		var projetil := candidato as Node
 		projetil.queue_free()
+
+
+func _obter_disparo_visual(id_disparo: String) -> Node2D:
+	var candidato: Variant = disparos_visuais_rede.get(id_disparo)
+	if not is_instance_valid(candidato) or not candidato is Node2D:
+		disparos_visuais_rede.erase(id_disparo)
+		return null
+	return candidato as Node2D
+
+
+func _remover_referencia_disparo(id_disparo: String) -> void:
+	disparos_visuais_rede.erase(id_disparo)
+
+
+func _obter_jogador_rede(id: int) -> Player:
+	var candidato: Variant = jogadores_rede.get(id)
+	if not is_instance_valid(candidato) or not candidato is Player:
+		jogadores_rede.erase(id)
+		return null
+	return candidato as Player
 
 
 func replicar_habilidade_player(dados: Dictionary) -> void:
@@ -475,7 +500,7 @@ func _receber_habilidade_visual(dados: Dictionary) -> void:
 
 func _criar_habilidade_visual_rede(dados: Dictionary) -> void:
 	var id := int(dados.get("peer_id", 0))
-	var alvo := jogadores_rede.get(id) as Player
+	var alvo := _obter_jogador_rede(id)
 	if not is_instance_valid(alvo):
 		return
 	var cor := Color(dados.get("cor", Color(0.55, 0.92, 1.0)))
@@ -535,7 +560,7 @@ func _aplicar_loadout_rede(dados: Dictionary) -> void:
 	var id := int(dados.get("peer_id", 0))
 	if id == Rede.peer_local():
 		return
-	var alvo := jogadores_rede.get(id) as Player
+	var alvo := _obter_jogador_rede(id)
 	var configuracao_variant: Variant = dados.get("configuracao", {})
 	if is_instance_valid(alvo) and configuracao_variant is Dictionary:
 		alvo.aplicar_estado_loadout_rede(configuracao_variant)
@@ -579,6 +604,12 @@ func _criar_feedback_visual_rede(dados: Dictionary) -> void:
 	var cor := Color(dados.get("cor", Color.WHITE))
 	var semente := int(dados.get("semente", 1))
 	match classe:
+		&"hitflash_inimigo":
+			var caminho_alvo := NodePath(str(dados.get("alvo", "")))
+			var alvo := get_node_or_null(caminho_alvo) as InimigoBase
+			if is_instance_valid(alvo) and not alvo.is_queued_for_deletion():
+				alvo.set_meta("hitflash_rede_recebido", true)
+				alvo.reproduzir_hitflash_rede()
 		&"efeito_combate":
 			var tipo_efeito := clampi(int(dados.get("tipo", 0)), 0, EfeitoCombate.Tipo.size() - 1)
 			var intensidade := clampf(float(dados.get("intensidade", 1.0)), 0.2, 4.0)
@@ -633,7 +664,7 @@ func _criar_feedback_visual_rede(dados: Dictionary) -> void:
 func _vincular_jogador_local() -> void:
 	if not Rede.modo_multiplayer:
 		return
-	var local := jogadores_rede.get(Rede.peer_local()) as Player
+	var local := _obter_jogador_rede(Rede.peer_local())
 	if not is_instance_valid(local):
 		return
 	player = local
@@ -670,13 +701,15 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	_processar_combo(delta)
 	if Rede.modo_multiplayer:
+		_atualizar_hud_boss_cliente()
 		_atualizar_estado_morte_multiplayer()
 	if game_over or escolha_setor_ativa:
 		return
 	atualizar_pontos(delta)
 	if Rede.modo_multiplayer and not multiplayer.is_server():
-		if not jogadores_rede.has(Rede.peer_local()):
+		if not is_instance_valid(_obter_jogador_rede(Rede.peer_local())):
 			tempo_nova_solicitacao_rede -= delta
 			if tempo_nova_solicitacao_rede <= 0.0:
 				_enviar_solicitacao_entrada()
@@ -706,6 +739,77 @@ func _process(delta: float) -> void:
 		timer = calcular_tempo_spawn()
 
 
+func _atualizar_hud_boss_cliente() -> void:
+	if not Rede.modo_multiplayer or multiplayer.is_server():
+		return
+	var encontrado: InimigoBase
+	for candidato in get_tree().get_nodes_in_group("boss"):
+		if candidato is InimigoBase and is_instance_valid(candidato) and not candidato.is_queued_for_deletion():
+			encontrado = candidato as InimigoBase
+			break
+	if not is_instance_valid(encontrado):
+		boss_ativo = null
+		if is_instance_valid(boss_hud):
+			boss_hud.queue_free()
+		boss_hud = null
+		return
+	if boss_ativo != encontrado or not is_instance_valid(boss_hud):
+		boss_ativo = encontrado
+		boss_atual_id = _identificar_boss_rede(encontrado)
+		setor_atual = _identificar_setor_do_boss(boss_atual_id)
+		criar_hud_boss()
+		_on_boss_fase_alterada((encontrado as BossMensal).fase if encontrado is BossMensal else 1)
+		if encontrado.has_method("obter_subtitulo_boss"):
+			_on_boss_subtitulo_alterado(str(encontrado.call("obter_subtitulo_boss")))
+	_on_boss_vida_alterada(encontrado.Vida, maxf(encontrado.VidaMaxima, encontrado.Vida))
+
+
+func _identificar_boss_rede(alvo: InimigoBase) -> StringName:
+	for id in BOSSES:
+		var cena := BOSSES[id] as PackedScene
+		if is_instance_valid(cena) and cena.resource_path == alvo.scene_file_path:
+			return StringName(id)
+	return &"pet0"
+
+
+func _identificar_setor_do_boss(id_boss: StringName) -> StringName:
+	for id_setor in DadosSetores.DADOS:
+		if StringName(DadosSetores.DADOS[id_setor].get("boss", &"")) == id_boss:
+			return StringName(id_setor)
+	return setor_atual
+
+
+func _processar_combo(delta: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
+	if Global.Combo != combo_observado:
+		if Global.Combo > combo_observado:
+			tempo_combo_restante = DURACAO_COMBO
+		combo_observado = maxi(Global.Combo, 0)
+		if combo_observado == 0:
+			tempo_combo_restante = 0.0
+		_publicar_combo_rede()
+	if combo_observado <= 0:
+		return
+	tempo_combo_restante = maxf(tempo_combo_restante - delta, 0.0)
+	if tempo_combo_restante <= 0.0:
+		Global.Combo = 0
+		combo_observado = 0
+		_publicar_combo_rede()
+
+
+func _publicar_combo_rede() -> void:
+	if Rede.esta_conectado() and multiplayer.is_server():
+		_receber_combo_rede.rpc(Global.Combo, tempo_combo_restante)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_combo_rede(valor: int, restante: float) -> void:
+	Global.Combo = maxi(valor, 0)
+	combo_observado = Global.Combo
+	tempo_combo_restante = clampf(restante, 0.0, DURACAO_COMBO)
+
+
 func _on_player_morreu(jogador: Player) -> void:
 	if not Rede.modo_multiplayer or jogador.peer_id_dono != Rede.peer_local():
 		return
@@ -721,7 +825,7 @@ func _notificar_morte_ao_host() -> void:
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not jogadores_rede.has(remetente):
 		return
-	var jogador := jogadores_rede[remetente] as Player
+	var jogador := _obter_jogador_rede(remetente)
 	if is_instance_valid(jogador):
 		jogador.vivo = false
 		jogador.vida = 0.0

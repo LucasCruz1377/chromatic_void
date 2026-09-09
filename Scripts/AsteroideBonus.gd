@@ -36,35 +36,45 @@ func Mover(delta: float) -> void:
 
 
 func conceder_recompensa() -> void:
-	if not is_instance_valid(player):
+	var jogadores := get_tree().get_nodes_in_group("player")
+	if jogadores.is_empty():
 		return
-
-	var cura_calculada := calcular_cura()
-	var xp_calculado := calcular_xp()
-	var vida_antes := float(player.get("vida"))
-	if player.has_method("curar"):
-		player.curar(cura_calculada)
-	if player.has_method("ganhar_xp"):
-		player.ganhar_xp(xp_calculado)
-	var cura_recebida := maxf(float(player.get("vida")) - vida_antes, 0.0)
+	var xp_calculado := 0.0
+	var maior_cura := 0.0
+	for jogador in jogadores:
+		if not is_instance_valid(jogador) or jogador.get("vivo") == false:
+			continue
+		var cura_calculada := calcular_cura(jogador)
+		xp_calculado = maxf(xp_calculado, calcular_xp(jogador))
+		maior_cura = maxf(maior_cura, cura_calculada)
+		if jogador.has_method("conceder_cura_rede"):
+			jogador.call("conceder_cura_rede", cura_calculada)
+		elif jogador.has_method("curar"):
+			jogador.call("curar", cura_calculada)
+		if jogador.has_method("conceder_xp_rede"):
+			jogador.call("conceder_xp_rede", calcular_xp(jogador))
+		elif jogador.has_method("ganhar_xp"):
+			jogador.call("ganhar_xp", calcular_xp(jogador))
 	mostrar_recompensa(
-		"+%d VIDA  •  +%d XP" % [roundi(cura_recebida), roundi(xp_calculado)],
+		"EQUIPE: +%d VIDA  •  +%d XP" % [roundi(maior_cura), roundi(xp_calculado)],
 		Color(0.82, 0.86, 0.95, 1.0)
 	)
 
 
-func calcular_cura() -> float:
+func calcular_cura(alvo: Node = player) -> float:
 	var nivel_blindagem := 0
-	var niveis = player.get("niveis_upgrades") if is_instance_valid(player) else null
+	var niveis = alvo.get("niveis_upgrades") if is_instance_valid(alvo) else null
+	if niveis is Dictionary and niveis.is_empty() and alvo.get("niveis_upgrades_rede") is Dictionary:
+		niveis = alvo.get("niveis_upgrades_rede")
 	if niveis is Dictionary:
 		nivel_blindagem = int(niveis.get(&"blindagem", 0))
 	return cura_base + cura_por_nivel_blindagem * float(nivel_blindagem)
 
 
-func calcular_xp() -> float:
+func calcular_xp(alvo: Node = player) -> float:
 	var nivel_player := 1
-	if is_instance_valid(player):
-		var nivel = player.get("nivel_atual")
+	if is_instance_valid(alvo):
+		var nivel = alvo.get("nivel_atual")
 		if nivel != null:
 			nivel_player = maxi(int(nivel), 1)
 	return xp_base + xp_por_nivel_player * float(nivel_player - 1)

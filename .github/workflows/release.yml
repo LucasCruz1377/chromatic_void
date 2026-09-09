@@ -120,6 +120,28 @@ jobs:
               "res://$teste"
           done
 
+      - name: Validar partida host e cliente
+        shell: bash
+        run: |
+          set -euo pipefail
+          pasta_logs="$(mktemp -d)"
+          godot --headless --audio-driver Dummy --path . \
+            Tests/lobby_peer_integration.tscn -- --lobby-role=host \
+            >"$pasta_logs/host.log" 2>&1 &
+          pid_host=$!
+          godot --headless --audio-driver Dummy --path . \
+            Tests/lobby_peer_integration.tscn -- --lobby-role=client \
+            >"$pasta_logs/client.log" 2>&1 &
+          pid_client=$!
+          status_host=0
+          status_client=0
+          wait "$pid_host" || status_host=$?
+          wait "$pid_client" || status_client=$?
+          cat "$pasta_logs/host.log"
+          cat "$pasta_logs/client.log"
+          test "$status_host" -eq 0
+          test "$status_client" -eq 0
+
 
   # ==========================================================
   # CRIAR UPDATER WINDOWS
@@ -716,4 +738,3 @@ jobs:
             --verify-tag \
             --prerelease \
             --latest=false
-

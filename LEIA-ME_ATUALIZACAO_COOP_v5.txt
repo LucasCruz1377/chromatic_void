@@ -1,0 +1,33 @@
+CHROMATIC VOID — PACOTE CUMULATIVO COOP v5
+
+COMO APLICAR
+1. Faça backup da pasta atual do projeto.
+2. Extraia este ZIP na raiz do repositório.
+3. Confirme a substituição de todos os arquivos existentes.
+4. Não apague seus segredos/keystores locais: eles não fazem parte do pacote.
+5. Importe o projeto com Godot 4.7 antes de criar a nova tag/release.
+
+CORREÇÕES DESTA REVISÃO
+- Flash, número de dano e feedback de acerto sincronizados para o client.
+- Partículas de morte preservam a cor do inimigo nos dois peers.
+- Combo passou a ser controlado pela batalha/host usando segundos, não frames.
+- Ativar habilidades não zera mais o combo em singleplayer ou coop.
+- Descrição da loja reserva espaço para o slider e quebra o texto sem recorte.
+- Botão Equipar tem altura mínima própria e não depende de uma moldura cortada.
+- Dano pós-PET-0 sobe 24% por índice de setor; movimento sobe 5%.
+- Cadência dos inimigos setoriais cresce sem intervalo menor que 0,5 segundo.
+- Fita Violeta está 35% mais rápida, deixa rastro por 1,1 s e investe mais rápido.
+- Preset iOS atualizado para versão mínima 14.0, exigida pelo renderer Metal.
+- CI e CD agora executam uma partida host/client além dos smoke tests.
+
+VALIDAÇÃO EXECUTADA
+- Importação headless Godot 4.7: OK, sem parse errors.
+- 24 smoke tests: OK.
+- Integração com dois processos (host/client): OK nos dois peers.
+- Validadores de referências, catálogo, updater, loja e iOS: OK.
+- YAML dos workflows CI/CD: OK.
+
+OBSERVAÇÃO SOBRE EXPORTAÇÃO LOCAL
+O ambiente de montagem não contém os templates de exportação do Godot, Android
+SDK/JDK ou credenciais Apple. Por isso os binários não foram gerados localmente.
+Os presets foram validados e o CI baixa os templates oficiais durante a execução.

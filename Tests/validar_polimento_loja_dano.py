@@ -20,12 +20,16 @@ CAMERA = (ROOT / "Scripts/camera.gd").read_text(encoding="utf-8")
 GLOBAL = (ROOT / "Scripts/Global.gd").read_text(encoding="utf-8")
 SETORES = (ROOT / "Scripts/SectorData.gd").read_text(encoding="utf-8")
 BATALHA = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
+CATALOGO = (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
 
 assert '"PERSONALIZAÇÃO"' in SHOP
 assert 'botao_acao.clip_text = true' in SHOP
 assert 'func _aplicar_layout_responsivo(' in SHOP
 assert 'grade.columns = colunas' in SHOP
 assert 'conteudo_principal.vertical = false' in SHOP
+assert '"preco": 15000' in SHOP
+assert 'detalhe_contexto.custom_minimum_size = Vector2(0, 78)' in SHOP
+assert 'detalhe_recarga.autowrap_mode' in SHOP
 assert 'InputEventScreenDrag' in SHOP
 assert '"DESEQUIPAR"' in SHOP
 assert 'func _on_acao_personalizacao(item: Dictionary)' in SHOP
@@ -106,7 +110,21 @@ for tipo in ['&"combo"', '&"pontos"', '&"sem_dano"']:
     assert tipo in GLOBAL, f"conquista ausente: {tipo}"
 assert 'MorteBossCena.criar' in ENEMY
 assert 'calcular_fator_xp_combo' in ENEMY
-assert 'Dano *= 1.0 + 0.14 * indice_setor_dificuldade' in ENEMY
+assert 'Dano *= 1.0 + 0.24 * indice_setor_dificuldade' in ENEMY
+assert 'return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)' in ENEMY
+assert '"cor": cor_particulas' in ENEMY
+assert '&"hitflash_inimigo"' in BATALHA
+assert '_atualizar_hud_boss_cliente()' in BATALHA
+assert 'conceder_cura_rede' in PLAYER
+for id_item, preco in [
+    ("p03_renascimento", 22000),
+    ("p08_presente_misterioso", 20000),
+    ("p10_laco_uniao", 18000),
+    ("p14_tempestade_verde", 18000),
+    ("a03_alcateia_misseis", 28000),
+]:
+    linha = next(linha for linha in CATALOGO.splitlines() if f'&"{id_item}"' in linha and '_item(' in linha)
+    assert f", {preco}, Color" in linha, f"preço incorreto: {id_item}"
 assert 'const MAX_ENEMIES := 10' in BATALHA
 assert 'const MIN_ENEMIES := 2' in BATALHA
 assert '&"sinal_da_estrela"' in GLOBAL

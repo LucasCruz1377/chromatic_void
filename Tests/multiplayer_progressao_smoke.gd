@@ -24,6 +24,8 @@ func _ready() -> void:
 	add_child(menu)
 	await get_tree().process_frame
 	verificar(menu.get("campo_nickname") is LineEdit, "tela inicial não criou o campo de nickname")
+	var campo_nickname := menu.get("campo_nickname") as LineEdit
+	verificar(campo_nickname.virtual_keyboard_enabled, "nickname não habilita teclado virtual")
 	menu.call("_mostrar_escolha_modo")
 	var conteudo := menu.get("conteudo_fluxo") as VBoxContainer
 	var textos: Array[String] = []
@@ -31,6 +33,10 @@ func _ready() -> void:
 		if filho is Button:
 			textos.append((filho as Button).text)
 	verificar(textos.size() >= 2 and textos[0] == "JOGAR SOLO" and textos[1] == "MULTIPLAYER", "Start não mostra Solo acima de Multiplayer")
+	await get_tree().process_frame
+	menu.call("_mostrar_entrada_ip")
+	var campo_ip := menu.get("campo_ip") as LineEdit
+	verificar(is_instance_valid(campo_ip) and campo_ip.virtual_keyboard_enabled, "IP não habilita teclado virtual")
 	menu.queue_free()
 	await get_tree().process_frame
 
@@ -60,6 +66,18 @@ func _ready() -> void:
 	batalha._on_jogador_rede_desconectado(2)
 	var aviso_rede := batalha.get_node("GUI/AvisoRede") as Label
 	verificar(aviso_rede.visible and "DESCONECTOU" in aviso_rede.text, "desconexão não mostra aviso durante a partida")
+	var disparo_liberado := Node2D.new()
+	batalha.add_child(disparo_liberado)
+	batalha.disparos_visuais_rede["2:liberado"] = disparo_liberado
+	disparo_liberado.queue_free()
+	await get_tree().process_frame
+	batalha._aplicar_estado_disparo_visual({
+		"id_disparo": "2:liberado", "posicao": Vector2.ONE,
+	})
+	verificar(
+		not batalha.disparos_visuais_rede.has("2:liberado"),
+		"referência de ataque liberado permaneceu no cache de rede"
+	)
 	var jogador := batalha.get_node("Player") as Player
 	var menu_upgrades := batalha.get_node("GUI/TelaUpgrades") as Control
 	var pontos_iniciais := jogador.pontos_upgrade_pendentes

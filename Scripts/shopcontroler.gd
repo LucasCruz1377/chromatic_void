@@ -45,7 +45,7 @@ const CATALOGO := [
 	},
 	{
 		"caminho": "res://Habilidades/habilidadeFrenesiCarnavalesco.tres",
-		"preco": 5200,
+		"preco": 15000,
 		"cor": Color(1.0, 0.24, 0.76, 1.0),
 		"raridade": "FEV • CARNAVAL",
 		"stats": [4, 4, 2]
@@ -121,6 +121,7 @@ var botao_acao: Button
 var mensagem: Label
 var rolagem_grade: ScrollContainer
 var rolagem_detalhes: ScrollContainer
+var coluna_detalhes: VBoxContainer
 var rolagem_pagina: ScrollContainer
 var botoes_habilidades: Array[Button] = []
 var dica_controles: HBoxContainer
@@ -650,11 +651,12 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	rolagem_detalhes.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	moldura_detalhes.add_child(rolagem_detalhes)
 
-	var coluna := VBoxContainer.new()
-	coluna.custom_minimum_size = Vector2.ZERO
-	coluna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	coluna.add_theme_constant_override("separation", 5)
-	rolagem_detalhes.add_child(coluna)
+	coluna_detalhes = VBoxContainer.new()
+	coluna_detalhes.custom_minimum_size = Vector2.ZERO
+	coluna_detalhes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	coluna_detalhes.add_theme_constant_override("separation", 5)
+	rolagem_detalhes.add_child(coluna_detalhes)
+	var coluna := coluna_detalhes
 
 	detalhe_tipo = Label.new()
 	detalhe_tipo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -675,13 +677,16 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	detalhe_icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 	var linha_icone := HBoxContainer.new()
+	linha_icone.custom_minimum_size = Vector2.ZERO
+	linha_icone.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	linha_icone.alignment = BoxContainer.ALIGNMENT_CENTER
 	linha_icone.add_theme_constant_override("separation", 9)
 	coluna.add_child(linha_icone)
 	linha_icone.add_child(detalhe_icone)
 
 	detalhe_contexto = Label.new()
-	detalhe_contexto.custom_minimum_size = Vector2(150, 78)
+	detalhe_contexto.custom_minimum_size = Vector2(0, 78)
+	detalhe_contexto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detalhe_contexto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalhe_contexto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalhe_contexto.add_theme_color_override("font_color", Color(0.70, 0.82, 1.0))
@@ -689,16 +694,21 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	linha_icone.add_child(detalhe_contexto)
 
 	detalhe_descricao = Label.new()
-	detalhe_descricao.custom_minimum_size = Vector2(0, 72)
+	detalhe_descricao.custom_minimum_size = Vector2(0, 64)
 	detalhe_descricao.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalhe_descricao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalhe_descricao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalhe_descricao.add_theme_color_override("font_color", Color(0.72, 0.76, 0.88))
-	aplicar_fonte(detalhe_descricao, 11)
+	detalhe_descricao.clip_text = false
+	detalhe_descricao.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	aplicar_fonte(detalhe_descricao, 10)
 	coluna.add_child(detalhe_descricao)
 
 	detalhe_recarga = Label.new()
 	detalhe_recarga.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalhe_recarga.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalhe_recarga.custom_minimum_size.x = 0.0
+	detalhe_recarga.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detalhe_recarga.add_theme_color_override("font_color", Color(0.42, 0.82, 1.0))
 	aplicar_fonte(detalhe_recarga, 10)
 	coluna.add_child(detalhe_recarga)
@@ -717,14 +727,17 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	preco_box.add_child(moeda)
 
 	detalhe_preco = Label.new()
+	detalhe_preco.custom_minimum_size.x = 0.0
+	detalhe_preco.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	detalhe_preco.add_theme_color_override("font_color", Color(0.75, 0.70, 1.0))
 	aplicar_fonte(detalhe_preco, 16)
 	preco_box.add_child(detalhe_preco)
 
 	botao_acao = Button.new()
-	botao_acao.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	botao_acao.focus_mode = Control.FOCUS_ALL
 	botao_acao.clip_text = true
+	botao_acao.custom_minimum_size = Vector2(0, 44)
+	botao_acao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	estilizar_botao(
 		botao_acao,
 		Color(0.05, 0.18, 0.26),
@@ -732,12 +745,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	)
 	aplicar_fonte(botao_acao, 13)
 	botao_acao.pressed.connect(_on_acao_pressed)
-	var moldura_botao := Control.new()
-	moldura_botao.custom_minimum_size = Vector2(0, 42)
-	moldura_botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	moldura_botao.clip_contents = true
-	coluna.add_child(moldura_botao)
-	moldura_botao.add_child(botao_acao)
+	coluna.add_child(botao_acao)
 
 
 func construir_filtros_personalizacao(pai: VBoxContainer) -> void:
@@ -1545,6 +1553,10 @@ func _aplicar_layout_responsivo(
 	_configurar_barra_vertical(rolagem_pagina.get_v_scroll_bar(), mobile, 12.0)
 	_configurar_barra_vertical(rolagem_grade.get_v_scroll_bar(), mobile, 22.0 if mobile else 12.0)
 	_configurar_barra_vertical(rolagem_detalhes.get_v_scroll_bar(), mobile, 10.0 if mobile else 8.0)
+	if is_instance_valid(coluna_detalhes):
+		# O scrollbar já reserva sua faixa. Nenhuma margem adicional nem texto
+		# sem quebra deve alargar a coluna além da área realmente visível.
+		coluna_detalhes.custom_minimum_size.x = 0.0
 	var colunas := 3
 	if largura_esquerda < 570.0:
 		colunas = 2

@@ -68,6 +68,19 @@ func _ready() -> void:
 	if not await _esperar_vida_inimigo(vida_esperada):
 		_falhar("dano do cliente não chegou ao host ou a vida não voltou sincronizada")
 		return
+	if papel == "client" and not await _esperar_hitflash_remoto(inimigo_teste):
+		_falhar("flash visual de acerto não chegou ao client")
+		return
+	if papel == "host":
+		Global.Combo = 5
+	if not await _esperar_combo_rede(5):
+		_falhar("combo autoritativo não foi sincronizado")
+		return
+	local.ao_ativar_habilidade()
+	await get_tree().create_timer(0.3).timeout
+	if Global.Combo != 5:
+		_falhar("habilidade ativa zerou o combo no coop")
+		return
 	local.criar_projetil(local.rotation, 1.0)
 	if not await _esperar_visual_rede("TiroVisual_"):
 		_falhar("tiro real do outro Player não apareceu visualmente")
@@ -106,6 +119,25 @@ func _ready() -> void:
 	if not await _esperar_feedback_visual_rede():
 		_falhar("feedback/partícula descartável não foi replicado")
 		return
+	batalha.replicar_feedback_visual({
+		"classe": &"particula_cena",
+		"cena": "res://FX/ParticulasMorteInimigo.tscn",
+		"posicao": Vector2(480.0, 220.0),
+		"rotacao": 0.0,
+		"cor": Color(0.82, 0.24, 0.68),
+	})
+	if not await _esperar_particula_colorida():
+		_falhar("partícula do outro peer perdeu sua cor e ficou branca")
+		return
+	# Estressa a corrida que acontece em aparelhos com latências diferentes:
+	# o fim confiável pode chegar antes do último pacote de posição não confiável.
+	for indice in range(16):
+		local.criar_projetil(
+			local.rotation + float(indice) * 0.025, 0.1, true, null, 0.0,
+			&"beam", Color(0.3, 0.9, 1.0),
+			{"tempo_vida": 0.08, "velocidade": 0.35}
+		)
+	await get_tree().create_timer(0.8).timeout
 	local.niveis_upgrades[&"dano_calibrado" if papel == "host" else &"cadencia"] = 1
 	local.call("_sincronizar_loadout_rede")
 	if not await _esperar_upgrades_loadout_remoto():
@@ -127,6 +159,35 @@ func _ready() -> void:
 		return
 	await get_tree().process_frame
 	menu.call("fechar_menu")
+	local.vida = 20.0
+	local.invencibilidade = true
+	local.invencibilidade_cd = 12.0
+	await get_tree().create_timer(0.5).timeout
+	if papel == "host":
+		var meteoro := (load("res://Entities/AsteroideBonus.tscn") as PackedScene).instantiate() as InimigoBase
+		batalha.add_child(meteoro, true)
+		meteoro.global_position = Vector2(480.0, 270.0)
+		await get_tree().process_frame
+		meteoro.conceder_recompensa()
+		meteoro.queue_free()
+	if not await _esperar_cura_meteoro(local):
+		_falhar("meteoro bônus não curou os dois jogadores")
+		return
+	if papel == "host":
+		batalha.limpar_inimigos_sem_recompensa()
+		batalha._criar_boss(&"no_ametista", 2, true)
+		await get_tree().process_frame
+		if is_instance_valid(batalha.boss_ativo):
+			batalha.boss_ativo.set_physics_process(false)
+			batalha.boss_ativo.Vida = maxf(batalha.boss_ativo.VidaMaxima - 37.0, 1.0)
+			batalha.boss_ativo.vida_alterada.emit(
+				batalha.boss_ativo.Vida, batalha.boss_ativo.VidaMaxima
+			)
+	if not await _esperar_hud_boss_sincronizado():
+		_falhar("barra de vida do boss não apareceu sincronizada no client")
+		return
+	local.invencibilidade = false
+	local.invencibilidade_cd = 0.0
 	if papel == "client":
 		local.morrer()
 	if not await _esperar_morte_individual(local):
@@ -161,6 +222,70 @@ func _esperar_vida_inimigo(vida_maxima_esperada: float) -> bool:
 		for inimigo in get_tree().get_nodes_in_group("inimigo"):
 			if inimigo is InimigoBase and inimigo.Vida <= vida_maxima_esperada:
 				return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+
+func _esperar_hitflash_remoto(inimigo: InimigoBase) -> bool:
+	var limite := 4.0
+	while limite > 0.0:
+		if is_instance_valid(inimigo) and inimigo.has_meta("hitflash_rede_recebido"):
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+
+func _esperar_combo_rede(valor: int) -> bool:
+	var limite := 4.0
+	while limite > 0.0:
+		if Global.Combo == valor:
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+
+func _esperar_cura_meteoro(jogador: Player) -> bool:
+	var limite := 5.0
+	while limite > 0.0:
+		if is_instance_valid(jogador) and jogador.vida > 20.0:
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+
+func _esperar_hud_boss_sincronizado() -> bool:
+	var limite := 6.0
+	while limite > 0.0:
+		var boss: InimigoBase
+		for candidato in get_tree().get_nodes_in_group("boss"):
+			if candidato is InimigoBase:
+				boss = candidato as InimigoBase
+				break
+		if (
+			is_instance_valid(boss)
+			and is_instance_valid(batalha.boss_hud)
+			and batalha.boss_hud.visible
+			and is_instance_valid(batalha.boss_vida)
+			and boss.Vida < boss.VidaMaxima
+			and is_equal_approx(float(batalha.boss_vida.value), boss.Vida)
+		):
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+
+func _esperar_particula_colorida() -> bool:
+	var limite := 4.0
+	while limite > 0.0:
+		for filho in batalha.get_children():
+			if filho.has_meta("efeito_visual_rede") and filho is GPUParticles2D:
+				if (filho as CanvasItem).modulate != Color.WHITE:
+					return true
 		await get_tree().create_timer(0.05).timeout
 		limite -= 0.05
 	return false

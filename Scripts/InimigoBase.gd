@@ -74,8 +74,8 @@ func _ready() -> void:
 				0
 			)
 		VidaMaxima *= 1.0 + 0.18 * indice_setor_dificuldade
-		Dano *= 1.0 + 0.14 * indice_setor_dificuldade
-		Velocidade *= 1.0 + 0.025 * indice_setor_dificuldade
+		Dano *= 1.0 + 0.24 * indice_setor_dificuldade
+		Velocidade *= 1.0 + 0.05 * indice_setor_dificuldade
 
 	escala_base_impacto = scale
 	modulacao_base = Color(
@@ -278,6 +278,34 @@ func obter_vida_maxima_atual() -> float:
 
 
 func reproduzir_impacto(dano_exibido: float = 0.0) -> void:
+	_reproduzir_hitflash_local()
+	var cena := _obter_cena_combate()
+	if Rede.esta_conectado() and multiplayer.is_server() and is_instance_valid(cena) and cena.has_method("replicar_feedback_visual"):
+		cena.call("replicar_feedback_visual", {
+			"classe": &"hitflash_inimigo",
+			"alvo": str(cena.get_path_to(self)),
+		})
+
+	if is_instance_valid(cena):
+		EfeitoCombateCena.criar(
+			cena,
+			global_position,
+			EfeitoCombate.Tipo.ACERTO,
+			obter_cor_feedback(),
+			clampf(0.72 + sqrt(maxf(VidaMaxima, 1.0)) * 0.035, 0.8, 1.45)
+		)
+		if dano_exibido > 0.0:
+			IndicadorDanoCena.criar(
+				cena, global_position, dano_exibido, Color(1.0, 0.82, 0.24) if bool(get_meta("impacto_critico", false)) else obter_cor_feedback(),
+				bool(get_meta("impacto_critico", false))
+			)
+
+
+func reproduzir_hitflash_rede() -> void:
+	_reproduzir_hitflash_local()
+
+
+func _reproduzir_hitflash_local() -> void:
 	if is_instance_valid(dmg_taken_audio):
 		dmg_taken_audio.pitch_scale = randf_range(0.92, 1.08)
 		dmg_taken_audio.play()
@@ -311,22 +339,6 @@ func reproduzir_impacto(dano_exibido: float = 0.0) -> void:
 		tween_impacto.chain().tween_property(
 			self, "scale", escala_base_impacto, 0.065
 		)
-
-	var cena := get_tree().current_scene
-	if is_instance_valid(cena):
-		EfeitoCombateCena.criar(
-			cena,
-			global_position,
-			EfeitoCombate.Tipo.ACERTO,
-			obter_cor_feedback(),
-			clampf(0.72 + sqrt(maxf(VidaMaxima, 1.0)) * 0.035, 0.8, 1.45)
-		)
-		if dano_exibido > 0.0:
-			IndicadorDanoCena.criar(
-				cena, global_position, dano_exibido, Color(1.0, 0.82, 0.24) if bool(get_meta("impacto_critico", false)) else obter_cor_feedback(),
-				bool(get_meta("impacto_critico", false))
-			)
-
 
 func normalizar_brilho_visual() -> void:
 	for node in find_children("*", "CanvasItem", true, false):
@@ -471,7 +483,7 @@ func criar_particulas_morte() -> void:
 	if not particulas_morte:
 		return
 
-	var cena := get_tree().current_scene
+	var cena := _obter_cena_combate()
 	if not is_instance_valid(cena):
 		return
 	var partes := particulas_morte.instantiate() as Node2D
@@ -479,6 +491,8 @@ func criar_particulas_morte() -> void:
 		return
 	partes.global_position = global_position
 	partes.global_rotation = global_rotation
+	var cor_particulas := obter_cor_feedback()
+	partes.modulate = cor_particulas
 	cena.add_child(partes)
 
 	if partes is GPUParticles2D:
@@ -490,8 +504,26 @@ func criar_particulas_morte() -> void:
 			"cena": particulas_morte.resource_path,
 			"posicao": global_position,
 			"rotacao": global_rotation,
-			"cor": Color.WHITE,
+			"cor": cor_particulas,
 		})
+
+
+func calcular_intervalo_ataque(valor_base: float) -> float:
+	if indice_setor_dificuldade <= 0:
+		return maxf(valor_base, 0.5)
+	return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)
+
+
+func _obter_cena_combate() -> Node:
+	# Testes, transições e MultiplayerSpawner podem manter a batalha abaixo da
+	# current_scene. Subir pela árvore garante que o evento saia do nó que tem
+	# os RPCs, tanto no jogo exportado quanto nas integrações host/client.
+	var cursor := get_parent()
+	while is_instance_valid(cursor):
+		if cursor.has_method("replicar_feedback_visual"):
+			return cursor
+		cursor = cursor.get_parent()
+	return get_tree().current_scene
 
 
 func conceder_recompensa() -> void:

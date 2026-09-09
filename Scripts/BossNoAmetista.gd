@@ -34,6 +34,18 @@ func Mover(delta: float) -> void:
 	multiplicador_dano_recebido = 1.2 if _proxima(alvo_amarra) < 0 else 0.28 + rompidas * 0.12
 
 
+func obter_velocidade_maxima() -> float:
+	var velocidade_base := super.obter_velocidade_maxima()
+	return velocidade_base * (1.32 if _sem_defesa() else 1.0)
+
+
+func processar_recuperacao(delta: float) -> void:
+	var estado_anterior := estado
+	super.processar_recuperacao(delta)
+	if estado_anterior == Estado.RECUPERANDO and estado == Estado.MOVENDO and _sem_defesa():
+		tempo_ataque = minf(tempo_ataque, 0.62)
+
+
 func escolher_ataque() -> int:
 	var opcoes: Array[int] = [0, 1]
 	if fase >= 2 or rompidas >= 1:
@@ -61,7 +73,7 @@ func executar_ruptura(indice: int) -> void:
 			_pulsos_de_libertacao()
 		_:
 			_espiral_viva()
-	iniciar_recuperacao(0.4)
+	iniciar_recuperacao(0.22 if _sem_defesa() else 0.4)
 
 
 func obter_posicao_satelite(_indice: int) -> Vector2:
@@ -100,7 +112,7 @@ func _lacos_perseguidores() -> void:
 	if not is_instance_valid(cena) or not is_instance_valid(player):
 		return
 	var base := global_position.angle_to_point(player.global_position)
-	var quantidade := 2 + mini(rompidas, 2)
+	var quantidade := 2 + mini(rompidas, 2) + (2 if _sem_defesa() else 0)
 	for indice in range(quantidade):
 		var abertura := (float(indice) - float(quantidade - 1) * 0.5) * 0.3
 		FaixaEnergia.criar(cena, {
@@ -110,9 +122,10 @@ func _lacos_perseguidores() -> void:
 			"comprimento": 1260.0,
 			"largura": 16.0 + rompidas * 1.8,
 			"cor": cor_secundaria,
-			"dano": Dano * 0.52,
+			"dano": Dano * (0.62 if _sem_defesa() else 0.52),
 			"atraso": indice * 0.21,
 			"aviso": 1.0,
+			"antecedencia_trava": 0.3,
 			"duracao": 0.42,
 			"alvo": player,
 			"dono": self,
@@ -227,6 +240,7 @@ func _reagir_amarra_rompida(indice: int) -> void:
 			"dano": Dano * 0.38,
 			"atraso": 0.2,
 			"aviso": 0.78,
+			"antecedencia_trava": 0.3,
 			"duracao": 0.34,
 			"alvo": player,
 			"dono": self,
@@ -240,6 +254,10 @@ func _proxima(inicio: int) -> int:
 		if amarras[indice] > 0.0:
 			return indice
 	return -1
+
+
+func _sem_defesa() -> bool:
+	return rompidas >= amarras.size() or _proxima(alvo_amarra) < 0
 
 
 func _posicao_amarra(indice: int) -> Vector2:

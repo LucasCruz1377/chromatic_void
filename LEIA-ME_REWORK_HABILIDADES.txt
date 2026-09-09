@@ -49,6 +49,9 @@ PRINCIPAIS ALTERAÇÕES
   individuais. O nickname de cada piloto usa a cor exata da própria nave.
 - Clones, guardiões e drones do Ovo possuem réplica visual segura no outro peer;
   somente a instância de autoridade dispara ou aplica efeitos de gameplay.
+- Corrigida a corrida de rede `Trying to cast a freed object`: tiros removidos,
+  jogadores desconectados e alvos de faixas de boss agora são validados antes
+  do cast e retirados imediatamente dos caches quando saem da árvore.
 - A desconexão exibe um aviso claro. A saída do cliente não encerra a partida do
   host; a perda do host é informada ao cliente com opção de voltar ao menu.
 - A morte de apenas um piloto não encerra o jogo: o sobrevivente continua e o
@@ -67,6 +70,8 @@ VALIDAÇÃO EXECUTADA
   da nave, correção contínua da posição dos ataques, partículas e ajudantes nos
   dois peers, upgrades próprios, XP compartilhado, menus individuais e
   continuidade após uma morte, sem parse/script errors.
+- O teste host/cliente também destrói 32 tiros de vida curta em sequência para
+  cobrir pacotes de posição que chegam depois do encerramento do projétil.
 - Validações Python de referências, iOS, updater, catálogo e loja: OK.
 - Export-pack Windows, Web, Android e iOS: OK.
 
