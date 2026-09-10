@@ -26,6 +26,12 @@ CANHÃO DO SOLSTÍCIO
 - Dano base alterado de 1,25 para 0,7 por projétil.
 - Acúmulo de gelo, lentidão, Nevasca e Abaixo de Zero foram preservados.
 
+HOTFIX v10.1
+- A validação de compra do Modelo O agora usa somente conquistas realmente
+  obtidas, impedindo sua compra antes de Sinal da Estrela.
+- O modo desenvolvedor continua podendo equipar todos os itens diretamente;
+  ele não converte mais uma conquista simulada em permissão de compra normal.
+
 SUBSTITUIÇÃO
 - Extraia o ZIP na raiz do projeto e confirme a substituição dos arquivos.
 - O pacote contém todas as alterações cumulativas anteriores.

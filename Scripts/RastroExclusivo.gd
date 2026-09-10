@@ -68,7 +68,7 @@ func _draw() -> void:
 		if tipo == &"spectrum":
 			for faixa in CORES_ARCO_IRIS.size():
 				var deslocamento := (float(faixa) - 3.0) * 2.25
-				var cor = CORES_ARCO_IRIS[faixa]
+				var cor := CORES_ARCO_IRIS[faixa]
 				cor.a = alpha * 0.88
 				draw_line(anterior + normal * deslocamento, atual + normal * deslocamento, cor, 3.2, true)
 		else:

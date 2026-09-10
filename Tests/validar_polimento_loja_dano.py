@@ -44,6 +44,7 @@ assert 'InputEventScreenDrag' in SHOP
 assert '"DESEQUIPAR"' in SHOP
 assert 'func _on_acao_personalizacao(item: Dictionary)' in SHOP
 assert 'func requisito_compra_atendido(item: Dictionary)' in SHOP
+assert 'requisito in Global.conquistas_desbloqueadas' in SHOP
 assert 'BLOQUEADO • CONQUISTA SECRETA' in SHOP
 assert '"personalizacao_nave": personalizacao_nave' in SHOP
 assert '"MODELOS"' in SHOP and '"CORES"' in SHOP and '"RASTROS"' in SHOP

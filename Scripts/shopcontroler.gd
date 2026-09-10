@@ -1417,7 +1417,10 @@ func _personalizacao_padrao(grupo: StringName) -> StringName:
 
 func requisito_compra_atendido(item: Dictionary) -> bool:
 	var requisito := StringName(item.get("requer_conquista", &""))
-	return requisito.is_empty() or Global.conquista_liberada(requisito)
+	# Esta consulta protege a compra normal e, por isso, deve considerar apenas
+	# conquistas realmente obtidas. O modo DEV continua liberando o catálogo por
+	# _item_generico_liberado(), sem transformar o requisito em uma compra válida.
+	return requisito.is_empty() or requisito in Global.conquistas_desbloqueadas
 
 
 static func tamanho_icone_item(id: StringName, detalhes := false) -> Vector2:
