@@ -676,21 +676,27 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	coluna.add_child(detalhe_nome)
 
 	detalhe_icone = TextureRect.new()
-	detalhe_icone.custom_minimum_size = Vector2(92, 92)
+	# Mantém a composição da v0.7.1: ícone e contexto lado a lado e a
+	# descrição ocupando toda a largura logo abaixo.
+	detalhe_icone.custom_minimum_size = Vector2(78, 78)
 	detalhe_icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	detalhe_icone.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	detalhe_icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
-	coluna.add_child(detalhe_icone)
+	var linha_icone := HBoxContainer.new()
+	linha_icone.alignment = BoxContainer.ALIGNMENT_CENTER
+	linha_icone.add_theme_constant_override("separation", 9)
+	coluna.add_child(linha_icone)
+	linha_icone.add_child(detalhe_icone)
 
 	detalhe_contexto = Label.new()
-	detalhe_contexto.custom_minimum_size = Vector2(0, 54)
+	detalhe_contexto.custom_minimum_size = Vector2(150, 78)
 	detalhe_contexto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalhe_contexto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalhe_contexto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalhe_contexto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalhe_contexto.add_theme_color_override("font_color", Color(0.70, 0.82, 1.0))
 	aplicar_fonte(detalhe_contexto, 8)
-	coluna.add_child(detalhe_contexto)
+	linha_icone.add_child(detalhe_contexto)
 
 	botao_site = Button.new()
 	botao_site.text = "VISITAR MONTHLY COLORS"
@@ -702,14 +708,14 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	coluna.add_child(botao_site)
 
 	detalhe_descricao = Label.new()
-	detalhe_descricao.custom_minimum_size = Vector2(0, 64)
+	detalhe_descricao.custom_minimum_size = Vector2(0, 72)
 	detalhe_descricao.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalhe_descricao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalhe_descricao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalhe_descricao.add_theme_color_override("font_color", Color(0.72, 0.76, 0.88))
 	detalhe_descricao.clip_text = false
 	detalhe_descricao.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-	aplicar_fonte(detalhe_descricao, 10)
+	aplicar_fonte(detalhe_descricao, 11)
 	coluna.add_child(detalhe_descricao)
 
 	detalhe_recarga = Label.new()
@@ -996,7 +1002,7 @@ func atualizar_detalhes() -> void:
 	var preco := int(dados["preco"])
 	var cor: Color = dados["cor"]
 	detalhe_stats.visible = true
-	detalhe_icone.custom_minimum_size = Vector2(92, 92)
+	detalhe_icone.custom_minimum_size = Vector2(78, 78)
 
 	detalhe_tipo.text = str(dados["raridade"])
 	detalhe_tipo.add_theme_color_override("font_color", cor)
@@ -1639,7 +1645,10 @@ func _ajustar_fonte_botao_acao() -> void:
 	# A fonte customizada é larga. Reduz somente o botão quando a frase de
 	# estado for longa, preservando o texto inteiro até nos painéis estreitos.
 	var largura_estimada_por_ponto := maxf(float(botao_acao.text.length()) * 0.62, 1.0)
-	var tamanho := clampi(floori(largura_disponivel / largura_estimada_por_ponto), 8, 13)
+	var tamanho_maximo := 10 if botao_acao.text.length() > 22 else 13
+	var tamanho := clampi(
+		floori(largura_disponivel / largura_estimada_por_ponto), 8, tamanho_maximo
+	)
 	botao_acao.add_theme_font_size_override("font_size", tamanho)
 
 

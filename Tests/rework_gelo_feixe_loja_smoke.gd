@@ -29,12 +29,18 @@ func testar_catalogo_e_upgrades() -> void:
 	verificar(str(DadosUpgrades.obter(&"solsticio_absorcao").get("nome", "")) == "ABAIXO DE ZERO", "melhoria Abaixo de Zero ausente")
 	verificar(int(DadosUpgrades.obter(&"perielio_potencia").get("max_nivel", 0)) == 3, "teto de dano do Periélio não tem três níveis")
 	verificar(str(DadosUpgrades.obter(&"perielio_infinito").get("raridade", "")) == "ULTRARRARA", "rota infinita não é ultrarrara")
+	var player_script := FileAccess.get_file_as_string("res://Scripts/player.gd")
+	verificar('rotation, 0.7, false, null, 0.0, &"ice_stack"' in player_script, "Canhão do Solstício não usa dano base 0,7")
 
 
 func testar_curva_feixe() -> void:
 	var jogador := Player.new()
 	jogador.tempo_uso_feixe_perielio = 0.0
 	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.1), "feixe não começa em 0,1 DPS")
+	jogador.tempo_uso_feixe_perielio = 0.49
+	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.1), "feixe aumenta antes de completar 0,5 segundo")
+	jogador.tempo_uso_feixe_perielio = 0.5
+	verificar(jogador.obter_dps_feixe_perielio() > 0.1, "feixe não aumenta no primeiro intervalo de 0,5 segundo")
 	jogador.tempo_uso_feixe_perielio = 10.0
 	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 5.0), "feixe base não chega a 5 DPS")
 	jogador.niveis_upgrades = {&"perielio_potencia": 3, &"perielio_resfriamento": 2}
@@ -65,7 +71,14 @@ func testar_loja() -> void:
 	var rolagem := loja.get("rolagem_detalhes") as ScrollContainer
 	var preco := loja.get("detalhe_preco") as Label
 	var acao := loja.get("botao_acao") as Button
+	var icone := loja.get("detalhe_icone") as TextureRect
+	var contexto := loja.get("detalhe_contexto") as Label
+	var descricao := loja.get("detalhe_descricao") as Label
 	verificar(is_instance_valid(preco) and is_instance_valid(acao), "preço ou botão de ação não foi criado")
+	verificar(icone.get_parent() == contexto.get_parent(), "ícone e contexto não usam a linha da v0.7.1")
+	verificar(icone.get_parent() is HBoxContainer, "composição de detalhes não restaurou a linha horizontal")
+	verificar(descricao.custom_minimum_size.y >= 72.0, "descrição perdeu a altura da v0.7.1")
+	verificar(descricao.get_theme_font_size("font_size") == 11, "descrição não usa a tipografia da v0.7.1")
 	verificar(not rolagem.is_ancestor_of(preco), "preço ainda está preso à rolagem da descrição")
 	verificar(not rolagem.is_ancestor_of(acao), "botão Equipar ainda está preso à rolagem da descrição")
 	verificar(acao.custom_minimum_size.y >= 44.0, "botão de ação ficou pequeno demais")

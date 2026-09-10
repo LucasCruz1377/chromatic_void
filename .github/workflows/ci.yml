@@ -68,7 +68,16 @@ jobs:
           python3 Tests/validar_polimento_loja_dano.py
 
       - name: Importar projeto em modo headless
-        run: godot --headless --audio-driver Dummy --path . --import --quit
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_importacao="$(mktemp)"
+          godot --headless --audio-driver Dummy --path . --import --quit 2>&1 \
+            | tee "$log_importacao"
+          if grep -Eiq 'SCRIPT ERROR:|Parse Error:|Could not resolve script|Could not load script' "$log_importacao"; then
+            echo "A importação encontrou erro de script mesmo com código de saída zero."
+            exit 1
+          fi
 
       - name: Executar smoke tests
         shell: bash
