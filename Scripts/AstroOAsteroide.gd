@@ -25,11 +25,11 @@ var curiosidades_monthly_colors: Array[String] = [
 	"No equinócio de março, dia e noite ficam com durações muito próximas em todo o planeta.",
 	"A [color=#72e7ff]Lua do Verme[/color] marca o degelo e o retorno das minhocas no Hemisfério Norte.",
 	"Abril pode vir do latim [i]aperire[/i], que significa abrir, como as flores na primavera do Hemisfério Norte.",
-	"A [color=#ff8fd8]Lua Rosa[/color] não fica rosa: o nome vem de uma flor que desabrocha em abril.",
+	"A [color=#ff8fd8]Lua Rosa[/color] não fica rosa, o nome vem de uma flor que desabrocha em abril.",
 	"O Dia da Terra é celebrado em 22 de abril e chama atenção para a preservação ambiental.",
-	"Maio provavelmente homenageia Maia, deusa romana ligada ao crescimento e à fertilidade.",
+	"O nome do mês de Maio homenageia Maia, deusa romana ligada ao crescimento e à fertilidade.",
 	"A [color=#72e7ff]Lua das Flores[/color] representa o período de muitas flores silvestres no Hemisfério Norte.",
-	"Junho pode ter recebido esse nome em homenagem a Juno, divindade romana ligada à família.",
+	"Junho recebeu esse nome em homenagem a Juno, divindade romana ligada à família.",
 	"As festas juninas celebram Santo Antônio no dia 13, São João no dia 24 e São Pedro no dia 29.",
 	"O solstício de junho traz o dia mais curto e a noite mais longa do ano para o Hemisfério Sul.",
 	"A [color=#ff7070]Lua de Morango[/color] não fica vermelha: o nome vem da época de colher morangos silvestres.",
@@ -45,7 +45,7 @@ var curiosidades_monthly_colors: Array[String] = [
 	"A [color=#72e7ff]Lua do Castor[/color] está ligada ao período de preparação para o inverno no Hemisfério Norte.",
 	"Dezembro vem de [i]decem[/i], dez em latim, embora atualmente encerre os doze meses do ano.",
 	"A [color=#72e7ff]Lua Fria[/color] recebeu esse nome por causa das noites longas de dezembro no Hemisfério Norte.",
-	"Gostou da curiosidade? Há muito mais nos cards de [color=#72e7ff]tami4lvess.github.io/Monthly-Colors[/color]!",
+	"Gostou da curiosidade? Há muito mais nos cards de [rainbow][wave]tami4lvess.github.io/Monthly-Colors[/wave][/rainbow]!",
 	"O Monthly Colors também reúne campanhas, datas e fases da Lua. Visite o site e escolha um mês para explorar!"
 ]
 
@@ -128,13 +128,27 @@ func _atualizar_tela_preta_responsiva() -> void:
 func _atualizar_dialogo_responsivo() -> void:
 	if not is_instance_valid(texto_label):
 		return
-	var largura_viewport := get_viewport_rect().size.x
-	var largura_dialogo := clampf(largura_viewport * 0.68, 220.0, 410.0)
-	var margem_esquerda := 8.0
-	var espaco_astro := 88.0
-	var x_global := maxf(margem_esquerda, largura_viewport - largura_dialogo - espaco_astro)
-	texto_label.position.x = x_global - global_position.x
-	texto_label.size.x = largura_dialogo
+
+	var tamanho_tela := get_viewport_rect().size
+	var margem := 12.0
+	var espaco_astro := 152.0
+	var altura_dialogo := 120.0
+
+	var largura_disponivel := tamanho_tela.x - espaco_astro - margem * 2.0
+	var largura_dialogo := minf(clampf(tamanho_tela.x * 0.62, 220.0, 410.0), largura_disponivel)
+
+	var x_global := tamanho_tela.x - largura_dialogo - espaco_astro
+	var y_global := tamanho_tela.y - altura_dialogo - margem - 30
+
+	texto_label.global_position = Vector2(
+		maxf(margem, x_global),
+		maxf(margem, y_global)
+	)
+	texto_label.size = Vector2(largura_dialogo, altura_dialogo)
+	texto_label.custom_minimum_size = Vector2(220, altura_dialogo)
+	texto_label.fit_content = false
+	texto_label.scroll_active = false
+	texto_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	texto_label.clip_contents = false
 
 

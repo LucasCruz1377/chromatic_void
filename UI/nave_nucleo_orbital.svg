@@ -1,9 +1,10 @@
-<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-  <defs><filter id="g" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <g transform="translate(80 80)" filter="url(#g)" fill="#fff" stroke="#303247" stroke-width="6" stroke-linejoin="round">
-    <path d="M43 0 L-14 -34 L-10 -15 L-34 -8 L-22 0 L-34 8 L-10 15 L-14 34 Z"/>
-    <path d="M43 0 L2 -15 L-3 0 L2 15 Z" fill="#f7f8ff" stroke-width="4"/>
-    <circle cx="-7" cy="0" r="14" fill="#fff" stroke-width="5"/>
-    <circle cx="-7" cy="0" r="6" fill="#303247" stroke="none"/>
-  </g>
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_80_104)">
+<path d="M115.504 80.058L64.9722 100.342L68.3394 89.1801V89.1313L55.1772 92.7153L63.856 80.058L55.1772 67.3998L68.3179 70.977L64.9722 59.4799L115.504 80.058Z" fill="#D699FF"/>
+</g>
+<defs>
+<clipPath id="clip0_80_104">
+<rect width="160" height="160" fill="white"/>
+</clipPath>
+</defs>
 </svg>

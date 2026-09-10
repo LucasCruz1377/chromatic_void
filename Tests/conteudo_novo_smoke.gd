@@ -51,7 +51,7 @@ func _ready() -> void:
 		var cena_boss := load(boss_path) as PackedScene
 		verificar(cena_boss != null, "boss novo não carregou: " + boss_path)
 
-	for conquista in [&"combo_200", &"pontos_1000000", &"pontos_5000000", &"pontos_10000000", &"pontos_20000000", &"pontos_25000000"]:
+	for conquista in [&"combo_100", &"pontos_1000000", &"pontos_5000000", &"pontos_10000000", &"pontos_20000000", &"pontos_25000000"]:
 		verificar(Global.CONQUISTAS.has(conquista), "conquista ausente: %s" % conquista)
 
 	for no in get_tree().get_nodes_in_group("ajudante_clone") + get_tree().get_nodes_in_group("ajudante_guardiao"):

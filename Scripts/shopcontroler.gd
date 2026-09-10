@@ -530,6 +530,8 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	rolagem_grade.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rolagem_grade.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	rolagem_grade.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	var barra_grade := rolagem_grade.get_v_scroll_bar()
+	barra_grade.custom_minimum_size.x = 2
 	moldura_grade.add_child(rolagem_grade)
 
 	grade = GridContainer.new()
@@ -556,7 +558,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	var margem := MarginContainer.new()
 	margem.add_theme_constant_override("margin_left", 16)
 	margem.add_theme_constant_override("margin_top", 12)
-	margem.add_theme_constant_override("margin_right", 16)
+	margem.add_theme_constant_override("margin_right", 8)
 	margem.add_theme_constant_override("margin_bottom", 12)
 	painel_detalhes.add_child(margem)
 
@@ -581,6 +583,9 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	rolagem_detalhes.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rolagem_detalhes.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	rolagem_detalhes.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	var barra_vertical := rolagem_detalhes.get_v_scroll_bar()
+	barra_vertical.custom_minimum_size.x = 1
+	barra_vertical.add_theme_constant_override("minimum_grab_thickness", 1)
 	moldura_detalhes.add_child(rolagem_detalhes)
 
 	coluna_detalhes = VBoxContainer.new()
@@ -612,15 +617,16 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 
 	var linha_icone := HBoxContainer.new()
 	linha_icone.alignment = BoxContainer.ALIGNMENT_CENTER
-	linha_icone.add_theme_constant_override("separation", 9)
+	linha_icone.add_theme_constant_override("separation", 6)
 	coluna.add_child(linha_icone)
 	linha_icone.add_child(detalhe_icone)
 
 	detalhe_contexto = Label.new()
-	detalhe_contexto.custom_minimum_size = Vector2(150, 78)
+	detalhe_contexto.custom_minimum_size = Vector2(140, 100)
 	detalhe_contexto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detalhe_contexto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalhe_contexto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalhe_contexto.clip_text = false
 	detalhe_contexto.add_theme_color_override("font_color", Color(0.70, 0.82, 1.0))
 	aplicar_fonte(detalhe_contexto, 8)
 	linha_icone.add_child(detalhe_contexto)
@@ -668,9 +674,12 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	preco_box.add_child(moeda)
 
 	detalhe_preco = Label.new()
-	detalhe_preco.custom_minimum_size.x = 0.0
-	detalhe_preco.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalhe_preco.custom_minimum_size = Vector2(150, 32)
+	detalhe_preco.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	detalhe_preco.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	detalhe_preco.autowrap_mode = TextServer.AUTOWRAP_OFF
 	detalhe_preco.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalhe_preco.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalhe_preco.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	detalhe_preco.add_theme_color_override("font_color", Color(0.75, 0.70, 1.0))
 	aplicar_fonte(detalhe_preco, 16)

@@ -1,13 +1,17 @@
-<svg width="120" height="168" viewBox="0 0 120 168" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M95.5854 62.7973L69.9878 52.9799L69.9878 61.8422L24.4517 22.1127L99.3267 48.0902L95.5854 62.7973ZM24.4517 135.106L69.9878 95.3764L69.9878 104.24L95.5854 94.4223L99.3267 109.129L24.4517 135.106ZM56.0903 78.7084L69.8423 66.5336L69.8423 90.8832L56.0903 78.7084ZM70.4536 103.587L70.4536 53.8295L135.548 78.7084L70.4536 103.587Z" fill="url(#paint0_linear_83_231)"/>
 <defs>
-  <linearGradient id="spectrum" x1="8" y1="12" x2="112" y2="156" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#ff8f79"/><stop offset=".22" stop-color="#fff178"/>
-    <stop offset=".42" stop-color="#7dff91"/><stop offset=".63" stop-color="#70ecff"/>
-    <stop offset=".82" stop-color="#7f8dff"/><stop offset="1" stop-color="#c875ff"/>
-  </linearGradient>
+<linearGradient id="paint0_linear_83_231" x1="24.5878" y1="22.0278" x2="99.4319" y2="109.034" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF0000"/>
+<stop offset="0.0001" stop-color="#FF8884"/>
+<stop offset="0.153846" stop-color="#FFBF89"/>
+<stop offset="0.298077" stop-color="#FFF28C"/>
+<stop offset="0.418269" stop-color="#D4FF89"/>
+<stop offset="0.533654" stop-color="#9DFF98"/>
+<stop offset="0.658654" stop-color="#A8FFE4"/>
+<stop offset="0.802885" stop-color="#99D6FF"/>
+<stop offset="0.899038" stop-color="#9999FF"/>
+<stop offset="1" stop-color="#D792FF"/>
+</linearGradient>
 </defs>
-<path d="M119.532 83.6262L49.9528 110.219L49.9528 57.0336L119.532 83.6262Z" fill="url(#spectrum)" stroke="#090b13" stroke-width="1.4"/>
-<path d="M34.5996 83.6262L49.2995 70.6128L49.2995 96.6395L34.5996 83.6262Z" fill="url(#spectrum)"/>
-<path d="M0.782616 23.132L80.8153 50.8985L76.8167 66.6189L49.4557 56.1251L49.4557 65.5982L0.782616 23.132Z" fill="url(#spectrum)"/>
-<path d="M0.782615 143.909L80.8153 116.143L76.8167 100.422L49.4557 110.916L49.4557 101.443L0.782615 143.909Z" fill="url(#spectrum)"/>
 </svg>

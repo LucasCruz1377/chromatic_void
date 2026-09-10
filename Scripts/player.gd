@@ -164,7 +164,7 @@ var sprites_modelos_exclusivos: Dictionary = {}
 var rastro_exclusivo: RastroExclusivo
 var rastro_ativo_rede := false
 var carga_arma := 0.0
-var calor_feixe := 0.0
+var calor_feixe := 0.2
 var feixe_perielio_ativo: Node2D
 var tempo_uso_feixe_perielio := 0.0
 var bloqueio_feixe_perielio := 0.0
@@ -1550,7 +1550,7 @@ func nivel_upgrade_arma(id: StringName) -> int:
 
 
 func _atualizar_feixe_perielio(delta: float) -> void:
-	bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0.0)
+	bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0)
 	if aviso_sobrecarga_feixe_perielio > 0.0:
 		aviso_sobrecarga_feixe_perielio = maxf(
 			aviso_sobrecarga_feixe_perielio - delta, 0.0
@@ -1587,7 +1587,7 @@ func _atualizar_feixe_perielio(delta: float) -> void:
 		PontaArma.global_position, Color(1.0, 0.14, 0.10), 0.9, 2.0
 	)
 	# Mantém um aviso vermelho curto e sem dano antes de recolher o Line2D.
-	aviso_sobrecarga_feixe_perielio = 0.22
+	aviso_sobrecarga_feixe_perielio = 0.70
 
 
 func _concluir_sobrecarga_feixe_perielio() -> void:
@@ -1634,7 +1634,7 @@ func obter_dps_feixe_perielio() -> float:
 		2: dano_maximo = 20.0
 		3: dano_maximo = 30.0
 	var tempo_crescimento := 10.0 * pow(
-		0.72, nivel_upgrade_arma(&"perielio_foco")
+		0.70, nivel_upgrade_arma(&"perielio_foco")
 	)
 	# Começa em 0,2 DPS e avança em degraus perceptíveis a cada 0,5 s.
 	var tempo_em_degraus := floorf(tempo_uso_feixe_perielio / 0.5) * 0.5

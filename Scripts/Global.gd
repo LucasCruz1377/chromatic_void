@@ -189,13 +189,13 @@ const CONQUISTAS: Dictionary = {
 		"nome": "ESPECTRO COMPLETO", "descricao": "Alcance multiplicador de combo 50.",
 		"tipo": &"combo", "meta": 50, "recompensas": []
 	},
-	&"combo_200": {
-		"nome": "COMETA ININTERRUPTO", "descricao": "Alcance multiplicador de combo 200.",
-		"tipo": &"combo", "meta": 200, "recompensas": []
+	&"combo_100": {
+		"nome": "COMETA ININTERRUPTO", "descricao": "Alcance multiplicador de combo 100.",
+		"tipo": &"combo", "meta": 100, "recompensas": []
 	},
-	&"combo_300_spectrum": {
-		"nome": "ESPECTRO INFINITO", "descricao": "Alcance multiplicador de combo 300.",
-		"tipo": &"combo", "meta": 300,
+	&"combo_213_spectrum": {
+		"nome": "ESPECTRO INFINITO", "descricao": "Alcance multiplicador de combo 213.",
+		"tipo": &"combo", "meta": 213,
 		"recompensas": [&"c08_modelo_spectrum", &"c22_rastro_spectrum"]
 	},
 	&"pontos_25000": {
@@ -230,9 +230,9 @@ const CONQUISTAS: Dictionary = {
 		"nome": "ALÉM DO ESPECTRO", "descricao": "Alcance 25 milhões de pontos em uma partida.",
 		"tipo": &"pontos", "meta": 25000000, "recompensas": []
 	},
-	&"pontos_38000000_fspeed": {
-		"nome": "VELOCIDADE MÁXIMA", "descricao": "Alcance 38 milhões de pontos em uma partida.",
-		"tipo": &"pontos", "meta": 38000000,
+	&"pontos_75000000_fspeed": {
+		"nome": "VELOCIDADE MÁXIMA", "descricao": "Alcance 75 milhões de pontos em uma partida.",
+		"tipo": &"pontos", "meta": 75000000,
 		"recompensas": [&"c09_modelo_fspeed", &"c23_rastro_fspeed"]
 	},
 	&"intocado_60": {
@@ -247,6 +247,14 @@ const CONQUISTAS: Dictionary = {
 		"nome": "LUZ INALCANÇÁVEL", "descricao": "Permaneça 5 minutos sem sofrer dano.",
 		"tipo": &"sem_dano", "meta": 300, "recompensas": []
 	},
+	&"sem_upgrades": {
+		"nome": "PODER INALTERADO",
+		"descricao": "Conclua uma partida sem escolher nenhum upgrade de partida.",
+		"tipo": &"vitoria_sem_upgrades",
+		"meta": 1,
+		"recompensas": [],
+		"secreta": true
+},
 }
 
 var conquistas_disponiveis: Array[StringName] = []

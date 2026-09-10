@@ -70,12 +70,12 @@ func testar_conquista_modelo_o() -> void:
 func testar_modelos_spectrum_e_fspeed() -> void:
 	var spectrum := MonthlyCatalog.encontrar(&"c08_modelo_spectrum")
 	var fspeed := MonthlyCatalog.encontrar(&"c09_modelo_fspeed")
-	verificar(StringName(spectrum.get("requer_conquista", &"")) == &"combo_300_spectrum", "Spectrum não exige combo 300x")
-	verificar(StringName(fspeed.get("requer_conquista", &"")) == &"pontos_38000000_fspeed", "Fspeed não exige 38M de pontos")
-	verificar(int(Global.CONQUISTAS[&"combo_300_spectrum"]["meta"]) == 300, "meta do Spectrum não é 300x")
-	verificar(int(Global.CONQUISTAS[&"pontos_38000000_fspeed"]["meta"]) == 38000000, "meta do Fspeed não é 38M")
-	verificar(&"c22_rastro_spectrum" in Global.CONQUISTAS[&"combo_300_spectrum"]["recompensas"], "Spectrum não libera seu rastro")
-	verificar(&"c23_rastro_fspeed" in Global.CONQUISTAS[&"pontos_38000000_fspeed"]["recompensas"], "Fspeed não libera seu rastro")
+	verificar(StringName(spectrum.get("requer_conquista", &"")) == &"combo_213_spectrum", "Spectrum não exige combo 300x")
+	verificar(StringName(fspeed.get("requer_conquista", &"")) == &"pontos_75000000_fspeed", "Fspeed não exige 75M de pontos")
+	verificar(int(Global.CONQUISTAS[&"combo_213_spectrum"]["meta"]) == 300, "meta do Spectrum não é 300x")
+	verificar(int(Global.CONQUISTAS[&"pontos_75000000_fspeed"]["meta"]) == 38000000, "meta do Fspeed não é 38M")
+	verificar(&"c22_rastro_spectrum" in Global.CONQUISTAS[&"combo_213_spectrum"]["recompensas"], "Spectrum não libera seu rastro")
+	verificar(&"c23_rastro_fspeed" in Global.CONQUISTAS[&"pontos_75000000_fspeed"]["recompensas"], "Fspeed não libera seu rastro")
 
 
 func testar_feedback_vinculos() -> void:
