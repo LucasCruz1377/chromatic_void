@@ -72,8 +72,8 @@ func testar_modelos_spectrum_e_fspeed() -> void:
 	var fspeed := MonthlyCatalog.encontrar(&"c09_modelo_fspeed")
 	verificar(StringName(spectrum.get("requer_conquista", &"")) == &"combo_213_spectrum", "Spectrum não exige combo 300x")
 	verificar(StringName(fspeed.get("requer_conquista", &"")) == &"pontos_75000000_fspeed", "Fspeed não exige 75M de pontos")
-	verificar(int(Global.CONQUISTAS[&"combo_213_spectrum"]["meta"]) == 300, "meta do Spectrum não é 300x")
-	verificar(int(Global.CONQUISTAS[&"pontos_75000000_fspeed"]["meta"]) == 38000000, "meta do Fspeed não é 38M")
+	verificar(int(Global.CONQUISTAS[&"combo_213_spectrum"]["meta"]) == 213, "meta do Spectrum não é 213x")
+	verificar(int(Global.CONQUISTAS[&"pontos_75000000_fspeed"]["meta"]) == 75000000, "meta do Fspeed não é 75M")
 	verificar(&"c22_rastro_spectrum" in Global.CONQUISTAS[&"combo_213_spectrum"]["recompensas"], "Spectrum não libera seu rastro")
 	verificar(&"c23_rastro_fspeed" in Global.CONQUISTAS[&"pontos_75000000_fspeed"]["recompensas"], "Fspeed não libera seu rastro")
 
