@@ -1,6 +1,13 @@
 <svg width="120" height="168" viewBox="0 0 120 168" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M119.532 83.6262L49.9528 110.219L49.9528 57.0336L119.532 83.6262Z" fill="white"/>
-<path d="M34.5996 83.6262L49.2995 70.6128L49.2995 96.6395L34.5996 83.6262Z" fill="white"/>
-<path d="M0.782616 23.132L80.8153 50.8985L76.8167 66.6189L49.4557 56.1251L49.4557 65.5982L0.782616 23.132Z" fill="white"/>
-<path d="M0.782615 143.909L80.8153 116.143L76.8167 100.422L49.4557 110.916L49.4557 101.443L0.782615 143.909Z" fill="white"/>
+<defs>
+  <linearGradient id="spectrum" x1="8" y1="12" x2="112" y2="156" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#ff8f79"/><stop offset=".22" stop-color="#fff178"/>
+    <stop offset=".42" stop-color="#7dff91"/><stop offset=".63" stop-color="#70ecff"/>
+    <stop offset=".82" stop-color="#7f8dff"/><stop offset="1" stop-color="#c875ff"/>
+  </linearGradient>
+</defs>
+<path d="M119.532 83.6262L49.9528 110.219L49.9528 57.0336L119.532 83.6262Z" fill="url(#spectrum)" stroke="#090b13" stroke-width="1.4"/>
+<path d="M34.5996 83.6262L49.2995 70.6128L49.2995 96.6395L34.5996 83.6262Z" fill="url(#spectrum)"/>
+<path d="M0.782616 23.132L80.8153 50.8985L76.8167 66.6189L49.4557 56.1251L49.4557 65.5982L0.782616 23.132Z" fill="url(#spectrum)"/>
+<path d="M0.782615 143.909L80.8153 116.143L76.8167 100.422L49.4557 110.916L49.4557 101.443L0.782615 143.909Z" fill="url(#spectrum)"/>
 </svg>

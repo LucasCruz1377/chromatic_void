@@ -12,7 +12,7 @@ const ORDEM_CICLO: Array[StringName] = [
 # fundo espacial escuro, inimigos padrão e PET-0 no nível 10.
 const DADOS: Dictionary = {
 	&"vazio_inicial": {
-		"nome": "VAZIO CROMÁTICO",
+		"nome": "VAZIO",
 		"subtitulo": "SETOR 01 • ORIGEM",
 		"descricao": "A formação original do jogo e o território do PET-0.",
 		"usar_fundo_original": true,

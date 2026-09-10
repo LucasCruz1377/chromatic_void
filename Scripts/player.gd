@@ -1605,7 +1605,7 @@ func _iniciar_feixe_perielio() -> void:
 	sobrecarga_feixe_perielio = false
 	feixe_perielio_ativo = criar_projetil(
 		rotation, 1.0, false, null, 0.0, &"perielio_ray",
-		Color(0.42, 0.86, 1.0), {"tempo_vida": 3600.0}
+		Color(1.0, 0.78, 0.08), {"tempo_vida": 3600.0}
 	)
 	if is_instance_valid(somtiro):
 		somtiro.pitch_scale = 0.82
@@ -1636,13 +1636,13 @@ func obter_dps_feixe_perielio() -> float:
 	var tempo_crescimento := 10.0 * pow(
 		0.72, nivel_upgrade_arma(&"perielio_foco")
 	)
-	# Começa em 0,1 DPS e avança em degraus perceptíveis a cada 0,5 s.
+	# Começa em 0,2 DPS e avança em degraus perceptíveis a cada 0,5 s.
 	var tempo_em_degraus := floorf(tempo_uso_feixe_perielio / 0.5) * 0.5
 	var progresso := clampf(
 		tempo_em_degraus / maxf(tempo_crescimento, 0.1), 0.0, 1.0
 	)
-	# Interpolação exponencial de 0,1 DPS até o teto atual.
-	return 0.1 * pow(dano_maximo / 0.1, progresso)
+	# Interpolação exponencial de 0,2 DPS até o teto atual.
+	return 0.2 * pow(dano_maximo / 0.2, progresso)
 
 
 func feixe_perielio_em_sobrecarga() -> bool:
@@ -1777,7 +1777,7 @@ func disparar_arma_monthly() -> void:
 		&"a13_canhao_lua_fria":
 			cor = Color(0.42, 0.86, 1.0)
 			criar_projetil(
-				rotation, 0.7, false, null, 0.0, &"ice_stack", cor,
+				rotation, 0.5, false, null, 0.0, &"ice_stack", cor,
 				{
 					"velocidade": 0.92,
 					"escala": 0.82,

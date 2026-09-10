@@ -31,7 +31,9 @@ assert 'func _ajustar_largura_coluna_detalhes()' in SHOP
 assert 'func _ajustar_fonte_botao_acao()' in SHOP
 assert 'grade.columns = colunas' in SHOP
 assert 'conteudo_principal.vertical = false' in SHOP
-assert '"preco": 15000' in SHOP
+assert 'CatalogoMonthly.habilidades_base()' in SHOP
+assert 'habilidadeFrenesiCarnavalesco.tres' in CATALOGO
+assert ', 15000, Color("ff3dc2")' in CATALOGO
 assert 'detalhe_icone.custom_minimum_size = Vector2(78, 78)' in SHOP
 assert 'detalhe_contexto.custom_minimum_size = Vector2(150, 78)' in SHOP
 assert 'var linha_icone := HBoxContainer.new()' in SHOP

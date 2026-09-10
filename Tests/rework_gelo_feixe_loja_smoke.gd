@@ -1,6 +1,9 @@
 extends Node
 
 
+const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
+
+
 var falhas: Array[String] = []
 
 
@@ -13,6 +16,8 @@ func verificar(condicao: bool, mensagem: String) -> void:
 func _ready() -> void:
 	testar_catalogo_e_upgrades()
 	testar_curva_feixe()
+	testar_localizacao()
+	await testar_visual_feixe()
 	await testar_gelo()
 	await testar_loja()
 	if falhas.is_empty():
@@ -30,23 +35,44 @@ func testar_catalogo_e_upgrades() -> void:
 	verificar(int(DadosUpgrades.obter(&"perielio_potencia").get("max_nivel", 0)) == 3, "teto de dano do Periélio não tem três níveis")
 	verificar(str(DadosUpgrades.obter(&"perielio_infinito").get("raridade", "")) == "ULTRARRARA", "rota infinita não é ultrarrara")
 	var player_script := FileAccess.get_file_as_string("res://Scripts/player.gd")
-	verificar('rotation, 0.7, false, null, 0.0, &"ice_stack"' in player_script, "Canhão do Solstício não usa dano base 0,7")
+	verificar('rotation, 0.5, false, null, 0.0, &"ice_stack"' in player_script, "Canhão do Solstício não usa dano base 0,5")
 
 
 func testar_curva_feixe() -> void:
 	var jogador := Player.new()
 	jogador.tempo_uso_feixe_perielio = 0.0
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.1), "feixe não começa em 0,1 DPS")
+	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.2), "feixe não começa em 0,2 DPS")
 	jogador.tempo_uso_feixe_perielio = 0.49
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.1), "feixe aumenta antes de completar 0,5 segundo")
+	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.2), "feixe aumenta antes de completar 0,5 segundo")
 	jogador.tempo_uso_feixe_perielio = 0.5
-	verificar(jogador.obter_dps_feixe_perielio() > 0.1, "feixe não aumenta no primeiro intervalo de 0,5 segundo")
+	verificar(jogador.obter_dps_feixe_perielio() > 0.2, "feixe não aumenta no primeiro intervalo de 0,5 segundo")
 	jogador.tempo_uso_feixe_perielio = 10.0
 	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 5.0), "feixe base não chega a 5 DPS")
 	jogador.niveis_upgrades = {&"perielio_potencia": 3, &"perielio_resfriamento": 2}
 	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 30.0), "melhorias não elevam o teto até 30 DPS")
 	verificar(is_equal_approx(jogador.obter_limite_uso_feixe_perielio(), 15.0), "resfriamento não amplia o uso contínuo")
 	jogador.free()
+
+
+func testar_localizacao() -> void:
+	var locale_anterior := TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+	verificar(tr("VAZIO") == "VOID", "locale inglês não traduz VAZIO para VOID")
+	verificar(tr("FEIXE DO PERIÉLIO") == "PERIHELION BEAM", "catálogo da loja não usa a tradução em inglês")
+	TranslationServer.set_locale(locale_anterior)
+
+
+func testar_visual_feixe() -> void:
+	var feixe := (load("res://Entities/fireball.tscn") as PackedScene).instantiate()
+	add_child(feixe)
+	feixe.configurar_estilo_monthly(&"perielio_ray", Color("ffd83d"), {})
+	verificar(feixe.get("linha_feixe") is Line2D, "feixe externo não usa Line2D")
+	verificar(feixe.get("centro_feixe") is Line2D, "centro branco do feixe não usa Line2D")
+	verificar(feixe.get("raycast_feixe") is RayCast2D, "feixe não cria RayCast2D")
+	var centro := feixe.get("centro_feixe") as Line2D
+	verificar(is_instance_valid(centro) and centro.default_color == Color.WHITE, "centro do feixe não começa branco")
+	feixe.queue_free()
+	await get_tree().process_frame
 
 
 func testar_gelo() -> void:
@@ -59,6 +85,7 @@ func testar_gelo() -> void:
 	verificar(is_equal_approx(inimigo._fator_velocidade_gelo(), 0.6), "cada camada não reduz 10% da velocidade")
 	inimigo.aplicar_camada_gelo(1, true, true)
 	verificar(inimigo.congelado_totalmente, "a quinta camada não congelou o inimigo")
+	verificar(inimigo.self_modulate.is_equal_approx(Color(0.40, 0.86, 1.0)), "quinta camada não deixa o inimigo totalmente azul-claro")
 	verificar(is_equal_approx(inimigo.tempo_morte_congelado, 5.0), "Abaixo de Zero não prolongou o congelamento")
 	inimigo.queue_free()
 	await get_tree().process_frame

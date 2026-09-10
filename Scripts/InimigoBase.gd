@@ -290,7 +290,10 @@ func _fator_velocidade_gelo() -> float:
 
 func _atualizar_visual_gelo() -> void:
 	var intensidade := float(camadas_gelo) / 5.0
-	self_modulate = Color.WHITE.lerp(Color(0.40, 0.82, 1.0), intensidade * 0.72)
+	self_modulate = Color.WHITE.lerp(Color(0.40, 0.86, 1.0), intensidade)
+	for material in materiais_hitflash:
+		if is_instance_valid(material) and material.get_shader_parameter("freeze_amount") != null:
+			material.set_shader_parameter("freeze_amount", intensidade)
 
 
 func _espalhar_camadas_gelo(quantidade: int, raio: float) -> void:
@@ -618,7 +621,11 @@ func criar_particulas_morte() -> void:
 		return
 	partes.global_position = global_position
 	partes.global_rotation = global_rotation
-	var cor_particulas := obter_cor_feedback()
+	var cor_particulas := (
+		Color(0.40, 0.88, 1.0)
+		if camadas_gelo > 0
+		else obter_cor_feedback()
+	)
 	partes.modulate = cor_particulas
 	cena.add_child(partes)
 

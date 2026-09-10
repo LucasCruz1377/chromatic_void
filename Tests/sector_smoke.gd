@@ -245,11 +245,11 @@ func _ready() -> void:
 		await get_tree().process_frame
 		verificar(loja.painel_filtros_personalizacao.visible, "os filtros de personalização não apareceram")
 		verificar(loja.botoes_filtros_personalizacao.size() == 3, "a personalização não possui três aspectos")
-		verificar(loja.obter_itens_categoria_atual().size() == 7, "o filtro Modelos não exibiu as sete naves")
+		verificar(loja.obter_itens_categoria_atual().size() == 9, "o filtro Modelos não exibiu as nove naves")
 		loja._selecionar_filtro_personalizacao(&"cor")
 		verificar(loja.obter_itens_categoria_atual().size() == 6, "o filtro Cores não exibiu seis paletas")
 		loja._selecionar_filtro_personalizacao(&"rastro")
-		verificar(loja.obter_itens_categoria_atual().size() == 2, "o filtro Rastros não exibiu as duas opções")
+		verificar(loja.obter_itens_categoria_atual().size() == 4, "o filtro Rastros não exibiu as quatro opções")
 		var rastro_modelo_o := loja.obter_itens_categoria_atual()[1] as Dictionary
 		verificar(
 			StringName(rastro_modelo_o.get("requer_modelo", &"")) == &"c07_modelo_o",

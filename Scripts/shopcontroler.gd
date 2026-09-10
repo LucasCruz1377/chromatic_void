@@ -7,79 +7,6 @@ const CristalIcone = preload("res://Scripts/CristalMoedaIcone.gd")
 const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 const CatalogoMonthly = preload("res://Scripts/MonthlyCatalog.gd")
 
-const CATALOGO := [
-	{
-		"caminho": "res://Habilidades/habilidadeRetrocesso.tres",
-		"preco": 0,
-		"cor": Color(0.76, 0.30, 1.0, 1.0),
-		"raridade": "FEV • ROXO",
-		"stats": [3, 4, 3]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeHiperdash.tres",
-		"preco": 2200,
-		"cor": Color(0.10, 0.86, 1.0, 1.0),
-		"raridade": "MAI • AMARELO",
-		"stats": [4, 2, 4]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeAuraSerenidade.tres",
-		"preco": 3000,
-		"cor": Color(0.35, 1.0, 0.76, 1.0),
-		"raridade": "JAN • BRANCO",
-		"stats": [2, 5, 2]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeFocoAbsoluto.tres",
-		"preco": 3600,
-		"cor": Color(0.35, 0.58, 1.0, 1.0),
-		"raridade": "ABR • AZUL",
-		"stats": [3, 3, 3]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeShockwave.tres",
-		"preco": 4500,
-		"cor": Color(0.22, 0.82, 1.0, 1.0),
-		"raridade": "MAR • ÁGUA",
-		"stats": [5, 2, 2]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeFrenesiCarnavalesco.tres",
-		"preco": 15000,
-		"cor": Color(1.0, 0.24, 0.76, 1.0),
-		"raridade": "FEV • CARNAVAL",
-		"stats": [4, 4, 2]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeEscudoProtetor.tres",
-		"preco": 4800,
-		"cor": Color(0.72, 0.42, 1.0, 1.0),
-		"raridade": "MAR • LILÁS",
-		"stats": [1, 4, 3]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeAbracoMaterno.tres",
-		"preco": 4400,
-		"cor": Color(1.0, 0.38, 0.62, 1.0),
-		"raridade": "MAI • CUIDADO",
-		"stats": [2, 4, 2]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeTransfusao.tres",
-		"preco": 6000,
-		"cor": Color(1.0, 0.08, 0.22, 1.0),
-		"raridade": "JUN • VERMELHO",
-		"stats": [5, 1, 3]
-	},
-	{
-		"caminho": "res://Habilidades/habilidadeFogueiraArdente.tres",
-		"preco": 5600,
-		"cor": Color(1.0, 0.48, 0.10, 1.0),
-		"raridade": "JUN • FESTA JUNINA",
-		"stats": [4, 5, 2]
-	}
-]
-
 const CATEGORIAS := ["HABILIDADES", "ARMAS", "NAVE", "UPGRADES", "PERSONALIZAÇÃO"]
 const FILTROS_PERSONALIZACAO := [
 	{"id": &"modelo", "nome": "MODELOS", "cor": Color(0.30, 0.88, 1.0)},
@@ -288,7 +215,7 @@ func _process(delta: float) -> void:
 func carregar_catalogo() -> void:
 	habilidades.clear()
 	dados_habilidades.clear()
-	for dados in CATALOGO:
+	for dados in CatalogoMonthly.habilidades_base():
 		var caminho := str(dados["caminho"])
 		if not ResourceLoader.exists(caminho):
 			push_warning("Habilidade não encontrada na loja: " + caminho)
@@ -784,7 +711,7 @@ func construir_filtros_personalizacao(pai: VBoxContainer) -> void:
 		var botao := Button.new()
 		botao.custom_minimum_size = Vector2(82, 36)
 		botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		botao.text = str(dados["nome"])
+		botao.text = tr(str(dados["nome"]))
 		botao.clip_text = true
 		botao.focus_mode = Control.FOCUS_ALL
 		botao.set_meta("grupo", StringName(dados["id"]))
@@ -906,7 +833,7 @@ func criar_cartao_habilidade(indice: int) -> void:
 	margem.add_child(coluna)
 
 	var tipo := Label.new()
-	tipo.text = str(dados["raridade"])
+	tipo.text = tr(str(dados["raridade"]))
 	tipo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tipo.add_theme_color_override("font_color", cor)
 	aplicar_fonte(tipo, 8)
@@ -922,7 +849,7 @@ func criar_cartao_habilidade(indice: int) -> void:
 	coluna.add_child(icone)
 
 	var nome := Label.new()
-	nome.text = habilidade.Nome.to_upper()
+	nome.text = tr(str(dados.get("nome", habilidade.Nome))).to_upper()
 	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nome.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	nome.add_theme_color_override("font_color", Color(0.88, 0.91, 1.0))
@@ -1004,23 +931,23 @@ func atualizar_detalhes() -> void:
 	detalhe_stats.visible = true
 	detalhe_icone.custom_minimum_size = Vector2(78, 78)
 
-	detalhe_tipo.text = str(dados["raridade"])
+	detalhe_tipo.text = tr(str(dados["raridade"]))
 	detalhe_tipo.add_theme_color_override("font_color", cor)
-	detalhe_nome.text = habilidade.Nome.to_upper()
+	detalhe_nome.text = tr(str(dados.get("nome", habilidade.Nome))).to_upper()
 	detalhe_icone.texture = habilidade.Icone
 	detalhe_icone.self_modulate = cor.lightened(0.10)
-	var contexto := habilidade.MonthlyColorsContexto.strip_edges()
-	var selo := habilidade.MonthlyColorsSelo.strip_edges()
+	var contexto := str(dados.get("contexto", habilidade.MonthlyColorsContexto)).strip_edges()
+	var selo := str(dados.get("selo", habilidade.MonthlyColorsSelo)).strip_edges()
 	detalhe_contexto.visible = not contexto.is_empty() or not selo.is_empty()
 	detalhe_contexto.text = (
-		"LIGAÇÃO COM MONTHLY COLORS\n%s\n%s" % [selo, contexto]
+		tr("LIGAÇÃO COM MONTHLY COLORS\n%s\n%s") % [tr(selo), tr(contexto)]
 		if detalhe_contexto.visible
 		else ""
 	)
 	botao_site.visible = detalhe_contexto.visible
-	botao_site.set_meta("url_monthly", habilidade.MonthlyColorsUrl)
-	detalhe_descricao.text = habilidade.Descricao
-	detalhe_recarga.text = "RECARGA  %.1f s" % habilidade.Cooldown
+	botao_site.set_meta("url_monthly", str(dados.get("url", habilidade.MonthlyColorsUrl)))
+	detalhe_descricao.text = tr(str(dados.get("descricao", habilidade.Descricao)))
+	detalhe_recarga.text = tr("RECARGA  %.1f s") % habilidade.Cooldown
 	var conquista_id := StringName(dados.get("conquista", &""))
 	detalhe_preco.text = _texto_preco_ou_conquista(preco, conquista_id)
 	reconstruir_stats(dados["stats"], cor)
@@ -1050,7 +977,7 @@ func reconstruir_stats(valores: Array, cor: Color) -> void:
 		detalhe_stats.remove_child(filho)
 		filho.queue_free()
 
-	var nomes := ["POTÊNCIA", "DURAÇÃO", "RECARGA"]
+	var nomes := [tr("POTÊNCIA"), tr("DURAÇÃO"), tr("RECARGA")]
 	for indice in nomes.size():
 		var linha := HBoxContainer.new()
 		linha.add_theme_constant_override("separation", 4)
@@ -1100,7 +1027,7 @@ func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	coluna.add_theme_constant_override("separation", 4)
 	margem.add_child(coluna)
 	var tipo := Label.new()
-	tipo.text = str(item["raridade"])
+	tipo.text = tr(str(item["raridade"]))
 	tipo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tipo.add_theme_color_override("font_color", cor)
 	aplicar_fonte(tipo, 8)
@@ -1114,7 +1041,7 @@ func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	icone.self_modulate = Color.WHITE if bool(item.get("preservar_cores", false)) else cor.lightened(0.12)
 	coluna.add_child(icone)
 	var nome := Label.new()
-	nome.text = str(item["nome"])
+	nome.text = tr(str(item["nome"]))
 	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nome.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	nome.add_theme_color_override("font_color", Color(0.88, 0.91, 1.0))
@@ -1182,21 +1109,21 @@ func atualizar_detalhes_genericos() -> void:
 	var id := StringName(item["id"])
 	var conquista := StringName(item["conquista"])
 	var em_breve := bool(item.get("em_breve", false))
-	detalhe_tipo.text = str(item["raridade"])
+	detalhe_tipo.text = tr(str(item["raridade"]))
 	detalhe_tipo.add_theme_color_override("font_color", cor)
-	detalhe_nome.text = str(item["nome"])
+	detalhe_nome.text = tr(str(item["nome"]))
 	detalhe_icone.custom_minimum_size = tamanho_icone_item(id, true)
 	detalhe_icone.texture = load(str(item["icone"])) as Texture2D
 	detalhe_icone.self_modulate = Color.WHITE if bool(item.get("preservar_cores", false)) else cor.lightened(0.10)
 	detalhe_contexto.visible = true
-	detalhe_contexto.text = "LIGAÇÃO COM MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
+	detalhe_contexto.text = tr("LIGAÇÃO COM MONTHLY COLORS\n%s\n%s") % ["", tr(str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors.")))]
 	botao_site.visible = true
 	botao_site.set_meta("url_monthly", "https://tami4lvess.github.io/Monthly-Colors/")
-	detalhe_descricao.text = str(item["descricao"])
+	detalhe_descricao.text = tr(str(item["descricao"]))
 	if categoria_atual == 1:
 		var crit := preload("res://Scripts/Criticos.gd").valores(id)
 		detalhe_descricao.text += "\n\nCrítico: %d%% de chance • %d%% do dano." % [roundi(crit.x * 100.0), roundi(crit.y * 100.0)]
-	detalhe_recarga.text = (
+	detalhe_recarga.text = tr(
 		"PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS"
 		if categoria_atual == 4
 		else "EQUIPAMENTO ÚNICO • 1 POR CATEGORIA"
@@ -1453,14 +1380,14 @@ func texto_estado_cartao(
 	caminho: String, preco: int, id: StringName = &"", conquista: StringName = &""
 ) -> String:
 	if caminho == caminho_equipado:
-		return "EQUIPADA"
+		return tr("EQUIPADA")
 	if _habilidade_liberada(caminho, id):
-		return "LIBERADA"
+		return tr("LIBERADA")
 	if Global.modo_desenvolvedor:
 		return "DEV LIBERADA"
 	if not conquista.is_empty():
 		return "★ CONQUISTA"
-	return "GRÁTIS" if preco == 0 else "◆  " + formatar_numero(preco)
+	return tr("GRÁTIS") if preco == 0 else "◆  " + formatar_numero(preco)
 
 
 func _texto_estado_item_generico(item: Dictionary) -> String:
@@ -1468,9 +1395,9 @@ func _texto_estado_item_generico(item: Dictionary) -> String:
 	var preco := int(item["preco"])
 	var conquista := StringName(item["conquista"])
 	if _item_generico_equipado(item) == id:
-		return "EQUIPADO"
+		return tr("EQUIPADO")
 	if _item_generico_liberado(id):
-		return "LIBERADO"
+		return tr("LIBERADO")
 	if not requisito_compra_atendido(item):
 		return "★ CONQUISTA SECRETA"
 	if not conquista.is_empty():
@@ -1498,7 +1425,7 @@ func obter_itens_categoria_atual() -> Array[Dictionary]:
 
 func _texto_preco_ou_conquista(preco: int, conquista: StringName) -> String:
 	if conquista.is_empty():
-		return "GRÁTIS" if preco == 0 else formatar_numero(preco)
+		return tr("GRÁTIS") if preco == 0 else formatar_numero(preco)
 	if Global.conquista_liberada(conquista):
 		return "RECOMPENSA OBTIDA"
 	var progresso := Global.progresso_conquista(conquista)

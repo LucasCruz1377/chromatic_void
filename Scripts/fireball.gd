@@ -63,6 +63,8 @@ var nevasca_gelo := false
 var abaixo_zero_gelo := false
 var linha_feixe: Line2D
 var brilho_feixe: Line2D
+var centro_feixe: Line2D
+var raycast_feixe: RayCast2D
 var intervalo_dano_feixe := 0.0
 var comprimento_feixe := 1200.0
 
@@ -589,6 +591,12 @@ func _on_body_entered(body: Node2D) -> void:
 
 
 func _draw() -> void:
+	if estilo_monthly == &"perielio_ray":
+		var cor_orbe := Color(1.0, 0.16, 0.12) if cor_monthly.r > 0.9 and cor_monthly.g < 0.4 else Color(1.0, 0.78, 0.08)
+		draw_circle(Vector2.ZERO, 9.0, Color(cor_orbe.r, cor_orbe.g, cor_orbe.b, 0.28))
+		draw_circle(Vector2.ZERO, 6.0, cor_orbe)
+		draw_circle(Vector2.ZERO, 2.7, Color.WHITE)
+		return
 	if estilo_monthly != &"mine":
 		return
 	var armada := tempo_estilo >= TEMPO_ARMAR_SINALIZADOR
@@ -621,17 +629,30 @@ func _configurar_feixe_perielio() -> void:
 		luz.visible = false
 	brilho_feixe = Line2D.new()
 	brilho_feixe.name = "BrilhoFeixePerielio"
-	brilho_feixe.width = 14.0
-	brilho_feixe.default_color = Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.18)
+	brilho_feixe.width = 18.0
+	brilho_feixe.default_color = Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.22)
 	brilho_feixe.antialiased = true
 	add_child(brilho_feixe)
 	linha_feixe = Line2D.new()
 	linha_feixe.name = "FeixePerielio"
-	linha_feixe.width = 5.0
+	linha_feixe.width = 7.0
 	linha_feixe.default_color = cor_monthly
 	linha_feixe.antialiased = true
 	add_child(linha_feixe)
+	centro_feixe = Line2D.new()
+	centro_feixe.name = "CentroBrancoFeixePerielio"
+	centro_feixe.width = 2.4
+	centro_feixe.default_color = Color.WHITE
+	centro_feixe.antialiased = true
+	add_child(centro_feixe)
+	raycast_feixe = RayCast2D.new()
+	raycast_feixe.name = "RayCastFeixePerielio"
+	raycast_feixe.enabled = true
+	raycast_feixe.collide_with_areas = false
+	raycast_feixe.collide_with_bodies = true
+	add_child(raycast_feixe)
 	_atualizar_geometria_feixe()
+	queue_redraw()
 
 
 func _processar_feixe_perielio(delta: float) -> void:
@@ -645,7 +666,7 @@ func _processar_feixe_perielio(delta: float) -> void:
 	if dono_player.has_method("feixe_perielio_em_sobrecarga") and bool(dono_player.call("feixe_perielio_em_sobrecarga")):
 		cor_monthly = Color(1.0, 0.16, 0.12)
 	else:
-		cor_monthly = Color(0.42, 0.86, 1.0)
+		cor_monthly = Color(1.0, 0.78, 0.08)
 	_atualizar_cor_feixe()
 	_atualizar_geometria_feixe()
 	if somente_visual_rede:
@@ -660,7 +681,7 @@ func _processar_feixe_perielio(delta: float) -> void:
 		return
 	var passo := 0.10
 	intervalo_dano_feixe = passo
-	var dps := 0.1
+	var dps := 0.2
 	if dono_player.has_method("obter_dps_feixe_perielio"):
 		dps = float(dono_player.call("obter_dps_feixe_perielio"))
 	var direcao := Vector2.from_angle(global_rotation)
@@ -701,6 +722,10 @@ func _atualizar_geometria_feixe() -> void:
 		brilho_feixe.points = pontos
 	if is_instance_valid(linha_feixe):
 		linha_feixe.points = pontos
+	if is_instance_valid(centro_feixe):
+		centro_feixe.points = pontos
+	if is_instance_valid(raycast_feixe):
+		raycast_feixe.target_position = Vector2(comprimento_feixe, 0.0)
 
 
 func _atualizar_cor_feixe() -> void:
@@ -708,6 +733,13 @@ func _atualizar_cor_feixe() -> void:
 		brilho_feixe.default_color = Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.18)
 	if is_instance_valid(linha_feixe):
 		linha_feixe.default_color = cor_monthly
+	if is_instance_valid(centro_feixe):
+		centro_feixe.default_color = (
+			Color(1.0, 0.72, 0.68)
+			if cor_monthly.r > 0.9 and cor_monthly.g < 0.4
+			else Color.WHITE
+		)
+	queue_redraw()
 
 
 func detonar_mina() -> void:

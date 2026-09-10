@@ -14,6 +14,7 @@ var ativo := false
 var pontos: Array[Dictionary] = []
 var acumulador := 0.0
 var duracao := 0.9
+var linhas_spectrum: Array[Line2D] = []
 
 
 func configurar(novo_alvo: Node2D, novo_tipo: StringName, nova_cor: Color) -> void:
@@ -27,6 +28,7 @@ func configurar(novo_alvo: Node2D, novo_tipo: StringName, nova_cor: Color) -> vo
 	global_position = Vector2.ZERO
 	z_index = 2
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_preparar_linhas_spectrum()
 
 
 func definir_estado(novo_ativo: bool, nova_cor: Color) -> void:
@@ -50,11 +52,16 @@ func _process(delta: float) -> void:
 			pontos.append({"posicao": origem, "idade": 0.0})
 			if pontos.size() > 42:
 				pontos.pop_front()
+	_atualizar_linhas_spectrum()
 	queue_redraw()
 
 
 func _draw() -> void:
 	if pontos.size() < 2:
+		return
+	# O Spectrum é desenhado por Line2D para manter o gradiente contínuo e
+	# reduzir a opacidade suavemente até o final do rastro.
+	if tipo == &"spectrum":
 		return
 	for indice in range(1, pontos.size()):
 		var anterior := Vector2(pontos[indice - 1]["posicao"])
@@ -65,16 +72,53 @@ func _draw() -> void:
 		var alpha := clampf(1.0 - idade / duracao, 0.0, 1.0)
 		var direcao := (atual - anterior).normalized()
 		var normal := Vector2(-direcao.y, direcao.x)
-		if tipo == &"spectrum":
-			for faixa in CORES_ARCO_IRIS.size():
-				var deslocamento := (float(faixa) - 3.0) * 2.25
-				var cor: Color = CORES_ARCO_IRIS[faixa]
-				cor.a = alpha * 0.88
-				draw_line(anterior + normal * deslocamento, atual + normal * deslocamento, cor, 3.2, true)
-		else:
-			if indice % 3 == 0:
-				continue
-			var marca := cor_base.darkened(0.62)
-			marca.a = alpha * 0.78
-			for lado in [-1.0, 1.0]:
-				draw_line(anterior + normal * 8.0 * lado, atual + normal * 8.0 * lado, marca, 4.2, true)
+		if indice % 3 == 0:
+			continue
+		var marca := cor_base.darkened(0.62)
+		marca.a = alpha * 0.78
+		for lado in [-1.0, 1.0]:
+			draw_line(anterior + normal * 8.0 * lado, atual + normal * 8.0 * lado, marca, 4.2, true)
+
+
+func _preparar_linhas_spectrum() -> void:
+	if linhas_spectrum.is_empty():
+		for indice in CORES_ARCO_IRIS.size():
+			var linha := Line2D.new()
+			linha.name = "FaixaSpectrum%d" % indice
+			linha.width = 3.2
+			linha.antialiased = true
+			linha.begin_cap_mode = Line2D.LINE_CAP_ROUND
+			linha.end_cap_mode = Line2D.LINE_CAP_ROUND
+			add_child(linha)
+			linhas_spectrum.append(linha)
+	for indice in linhas_spectrum.size():
+		var linha := linhas_spectrum[indice]
+		var cor: Color = CORES_ARCO_IRIS[indice]
+		var gradiente := Gradient.new()
+		gradiente.set_color(0, Color(cor.r, cor.g, cor.b, 0.0))
+		gradiente.set_color(1, Color(cor.r, cor.g, cor.b, 0.90))
+		linha.gradient = gradiente
+		linha.visible = tipo == &"spectrum"
+
+
+func _atualizar_linhas_spectrum() -> void:
+	if linhas_spectrum.is_empty():
+		return
+	var visivel := tipo == &"spectrum" and ativo and pontos.size() >= 2
+	for linha in linhas_spectrum:
+		linha.visible = visivel
+	if not visivel:
+		return
+	for faixa in linhas_spectrum.size():
+		var vertices := PackedVector2Array()
+		for indice in pontos.size():
+			var atual := Vector2(pontos[indice]["posicao"])
+			var direcao := Vector2.RIGHT
+			if indice > 0:
+				direcao = Vector2(pontos[indice - 1]["posicao"]).direction_to(atual)
+			elif pontos.size() > 1:
+				direcao = atual.direction_to(Vector2(pontos[1]["posicao"]))
+			var normal := Vector2(-direcao.y, direcao.x)
+			var deslocamento := (float(faixa) - 3.0) * 2.25
+			vertices.append(atual + normal * deslocamento)
+		linhas_spectrum[faixa].points = vertices

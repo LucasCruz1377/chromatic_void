@@ -182,13 +182,16 @@ func _ready() -> void:
 	var sprite_fspeed := remoto.sprites_modelos_exclusivos.get(&"c09_modelo_fspeed") as Sprite2D
 	verificar(is_instance_valid(sprite_fspeed) and sprite_fspeed.visible, "modelo Fspeed não usa o SVG C4RLOS")
 	verificar(remoto.rastro_exclusivo.tipo == &"fspeed", "rastro de marcas de pneu do Fspeed não ativou")
-	var area_comum := batalha.calcular_area_comum([Vector2(1920, 1080), Vector2(1024, 768)])
+	var resolucoes: Array[Vector2] = [
+		Vector2(1920, 1080), Vector2(1024, 768)
+	]
+	var area_comum: Rect2 = batalha.calcular_area_comum(resolucoes)
 	verificar(area_comum.size.is_equal_approx(Vector2(960, 540)), "arena não escolheu o menor campo visível")
-	verificar(batalha.resolucoes_sao_diferentes([Vector2(1920, 1080), Vector2(1024, 768)]), "resoluções diferentes não foram detectadas")
+	verificar(batalha.resolucoes_sao_diferentes(resolucoes), "resoluções diferentes não foram detectadas")
 	batalha._receber_area_coop(area_comum.position, area_comum.size, true)
 	verificar(is_instance_valid(batalha.limite_arena_coop) and batalha.limite_arena_coop.resolucoes_diferentes, "barreiras visuais da arena comum não apareceram")
-	var area_dupla := batalha.calcular_area_jogo(area_comum, 2)
-	var area_quarteto := batalha.calcular_area_jogo(area_comum, 4)
+	var area_dupla: Rect2 = batalha.calcular_area_jogo(area_comum, 2)
+	var area_quarteto: Rect2 = batalha.calcular_area_jogo(area_comum, 4)
 	verificar(area_dupla.size.x > area_comum.size.x, "arena não cresce para uma dupla")
 	verificar(area_quarteto.size.x > area_dupla.size.x, "arena não cresce até quatro jogadores")
 	batalha._on_jogador_rede_desconectado(2)

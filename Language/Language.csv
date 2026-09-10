@@ -1,4 +1,4 @@
-,pt_BR,es_EN
+,pt_BR,en
 B_START,Começar,Start
 B_SHOP,Loja,Shop
 B_ACHIEVEMENTS,Conquistas,Achievements
@@ -77,3 +77,155 @@ T_DELETE_SAVE_CONFIRM,"Tem certeza? Todo o progresso, compras, cristais e config
 B_DELETE_EVERYTHING,APAGAR TUDO,DELETE EVERYTHING
 B_CANCEL,CANCELAR,CANCEL
 T_SAVE_DELETED,SAVE APAGADO,SAVE DELETED
+LOJA,LOJA,SHOP
+TERMINAL CROMÁTICO,TERMINAL CROMÁTICO,CHROMATIC TERMINAL
+<  VOLTAR,<  VOLTAR,<  BACK
+VISITAR MONTHLY COLORS,VISITAR MONTHLY COLORS,VISIT MONTHLY COLORS
+"LIGAÇÃO COM MONTHLY COLORS\n%s\n%s","LIGAÇÃO COM MONTHLY COLORS\n%s\n%s","MONTHLY COLORS CONNECTION\n%s\n%s"
+RECARGA  %.1f s,RECARGA  %.1f s,COOLDOWN  %.1f s
+POTÊNCIA,POTÊNCIA,POWER
+DURAÇÃO,DURAÇÃO,DURATION
+RECARGA,RECARGA,COOLDOWN
+EQUIPADO,EQUIPADO,EQUIPPED
+EQUIPADA,EQUIPADA,EQUIPPED
+LIBERADO,LIBERADO,UNLOCKED
+LIBERADA,LIBERADA,UNLOCKED
+GRÁTIS,GRÁTIS,FREE
+EQUIPAR,EQUIPAR,EQUIP
+DESEQUIPAR,DESEQUIPAR,UNEQUIP
+COMPRAR,COMPRAR,BUY
+PADRÃO,PADRÃO,DEFAULT
+EM BREVE,EM BREVE,COMING SOON
+CONQUISTA SECRETA,CONQUISTA SECRETA,SECRET ACHIEVEMENT
+BLOQUEADO POR CONQUISTA,BLOQUEADO POR CONQUISTA,LOCKED BY ACHIEVEMENT
+SALDO INSUFICIENTE,SALDO INSUFICIENTE,INSUFFICIENT BALANCE
+HABILIDADES,HABILIDADES,ABILITIES
+ARMAS,ARMAS,WEAPONS
+NAVE,NAVE,SHIP
+UPGRADES,UPGRADES,UPGRADES
+PERSONALIZAÇÃO,PERSONALIZAÇÃO,CUSTOMIZATION
+MODELOS,MODELOS,MODELS
+CORES,CORES,COLORS
+RASTROS,RASTROS,TRAILS
+VAZIO,VAZIO,VOID
+Escolha como deseja entrar no Vazio.,Escolha como deseja entrar no Vazio.,Choose how you want to enter the Void.
+RETROCESSO,RETROCESSO,REWIND
+HIPERDASH,HIPERDASH,HYPERDASH
+AURA DA SERENIDADE,AURA DA SERENIDADE,SERENITY AURA
+FOCO ABSOLUTO,FOCO ABSOLUTO,ABSOLUTE FOCUS
+ONDA DE CHOQUE,ONDA DE CHOQUE,SHOCKWAVE
+FRENESI CARNAVALESCO,FRENESI CARNAVALESCO,CARNIVAL FRENZY
+ESCUDO PROTETOR,ESCUDO PROTETOR,PROTECTIVE SHIELD
+ABRAÇO MATERNO,ABRAÇO MATERNO,MATERNAL EMBRACE
+TRANSFUSÃO,TRANSFUSÃO,TRANSFUSION
+FOGUEIRA ARDENTE,FOGUEIRA ARDENTE,BLAZING BONFIRE
+LEQUE DA PRIMAVERA,LEQUE DA PRIMAVERA,SPRING FAN
+FOGOS DO RECOMEÇO,FOGOS DO RECOMEÇO,RENEWAL FIREWORKS
+CANHÃO DO ESTURJÃO,CANHÃO DO ESTURJÃO,STURGEON CANNON
+SINALIZADORES AMARELOS,SINALIZADORES AMARELOS,YELLOW FLARES
+FEIXE DO PERIÉLIO,FEIXE DO PERIÉLIO,PERIHELION BEAM
+ARCO DA COLHEITA,ARCO DA COLHEITA,HARVEST ARC
+RAIZ DO DIA DA TERRA,RAIZ DO DIA DA TERRA,EARTH DAY ROOT
+MORTEIRO DA FOGUEIRA,MORTEIRO DA FOGUEIRA,BONFIRE MORTAR
+SEMENTES VERMELHAS,SEMENTES VERMELHAS,RED SEEDS
+PROJETOR FEVEREIRO ROXO,PROJETOR FEVEREIRO ROXO,PURPLE FEBRUARY PROJECTOR
+JARDIM ORBITAL,JARDIM ORBITAL,ORBITAL GARDEN
+CANHÃO DO SOLSTÍCIO,CANHÃO DO SOLSTÍCIO,SOLSTICE CANNON
+NAVE PADRÃO,NAVE PADRÃO,DEFAULT SHIP
+ASA DELTA,ASA DELTA,DELTA WING
+NÚCLEO ORBITAL,NÚCLEO ORBITAL,ORBITAL CORE
+DARDO,DARDO,DART
+INTERCEPTOR,INTERCEPTOR,INTERCEPTOR
+ESTRELA ROSA,ESTRELA ROSA,PINK STAR
+MODELO O,MODELO O,MODEL O
+MODELO SPECTRUM,MODELO SPECTRUM,SPECTRUM MODEL
+MODELO FSPEED,MODELO FSPEED,FSPEED MODEL
+VERDE ORIGINAL,VERDE ORIGINAL,ORIGINAL GREEN
+CIANO,CIANO,CYAN
+ROSA,ROSA,PINK
+VIOLETA,VIOLETA,VIOLET
+DOURADO,DOURADO,GOLD
+BRANCO LUNAR,BRANCO LUNAR,MOON WHITE
+RASTRO PADRÃO,RASTRO PADRÃO,DEFAULT TRAIL
+RASTRO ESTELAR O,RASTRO ESTELAR O,MODEL O STAR TRAIL
+ARCO-ÍRIS SPECTRUM,ARCO-ÍRIS SPECTRUM,SPECTRUM RAINBOW
+MARCAS FSPEED,MARCAS FSPEED,FSPEED TRACKS
+"Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.","Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.","Continuous infinite-range laser: rises from 0.2 to 5 DPS and overheats after 10 seconds."
+"Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.","Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.","Fires low-damage light-blue ice. Each hit reduces speed by 10%; at five stacks the target freezes and shatters after 3 seconds."
+Chassi cromático que percorre lentamente todo o espectro RGB.,Chassi cromático que percorre lentamente todo o espectro RGB.,Chromatic chassis that slowly cycles through the full RGB spectrum.
+"Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.","Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.","B-EL model awarded for sustaining a 300x combo. Includes an exclusive rainbow trail."
+"Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.","Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.","Long racing ship accompanied by tire tracks in the selected customization color."
+"Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.","Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.","C4RLOS model awarded for reaching 38 million points. Includes an exclusive tire-track trail."
+PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS,PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS,VISUAL CUSTOMIZATION • NO ATTRIBUTE BONUS
+EQUIPAMENTO ÚNICO • 1 POR CATEGORIA,EQUIPAMENTO ÚNICO • 1 POR CATEGORIA,UNIQUE EQUIPMENT • 1 PER CATEGORY
+OVO SURPRESA,OVO SURPRESA,SURPRISE EGG
+CLONE ENGANADOR,CLONE ENGANADOR,DECEPTIVE CLONE
+RENASCIMENTO,RENASCIMENTO,REBIRTH
+ESPÍRITO PROTETOR,ESPÍRITO PROTETOR,PROTECTIVE SPIRIT
+FLORESCIMENTO,FLORESCIMENTO,BLOOM
+ROSA ESPINHOSA,ROSA ESPINHOSA,THORNY ROSE
+FORMA FANTASMA,FORMA FANTASMA,GHOST FORM
+PRESENTE MISTERIOSO,PRESENTE MISTERIOSO,MYSTERIOUS GIFT
+LAÇO DA UNIÃO,LAÇO DA UNIÃO,BOND OF UNITY
+IMAGINAÇÃO SEM LIMITES,IMAGINAÇÃO SEM LIMITES,BOUNDLESS IMAGINATION
+FÚRIA DA NATUREZA,FÚRIA DA NATUREZA,NATURE'S FURY
+ONDA GIGANTE,ONDA GIGANTE,GIANT WAVE
+TEMPESTADE VERDE,TEMPESTADE VERDE,GREEN STORM
+DETERMINAÇÃO INABALÁVEL,DETERMINAÇÃO INABALÁVEL,UNSHAKABLE DETERMINATION
+REFLEXOS RÁPIDOS,REFLEXOS RÁPIDOS,QUICK REFLEXES
+LUZ VITAL,LUZ VITAL,VITAL LIGHT
+REDE DE APOIO,REDE DE APOIO,SUPPORT NETWORK
+ARMADURA DE AÇO,ARMADURA DE AÇO,STEEL ARMOR
+RESERVA SOLIDÁRIA,RESERVA SOLIDÁRIA,SOLIDARITY RESERVE
+SCANNER PREVENTIVO,SCANNER PREVENTIVO,PREVENTIVE SCANNER
+PROPULSOR DE DUAS FACES,PROPULSOR DE DUAS FACES,TWO-FACED THRUSTER
+MOTOR DO CRESCIMENTO,MOTOR DO CRESCIMENTO,GROWTH ENGINE
+FAMÍLIA DE SATÉLITES,FAMÍLIA DE SATÉLITES,SATELLITE FAMILY
+CHASSI DO EQUINÓCIO,CHASSI DO EQUINÓCIO,EQUINOX CHASSIS
+ALCATEIA LUNAR,ALCATEIA LUNAR,LUNAR PACK
+COBERTURA DE NEVE,COBERTURA DE NEVE,SNOW COVER
+RETORNO SUBTERRÂNEO,RETORNO SUBTERRÂNEO,UNDERGROUND RETURN
+FLORAÇÃO ROSA,FLORAÇÃO ROSA,PINK BLOOM
+JARDIM CRESCENTE,JARDIM CRESCENTE,GROWING GARDEN
+GALHOS LUNARES,GALHOS LUNARES,LUNAR BRANCHES
+CORRENTE DO ESTURJÃO,CORRENTE DO ESTURJÃO,STURGEON CURRENT
+COLHEITA CROMÁTICA,COLHEITA CROMÁTICA,CHROMATIC HARVEST
+MARCA DO CAÇADOR,MARCA DO CAÇADOR,HUNTER'S MARK
+BARRAGEM DO CASTOR,BARRAGEM DO CASTOR,BEAVER DAM
+NOITE CONGELADA,NOITE CONGELADA,FROZEN NIGHT
+"Cria um ovo no ponto de ativação: dele nasce um ajudante, uma cura perseguidora ou uma onda devastadora.","Cria um ovo no ponto de ativação: dele nasce um ajudante, uma cura perseguidora ou uma onda devastadora.","Creates an egg at the activation point; it hatches a helper, a chasing heal, or a devastating wave."
+Cria um eco da nave que repete sua direção e dispara uma cópia atrasada.,Cria um eco da nave que repete sua direção e dispara uma cópia atrasada.,Creates a ship echo that repeats its direction and fires a delayed copy.
+Planta uma semente de retorno. Se o casco cair você renasce nela uma vez.,Planta uma semente de retorno. Se o casco cair você renasce nela uma vez.,Plants a return seed. If the hull fails you are reborn there once.
+Invoca um guardião que intercepta tiros e responde com uma rajada dourada.,Invoca um guardião que intercepta tiros e responde com uma rajada dourada.,Summons a guardian that intercepts shots and answers with a golden burst.
+"Por 3 segundos, vinhas infectam e congelam inimigos próximos; as flores explodem juntas no fim.","Por 3 segundos, vinhas infectam e congelam inimigos próximos; as flores explodem juntas no fim.","For 3 seconds, vines infect and freeze nearby enemies; the flowers explode together at the end."
+"Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.","Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.",Opens a short counterattack window; the next hit erupts into thorns.
+"Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.","Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.","Become intangible for 3.5 seconds and leave orbs; they all explode together at the end."
+"Planta uma caixa que atrai inimigos e explode, derrotando quem se aproximar.","Planta uma caixa que atrai inimigos e explode, derrotando quem se aproximar.",Plants a box that attracts enemies and explodes to defeat anything nearby.
+"Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.","Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.","Links enemies in the area to a central bond; destroy it to break them all at once."
+Transforma temporariamente o tiro em um brinquedo cromático imprevisível.,Transforma temporariamente o tiro em um brinquedo cromático imprevisível.,Temporarily transforms your shot into an unpredictable chromatic toy.
+"Ergue raízes, rochas e cristais em sequência na direção da mira.","Ergue raízes, rochas e cristais em sequência na direção da mira.",Raises roots rocks and crystals in sequence toward the aim direction.
+"Uma onda larga apaga projéteis pequenos, empurra inimigos e deixa correnteza.","Uma onda larga apaga projéteis pequenos, empurra inimigos e deixa correnteza.","A wide wave clears small projectiles, pushes enemies, and leaves a current."
+"Invoca uma chuva diagonal de folhas a 315°, com dano baixo e perfuração evolutiva.","Invoca uma chuva diagonal de folhas a 315°, com dano baixo e perfuração evolutiva.","Summons diagonal leaf rain at 315°, with low damage and upgradeable piercing."
+Marca ameaças próximas e libera proteção com uma explosão concentrada.,Marca ameaças próximas e libera proteção com uma explosão concentrada.,Marks nearby threats and releases protection with a concentrated blast.
+Quase-colisões carregam uma curva evasiva instantânea.,Quase-colisões carregam uma curva evasiva instantânea.,Near misses charge an instant evasive turn.
+Experiência enche um halo que cura e concede escudo.,Experiência enche um halo que cura e concede escudo.,Experience fills a halo that heals and grants a shield.
+"Após sofrer dano, alcançar um ponto seguro concede proteção.","Após sofrer dano, alcançar um ponto seguro concede proteção.",After taking damage reaching a safe point grants protection.
+Placas frontais reduzem dano quando você encara o perigo.,Placas frontais reduzem dano quando você encara o perigo.,Front plates reduce damage while you face the danger.
+Cura excedente vira células orbitais consumidas ao receber dano.,Cura excedente vira células orbitais consumidas ao receber dano.,Excess healing becomes orbital cells consumed when taking damage.
+Destaca projéteis que seguem rota de colisão com a nave.,Destaca projéteis que seguem rota de colisão com a nave.,Highlights projectiles on a collision course with the ship.
+"Acelerar protege a frente; dar ré protege a traseira.","Acelerar protege a frente; dar ré protege a traseira.","Accelerating protects the front; reversing protects the rear."
+Viajar sem colidir evolui o motor em três estágios.,Viajar sem colidir evolui o motor em três estágios.,Traveling without collisions upgrades the engine through three stages.
+Satélites ligados absorvem impactos e mudam de formação.,Satélites ligados absorvem impactos e mudam de formação.,Linked satellites absorb impacts and change formation.
+Cada habilidade alterna entre ataque solar e defesa lunar.,Cada habilidade alterna entre ataque solar e defesa lunar.,Each ability alternates between solar attack and lunar defense.
+A habilidade cria duas cópias menores em direções laterais.,A habilidade cria duas cópias menores em direções laterais.,The ability creates two smaller copies in side directions.
+A habilidade deixa uma área que desacelera inimigos.,A habilidade deixa uma área que desacelera inimigos.,The ability leaves an area that slows enemies.
+A habilidade se repete sob o inimigo mais próximo após um atraso.,A habilidade se repete sob o inimigo mais próximo após um atraso.,The ability repeats beneath the nearest enemy after a delay.
+A habilidade termina lançando uma coroa radial de pétalas.,A habilidade termina lançando uma coroa radial de pétalas.,The ability ends by launching a radial crown of petals.
+Inimigos atingidos recebem flores que desabrocham no fim.,Inimigos atingidos recebem flores que desabrocham no fim.,Hit enemies receive flowers that bloom at the end.
+Acertos guardam sementes que fortalecem a próxima ativação.,Acertos guardam sementes que fortalecem a próxima ativação.,Hits store seeds that strengthen the next activation.
+A direção principal se ramifica em dois ângulos secundários.,A direção principal se ramifica em dois ângulos secundários.,The main direction branches into two secondary angles.
+Projéteis da habilidade ondulam e atravessam um alvo extra.,Projéteis da habilidade ondulam e atravessam um alvo extra.,Ability projectiles weave and pierce one extra target.
+A ativação puxa experiência e a converte em projéteis orbitais.,A ativação puxa experiência e a converte em projéteis orbitais.,Activation pulls experience and converts it into orbital projectiles.
+A habilidade procura o inimigo mais resistente e concentra fogo nele.,A habilidade procura o inimigo mais resistente e concentra fogo nele.,The ability seeks the toughest enemy and focuses fire on it.
+Ergue uma barreira temporária no lado oposto ao movimento.,Ergue uma barreira temporária no lado oposto ao movimento.,Raises a temporary barrier opposite the movement direction.
+Projéteis inimigos alcançados pela habilidade congelam e se desfazem.,Projéteis inimigos alcançados pela habilidade congelam e se desfazem.,Enemy projectiles reached by the ability freeze and break apart.

@@ -174,9 +174,9 @@ func _configurar_opcoes() -> void:
 	idiomas.clear()
 	var locais := TranslationServer.get_loaded_locales()
 	if locais.is_empty():
-		locais = PackedStringArray(["pt_BR", "es_EN"])
+		locais = PackedStringArray(["pt_BR", "en"])
 	for local in locais:
-		idiomas.add_item(str(local))
+		idiomas.add_item("Português (Brasil)" if str(local) == "pt_BR" else "English")
 		idiomas.set_item_metadata(idiomas.item_count - 1, str(local))
 
 	limite_fps.clear()

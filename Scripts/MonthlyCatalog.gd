@@ -70,6 +70,21 @@ const FONTES_SITE: Dictionary = {
 	&"u12_noite_congelada": "Dezembro • Lua Fria",
 }
 
+
+static func habilidades_base() -> Array[Dictionary]:
+	return [
+		_habilidade_base("res://Habilidades/habilidadeRetrocesso.tres", "RETROCESSO", "Rebobina os estados recentes da nave e recupera a vida registrada, como uma fita VHS voltando a uma lembrança gravada. No Monthly Colors, Fevereiro Roxo dá visibilidade ao Alzheimer, ao lúpus e à fibromialgia; a habilidade se relaciona à memória como metáfora de jogo, sem representar cura ou tratamento.", 0, Color("c24cff"), "FEV • ROXO", [3, 4, 3], "FEVEREIRO ROXO • ALZHEIMER", "A fita VHS guarda registros; rebobiná-la simboliza revisitar memórias. O site apresenta o Alzheimer entre as causas do Fevereiro Roxo."),
+		_habilidade_base("res://Habilidades/habilidadeHiperdash.tres", "HIPERDASH", "Prepara a nave e dispara um avanço veloz, invulnerável e com rastro. No Monthly Colors, Maio Amarelo chama atenção para a segurança no trânsito e para a redução de acidentes; no jogo, velocidade exige escolher e controlar a trajetória.", 2200, Color("1adcff"), "MAI • AMARELO", [4, 2, 4], "MAIO AMARELO • ATENÇÃO", "O impulso veloz representa deslocamento, enquanto a direção controlada reforça a atenção defendida pelo Maio Amarelo."),
+		_habilidade_base("res://Habilidades/habilidadeAuraSerenidade.tres", "AURA DA SERENIDADE", "Cria um período de calma que reduz o dano recebido e regenera vida. No Monthly Colors, Janeiro Branco usa a folha em branco do novo ano para incentivar a reflexão sobre saúde mental, bem-estar e projetos de vida; a aura transforma pausa e autocuidado em proteção.", 3000, Color("59ffc2"), "JAN • BRANCO", [2, 5, 2], "JANEIRO BRANCO • SAÚDE MENTAL", "A serenidade, a regeneração e a pausa defensiva traduzem o cuidado com o bem-estar psicológico apresentado pelo site."),
+		_habilidade_base("res://Habilidades/habilidadeFocoAbsoluto.tres", "FOCO ABSOLUTO", "Desacelera o mundo enquanto a nave mantém sua capacidade de manobra. No Monthly Colors, Abril Azul reforça conscientização sobre o autismo, inclusão e respeito às diferentes formas de perceber o mundo; o foco temporal funciona somente como metáfora visual do jogo.", 3600, Color("5994ff"), "ABR • AZUL", [3, 3, 3], "ABRIL AZUL • INCLUSÃO", "A relação está no respeito às diferentes percepções de mundo; a habilidade não associa capacidades especiais a pessoas autistas."),
+		_habilidade_base("res://Habilidades/habilidadeShockwave.tres", "ONDA DE CHOQUE", "Emite uma onda circular que causa dano, empurra e atordoa inimigos próximos. O calendário de março do Monthly Colors destaca o Dia Mundial da Água, criado para lembrar a importância do acesso à água potável; a expansão do poder usa as ondas da água como referência visual.", 4500, Color("38d1ff"), "MAR • ÁGUA", [5, 2, 2], "MARÇO • DIA MUNDIAL DA ÁGUA", "Os anéis que se propagam lembram ondas na água e conectam o efeito à data de 22 de março apresentada pelo site."),
+		_habilidade_base("res://Habilidades/habilidadeFrenesiCarnavalesco.tres", "FRENESI CARNAVALESCO", "Aumenta velocidade, dano e cadência por alguns segundos, deixando rastros multicoloridos que ferem inimigos. No Monthly Colors, fevereiro apresenta o Carnaval como uma explosão de cor, ritmo e identidade cultural — por isso o poder vira um frenesi neon.", 15000, Color("ff3dc2"), "FEV • CARNAVAL", [4, 4, 2], "FEVEREIRO • CARNAVAL", "O site liga o Carnaval à cor, ao ritmo e à identidade cultural brasileira."),
+		_habilidade_base("res://Habilidades/habilidadeEscudoProtetor.tres", "ESCUDO PROTETOR", "Cria uma barreira lilás que absorve 48 pontos de dano durante 7 segundos. No Monthly Colors, Março Lilás representa prevenção ao câncer do colo do útero por meio de informação, vacina contra HPV e exames; o escudo transforma essa ideia de prevenção em proteção direta.", 4800, Color("b86bff"), "MAR • LILÁS", [1, 4, 3], "MARÇO LILÁS • PREVENÇÃO", "A barreira simboliza o cuidado preventivo, o exame e a vacina destacados pelo site."),
+		_habilidade_base("res://Habilidades/habilidadeAbracoMaterno.tres", "ABRAÇO MATERNO", "Recupera 32 de vida e reduz temporariamente o dano recebido. O Monthly Colors marca o Dia das Mães no calendário de maio e apresenta o mês pelas ideias de proteção e cuidado; a habilidade traduz esse acolhimento em cura e resistência.", 4400, Color("ff619e"), "MAI • CUIDADO", [2, 4, 2], "MAIO • DIA DAS MÃES", "Cura e resistência representam o acolhimento e a proteção associados a maio no site."),
+		_habilidade_base("res://Habilidades/habilidadeTransfusao.tres", "TRANSFUSÃO", "Rouba vida do inimigo mais próximo em até 420 de alcance: causa 28 de dano e transforma 65% do dano causado em cura. No Monthly Colors, Junho Vermelho incentiva a doação regular de sangue para ajudar tratamentos, cirurgias e emergências; a habilidade representa a circulação de vitalidade sem sacrificar a vida do jogador.", 6000, Color("ff1438"), "JUN • VERMELHO", [5, 1, 3], "JUNHO VERMELHO • DOAÇÃO", "O fluxo entre inimigo e jogador remete à circulação e à importância da doação de sangue apresentada pelo site."),
+		_habilidade_base("res://Habilidades/habilidadeFogueiraArdente.tres", "FOGUEIRA ARDENTE", "Acende uma fogueira por 8 segundos que causa dano contínuo nos inimigos próximos. A página de junho do Monthly Colors usa o dourado das fogueiras, as bandeirinhas e as noites frias como identidade cultural das festas juninas; aqui essa imagem vira uma zona de fogo.", 5600, Color("ff7a1a"), "JUN • FESTA JUNINA", [4, 5, 2], "JUNHO • FESTA JUNINA", "A fogueira e o tom dourado são elementos culturais destacados na página de junho."),
+	]
+
 static func ativos() -> Array[Dictionary]:
 	return [
 	_item(&"p01_ovo_surpresa", "OVO SURPRESA", "Cria um ovo no ponto de ativação: dele nasce um ajudante, uma cura perseguidora ou uma onda devastadora.", 0, Color("ffd45a"), "ABR • PÁSCOA", [3, 3, 3], &"primeiro_brilho", "A renovação e as cores da Páscoa viram uma escolha rápida em combate.", "res://Habilidades/monthly_p01.tres"),
@@ -96,7 +111,7 @@ static func armas() -> Array[Dictionary]:
 	_item(&"a03_alcateia_misseis", "FOGOS DO RECOMEÇO", "Três foguetes inteligentes cercam o alvo por ângulos diferentes.", 28000, Color("e7edff"), "JAN • ANO NOVO", [4, 3, 2], &"", "Fogos de Ano Novo representam o encerramento de um ciclo e o começo do próximo."),
 	_item(&"a04_canhao_esturjao", "CANHÃO DO ESTURJÃO", "Segure para carregar um único disparo ondulante, pesado e perfurante.", 5100, Color("54c6ff"), "AGO • LUA DO ESTURJÃO", [5, 3, 1], &"", "A Lua do Esturjão, apresentada no card de agosto, inspira um disparo profundo que avança como correnteza."),
 	_item(&"a05_minas_castor", "SINALIZADORES AMARELOS", "Instala até quatro sinais que explodem após 5 segundos. Melhorias liberam pavio curto, sensor ou comando remoto.", 0, Color("ffd447"), "MAI • MAIO AMARELO", [5, 5, 3], &"constelacao_50", "O Maio Amarelo chama atenção para segurança e prevenção; o sinalizador usa contagem visível antes do perigo."),
-	_item(&"a06_feixe_perielio", "FEIXE DO PERIÉLIO", "Laser contínuo infinito em alcance: cresce de 0,1 até 5 DPS e sobrecarrega após 10 segundos.", 0, Color("6fdcff"), "JAN • PERIÉLIO", [5, 4, 2], &"boss_sizigia", "A proximidade máxima da Terra ao Sol inspira um feixe que intensifica enquanto permanece ativo."),
+	_item(&"a06_feixe_perielio", "FEIXE DO PERIÉLIO", "Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.", 0, Color("ffd83d"), "JAN • PERIÉLIO", [5, 4, 2], &"boss_sizigia", "A proximidade máxima da Terra ao Sol inspira um feixe que intensifica enquanto permanece ativo."),
 	_item(&"a07_foice_colheita", "ARCO DA COLHEITA", "Crescente bumerangue que causa dano na ida e na volta.", 3900, Color("ffb34d"), "SET • COLHEITA", [4, 4, 3]),
 	_item(&"a08_torpedo_subterraneo", "RAIZ DO DIA DA TERRA", "Some no solo e emerge sob o inimigo marcado.", 4400, Color("8ae878"), "ABR • DIA DA TERRA", [5, 3, 2], &"", "O Dia da Terra inspira um ataque que viaja sob o solo antes de reaparecer."),
 	_item(&"a09_morteiro_fogueira", "MORTEIRO DA FOGUEIRA", "Brasas lentas explodem e deixam uma zona curta de fogo.", 4300, Color("ff6f32"), "JUN • FOGUEIRA", [5, 4, 1]),
@@ -145,7 +160,7 @@ static func personalizacao() -> Array[Dictionary]:
 			"preco": 0, "cor": Color("aaff53"), "raridade": "MODELO • PADRÃO",
 			"stats": [3, 3, 3], "conquista": &"", "contexto": "O visual original da nave permanece selecionado por padrão.",
 			"caminho": "", "icone": ICONE_NAVE, "em_breve": false,
-			"grupo_personalizacao": &"modelo",
+			"grupo_personalizacao": &"modelo", "preservar_cores": true,
 		},
 		{
 			"id": &"c02_asa_delta", "nome": "ASA DELTA",
@@ -203,17 +218,17 @@ static func personalizacao() -> Array[Dictionary]:
 			"requer_conquista": &"combo_300_spectrum",
 			"contexto": "Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.",
 			"caminho": "", "icone": "res://UI/modelo_spectrum.svg", "em_breve": false,
-			"grupo_personalizacao": &"modelo",
+			"grupo_personalizacao": &"modelo", "preservar_cores": true,
 		},
 		{
 			"id": &"c09_modelo_fspeed", "nome": "MODELO FSPEED",
 			"descricao": "Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.",
-			"preco": 0, "cor": Color("72f4ff"), "raridade": "MODELO • VELOCIDADE",
+			"preco": 0, "cor": Color("ff2b2b"), "raridade": "MODELO • VELOCIDADE",
 			"stats": [3, 3, 3], "conquista": &"pontos_38000000_fspeed",
 			"requer_conquista": &"pontos_38000000_fspeed",
 			"contexto": "Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.",
 			"caminho": "", "icone": "res://UI/modelo_fspeed.svg", "em_breve": false,
-			"grupo_personalizacao": &"modelo",
+			"grupo_personalizacao": &"modelo", "preservar_cores": true,
 		},
 		_cor(&"c10_verde_original", "VERDE ORIGINAL", 0, Color("8bff2a"), "A cor clássica do Chromatic Void."),
 		_cor(&"c11_ciano", "CIANO", 650, Color("39dcff"), "Um brilho frio inspirado no vazio espacial."),
@@ -286,6 +301,18 @@ static func _item(
 		"caminho": caminho,
 		"icone": "res://Habilidades/Icones/monthly/%s.svg" % String(id),
 		"fonte_site": fonte_site,
+	}
+
+
+static func _habilidade_base(
+	caminho: String, nome: String, descricao: String, preco: int, cor: Color,
+	raridade: String, stats: Array, selo: String, contexto: String
+) -> Dictionary:
+	return {
+		"caminho": caminho, "nome": nome, "descricao": descricao,
+		"preco": preco, "cor": cor, "raridade": raridade, "stats": stats,
+		"selo": selo, "contexto": contexto,
+		"url": "https://tami4lvess.github.io/Monthly-Colors/",
 	}
 
 

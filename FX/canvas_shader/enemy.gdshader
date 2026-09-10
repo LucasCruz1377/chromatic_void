@@ -4,9 +4,12 @@ shader_type canvas_item;
 // InimigoBase para produzir um hitflash branco legível.
 uniform float brilho_base : hint_range(0.0, 0.10, 0.01) = 0.06;
 uniform float brightness : hint_range(0.0, 1.0, 0.01) = 0.0;
+uniform float freeze_amount : hint_range(0.0, 1.0, 0.01) = 0.0;
 
 void fragment() {
 	vec4 col = COLOR;
+	vec3 gelo = vec3(0.38, 0.84, 1.0);
+	col.rgb = mix(col.rgb, gelo, clamp(freeze_amount, 0.0, 1.0));
 	float flash = clamp(brightness, 0.0, 1.0);
 	col.rgb = mix(col.rgb, vec3(1.0), flash);
 	col.rgb *= 1.0 + brilho_base;

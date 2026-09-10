@@ -1,36 +1,12 @@
 <svg width="167" height="71" viewBox="0 0 167 71" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M102.885 23.622C104.033 23.5558 105 24.4689 105 25.6187L105 45.3813C105 46.5312 104.033 47.4442 102.885 47.378L80.8848 46.1087C79.8267 46.0477 79 45.1719 79 44.1121L79 26.8879C79 25.8281 79.8267 24.9523 80.8848 24.8913L102.885 23.622Z" fill="white"/>
-<rect x="78" y="32" width="7" height="59" transform="rotate(90 78 32)" fill="white"/>
-<path d="M162 36L157.5 38.5L106 47L106 36L162 36Z" fill="white"/>
-<path d="M162 35L157.5 32.5L106 24L106 35L162 35Z" fill="white"/>
-<rect x="18" y="40" width="14" height="9" transform="rotate(-180 18 40)" fill="white"/>
-<path d="M16 55L0 58L4 56L4 40L18 40L16 55Z" fill="white"/>
-<path d="M16 16L0 13L4 15L4 31H18L16 16Z" fill="white"/>
-<rect x="167" y="41.6" width="14" height="12.2" transform="rotate(-180 167 41.6)" fill="white"/>
-<path d="M165 61.9333L149 66L153 63.2889L153 41.6L167 41.6L165 61.9333Z" fill="white"/>
-<path d="M165 9.06667L149 5.00001L153 7.71112L153 29.4H167L165 9.06667Z" fill="white"/>
-<path d="M78.0296 24L78.0296 31L19 31L19 24L91.7692 1.00001L105 22.5L78.0296 24Z" fill="white"/>
-<path d="M78.0296 47L78.0296 40L19 40L19 47L91.7692 70L105 48.5L78.0296 47Z" fill="white"/>
-<rect x="162" y="35" width="1" height="56" transform="rotate(90 162 35)" fill="white"/>
-<rect x="37" width="12" height="21" rx="4" transform="rotate(90 37 0)" fill="white"/>
-<rect x="37" width="12" height="21" rx="4" transform="rotate(90 37 0)" fill="white"/>
-<rect x="37" y="59" width="12" height="21" rx="4" transform="rotate(90 37 59)" fill="white"/>
-<rect x="37" y="59" width="12" height="21" rx="4" transform="rotate(90 37 59)" fill="white"/>
-<rect x="142" y="59" width="12" height="21" rx="4" transform="rotate(90 142 59)" fill="white"/>
-<rect x="142" y="59" width="12" height="21" rx="4" transform="rotate(90 142 59)" fill="white"/>
-<rect x="142" y="7.62939e-06" width="12" height="21" rx="4" transform="rotate(90 142 7.62939e-06)" fill="white"/>
-<rect x="142" y="7.62939e-06" width="12" height="21" rx="4" transform="rotate(90 142 7.62939e-06)" fill="white"/>
-<rect x="142" y="7.62939e-06" width="12" height="21" rx="4" transform="rotate(90 142 7.62939e-06)" fill="white"/>
-<line x1="26" y1="48" x2="25.9999" y2="59" stroke="white" stroke-width="2"/>
-<line x1="32.7526" y1="50.6585" x2="25.7526" y2="58.6585" stroke="white" stroke-width="2"/>
-<line x1="20.9941" y1="45.7229" x2="24.9611" y2="59.4802" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="11" y2="-1" transform="matrix(-6.37797e-06 -1 -1 6.37797e-06 25 22.7573)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="10.6301" y2="-1" transform="matrix(-0.658505 -0.752577 -0.752577 0.658505 32 20.7573)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="14.3178" y2="-1" transform="matrix(0.27707 -0.96085 -0.96085 -0.27707 20.0327 24.7573)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="21.5886" y2="-1" transform="matrix(3.31574e-06 -1 1 1.26469e-05 132.033 33.0748)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="17.1905" y2="-1" transform="matrix(0.407201 -0.913339 0.503217 0.86416 125.033 29.1497)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="27.2899" y2="-1" transform="matrix(-0.145367 -0.989378 0.870296 -0.492529 137 37)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="21.5886" y2="-1" transform="matrix(3.22832e-06 1 1 -1.25595e-05 132.033 37.9252)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="17.1905" y2="-1" transform="matrix(0.407201 0.913339 0.503217 -0.86416 125.033 41.8503)" stroke="white" stroke-width="2"/>
-<line y1="-1" x2="27.2899" y2="-1" transform="matrix(-0.145367 0.989378 0.870296 0.492529 137 34)" stroke="white" stroke-width="2"/>
+<g fill="#ff1f28">
+  <path d="M102.9 23.6A2 2 0 0 1 105 25.6v19.8a2 2 0 0 1-2.1 2L80.9 46.1A2 2 0 0 1 79 44.1V26.9a2 2 0 0 1 1.9-2z"/>
+  <rect x="19" y="32" width="59" height="7"/>
+  <path d="M106 24l51.5 8.5L162 35h-56zM106 36h56l-4.5 2.5L106 47z"/>
+  <rect x="4" y="31" width="14" height="9"/><path d="M16 16L0 13l4 2v16h14zM16 55L0 58l4-2V40h14z"/>
+  <rect x="153" y="29.4" width="14" height="12.2"/><path d="M165 9.1L149 5l4 2.7v21.7h14zM165 61.9L149 66l4-2.7V41.6h14z"/>
+  <path d="M19 24h59l13.8-23L105 22.5 78 24v7H19zM19 47h59v-7h27l-13.2 30z"/>
+  <rect x="16" y="0" width="21" height="12" rx="4"/><rect x="16" y="59" width="21" height="12" rx="4"/>
+  <rect x="121" y="0" width="21" height="12" rx="4"/><rect x="121" y="59" width="21" height="12" rx="4"/>
+</g>
 </svg>

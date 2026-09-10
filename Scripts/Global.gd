@@ -681,6 +681,10 @@ func carregar_configuracoes() -> void:
 	volume_musica = float(config["volume_musica"])
 	volume_som = float(config["volume_som"])
 	idioma = str(config["idioma"])
+	# Migra o identificador incorreto usado nas versões antigas para o locale
+	# padrão reconhecido pelo Godot, sem perder as demais configurações.
+	if idioma == "es_EN":
+		idioma = "en"
 	tela_cheia = bool(config["tela_cheia"])
 	vsync = bool(config["vsync"])
 	limite_fps = int(config["limite_fps"])

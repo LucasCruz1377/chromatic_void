@@ -351,7 +351,7 @@ func _abrir_fluxo(etapa: StringName) -> void:
 func _mostrar_escolha_modo() -> void:
 	_abrir_fluxo(&"modo")
 	_limpar_fluxo()
-	_adicionar_titulo_fluxo("INICIAR PARTIDA", "Escolha como deseja entrar no Vazio Cromático.")
+	_adicionar_titulo_fluxo("INICIAR PARTIDA", "Escolha como deseja entrar no Vazio.")
 	var solo := _adicionar_botao_fluxo("JOGAR SOLO", _on_solo_pressed, true)
 	_adicionar_botao_fluxo("MULTIPLAYER", _on_multiplayer_pressed)
 	_adicionar_botao_fluxo("VOLTAR", _voltar_fluxo)

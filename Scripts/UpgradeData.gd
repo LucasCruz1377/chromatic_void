@@ -513,7 +513,7 @@ const DADOS_ARMAS: Dictionary = {
 		"tags": [&"arma_especifica", &"dano", &"perielio"]
 	},
 	&"perielio_potencia": {
-		"nome": "NÚCLEO HIPERQUENTE", "descricao": "Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,1 DPS.",
+		"nome": "NÚCLEO HIPERQUENTE", "descricao": "Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,2 DPS.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_foco.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "RARA", "cor": Color("ff6b35"), "max_nivel": 3, "peso": 0.42,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"perielio_foco": 1}, "arma_exclusiva": &"a06_feixe_perielio",

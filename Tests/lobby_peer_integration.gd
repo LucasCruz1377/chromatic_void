@@ -428,10 +428,24 @@ func _personalizacoes_distintas_corretas() -> bool:
 		var texto := label.get_child(0) as Label if is_instance_valid(label) and label.get_child_count() > 0 else null
 		var barra := jogador.get_node_or_null("NicknameRede/BarraVidaRede") as ProgressBar
 		if jogador.modelo_visual_nave != esperado_modelo or jogador.cor_visual_nave != esperada_cor:
+			print("DIAGNOSTICO LOADOUT %s peer=%d modelo=%s esperado=%s cor=%s esperada=%s" % [papel, jogador.peer_id_dono, jogador.modelo_visual_nave, esperado_modelo, jogador.cor_visual_nave, esperada_cor])
 			return false
 		if jogador.habilidade_rede_path != esperado_poder or not is_instance_valid(texto) or not is_instance_valid(barra):
+			print("DIAGNOSTICO LOADOUT %s peer=%d habilidade=%s esperada=%s texto=%s barra=%s" % [papel, jogador.peer_id_dono, jogador.habilidade_rede_path, esperado_poder, is_instance_valid(texto), is_instance_valid(barra)])
 			return false
-		if not texto.get_theme_color("font_color").is_equal_approx(jogador.obter_cor_personalizacao()):
+		# O Spectrum anima a matiz com o relógio; duas leituras consecutivas podem
+		# diferir alguns milésimos mesmo representando a mesma identidade visual.
+		var cor_nickname: Color = texto.get_theme_color("font_color")
+		var cor_modelo: Color = jogador.obter_cor_personalizacao()
+		var diferenca_cor := maxf(
+			maxf(
+				absf(cor_nickname.r - cor_modelo.r),
+				absf(cor_nickname.g - cor_modelo.g)
+			),
+			absf(cor_nickname.b - cor_modelo.b)
+		)
+		if diferenca_cor > 0.01:
+			print("DIAGNOSTICO LOADOUT %s peer=%d cor_nick=%s cor_nave=%s" % [papel, jogador.peer_id_dono, texto.get_theme_color("font_color"), jogador.obter_cor_personalizacao()])
 			return false
 		if jogador.particulas_rastro_modelo_o.emitting:
 			return false
