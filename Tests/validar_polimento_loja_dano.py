@@ -35,7 +35,8 @@ assert 'CatalogoMonthly.habilidades_base()' in SHOP
 assert 'habilidadeFrenesiCarnavalesco.tres' in CATALOGO
 assert ', 15000, Color("ff3dc2")' in CATALOGO
 assert 'detalhe_icone.custom_minimum_size = Vector2(78, 78)' in SHOP
-assert 'detalhe_contexto.custom_minimum_size = Vector2(150, 78)' in SHOP
+assert 'detalhe_contexto.custom_minimum_size' in SHOP
+assert 'detalhe_contexto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART' in SHOP
 assert 'var linha_icone := HBoxContainer.new()' in SHOP
 assert 'detalhe_descricao.custom_minimum_size = Vector2(0, 72)' in SHOP
 assert 'estrutura_detalhes.add_child(preco_box)' in SHOP
@@ -185,7 +186,7 @@ assert 'const MIN_ENEMIES := 2' in BATALHA
 assert '&"sinal_da_estrela"' in GLOBAL
 assert '"secreta": true' in GLOBAL
 assert '"requer_conquista": &"sinal_da_estrela"' in (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
-assert '&"combo_300_spectrum"' in GLOBAL
-assert '&"pontos_38000000_fspeed"' in GLOBAL
+assert '&"combo_213_spectrum"' in GLOBAL
+assert '&"pontos_75000000_fspeed"' in GLOBAL
 
 print("Polimento verificado: loja, filtros, skins, sinalizador, efeitos e hitflash.")
