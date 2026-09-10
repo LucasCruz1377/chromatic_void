@@ -1,0 +1,35 @@
+CHROMATIC VOID — SIZÍGIA ETERNA / NOVA CINEMÁTICA
+
+Este pacote é cumulativo e foi criado sobre a versão:
+ChromaticVoid_Correcao_Parse_Musica_Menu_substituicao.zip
+
+ALTERAÇÕES DESTA ENTREGA
+
+- O Sol novo recuperou a animação geométrica da versão antiga:
+  halo pulsante, 16 raios externos oscilantes e 8 raios internos em contrarrotação.
+- Na troca Lua -> Sol, a Lua sai inteiramente pela esquerda e só depois o Sol
+  entra pela direita. Não existe troca instantânea de textura em cena.
+- Na transição para o Eclipse, o Sol para e a Lua retorna da esquerda.
+- Lua e Sol ocupam posições lado a lado e se unem lentamente.
+- A tela escurece de forma gradual durante a união.
+- O Eclipse pisca no escuro com brilho neon antes da batalha.
+- A volta da imagem dispara uma onda de choque feita por fragment shader.
+  O shader refrata os pixels da arena, criando compressão e expansão visual.
+- A câmera e o controle recebem impacto no início da onda.
+- O jogador permanece protegido e o boss permanece parado até o fim da cena.
+
+VALIDAÇÃO
+
+- Importação completa no Godot 4.7 sem erros de parse ou compilação.
+- 167 referências res:// verificadas.
+- Todos os 9 smoke tests passaram.
+- Teste novo cobre saída, entrada, fusão, Eclipse e encerramento do shader.
+- Cena principal permaneceu aberta por 8 segundos em modo headless sem erros.
+
+SUBSTITUIÇÃO
+
+Extraia este ZIP na raiz do projeto e permita a substituição dos arquivos.
+O pacote não contém a pasta de cache .godot.
+
+LotusDance.mp3 deve continuar em:
+sounds/OST/LotusDance.mp3

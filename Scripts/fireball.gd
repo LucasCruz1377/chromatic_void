@@ -59,6 +59,12 @@ var rotacao_estado_rede := 0.0
 var escala_estado_rede := Vector2.ONE
 var visibilidade_estado_rede := true
 var recebeu_estado_rede := false
+var nevasca_gelo := false
+var abaixo_zero_gelo := false
+var linha_feixe: Line2D
+var brilho_feixe: Line2D
+var intervalo_dano_feixe := 0.0
+var comprimento_feixe := 1200.0
 
 @onready var visual: Polygon2D = $Polygon2D
 @onready var luz: PointLight2D = $PointLight2D
@@ -95,13 +101,17 @@ func configurar_id_disparo_rede(novo_id: String, visual_remoto: bool) -> void:
 
 func aplicar_estado_visual_rede(
 	nova_posicao: Vector2, nova_rotacao: float,
-	nova_escala: Vector2, nova_visibilidade: bool
+	nova_escala: Vector2, nova_visibilidade: bool,
+	nova_cor: Color = Color.TRANSPARENT
 ) -> void:
 	posicao_estado_rede = nova_posicao
 	rotacao_estado_rede = nova_rotacao
 	escala_estado_rede = nova_escala
 	visibilidade_estado_rede = nova_visibilidade
 	recebeu_estado_rede = true
+	if nova_cor.a > 0.0:
+		cor_monthly = nova_cor
+		_atualizar_cor_feixe()
 	set_meta("estado_rede_recebido", true)
 
 
@@ -167,6 +177,8 @@ func configurar_estilo_monthly(estilo: StringName, cor: Color, config: Dictionar
 	tempo_vida = maxf(float(config.get("tempo_vida", tempo_vida)), 0.05)
 	tempo_orbita = maxf(float(config.get("tempo_orbita", tempo_orbita)), 0.10)
 	duracao_lentidao = maxf(float(config.get("duracao_lentidao", duracao_lentidao)), 0.05)
+	nevasca_gelo = bool(config.get("nevasca_gelo", false))
+	abaixo_zero_gelo = bool(config.get("abaixo_zero_gelo", false))
 	raio_absorcao = maxf(float(config.get("raio_absorcao", raio_absorcao)), 8.0)
 	multiplicador_retorno = maxf(float(config.get("multiplicador_retorno", multiplicador_retorno)), 0.5)
 	bumerangue_alcance_ida = maxf(float(config.get("alcance_ida", bumerangue_alcance_ida)), 80.0)
@@ -204,6 +216,15 @@ func configurar_estilo_monthly(estilo: StringName, cor: Color, config: Dictionar
 		&"mortar": tempo_vida = 1.1
 		&"orbit": tempo_vida = 2.8
 		&"cold": tempo_vida = 3.0
+		&"ice_stack":
+			tempo_vida = maxf(float(config.get("tempo_vida", 2.2)), 0.5)
+			penetracoes_restantes = 0
+		&"perielio_ray":
+			tempo_vida = 3600.0
+			velocidade = 0.0
+			monitoring = false
+			monitorable = false
+			_configurar_feixe_perielio()
 
 
 func _physics_process(delta: float) -> void:
@@ -242,6 +263,7 @@ func _atualizar_estado_rede(delta: float) -> void:
 		global_rotation = lerp_angle(global_rotation, rotacao_estado_rede, 0.78)
 		scale = scale.lerp(escala_estado_rede, 0.72)
 		visible = visibilidade_estado_rede
+		_atualizar_cor_feixe()
 		return
 	intervalo_estado_rede -= delta
 	if intervalo_estado_rede > 0.0:
@@ -255,11 +277,15 @@ func _atualizar_estado_rede(delta: float) -> void:
 			"rotacao": global_rotation,
 			"escala": scale,
 			"visivel": visible,
+			"cor": cor_monthly,
 		})
 
 
 func _processar_movimento_monthly(delta: float) -> bool:
 	match estilo_monthly:
+		&"perielio_ray":
+			_processar_feixe_perielio(delta)
+			return true
 		&"mine":
 			rotation += delta * 1.8
 			queue_redraw()
@@ -539,11 +565,13 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 
 	_aplicar_dano_critico(body, dmg)
+	if estilo_monthly == &"ice_stack" and body.has_method("aplicar_camada_gelo"):
+		body.call("aplicar_camada_gelo", 1, nevasca_gelo, abaixo_zero_gelo)
 	if estilo_monthly == &"snow" and body.has_method("aplicar_atordoamento"):
 		body.aplicar_atordoamento(duracao_lentidao)
-	if body is CharacterBody2D:
+	if estilo_monthly == &"snow" and body is CharacterBody2D:
 		var corpo := body as CharacterBody2D
-		corpo.velocity *= 0.1
+		corpo.velocity *= 0.72
 
 	if is_instance_valid(dono_player) and dono_player.has_method("registrar_acerto_projetil"):
 		dono_player.registrar_acerto_projetil()
@@ -584,6 +612,102 @@ func _draw() -> void:
 				Vector2.ZERO, 25.0, -PI * 0.5, -PI * 0.5 + TAU * restante,
 				32, cor_monthly, 3.2, true
 			)
+
+
+func _configurar_feixe_perielio() -> void:
+	if is_instance_valid(visual):
+		visual.visible = false
+	if is_instance_valid(luz):
+		luz.visible = false
+	brilho_feixe = Line2D.new()
+	brilho_feixe.name = "BrilhoFeixePerielio"
+	brilho_feixe.width = 14.0
+	brilho_feixe.default_color = Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.18)
+	brilho_feixe.antialiased = true
+	add_child(brilho_feixe)
+	linha_feixe = Line2D.new()
+	linha_feixe.name = "FeixePerielio"
+	linha_feixe.width = 5.0
+	linha_feixe.default_color = cor_monthly
+	linha_feixe.antialiased = true
+	add_child(linha_feixe)
+	_atualizar_geometria_feixe()
+
+
+func _processar_feixe_perielio(delta: float) -> void:
+	if not is_instance_valid(dono_player) or not dono_player is Node2D:
+		queue_free()
+		return
+	var nave := dono_player as Node2D
+	global_position = nave.global_position + Vector2.from_angle(nave.global_rotation) * 28.0
+	global_rotation = nave.global_rotation
+	comprimento_feixe = _comprimento_ate_borda(global_position, Vector2.from_angle(global_rotation))
+	if dono_player.has_method("feixe_perielio_em_sobrecarga") and bool(dono_player.call("feixe_perielio_em_sobrecarga")):
+		cor_monthly = Color(1.0, 0.16, 0.12)
+	else:
+		cor_monthly = Color(0.42, 0.86, 1.0)
+	_atualizar_cor_feixe()
+	_atualizar_geometria_feixe()
+	if somente_visual_rede:
+		return
+	if (
+		dono_player.has_method("feixe_perielio_pode_causar_dano")
+		and not bool(dono_player.call("feixe_perielio_pode_causar_dano"))
+	):
+		return
+	intervalo_dano_feixe -= delta
+	if intervalo_dano_feixe > 0.0:
+		return
+	var passo := 0.10
+	intervalo_dano_feixe = passo
+	var dps := 0.1
+	if dono_player.has_method("obter_dps_feixe_perielio"):
+		dps = float(dono_player.call("obter_dps_feixe_perielio"))
+	var direcao := Vector2.from_angle(global_rotation)
+	for candidato in get_tree().get_nodes_in_group("inimigo"):
+		if not is_instance_valid(candidato) or not candidato is Node2D or not candidato.has_method("tomarDano"):
+			continue
+		var deslocamento := (candidato as Node2D).global_position - global_position
+		var projecao := deslocamento.dot(direcao)
+		if projecao < 0.0 or projecao > comprimento_feixe:
+			continue
+		if absf(deslocamento.cross(direcao)) <= 11.0:
+			_aplicar_dano_critico(candidato as Node2D, dps * passo * dmg)
+			if is_instance_valid(dono_player) and dono_player.has_method("registrar_acerto_projetil"):
+				dono_player.call("registrar_acerto_projetil")
+
+
+func _comprimento_ate_borda(origem: Vector2, direcao: Vector2) -> float:
+	var area := Global.obter_retangulo_area_visivel()
+	var distancias: Array[float] = []
+	if direcao.x > 0.001:
+		distancias.append((area.end.x - origem.x) / direcao.x)
+	elif direcao.x < -0.001:
+		distancias.append((area.position.x - origem.x) / direcao.x)
+	if direcao.y > 0.001:
+		distancias.append((area.end.y - origem.y) / direcao.y)
+	elif direcao.y < -0.001:
+		distancias.append((area.position.y - origem.y) / direcao.y)
+	var menor := 1600.0
+	for distancia in distancias:
+		if distancia >= 0.0:
+			menor = minf(menor, distancia)
+	return maxf(menor + 120.0, 160.0)
+
+
+func _atualizar_geometria_feixe() -> void:
+	var pontos := PackedVector2Array([Vector2.ZERO, Vector2(comprimento_feixe, 0.0)])
+	if is_instance_valid(brilho_feixe):
+		brilho_feixe.points = pontos
+	if is_instance_valid(linha_feixe):
+		linha_feixe.points = pontos
+
+
+func _atualizar_cor_feixe() -> void:
+	if is_instance_valid(brilho_feixe):
+		brilho_feixe.default_color = Color(cor_monthly.r, cor_monthly.g, cor_monthly.b, 0.18)
+	if is_instance_valid(linha_feixe):
+		linha_feixe.default_color = cor_monthly
 
 
 func detonar_mina() -> void:

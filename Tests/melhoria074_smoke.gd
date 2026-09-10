@@ -23,9 +23,11 @@ func _ready() -> void:
 
 func testar_curva_xp_e_dano() -> void:
 	var xp_inicio := InimigoBase.calcular_fator_xp_combo(1, 0)
+	var xp_combo_20 := InimigoBase.calcular_fator_xp_combo(20, 0)
 	var xp_pos_pet0 := InimigoBase.calcular_fator_xp_combo(10, 1)
 	var xp_final := InimigoBase.calcular_fator_xp_combo(200, 4)
-	verificar(is_equal_approx(xp_inicio, 1.0), "o primeiro abate alterou o XP base")
+	verificar(xp_inicio > 1.0 and xp_inicio < 1.03, "o primeiro abate recebeu bônus excessivo")
+	verificar(is_equal_approx(xp_combo_20, 1.10), "combo 20x não concede exatamente 10% de XP")
 	verificar(xp_pos_pet0 > xp_inicio, "o combo não melhorou o XP após o PET-0")
 	verificar(xp_final > xp_pos_pet0 and xp_final < 2.25, "a curva de XP não cresce de forma moderada")
 

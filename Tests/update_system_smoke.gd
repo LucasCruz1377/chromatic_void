@@ -29,6 +29,12 @@ func _ready() -> void:
 	verificar(UpdateManager._versao_eh_mais_nova("0.6.0-beta.2", "0.6.0-alpha.9"), "não ordenou pré-releases")
 	verificar(not UpdateManager._versao_eh_mais_nova("0.6.0-beta.1", "0.6.0"), "ofereceu pré-release sobre versão estável")
 	verificar(not UpdateManager._versao_eh_mais_nova("versao-invalida", "0.6.0"), "aceitou versão inválida")
+	verificar(
+		UpdateManager.selecionar_versao_itch(
+			{"latest": "v0.7.4-beta.2"}, "0.7.4-beta.1"
+		) == "0.7.4-beta.2",
+		"Android não usa a versão mais recente publicada no itch.io"
+	)
 
 	var releases := [
 		criar_release("v0.6.1", false, UpdateManager.ASSET_WINDOWS),

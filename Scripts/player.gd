@@ -165,6 +165,11 @@ var rastro_exclusivo: RastroExclusivo
 var rastro_ativo_rede := false
 var carga_arma := 0.0
 var calor_feixe := 0.0
+var feixe_perielio_ativo: Node2D
+var tempo_uso_feixe_perielio := 0.0
+var bloqueio_feixe_perielio := 0.0
+var sobrecarga_feixe_perielio := false
+var aviso_sobrecarga_feixe_perielio := 0.0
 var tempo_poder_monthly := 0.0
 var tipo_poder_temporario: StringName = &""
 var cor_poder_temporario := Color.WHITE
@@ -257,8 +262,10 @@ func _atualizar_efeitos_visuais_rede() -> void:
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
 	if is_instance_valid(particles):
+		particles.visible = not usando_estrelas_modelo_o and not usando_rastro_especial
 		particles.emitting = rastro_ativo_rede and visible and not usando_estrelas_modelo_o and not usando_rastro_especial
 	if is_instance_valid(particulas_rastro_modelo_o):
+		particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o
 		particulas_rastro_modelo_o.emitting = rastro_ativo_rede and visible and usando_estrelas_modelo_o
 	if is_instance_valid(rastro_exclusivo):
 		rastro_exclusivo.definir_estado(rastro_ativo_rede and visible and usando_rastro_especial, obter_cor_personalizacao())
@@ -292,6 +299,12 @@ func _aplicar_campos_configuracao_rede() -> void:
 	modelo_visual_nave = StringName(str(configuracao_visual_rede.get("modelo", "c01_modelo_padrao")))
 	cor_visual_nave = StringName(str(configuracao_visual_rede.get("cor", "c10_verde_original")))
 	rastro_visual_nave = StringName(str(configuracao_visual_rede.get("rastro", "c20_rastro_padrao")))
+	if (
+		(rastro_visual_nave == &"c21_rastro_estelar_o" and modelo_visual_nave != &"c07_modelo_o")
+		or (rastro_visual_nave == &"c22_rastro_spectrum" and modelo_visual_nave != &"c08_modelo_spectrum")
+		or (rastro_visual_nave == &"c23_rastro_fspeed" and modelo_visual_nave != &"c09_modelo_fspeed")
+	):
+		rastro_visual_nave = &"c20_rastro_padrao"
 	habilidade_rede_path = str(configuracao_visual_rede.get("habilidade", ""))
 	var upgrades_variant: Variant = configuracao_visual_rede.get("upgrades", {})
 	niveis_upgrades_rede = upgrades_variant.duplicate(true) if upgrades_variant is Dictionary else {}
@@ -318,20 +331,19 @@ func _criar_nickname_rede() -> void:
 	suporte_nickname_rede.add_child(rotulo_nickname_rede)
 	barra_vida_rede = ProgressBar.new()
 	barra_vida_rede.name = "BarraVidaRede"
-	barra_vida_rede.position = Vector2(-43.0, -31.0)
-	barra_vida_rede.size = Vector2(86.0, 7.0)
+	barra_vida_rede.position = Vector2(-43.0, -29.0)
+	barra_vida_rede.size = Vector2(86.0, 4.0)
+	barra_vida_rede.custom_minimum_size = Vector2(86.0, 4.0)
 	barra_vida_rede.max_value = VIDA_MAXIMA
 	barra_vida_rede.value = vida
 	barra_vida_rede.show_percentage = false
 	barra_vida_rede.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var fundo_vida := StyleBoxFlat.new()
-	fundo_vida.bg_color = Color(0.015, 0.02, 0.06, 0.86)
-	fundo_vida.border_color = Color(0.55, 0.68, 0.88, 0.7)
-	fundo_vida.set_border_width_all(1)
-	fundo_vida.set_corner_radius_all(3)
+	fundo_vida.bg_color = Color(0.01, 0.012, 0.03, 0.92)
+	fundo_vida.set_corner_radius_all(1)
 	estilo_vida_rede = StyleBoxFlat.new()
 	estilo_vida_rede.bg_color = obter_cor_personalizacao()
-	estilo_vida_rede.set_corner_radius_all(3)
+	estilo_vida_rede.set_corner_radius_all(1)
 	barra_vida_rede.add_theme_stylebox_override("background", fundo_vida)
 	barra_vida_rede.add_theme_stylebox_override("fill", estilo_vida_rede)
 	suporte_nickname_rede.add_child(barra_vida_rede)
@@ -578,6 +590,7 @@ func aplicar_personalizacao_nave() -> void:
 			if is_instance_valid(material_fspeed):
 				material_fspeed.set_shader_parameter("cor_estrela", cor_nave)
 	if is_instance_valid(particulas_rastro_modelo_o):
+		particulas_rastro_modelo_o.visible = usando_modelo_o and _usa_rastro_modelo_o()
 		var material_particulas_o := particulas_rastro_modelo_o.material as ShaderMaterial
 		if is_instance_valid(material_particulas_o):
 			material_particulas_o.set_shader_parameter("cor_estrela", cor_nave)
@@ -597,10 +610,10 @@ func aplicar_personalizacao_nave() -> void:
 		PontaArma.position = Vector2(34.0, 0.0)
 		return
 	if usando_modelo_spectrum:
-		PontaArma.position = Vector2(37.0, 0.0)
+		PontaArma.position = Vector2(30.0, 0.0)
 		return
 	if usando_modelo_fspeed:
-		PontaArma.position = Vector2(36.0, 0.0)
+		PontaArma.position = Vector2(31.0, 0.0)
 		return
 	corpo_visual.position = Vector2.ZERO
 	corpo_visual.rotation = 0.0
@@ -714,7 +727,7 @@ func criar_visuais_modelos_exclusivos() -> void:
 	var spectrum := Sprite2D.new()
 	spectrum.name = "ModeloSpectrum"
 	spectrum.texture = TEXTURA_MODELO_SPECTRUM
-	spectrum.scale = Vector2(0.31, 0.31)
+	spectrum.scale = Vector2(0.25, 0.25)
 	spectrum.z_index = 3
 	spectrum.visible = false
 	var material_spectrum := ShaderMaterial.new()
@@ -726,7 +739,7 @@ func criar_visuais_modelos_exclusivos() -> void:
 	var fspeed := Sprite2D.new()
 	fspeed.name = "ModeloFspeed"
 	fspeed.texture = TEXTURA_MODELO_FSPEED
-	fspeed.scale = Vector2(0.36, 0.36)
+	fspeed.scale = Vector2(0.28, 0.28)
 	fspeed.z_index = 3
 	fspeed.visible = false
 	var material_fspeed := ShaderMaterial.new()
@@ -1372,8 +1385,10 @@ func atualizar_movimento(delta: float) -> void:
 	rastro_ativo_rede = emitindo_rastro
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
+	particles.visible = not usando_estrelas_modelo_o and not usando_rastro_especial
 	particles.emitting = emitindo_rastro and not usando_estrelas_modelo_o and not usando_rastro_especial
 	if is_instance_valid(particulas_rastro_modelo_o):
+		particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o
 		particulas_rastro_modelo_o.emitting = emitindo_rastro and usando_estrelas_modelo_o
 	if is_instance_valid(rastro_exclusivo):
 		rastro_exclusivo.definir_estado(emitindo_rastro and usando_rastro_especial, obter_cor_personalizacao())
@@ -1446,6 +1461,11 @@ func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
 
 func atualizar_combate(delta: float) -> void:
 	cooldown = maxf(cooldown - delta, 0.0)
+	if arma_monthly == &"a06_feixe_perielio":
+		_atualizar_feixe_perielio(delta)
+		return
+	elif is_instance_valid(feixe_perielio_ativo):
+		_encerrar_feixe_perielio(true)
 	if ctrlblock:
 		if carga_arma > 0.0:
 			carga_arma = 0.0
@@ -1529,6 +1549,111 @@ func nivel_upgrade_arma(id: StringName) -> int:
 	return DadosUpgrades.nivel(id, niveis_upgrades)
 
 
+func _atualizar_feixe_perielio(delta: float) -> void:
+	bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0.0)
+	if aviso_sobrecarga_feixe_perielio > 0.0:
+		aviso_sobrecarga_feixe_perielio = maxf(
+			aviso_sobrecarga_feixe_perielio - delta, 0.0
+		)
+		sobrecarga_feixe_perielio = true
+		if aviso_sobrecarga_feixe_perielio <= 0.0:
+			_concluir_sobrecarga_feixe_perielio()
+		return
+	var pressionando := vivo and not ctrlblock and Input.is_action_pressed("atirar")
+	if not pressionando:
+		_encerrar_feixe_perielio(true)
+		return
+	if bloqueio_feixe_perielio > 0.0:
+		return
+	if not is_instance_valid(feixe_perielio_ativo):
+		_iniciar_feixe_perielio()
+	if not is_instance_valid(feixe_perielio_ativo):
+		return
+	tempo_uso_feixe_perielio += delta
+	var limite_uso := obter_limite_uso_feixe_perielio()
+	var infinito := nivel_upgrade_arma(&"perielio_infinito") > 0
+	if tempo_uso_feixe_perielio < limite_uso:
+		sobrecarga_feixe_perielio = false
+		return
+	if infinito:
+		sobrecarga_feixe_perielio = true
+		# Custo direto e contínuo: usar tomar_dano aqui faria os frames de
+		# invencibilidade descartarem quase todo o 1% prometido pela melhoria.
+		# Como é um custo da própria arma, ele também não interfere no combo.
+		vida = maxf(vida - obter_dps_feixe_perielio() * 0.01 * delta, 0.0)
+		return
+	sobrecarga_feixe_perielio = true
+	_criar_feedback_monthly(
+		PontaArma.global_position, Color(1.0, 0.14, 0.10), 0.9, 2.0
+	)
+	# Mantém um aviso vermelho curto e sem dano antes de recolher o Line2D.
+	aviso_sobrecarga_feixe_perielio = 0.22
+
+
+func _concluir_sobrecarga_feixe_perielio() -> void:
+	_encerrar_feixe_perielio(false)
+	tempo_uso_feixe_perielio = 0.0
+	bloqueio_feixe_perielio = clampf(
+		2.2 - float(nivel_upgrade_arma(&"perielio_resfriamento")) * 0.35,
+		1.0, 3.0
+	)
+
+
+func _iniciar_feixe_perielio() -> void:
+	if is_instance_valid(feixe_perielio_ativo) or bloqueio_feixe_perielio > 0.0:
+		return
+	sobrecarga_feixe_perielio = false
+	feixe_perielio_ativo = criar_projetil(
+		rotation, 1.0, false, null, 0.0, &"perielio_ray",
+		Color(0.42, 0.86, 1.0), {"tempo_vida": 3600.0}
+	)
+	if is_instance_valid(somtiro):
+		somtiro.pitch_scale = 0.82
+		somtiro.play()
+
+
+func _encerrar_feixe_perielio(reiniciar_carga: bool) -> void:
+	if is_instance_valid(feixe_perielio_ativo):
+		feixe_perielio_ativo.queue_free()
+	feixe_perielio_ativo = null
+	if reiniciar_carga:
+		tempo_uso_feixe_perielio = 0.0
+		sobrecarga_feixe_perielio = false
+		aviso_sobrecarga_feixe_perielio = 0.0
+
+
+func obter_limite_uso_feixe_perielio() -> float:
+	return 10.0 + float(nivel_upgrade_arma(&"perielio_resfriamento")) * 2.5
+
+
+func obter_dps_feixe_perielio() -> float:
+	var nivel_potencia := nivel_upgrade_arma(&"perielio_potencia")
+	var dano_maximo := 5.0
+	match nivel_potencia:
+		1: dano_maximo = 10.0
+		2: dano_maximo = 20.0
+		3: dano_maximo = 30.0
+	var tempo_crescimento := 10.0 * pow(
+		0.72, nivel_upgrade_arma(&"perielio_foco")
+	)
+	var progresso := clampf(
+		tempo_uso_feixe_perielio / maxf(tempo_crescimento, 0.1), 0.0, 1.0
+	)
+	# Interpolação exponencial de 0,1 DPS até o teto atual.
+	return 0.1 * pow(dano_maximo / 0.1, progresso)
+
+
+func feixe_perielio_em_sobrecarga() -> bool:
+	return sobrecarga_feixe_perielio
+
+
+func feixe_perielio_pode_causar_dano() -> bool:
+	return (
+		not sobrecarga_feixe_perielio
+		or nivel_upgrade_arma(&"perielio_infinito") > 0
+	)
+
+
 func obter_tempo_carga_esturjao() -> float:
 	return maxf(1.55 * pow(0.80, nivel_upgrade_arma(&"esturjao_correnteza")), 0.82)
 
@@ -1599,14 +1724,8 @@ func disparar_arma_monthly() -> void:
 				criar_projetil(rotation + PI, 2.4, false, null, 0.0, &"mine", cor, {"velocidade": 0.0, "escala": 1.35, "explosao": 1.2, "raio": 142.0, "modo_mina": modo_mina, "tempo_detonacao": tempo_detonacao})
 			recarga *= 4.8
 		&"a06_feixe_perielio":
-			if calor_feixe >= 1.0:
-				return
-			cor = Color(1.0, 0.77, 0.18)
-			var nivel_foco := nivel_upgrade_arma(&"perielio_foco")
-			criar_projetil(rotation, 0.58 + float(nivel_foco) * 0.10, false, null, 0.0, &"beam", cor, {"velocidade": 1.65, "penetracao": 2 + nivel_foco, "escala": 0.7, "tempo_vida": 0.34})
-			var calor_por_tiro := 0.075 * pow(0.78, nivel_upgrade_arma(&"perielio_resfriamento"))
-			calor_feixe = minf(calor_feixe + calor_por_tiro, 1.15)
-			recarga = maxf(CD_MAX * 0.42, 0.045)
+			_iniciar_feixe_perielio()
+			return
 		&"a07_foice_colheita":
 			cor = Color(1.0, 0.68, 0.24)
 			var quantidade := 1 + nivel_upgrade_arma(&"colheita_dupla")
@@ -1654,11 +1773,18 @@ func disparar_arma_monthly() -> void:
 				criar_projetil(rotation + TAU * float(indice) / float(quantidade), 0.45 + float(nivel_sincronia) * 0.07, false, null, 0.0, &"orbit", cor, {"indice_orbita": indice, "quantidade_orbita": quantidade, "tempo_orbita": 0.65 - float(nivel_sincronia) * 0.10})
 			recarga *= 3.1
 		&"a13_canhao_lua_fria":
-			cor = Color(0.5, 0.76, 1.0)
-			var nivel_nucleo := nivel_upgrade_arma(&"solsticio_nucleo")
-			var nivel_absorcao := nivel_upgrade_arma(&"solsticio_absorcao")
-			criar_projetil(rotation, 2.1 + float(nivel_nucleo) * 0.18, false, null, 0.0, &"cold", cor, {"velocidade": 0.42, "escala": 1.75 + float(nivel_nucleo) * 0.16, "penetracao": 2, "explosao": 0.65 + float(nivel_nucleo) * 0.16, "raio": 96.0 + float(nivel_nucleo) * 14.0, "raio_absorcao": 42.0 + float(nivel_absorcao) * 12.0})
-			recarga *= 4.2
+			cor = Color(0.42, 0.86, 1.0)
+			criar_projetil(
+				rotation, 1.25, false, null, 0.0, &"ice_stack", cor,
+				{
+					"velocidade": 0.92,
+					"escala": 0.82,
+					"tempo_vida": 2.2,
+					"nevasca_gelo": nivel_upgrade_arma(&"solsticio_nucleo") > 0,
+					"abaixo_zero_gelo": nivel_upgrade_arma(&"solsticio_absorcao") > 0,
+				}
+			)
+			recarga *= 1.15
 		_:
 			arma_monthly = &""
 			fire()
@@ -1706,7 +1832,7 @@ func criar_projetil(
 	estilo_monthly: StringName = &"",
 	cor_monthly: Color = Color.WHITE,
 	config_monthly: Dictionary = {}
-) -> void:
+) -> Node2D:
 	var projetil = tiro.instantiate()
 	get_tree().current_scene.add_child(projetil)
 	if estilo_monthly == &"mine":
@@ -1784,6 +1910,7 @@ func criar_projetil(
 
 	if Rede.esta_conectado():
 		registrar_projetil_rede(projetil, estilo_monthly, cor_monthly, config_monthly)
+	return projetil as Node2D
 
 
 func registrar_projetil_rede(
@@ -2223,9 +2350,12 @@ func _receber_xp_autoritativo(valor: float) -> void:
 func subir_de_nivel() -> void:
 	nivel_atual += 1
 	xp_necessario = calcular_xp_proximo_nivel(nivel_atual)
-	# Solo mantém uma escolha em todo level up. No coop cada piloto recebe uma
-	# escolha nos níveis pares (2, 4, 6...), preservando a progressão compartilhada.
-	if not Rede.modo_multiplayer or nivel_atual % 2 == 0:
+	# A frequência acompanha o tamanho atual da equipe: solo/1, dupla/2,
+	# trio/3 e quarteto/4. Todos continuam recebendo a mesma quantidade.
+	var intervalo_melhoria := 1
+	if Rede.modo_multiplayer:
+		intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)
+	if nivel_atual % intervalo_melhoria == 0:
 		pontos_upgrade_pendentes += 1
 		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()

@@ -9,6 +9,7 @@ class_name HabilidadeMonthly
 var nivel_upgrade_1 := 0
 var nivel_upgrade_2 := 0
 var nivel_upgrade_3 := 0
+var nivel_upgrade_4 := 0
 
 
 func executar(player) -> void:
@@ -31,6 +32,7 @@ func _config_rework() -> Dictionary:
 				"intervalo": 0.54 * pow(0.82, nivel_upgrade_1),
 				"projeteis_explosao": nivel_upgrade_2 > 0,
 				"duracao": 3.0 + 0.75 * nivel_upgrade_3,
+				"limite_raizes": 3 + mini(nivel_upgrade_4, 2),
 			}
 		&"tempestade":
 			return {
@@ -55,6 +57,7 @@ func obter_upgrades_especificos() -> Dictionary:
 				&"flor_velocidade": criar_carta_upgrade("VINHAS VORAZES", "Cria vinhas 18% mais rápido quando há alvos.", icone, cor_efeito, Nome, 3, [&"cadencia"]),
 				&"flor_sementes": criar_carta_upgrade("SEMENTES EXPLOSIVAS", "Flores destruídas espalham seis pétalas perfurantes.", icone, cor_efeito, Nome, 1, [&"projeteis"]),
 				&"flor_duracao": criar_carta_upgrade("PRIMAVERA LONGA", "+0,75 segundo infectando inimigos próximos.", icone, cor_efeito, Nome, 3, [&"duracao"]),
+				&"flor_raizes": criar_carta_upgrade("JARDIM PROFUNDO", "+1 raiz simultânea, até o limite de cinco.", icone, cor_efeito, Nome, 2, [&"quantidade"]),
 			}
 		&"tempestade":
 			return {
@@ -72,6 +75,8 @@ func aplicar_upgrade_especifico(id: StringName, _nivel: int) -> bool:
 		nivel_upgrade_2 += 1
 	elif id in [&"ovo_drone_duracao", &"flor_duracao", &"tempestade_perfuracao"]:
 		nivel_upgrade_3 += 1
+	elif id == &"flor_raizes":
+		nivel_upgrade_4 += 1
 	else:
 		return false
 	return true
@@ -82,3 +87,4 @@ func reiniciar_estado() -> void:
 	nivel_upgrade_1 = 0
 	nivel_upgrade_2 = 0
 	nivel_upgrade_3 = 0
+	nivel_upgrade_4 = 0

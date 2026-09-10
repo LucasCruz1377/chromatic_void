@@ -19,6 +19,7 @@ var fase := 0.0
 var resolvido := false
 var resultado_ovo := 0
 var infectados: Array[Node2D] = []
+var posicoes_infectadas: Array[Vector2] = []
 var posicoes_fantasma: Array[Vector2] = []
 var folhas: Array[Dictionary] = []
 var mascara_inimigos_ativa := true
@@ -190,12 +191,18 @@ func _processar_orbe_cura(delta: float) -> void:
 
 
 func _processar_florescimento(delta: float) -> void:
+	for indice in range(infectados.size()):
+		if is_instance_valid(infectados[indice]):
+			posicoes_infectadas[indice] = infectados[indice].global_position
+	if infectados.size() >= clampi(int(config.get("limite_raizes", 3)), 3, 5):
+		return
 	acumulador -= delta
 	if acumulador <= 0.0:
 		acumulador = float(config.get("intervalo", 0.52))
 		var alvo := _proximo_nao_infectado(390.0)
 		if is_instance_valid(alvo):
 			infectados.append(alvo)
+			posicoes_infectadas.append(alvo.global_position)
 			if not somente_visual_rede and alvo.has_method("aplicar_atordoamento"):
 				alvo.call("aplicar_atordoamento", duracao - tempo + 0.2)
 			EfeitoCombateCena.criar(get_tree().current_scene, alvo.global_position, EfeitoCombate.Tipo.AVISO, cor, 0.85, player.global_position.direction_to(alvo.global_position), -1, false)
@@ -289,9 +296,8 @@ func _finalizar() -> void:
 				player.curar(float(config.get("cura", 22.0)) * potencia)
 		&"florescimento":
 			if somente_visual_rede:
-				for alvo in infectados:
-					if is_instance_valid(alvo):
-						ExplosaoMonthlyCena.criar(get_tree().current_scene, alvo.global_position, cor, 1.0, &"florescimento", -1, false)
+				for posicao in posicoes_infectadas:
+					ExplosaoMonthlyCena.criar(get_tree().current_scene, posicao, cor, 1.0, &"florescimento", -1, false)
 			else:
 				_explodir_infectados()
 		&"fantasma":
@@ -311,16 +317,17 @@ func _finalizar() -> void:
 
 
 func _explodir_infectados() -> void:
-	for alvo in infectados:
-		if not is_instance_valid(alvo):
-			continue
-		var posicao := alvo.global_position
-		if alvo.has_method("tomarDano"):
+	for indice in range(posicoes_infectadas.size()):
+		var alvo: Node2D = infectados[indice] if indice < infectados.size() else null
+		var posicao := posicoes_infectadas[indice]
+		if is_instance_valid(alvo):
+			posicao = alvo.global_position
+		if is_instance_valid(alvo) and alvo.has_method("tomarDano"):
 			alvo.call("tomarDano", 8.0 * potencia * player.multiplicador_dano_habilidade)
 		ExplosaoMonthlyCena.criar(get_tree().current_scene, posicao, cor, 1.0, &"florescimento", -1, false)
 		if bool(config.get("projeteis_explosao", false)):
-			for indice in range(6):
-				player.criar_projetil(TAU * float(indice) / 6.0, 0.42 * potencia, true, null, 0.0, &"petal", cor, {"origem_global": posicao, "penetracao": 1})
+			for indice_petala in range(6):
+				player.criar_projetil(TAU * float(indice_petala) / 6.0, 0.42 * potencia, true, null, 0.0, &"petal", cor, {"origem_global": posicao, "penetracao": 1})
 
 
 func _criar_laco() -> void:
@@ -384,9 +391,10 @@ func _draw() -> void:
 			draw_line(Vector2(-6, 0), Vector2(6, 0), Color.WHITE, 3.0)
 			draw_line(Vector2(0, -6), Vector2(0, 6), Color.WHITE, 3.0)
 		&"florescimento":
-			for alvo in infectados:
-				if not is_instance_valid(alvo): continue
-				var ponta := alvo.global_position
+			for indice in range(posicoes_infectadas.size()):
+				var ponta := posicoes_infectadas[indice]
+				if indice < infectados.size() and is_instance_valid(infectados[indice]):
+					ponta = infectados[indice].global_position
 				var origem := player.global_position
 				draw_line(origem, ponta, Color(cor, 0.22), 8.0)
 				draw_line(origem, ponta, cor, 2.0)

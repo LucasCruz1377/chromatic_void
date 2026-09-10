@@ -105,7 +105,6 @@ obrigatorias_por_conquista = {
     "p05_florescimento",
     "a06_feixe_perielio",
     "a12_jardim_orbital",
-    "a13_canhao_lua_fria",
     "u01_alcateia_lunar",
     "u04_floracao_rosa",
     "u05_jardim_crescente",

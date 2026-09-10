@@ -21,7 +21,7 @@ func _ready() -> void:
 	var flor := load("res://Habilidades/monthly_p05.tres") as HabilidadeMonthly
 	var tempestade := load("res://Habilidades/monthly_p14.tres") as HabilidadeMonthly
 	verificar(ovo.obter_upgrades_especificos().size() == 3, "Ovo não recebeu cura, dano e duração")
-	verificar(flor.obter_upgrades_especificos().size() == 3, "Florescimento não recebeu as três rotas")
+	verificar(flor.obter_upgrades_especificos().size() == 4, "Florescimento não recebeu a melhoria de raízes")
 	verificar(tempestade.obter_upgrades_especificos().size() == 3, "Tempestade não recebeu dano, duração e perfuração")
 
 	var cura_inicial := float(ovo._config_rework().get("cura", 0.0))
@@ -29,6 +29,10 @@ func _ready() -> void:
 	verificar(float(ovo._config_rework().get("cura", 0.0)) > cura_inicial, "upgrade de cura do Ovo não altera o efeito")
 	flor.aplicar_upgrade_especifico(&"flor_sementes", 1)
 	verificar(bool(flor._config_rework().get("projeteis_explosao", false)), "Florescimento não libera pétalas na explosão")
+	verificar(int(flor._config_rework().get("limite_raizes", 0)) == 3, "Florescimento não começa limitado a três raízes")
+	flor.aplicar_upgrade_especifico(&"flor_raizes", 1)
+	flor.aplicar_upgrade_especifico(&"flor_raizes", 2)
+	verificar(int(flor._config_rework().get("limite_raizes", 0)) == 5, "melhoria não eleva as raízes até cinco")
 	tempestade.aplicar_upgrade_especifico(&"tempestade_perfuracao", 1)
 	verificar(int(tempestade._config_rework().get("perfuracao", 0)) == 1, "Tempestade não ganhou perfuração")
 	verificar(float(tempestade._config_rework().get("duracao", 0.0)) >= 7.0, "Tempestade dura menos de 7 segundos")

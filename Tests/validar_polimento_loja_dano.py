@@ -32,7 +32,10 @@ assert 'func _ajustar_fonte_botao_acao()' in SHOP
 assert 'grade.columns = colunas' in SHOP
 assert 'conteudo_principal.vertical = false' in SHOP
 assert '"preco": 15000' in SHOP
-assert 'detalhe_contexto.custom_minimum_size = Vector2(0, 78)' in SHOP
+assert 'detalhe_contexto.custom_minimum_size = Vector2(0, 54)' in SHOP
+assert 'estrutura_detalhes.add_child(preco_box)' in SHOP
+assert 'estrutura_detalhes.add_child(botao_acao)' in SHOP
+assert 'VISITAR MONTHLY COLORS' in SHOP
 assert 'detalhe_recarga.autowrap_mode' in SHOP
 assert 'InputEventScreenDrag' in SHOP
 assert '"DESEQUIPAR"' in SHOP
@@ -107,11 +110,22 @@ assert 'c08_modelo_spectrum' in PLAYER and 'c09_modelo_fspeed' in PLAYER
 assert '_usa_rastro_modelo_o()' in PLAYER
 assert 'BarraVidaRede' in PLAYER
 assert 'PORTA_DESCOBERTA := 24568' in (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
+assert 'const MAX_JOGADORES := 4' in REDE
+assert 'const MIN_JOGADORES_PARTIDA := 2' in REDE
+assert 'Rede.jogadores.size() == 1' in MENU
 assert 'calcular_area_comum' in BATALHA
+assert 'calcular_area_jogo' in BATALHA
 assert 'LimiteArenaCoop' in BATALHA
+assert 'func conceder_cristais_coop' in BATALHA
+assert '_receber_cristais_coop.rpc(quantidade)' in BATALHA
+assert 'func configurar_alvo(' in CAMERA
+assert 'intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in PLAYER
+assert 'particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o' in PLAYER
+assert 'spectrum.scale = Vector2(0.25, 0.25)' in PLAYER
+assert 'fspeed.scale = Vector2(0.28, 0.28)' in PLAYER
 
 assert 'const DADOS_ARMAS' in UPGRADES
-assert UPGRADES.count('"arma_exclusiva":') == 25
+assert UPGRADES.count('"arma_exclusiva":') == 27
 assert 'func _compativel_com_arma' in UPGRADES
 assert 'especificos_arma' in UPGRADES
 icones_upgrades = sorted((ROOT / "Habilidades/Icones/upgrades_armas").glob("*.svg"))
@@ -134,6 +148,17 @@ for tipo in ['&"combo"', '&"pontos"', '&"sem_dano"']:
     assert tipo in GLOBAL, f"conquista ausente: {tipo}"
 assert 'MorteBossCena.criar' in ENEMY
 assert 'calcular_fator_xp_combo' in ENEMY
+assert '0.10 * sqrt(float(cadeia) / 20.0)' in ENEMY
+assert 'camadas_gelo' in ENEMY and 'tempo_decaimento_gelo = 5.0' in ENEMY
+assert 'nevasca_ao_quebrar' in ENEMY and 'abaixo_zero_ativo' in ENEMY
+assert '&"morte_inimigo"' in ENEMY
+assert '&"ice_stack"' in PROJECTILE and '&"perielio_ray"' in PROJECTILE
+assert 'monitoring = false' in PROJECTILE and 'linha_feixe' in PROJECTILE
+assert 'func obter_dps_feixe_perielio()' in PLAYER
+assert 'func obter_limite_uso_feixe_perielio()' in PLAYER
+assert 'perielio_infinito' in UPGRADES and 'perielio_potencia' in UPGRADES
+linha_solsticio = next(linha for linha in CATALOGO.splitlines() if '&"a13_canhao_lua_fria"' in linha and '_item(' in linha)
+assert ', 16500, Color' in linha_solsticio
 assert 'Dano *= 1.0 + 0.24 * indice_setor_dificuldade' in ENEMY
 assert 'return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)' in ENEMY
 assert '"cor": cor_particulas' in ENEMY

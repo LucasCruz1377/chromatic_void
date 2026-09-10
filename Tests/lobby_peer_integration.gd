@@ -143,9 +143,13 @@ func _ready() -> void:
 	if not await _esperar_upgrades_loadout_remoto():
 		_falhar("upgrades individuais não foram publicados no loadout remoto")
 		return
+	var cristais_antes := Global.cristais
 	if papel == "host":
 		inimigo_teste.conceder_recompensa()
 		inimigo_teste.conceder_recompensa()
+	if not await _esperar_cristais_rede(cristais_antes):
+		_falhar("cliente não recebeu os cristais concedidos pelo host")
+		return
 	if not await _esperar_upgrade_compartilhado(local):
 		_falhar("XP compartilhado não concedeu a mesma melhoria")
 		return
@@ -222,6 +226,16 @@ func _esperar_vida_inimigo(vida_maxima_esperada: float) -> bool:
 		for inimigo in get_tree().get_nodes_in_group("inimigo"):
 			if inimigo is InimigoBase and inimigo.Vida <= vida_maxima_esperada:
 				return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+
+func _esperar_cristais_rede(valor_anterior: int) -> bool:
+	var limite := 4.0
+	while limite > 0.0:
+		if Global.cristais > valor_anterior:
+			return true
 		await get_tree().create_timer(0.05).timeout
 		limite -= 0.05
 	return false

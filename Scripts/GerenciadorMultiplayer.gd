@@ -10,7 +10,8 @@ signal lobbies_lan_alterados(lobbies: Array)
 
 
 const PORTA := 24567
-const MAX_JOGADORES := 2
+const MAX_JOGADORES := 4
+const MIN_JOGADORES_PARTIDA := 2
 const NICK_PADRAO := "PILOTO"
 const PORTA_DESCOBERTA := 24568
 const ASSINATURA_DESCOBERTA := "CHROMATIC_VOID_LAN_V1"
@@ -293,12 +294,17 @@ func obter_configuracao_nave_local() -> Dictionary:
 
 
 func pode_iniciar_partida() -> bool:
-	return hospedando and em_lobby and jogadores.size() == MAX_JOGADORES
+	return (
+		hospedando
+		and em_lobby
+		and jogadores.size() >= MIN_JOGADORES_PARTIDA
+		and jogadores.size() <= MAX_JOGADORES
+	)
 
 
 func solicitar_inicio_partida() -> bool:
 	if not pode_iniciar_partida():
-		status_alterado.emit("Aguardando o segundo jogador entrar na sala.", true)
+		status_alterado.emit("Aguardando pelo menos dois jogadores na sala.", true)
 		return false
 	_iniciar_partida_remota.rpc()
 	return true

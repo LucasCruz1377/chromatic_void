@@ -1,0 +1,54 @@
+CHROMATIC VOID — AJUSTES CUMULATIVOS PARA TESTE
+Base analisada: main @ 6d3cb68c1c293997f2e7dffadc0bdc205e7f58d9
+
+COMO APLICAR
+1. Faça uma cópia da pasta atual do projeto.
+2. Extraia este ZIP sobre a raiz do repositório.
+3. Confirme a substituição dos arquivos existentes.
+4. Abra o projeto no Godot 4.7 e deixe a importação terminar.
+5. Execute os smoke tests antes de gerar uma release.
+
+O PACOTE CONTÉM
+- correções de crash ao matar e pausar no mesmo frame.
+- recuperação de falhas do carregamento que antes congelavam/fechavam o jogo.
+- Android restaurado ao renderer Mobile da 0.7.1, com fallback automático para
+  Compatibility/OpenGL; iOS permanece no caminho Mobile/Metal.
+- remoção das teias e dos picos de preprocess das partículas de fundo.
+- inimigos setoriais não morrem mais ao tocar o player.
+- vida e XP convertidos para barras equivalentes, preenchidas a partir do meio.
+- ícone do Modelo O reduzido na loja.
+- HUD de vida/XP centralizado e responsivo.
+- cursor nativo e aim.tscn ocultos no mobile.
+- limites de 2 a 10 inimigos regulares.
+- XP moderado por combo/setor e dano crescente por setor.
+- feedback explicativo para escudo, elo, nó e formação orbital.
+- música para os bosses novos e orçamento visual mobile reduzido.
+- scrollbar estreita na descrição da loja.
+- Modelo O pago, revelado somente após a conquista secreta.
+- preset/documentação/validação de projeto Xcode para iOS.
+- correção de cinco WAVs malformados herdados do último commit.
+- Constelação do Amparo refeita com quatro formações ofensivas, lasers
+  rastreadores, triângulo móvel, compressão da arena e reações dos satélites.
+- Nó de Ametista refeito com corredores móveis, fitas rastreadoras, ondas
+  vazadas, espiral reversível e contra-ataques ao romper cada amarra.
+- avisos pulsantes e perigos procedurais que deixam explícito quando o golpe
+  ainda está carregando e quando passa a causar dano.
+- glow, bloom, HDR e densidade de partículas mobile restaurados ao perfil da
+  release 0.7.1, preservando o preprocess curto e a correção das “teias”.
+- otimizações de CPU em buscas de aliados, redesenho de efeitos e números de
+  dano, sem reduzir os shaders ou as partículas principais.
+
+VALIDAÇÃO REALIZADA
+- importação e compilação de todos os scripts no Godot 4.7.
+- 21 cenas de smoke test aprovadas.
+- 107 scripts carregados e compilados no Godot 4.7.
+- 297 referências res:// verificadas.
+- validadores do updater, catálogo, loja, iOS e CI aprovados.
+- empacotamento PCK aprovado nos presets Windows, Web, Android e iOS.
+
+IMPORTANTE SOBRE IOS
+O preset gera o projeto Xcode, mas o IPA final precisa ser produzido em macOS
+com Xcode, templates do Godot, Apple Team ID, certificado e provisioning profile.
+Troque XXXXXXXXXX pelo Team ID somente no ambiente de assinatura.
+
+Nenhum PR, commit ou push está incluído neste pacote.

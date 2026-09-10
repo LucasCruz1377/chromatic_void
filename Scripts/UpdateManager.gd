@@ -1,11 +1,14 @@
 extends Node
 
 ## Gerencia a descoberta e a instalação de novas versões do Chromatic Void.
-## O GitHub Releases é a única fonte de versão e de arquivos, evitando que o
-## catálogo do itch.io e os arquivos publicados fiquem fora de sincronia.
+## Windows usa os artefatos da Release. No Android, a versão publicada no
+## canal do itch.io é a fonte de verdade, pois pode ser promovida depois.
 
 const GITHUB_REPO := "LucasCruz1377/chromatic_void"
 const RELEASES_API := "https://api.github.com/repos/%s/releases?per_page=30" % GITHUB_REPO
+const ITCH_TARGET_ANDROID := "lukass-1377/chromatic-void:android"
+const ITCH_LATEST_API := "https://itch.io/api/1/x/wharf/latest?target=lukass-1377%2Fchromatic-void%3Aandroid"
+const ITCH_GAME_URL := "https://lukass-1377.itch.io/chromatic-void"
 var request_headers := PackedStringArray([
 	"Accept: application/vnd.github+json",
 	"X-GitHub-Api-Version: 2022-11-28",
@@ -66,7 +69,9 @@ func verificar_atualizacao() -> void:
 	current_version = _obter_versao_atual()
 	_limpar_release_selecionada()
 
-	var erro := http_request.request(RELEASES_API, request_headers)
+	var endpoint := ITCH_LATEST_API if plataforma == PLATFORM_ANDROID else RELEASES_API
+	var headers := download_headers if plataforma == PLATFORM_ANDROID else request_headers
+	var erro := http_request.request(endpoint, headers)
 	if erro != OK:
 		checking_update = false
 		update_check_failed.emit("Não foi possível iniciar a verificação de atualizações.")
@@ -93,7 +98,20 @@ func _on_release_request_completed(
 		update_check_failed.emit("O servidor de atualizações respondeu com erro HTTP %d." % response_code)
 		return
 
-	var releases = JSON.parse_string(body.get_string_from_utf8())
+	var resposta = JSON.parse_string(body.get_string_from_utf8())
+	if obter_plataforma_atual() == PLATFORM_ANDROID:
+		var versao_itch := selecionar_versao_itch(resposta, current_version)
+		if versao_itch.is_empty():
+			update_check_finished.emit()
+			return
+		latest_version = versao_itch
+		latest_asset_url = ITCH_GAME_URL
+		latest_release_url = ITCH_GAME_URL
+		update_available.emit(latest_version)
+		update_check_finished.emit()
+		return
+
+	var releases = resposta
 	if not (releases is Array):
 		update_check_failed.emit("O servidor retornou uma lista de versões inválida.")
 		return
@@ -111,6 +129,13 @@ func _on_release_request_completed(
 
 	update_available.emit(latest_version)
 	update_check_finished.emit()
+
+
+func selecionar_versao_itch(resposta: Variant, versao_instalada: String) -> String:
+	if not resposta is Dictionary:
+		return ""
+	var versao := str((resposta as Dictionary).get("latest", "")).strip_edges()
+	return versao.trim_prefix("v") if _versao_eh_mais_nova(versao, versao_instalada) else ""
 
 
 func selecionar_melhor_release(

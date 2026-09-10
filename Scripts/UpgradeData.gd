@@ -499,18 +499,32 @@ const DADOS_ARMAS: Dictionary = {
 		"requisitos": {}, "arma_exclusiva": &"a05_minas_castor", "tags": [&"arma_especifica", &"detonador", &"maio_amarelo"]
 	},
 	&"perielio_resfriamento": {
-		"nome": "JANELA DO PERIÉLIO", "descricao": "O feixe aquece 22% menos por nível antes de exigir resfriamento.",
+		"nome": "JANELA DO PERIÉLIO", "descricao": "+2,5 segundos de uso contínuo por nível e reduz o bloqueio após uma sobrecarga.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_resfriamento.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "INCOMUM", "cor": Color("ffcf45"), "max_nivel": 2, "peso": 0.88,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a06_feixe_perielio",
-		"tags": [&"arma_especifica", &"calor", &"perielio"]
+		"tags": [&"arma_especifica", &"duracao", &"perielio"]
 	},
 	&"perielio_foco": {
-		"nome": "FOCO SOLAR", "descricao": "Concentra o feixe: mais dano e perfuração, mantendo sua vocação de curta distância.",
+		"nome": "CONVERGÊNCIA SOLAR", "descricao": "A curva exponencial alcança o dano máximo 28% mais rápido por nível.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_foco.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "RARA", "cor": Color("ff9f2f"), "max_nivel": 2, "peso": 0.62,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a06_feixe_perielio",
 		"tags": [&"arma_especifica", &"dano", &"perielio"]
+	},
+	&"perielio_potencia": {
+		"nome": "NÚCLEO HIPERQUENTE", "descricao": "Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,1 DPS.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_foco.svg", "categoria": "FEIXE DO PERIÉLIO",
+		"raridade": "RARA", "cor": Color("ff6b35"), "max_nivel": 3, "peso": 0.42,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"perielio_foco": 1}, "arma_exclusiva": &"a06_feixe_perielio",
+		"tags": [&"arma_especifica", &"dano", &"perielio"]
+	},
+	&"perielio_infinito": {
+		"nome": "SOL SEM OCASO", "descricao": "ULTRARRARA: remove a sobrecarga. Após o limite, o feixe fica vermelho e devolve 1% do próprio DPS ao casco por segundo.",
+		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_resfriamento.svg", "categoria": "FEIXE DO PERIÉLIO",
+		"raridade": "ULTRARRARA", "cor": Color("ff3344"), "max_nivel": 1, "peso": 0.10,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"perielio_resfriamento": 2, &"perielio_foco": 2}, "arma_exclusiva": &"a06_feixe_perielio",
+		"tags": [&"arma_especifica", &"risco", &"perielio"]
 	},
 	&"colheita_dupla": {
 		"nome": "CEIFA EM DUPLA", "descricao": "+1 arco de colheita por disparo, abrindo trajetórias laterais de ida e volta.",
@@ -597,18 +611,18 @@ const DADOS_ARMAS: Dictionary = {
 		"tags": [&"arma_especifica", &"dano", &"flores"]
 	},
 	&"solsticio_nucleo": {
-		"nome": "NOITE MAIS LONGA", "descricao": "Amplia o orbe, sua explosão e o dano liberado no estilhaçamento.",
+		"nome": "NEVASCA", "descricao": "Ao romper após cinco camadas, o alvo libera uma onda de 250 px que aplica duas camadas de gelo aos inimigos próximos.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/solsticio_nucleo.svg", "categoria": "CANHÃO DO SOLSTÍCIO",
-		"raridade": "INCOMUM", "cor": Color("90caff"), "max_nivel": 2, "peso": 0.84,
+		"raridade": "RARA", "cor": Color("90dcff"), "max_nivel": 1, "peso": 0.34,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a13_canhao_lua_fria",
-		"tags": [&"arma_especifica", &"area", &"solsticio"]
+		"tags": [&"arma_especifica", &"area", &"gelo", &"solsticio"]
 	},
 	&"solsticio_absorcao": {
-		"nome": "CÉU DE INVERNO", "descricao": "Aumenta a área que captura projéteis pequenos durante o avanço do orbe.",
+		"nome": "ABAIXO DE ZERO", "descricao": "ULTRARRARA: o congelamento total dura 5 segundos e irradia uma camada de gelo por segundo em 250 px.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/solsticio_absorcao.svg", "categoria": "CANHÃO DO SOLSTÍCIO",
-		"raridade": "RARA", "cor": Color("67a8ff"), "max_nivel": 2, "peso": 0.58,
-		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a13_canhao_lua_fria",
-		"tags": [&"arma_especifica", &"defesa", &"solsticio"]
+		"raridade": "ULTRARRARA", "cor": Color("67a8ff"), "max_nivel": 1, "peso": 0.12,
+		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"solsticio_nucleo": 1}, "arma_exclusiva": &"a13_canhao_lua_fria",
+		"tags": [&"arma_especifica", &"controle", &"gelo", &"solsticio"]
 	},
 }
 

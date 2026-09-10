@@ -125,6 +125,7 @@ var tamanhos_viewport_rede: Dictionary = {}
 var limite_arena_coop: LimiteArenaCoop
 var area_coop_recebida := false
 var tempo_reenvio_viewport := 0.0
+var area_visual_coop := Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
 
 
 func _ready() -> void:
@@ -227,8 +228,30 @@ func _configurar_spawners_multiplayer() -> void:
 			world_spawner.add_spawnable_scene(caminho)
 
 
+func conceder_cristais_coop(quantidade: int) -> void:
+	if quantidade <= 0:
+		return
+	Global.adicionar_cristais(quantidade)
+	if Rede.esta_conectado() and multiplayer.is_server():
+		_receber_cristais_coop.rpc(quantidade)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_cristais_coop(quantidade: int) -> void:
+	Global.adicionar_cristais(clampi(quantidade, 0, 1000))
+
+
 func _posicao_inicial_peer(id: int) -> Vector2:
-	return Vector2(175.0, 234.0) if id == 1 else Vector2(785.0, 306.0)
+	var posicoes := [
+		Vector2(210.0, 190.0), Vector2(750.0, 350.0),
+		Vector2(750.0, 190.0), Vector2(210.0, 350.0),
+	]
+	var ids: Array = Rede.jogadores.keys()
+	ids.sort()
+	var indice := ids.find(id)
+	if indice < 0:
+		indice = 0 if id == 1 else mini(ids.size(), posicoes.size() - 1)
+	return posicoes[clampi(indice, 0, posicoes.size() - 1)]
 
 
 func _enviar_solicitacao_entrada() -> void:
@@ -408,7 +431,8 @@ func _aplicar_estado_disparo_visual(dados: Dictionary) -> void:
 			Vector2(dados.get("posicao", projetil.global_position)),
 			float(dados.get("rotacao", projetil.global_rotation)),
 			Vector2(dados.get("escala", projetil.scale)),
-			bool(dados.get("visivel", projetil.visible))
+			bool(dados.get("visivel", projetil.visible)),
+			Color(dados.get("cor", Color.TRANSPARENT))
 		)
 
 
@@ -682,6 +706,21 @@ func _vincular_jogador_local() -> void:
 		tela_upgrades.definir_player_local(player)
 	if is_instance_valid(controles_mobile):
 		controles_mobile.configurar(self, player)
+	_configurar_camera_local()
+
+
+func _configurar_camera_local() -> void:
+	var camera_local := get_node_or_null("Camera") as Camera2D
+	if (
+		Rede.modo_multiplayer
+		and is_instance_valid(camera_local)
+		and is_instance_valid(player)
+		and camera_local.has_method("configurar_alvo")
+	):
+		camera_local.call(
+			"configurar_alvo", player, Global.obter_retangulo_area_visivel(),
+			area_visual_coop.size
+		)
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
@@ -1370,23 +1409,39 @@ func _publicar_area_coop() -> void:
 	var tamanhos: Array[Vector2] = []
 	for valor in tamanhos_viewport_rede.values():
 		tamanhos.append(Vector2(valor))
-	var area := calcular_area_comum(tamanhos)
+	var area_visual := calcular_area_comum(tamanhos)
+	var area := calcular_area_jogo(area_visual, Rede.jogadores.size())
 	var diferentes := resolucoes_sao_diferentes(tamanhos)
 	if Rede.esta_conectado():
-		_receber_area_coop.rpc(area.position, area.size, diferentes)
+		_receber_area_coop.rpc(
+			area.position, area.size, diferentes,
+			area_visual.position, area_visual.size
+		)
 	else:
-		_receber_area_coop(area.position, area.size, diferentes)
+		_receber_area_coop(
+			area.position, area.size, diferentes,
+			area_visual.position, area_visual.size
+		)
 
 
 @rpc("authority", "call_local", "reliable")
-func _receber_area_coop(posicao: Vector2, tamanho: Vector2, diferentes: bool) -> void:
+func _receber_area_coop(
+	posicao: Vector2, tamanho: Vector2, diferentes: bool,
+	posicao_visual := Vector2.ZERO, tamanho_visual := Vector2.ZERO
+) -> void:
 	var area := Rect2(posicao, tamanho)
+	area_visual_coop = (
+		Rect2(posicao_visual, tamanho_visual)
+		if tamanho_visual.x > 0.0 and tamanho_visual.y > 0.0
+		else area
+	)
 	Global.definir_area_multiplayer(area)
 	area_coop_recebida = true
 	if is_instance_valid(limite_arena_coop):
 		var area_local := Global.calcular_retangulo_area_visivel(get_viewport().get_visible_rect().size)
-		limite_arena_coop.configurar(area, area_local, diferentes)
+		limite_arena_coop.configurar(area_visual_coop, area_local, diferentes)
 	_atualizar_area_responsiva()
+	_configurar_camera_local()
 
 
 static func calcular_area_comum(tamanhos_viewport: Array[Vector2]) -> Rect2:
@@ -1402,6 +1457,17 @@ static func calcular_area_comum(tamanhos_viewport: Array[Vector2]) -> Rect2:
 	return Rect2((Global.TAMANHO_BASE_JOGO - tamanho_comum) * 0.5, tamanho_comum)
 
 
+static func calcular_area_jogo(area_visual: Rect2, quantidade_jogadores: int) -> Rect2:
+	var jogadores := clampi(quantidade_jogadores, 1, Rede.MAX_JOGADORES)
+	var fator := 1.0
+	match jogadores:
+		2: fator = 1.20
+		3: fator = 1.42
+		4: fator = 1.68
+	var tamanho := area_visual.size * fator
+	return Rect2(Global.TAMANHO_BASE_JOGO * 0.5 - tamanho * 0.5, tamanho)
+
+
 static func resolucoes_sao_diferentes(tamanhos_viewport: Array[Vector2]) -> bool:
 	if tamanhos_viewport.size() < 2:
 		return false
@@ -1415,10 +1481,17 @@ static func resolucoes_sao_diferentes(tamanhos_viewport: Array[Vector2]) -> bool
 func _atualizar_area_responsiva() -> void:
 	var area := Global.obter_retangulo_area_visivel()
 	if is_instance_valid(fundo_original):
-		fundo_original.position = area.get_center()
+		# O cenário preenche o viewport local; apenas as faixas do limitador
+		# escondem a sobra. Escalar o fundo pela arena comum expunha o cinza do
+		# clear color e criava o quadrado escuro visto na tela do host.
+		var area_local := Global.calcular_retangulo_area_visivel(
+			get_viewport().get_visible_rect().size
+		)
+		var area_fundo := area.merge(area_local)
+		fundo_original.position = area_fundo.get_center()
 		fundo_original.scale = Vector2(
-			escala_fundo_original.x * area.size.x / Global.TAMANHO_BASE_JOGO.x,
-			escala_fundo_original.y * area.size.y / Global.TAMANHO_BASE_JOGO.y
+			escala_fundo_original.x * area_fundo.size.x / Global.TAMANHO_BASE_JOGO.x,
+			escala_fundo_original.y * area_fundo.size.y / Global.TAMANHO_BASE_JOGO.y
 		)
 	var posicoes := [
 		Vector2(area.position.x + 30.0, area.position.y + 40.0),

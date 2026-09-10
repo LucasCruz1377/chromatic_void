@@ -6,10 +6,12 @@ const SONS := {
  &"investida": preload("res://sounds/SFX/inimigo_investida.wav"),
  &"dash": preload("res://sounds/SFX/Player_dash.wav"),
  &"cura": preload("res://sounds/SFX/Curar.wav"),
+ &"morte_inimigo": preload("res://sounds/enemydeath.wav"),
 }
 
 static func tocar(emissor: Node, id: StringName, intervalo: float = 0.12) -> void:
  if not is_instance_valid(emissor) or not emissor.is_inside_tree(): return
+ if not SONS.has(id): return
  var chave := "som_" + str(id)
  var agora := Time.get_ticks_msec()
  if agora < int(emissor.get_meta(chave, 0)): return

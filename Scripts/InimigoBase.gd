@@ -4,6 +4,7 @@ class_name InimigoBase
 
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const IndicadorDanoCena = preload("res://Scripts/IndicadorDano.gd")
+const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 const ShaderHitflash = preload("res://FX/canvas_shader/enemy.gdshader")
 const MorteBossCena = preload("res://Scripts/MorteBossFX.gd")
 
@@ -49,6 +50,13 @@ var _poligono_feedback: Polygon2D
 var _feedback_localizado := false
 var _feedback_com_poligono := false
 var indice_setor_dificuldade := 0
+var camadas_gelo := 0
+var tempo_decaimento_gelo := 0.0
+var congelado_totalmente := false
+var tempo_morte_congelado := 0.0
+var tempo_pulso_abaixo_zero := 0.0
+var nevasca_ao_quebrar := false
+var abaixo_zero_ativo := false
 
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
@@ -115,6 +123,9 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:VidaMaxima"),
 		NodePath(".:morto"),
 		NodePath(".:visible"),
+		NodePath(".:self_modulate"),
+		NodePath(".:camadas_gelo"),
+		NodePath(".:congelado_totalmente"),
 	]:
 		configuracao.add_property(caminho)
 		configuracao.property_set_spawn(caminho, true)
@@ -133,6 +144,9 @@ func _physics_process(delta: float) -> void:
 		return
 
 	atualizar_estados(delta)
+	_atualizar_estado_gelo(delta)
+	if morto:
+		return
 	atualizar_referencia_player()
 
 	var atraido_pelo_presente := _mover_para_presente_misterioso(delta)
@@ -143,7 +157,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		Mover(delta)
 
-	var velocidade_limite := obter_velocidade_maxima()
+	var velocidade_limite := obter_velocidade_maxima() * _fator_velocidade_gelo()
 	if atraido_pelo_presente:
 		velocidade_limite = maxf(velocidade_limite * 1.8, 320.0)
 	velocity = velocity.limit_length(velocidade_limite)
@@ -195,6 +209,115 @@ func _mover_para_presente_misterioso(delta: float) -> bool:
 func atualizar_estados(delta: float) -> void:
 	if tempo_atordoado > 0.0:
 		tempo_atordoado = maxf(tempo_atordoado - delta, 0.0)
+
+
+func aplicar_camada_gelo(
+	quantidade := 1, ativar_nevasca := false, ativar_abaixo_zero := false
+) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_camada_gelo.rpc_id(
+			1, clampi(quantidade, 1, 2), ativar_nevasca, ativar_abaixo_zero
+		)
+		return
+	_aplicar_camada_gelo_autoritativa(quantidade, ativar_nevasca, ativar_abaixo_zero)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_camada_gelo(
+	quantidade: int, ativar_nevasca: bool, ativar_abaixo_zero: bool
+) -> void:
+	if not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	_aplicar_camada_gelo_autoritativa(
+		clampi(quantidade, 1, 2), ativar_nevasca, ativar_abaixo_zero
+	)
+
+
+func _aplicar_camada_gelo_autoritativa(
+	quantidade: int, ativar_nevasca: bool, ativar_abaixo_zero: bool
+) -> void:
+	if morto or congelado_totalmente:
+		return
+	nevasca_ao_quebrar = nevasca_ao_quebrar or ativar_nevasca
+	abaixo_zero_ativo = abaixo_zero_ativo or ativar_abaixo_zero
+	var limite := 4 if is_in_group("boss") else 5
+	camadas_gelo = clampi(camadas_gelo + maxi(quantidade, 1), 0, limite)
+	tempo_decaimento_gelo = 5.0
+	_atualizar_visual_gelo()
+	var cena_combate := _obter_cena_combate()
+	if is_instance_valid(cena_combate):
+		EfeitoCombateCena.criar(
+			cena_combate, global_position, EfeitoCombate.Tipo.ACERTO,
+			Color(0.48, 0.86, 1.0), 0.55 + float(camadas_gelo) * 0.08
+		)
+	if camadas_gelo >= 5:
+		congelado_totalmente = true
+		tempo_morte_congelado = 5.0 if abaixo_zero_ativo else 3.0
+		tempo_pulso_abaixo_zero = 1.0
+		velocity = Vector2.ZERO
+		aplicar_atordoamento(tempo_morte_congelado + 0.1)
+
+
+func _atualizar_estado_gelo(delta: float) -> void:
+	if congelado_totalmente:
+		velocity = Vector2.ZERO
+		tempo_morte_congelado = maxf(tempo_morte_congelado - delta, 0.0)
+		if abaixo_zero_ativo:
+			tempo_pulso_abaixo_zero -= delta
+			if tempo_pulso_abaixo_zero <= 0.0:
+				tempo_pulso_abaixo_zero = 1.0
+				_espalhar_camadas_gelo(1, 250.0)
+		if tempo_morte_congelado <= 0.0:
+			_quebrar_congelado()
+		return
+	if camadas_gelo <= 0:
+		return
+	tempo_decaimento_gelo -= delta
+	if tempo_decaimento_gelo <= 0.0:
+		camadas_gelo = maxi(camadas_gelo - 1, 0)
+		tempo_decaimento_gelo = 5.0 if camadas_gelo > 0 else 0.0
+		_atualizar_visual_gelo()
+
+
+func _fator_velocidade_gelo() -> float:
+	if congelado_totalmente:
+		return 0.0
+	return maxf(1.0 - float(camadas_gelo) * 0.10, 0.50)
+
+
+func _atualizar_visual_gelo() -> void:
+	var intensidade := float(camadas_gelo) / 5.0
+	self_modulate = Color.WHITE.lerp(Color(0.40, 0.82, 1.0), intensidade * 0.72)
+
+
+func _espalhar_camadas_gelo(quantidade: int, raio: float) -> void:
+	var cena := _obter_cena_combate()
+	if is_instance_valid(cena):
+		ExplosaoMonthlyCena.criar(cena, global_position, Color(0.42, 0.84, 1.0), raio / 210.0)
+	for candidato in get_tree().get_nodes_in_group("inimigo"):
+		if (
+			not is_instance_valid(candidato)
+			or candidato == self
+			or not candidato is Node2D
+			or not candidato.has_method("aplicar_camada_gelo")
+		):
+			continue
+		if global_position.distance_to((candidato as Node2D).global_position) <= raio:
+			candidato.call(
+				"aplicar_camada_gelo", quantidade, nevasca_ao_quebrar, abaixo_zero_ativo
+			)
+
+
+func _quebrar_congelado() -> void:
+	if morto:
+		return
+	if nevasca_ao_quebrar:
+		_espalhar_camadas_gelo(2, 250.0)
+	Vida = 0.0
+	morrer()
 
 
 func aplicar_atordoamento(duracao: float) -> void:
@@ -431,6 +554,10 @@ func morrer() -> void:
 	for forma in find_children("*", "CollisionShape2D", true, false):
 		(forma as CollisionShape2D).set_deferred("disabled", true)
 	morreu.emit(self)
+	if not is_in_group("boss"):
+		preload("res://Scripts/AudioCombate.gd").tocar(
+			get_tree().current_scene, &"morte_inimigo", 0.04
+		)
 
 	if is_instance_valid(camera) and camera.has_method("shake"):
 		camera.shake(obter_tremor_morte(), is_in_group("boss"))
@@ -539,13 +666,22 @@ func conceder_recompensa() -> void:
 	Global.Combo += 1
 	Global.Pontos += pontos_base + (pontos_base * (Global.Combo - 1))
 	Global.registrar_recordes_partida(Global.Combo, Global.Pontos)
-	Global.adicionar_cristais(valor_cristais)
+	var cena_combate := _obter_cena_combate()
+	if (
+		Rede.modo_multiplayer
+		and multiplayer.is_server()
+		and is_instance_valid(cena_combate)
+		and cena_combate.has_method("conceder_cristais_coop")
+	):
+		cena_combate.call("conceder_cristais_coop", valor_cristais)
+	else:
+		Global.adicionar_cristais(valor_cristais)
 
 
 static func calcular_fator_xp_combo(combo: int, indice_setor: int = 0) -> float:
-	# Curva logarítmica: recompensa manter a cadeia sem usar o multiplicador
-	# bruto. O ganho cresce bastante no pós-PET-0, mas desacelera e tem teto.
-	var cadeia := maxi(combo, 1)
-	var bonus_combo := minf(log(float(cadeia)) / log(10.0) * 0.34, 0.85)
-	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.10, 0.0, 0.40)
+	# 20x concede exatamente +10%. A raiz quadrada premia cadeias maiores sem
+	# converter o multiplicador bruto em XP; o bônus de combo para em +50%.
+	var cadeia := maxi(combo, 0)
+	var bonus_combo := minf(0.10 * sqrt(float(cadeia) / 20.0), 0.50)
+	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.05, 0.0, 0.25)
 	return 1.0 + bonus_combo + bonus_setor

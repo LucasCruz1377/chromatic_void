@@ -142,7 +142,7 @@ const CONQUISTAS: Dictionary = {
 		"descricao": "Derrote a Sizígia Eterna.",
 		"tipo": &"boss", "alvo": &"eclipse_colheita", "meta": 1,
 		"recompensas": [
-			&"a06_feixe_perielio", &"a13_canhao_lua_fria",
+			&"a06_feixe_perielio",
 			&"u01_alcateia_lunar", &"u08_corrente_esturjao",
 			&"u10_marca_cacador", &"u12_noite_congelada"
 		]
@@ -419,10 +419,12 @@ func salvar_conquistas() -> void:
 
 
 func conquista_liberada(id: StringName) -> bool:
-	return id in conquistas_desbloqueadas
+	return modo_desenvolvedor or id in conquistas_desbloqueadas
 
 
 func item_liberado_por_conquista(item_id: StringName) -> bool:
+	if modo_desenvolvedor:
+		return true
 	for conquista_id in conquistas_desbloqueadas:
 		var dados: Dictionary = CONQUISTAS.get(conquista_id, {})
 		var recompensas: Array = dados.get("recompensas", [])
@@ -442,6 +444,9 @@ func obter_conquista_do_item(item_id: StringName) -> StringName:
 
 func progresso_conquista(id: StringName) -> Dictionary:
 	var dados: Dictionary = CONQUISTAS.get(id, {})
+	if modo_desenvolvedor:
+		var meta_dev := int(dados.get("meta", 1))
+		return {"atual": meta_dev, "meta": meta_dev}
 	var tipo: StringName = dados.get("tipo", &"")
 	var atual := 0
 	match tipo:

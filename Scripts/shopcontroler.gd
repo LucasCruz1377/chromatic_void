@@ -118,6 +118,7 @@ var detalhe_recarga: Label
 var detalhe_stats: VBoxContainer
 var detalhe_preco: Label
 var botao_acao: Button
+var botao_site: Button
 var mensagem: Label
 var rolagem_grade: ScrollContainer
 var rolagem_detalhes: ScrollContainer
@@ -632,13 +633,20 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	margem.add_theme_constant_override("margin_bottom", 12)
 	painel_detalhes.add_child(margem)
 
-	# O texto Monthly Colors pode ser longo, mas fica confinado ao painel.
+	# O rodapé de preço/ação fica fora da rolagem. Assim a descrição pode ser
+	# longa sem fazer o botão desaparecer ou deslocar o topo do painel.
+	var estrutura_detalhes := VBoxContainer.new()
+	estrutura_detalhes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	estrutura_detalhes.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	estrutura_detalhes.add_theme_constant_override("separation", 7)
+	margem.add_child(estrutura_detalhes)
+
 	var moldura_detalhes := Control.new()
 	moldura_detalhes.custom_minimum_size = Vector2.ZERO
 	moldura_detalhes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	moldura_detalhes.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	moldura_detalhes.clip_contents = true
-	margem.add_child(moldura_detalhes)
+	estrutura_detalhes.add_child(moldura_detalhes)
 
 	rolagem_detalhes = ScrollContainer.new()
 	rolagem_detalhes.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -668,27 +676,30 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	coluna.add_child(detalhe_nome)
 
 	detalhe_icone = TextureRect.new()
-	detalhe_icone.custom_minimum_size = Vector2(78, 78)
+	detalhe_icone.custom_minimum_size = Vector2(92, 92)
 	detalhe_icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	detalhe_icone.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	detalhe_icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
-	var linha_icone := HBoxContainer.new()
-	linha_icone.custom_minimum_size = Vector2.ZERO
-	linha_icone.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	linha_icone.alignment = BoxContainer.ALIGNMENT_CENTER
-	linha_icone.add_theme_constant_override("separation", 9)
-	coluna.add_child(linha_icone)
-	linha_icone.add_child(detalhe_icone)
+	coluna.add_child(detalhe_icone)
 
 	detalhe_contexto = Label.new()
-	detalhe_contexto.custom_minimum_size = Vector2(0, 78)
+	detalhe_contexto.custom_minimum_size = Vector2(0, 54)
 	detalhe_contexto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalhe_contexto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	detalhe_contexto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalhe_contexto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalhe_contexto.add_theme_color_override("font_color", Color(0.70, 0.82, 1.0))
 	aplicar_fonte(detalhe_contexto, 8)
-	linha_icone.add_child(detalhe_contexto)
+	coluna.add_child(detalhe_contexto)
+
+	botao_site = Button.new()
+	botao_site.text = "VISITAR MONTHLY COLORS"
+	botao_site.custom_minimum_size = Vector2(0, 28)
+	botao_site.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	botao_site.pressed.connect(_on_site_monthly_pressed)
+	estilizar_botao(botao_site, Color(0.03, 0.08, 0.14), Color(0.28, 0.72, 1.0))
+	aplicar_fonte(botao_site, 9)
+	coluna.add_child(botao_site)
 
 	detalhe_descricao = Label.new()
 	detalhe_descricao.custom_minimum_size = Vector2(0, 64)
@@ -717,7 +728,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	var preco_box := HBoxContainer.new()
 	preco_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	preco_box.add_theme_constant_override("separation", 7)
-	coluna.add_child(preco_box)
+	estrutura_detalhes.add_child(preco_box)
 
 	var moeda = CristalIcone.new()
 	moeda.custom_minimum_size = Vector2(14, 19)
@@ -744,7 +755,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	)
 	aplicar_fonte(botao_acao, 13)
 	botao_acao.pressed.connect(_on_acao_pressed)
-	coluna.add_child(botao_acao)
+	estrutura_detalhes.add_child(botao_acao)
 
 
 func construir_filtros_personalizacao(pai: VBoxContainer) -> void:
@@ -978,7 +989,6 @@ func atualizar_destaques_cartoes() -> void:
 func atualizar_detalhes() -> void:
 	if habilidades.is_empty():
 		return
-		return
 
 	var habilidade := habilidades[indice_selecionado]
 	var dados: Dictionary = dados_habilidades[indice_selecionado]
@@ -986,6 +996,7 @@ func atualizar_detalhes() -> void:
 	var preco := int(dados["preco"])
 	var cor: Color = dados["cor"]
 	detalhe_stats.visible = true
+	detalhe_icone.custom_minimum_size = Vector2(92, 92)
 
 	detalhe_tipo.text = str(dados["raridade"])
 	detalhe_tipo.add_theme_color_override("font_color", cor)
@@ -996,10 +1007,12 @@ func atualizar_detalhes() -> void:
 	var selo := habilidade.MonthlyColorsSelo.strip_edges()
 	detalhe_contexto.visible = not contexto.is_empty() or not selo.is_empty()
 	detalhe_contexto.text = (
-		"MONTHLY COLORS\n%s\n%s" % [selo, contexto]
+		"LIGAÇÃO COM MONTHLY COLORS\n%s\n%s" % [selo, contexto]
 		if detalhe_contexto.visible
 		else ""
 	)
+	botao_site.visible = detalhe_contexto.visible
+	botao_site.set_meta("url_monthly", habilidade.MonthlyColorsUrl)
 	detalhe_descricao.text = habilidade.Descricao
 	detalhe_recarga.text = "RECARGA  %.1f s" % habilidade.Cooldown
 	var conquista_id := StringName(dados.get("conquista", &""))
@@ -1021,6 +1034,8 @@ func atualizar_detalhes() -> void:
 	else:
 		botao_acao.text = "SALDO INSUFICIENTE"
 		botao_acao.disabled = true
+	if is_instance_valid(rolagem_detalhes):
+		rolagem_detalhes.scroll_vertical = 0
 	call_deferred("_ajustar_fonte_botao_acao")
 
 
@@ -1168,7 +1183,9 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_icone.texture = load(str(item["icone"])) as Texture2D
 	detalhe_icone.self_modulate = Color.WHITE if bool(item.get("preservar_cores", false)) else cor.lightened(0.10)
 	detalhe_contexto.visible = true
-	detalhe_contexto.text = "MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
+	detalhe_contexto.text = "LIGAÇÃO COM MONTHLY COLORS\n" + str(item.get("contexto", "Equipamento inspirado no calendário Monthly Colors."))
+	botao_site.visible = true
+	botao_site.set_meta("url_monthly", "https://tami4lvess.github.io/Monthly-Colors/")
 	detalhe_descricao.text = str(item["descricao"])
 	if categoria_atual == 1:
 		var crit := preload("res://Scripts/Criticos.gd").valores(id)
@@ -1215,6 +1232,19 @@ func atualizar_detalhes_genericos() -> void:
 	else:
 		botao_acao.text = "SALDO INSUFICIENTE"
 		botao_acao.disabled = true
+	if is_instance_valid(rolagem_detalhes):
+		rolagem_detalhes.scroll_vertical = 0
+	call_deferred("_ajustar_fonte_botao_acao")
+
+
+func _on_site_monthly_pressed() -> void:
+	if not is_instance_valid(botao_site):
+		return
+	var url := str(botao_site.get_meta(
+		"url_monthly", "https://tami4lvess.github.io/Monthly-Colors/"
+	)).strip_edges()
+	if url.begins_with("https://"):
+		OS.shell_open(url)
 
 
 func _on_acao_pressed() -> void:
@@ -1553,7 +1583,9 @@ func _aplicar_layout_responsivo(
 	saldo_painel.custom_minimum_size = Vector2(140 if compacto else 176, 42 if compacto else 46)
 
 	var largura_util := tamanho.x - float(margem_horizontal * 2)
-	var largura_detalhes := clampf(largura_util * 0.30, 218.0, 292.0)
+	# Reserva largura suficiente para descrição e ação, inclusive quando a
+	# barra de rolagem está visível em telas menores.
+	var largura_detalhes := clampf(largura_util * 0.34, 250.0, 340.0)
 	var largura_esquerda := largura_util - largura_detalhes - (8.0 if compacto else 12.0)
 	painel_detalhes.custom_minimum_size = Vector2(largura_detalhes, 0)
 	painel_lista_loja.custom_minimum_size.y = 0.0

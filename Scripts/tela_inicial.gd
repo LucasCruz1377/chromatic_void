@@ -541,7 +541,7 @@ func _mostrar_lobby() -> void:
 		espera.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		espera.add_theme_color_override("font_color", Color(0.68, 0.72, 0.92))
 		conteudo_fluxo.add_child(espera)
-	if Rede.hospedando:
+	if Rede.hospedando and Rede.jogadores.size() == 1:
 		var enderecos := Rede.obter_enderecos_host()
 		if not enderecos.is_empty():
 			var instrucao := Label.new()
@@ -841,7 +841,11 @@ func _atualizar_lista_conquistas() -> void:
 		lista_conquistas.remove_child(filho)
 		filho.queue_free()
 
-	var liberadas := Global.conquistas_desbloqueadas.size()
+	var liberadas := (
+		Global.CONQUISTAS.size()
+		if Global.modo_desenvolvedor
+		else Global.conquistas_desbloqueadas.size()
+	)
 	resumo_conquistas.text = "%d DE %d DESBLOQUEADAS" % [liberadas, Global.CONQUISTAS.size()]
 	for id in Global.CONQUISTAS:
 		var dados: Dictionary = Global.CONQUISTAS[id]
