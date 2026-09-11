@@ -951,7 +951,7 @@ func _criar_aviso_rede() -> void:
 	aviso_rede.add_theme_stylebox_override("normal", fundo)
 	$GUI.add_child(aviso_rede)
 	aviso_rede.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	aviso_rede.position = Vector2(-260.0, 24.0)
+	aviso_rede.position = Vector2((get_window().size.x/2) - 520/2 , 24.0)
 	aviso_rede.size = Vector2(520.0, 48.0)
 
 

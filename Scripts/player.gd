@@ -318,7 +318,7 @@ func _criar_nickname_rede() -> void:
 	suporte_nickname_rede.set_as_top_level(true)
 	add_child(suporte_nickname_rede)
 	rotulo_nickname_rede = Label.new()
-	rotulo_nickname_rede.position = Vector2(-80.0, -58.0)
+	rotulo_nickname_rede.position = Vector2(-80.0, -38.0)
 	rotulo_nickname_rede.size = Vector2(160.0, 28.0)
 	rotulo_nickname_rede.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rotulo_nickname_rede.add_theme_font_size_override("font_size", 14)
@@ -331,9 +331,10 @@ func _criar_nickname_rede() -> void:
 	suporte_nickname_rede.add_child(rotulo_nickname_rede)
 	barra_vida_rede = ProgressBar.new()
 	barra_vida_rede.name = "BarraVidaRede"
-	barra_vida_rede.position = Vector2(-43.0, -29.0)
-	barra_vida_rede.size = Vector2(86.0, 4.0)
-	barra_vida_rede.custom_minimum_size = Vector2(86.0, 4.0)
+	barra_vida_rede.position = Vector2(-43.0, -19.0)
+	barra_vida_rede.size = Vector2(86.0, 1.0)
+	barra_vida_rede.custom_minimum_size = Vector2(86.0, 3.0)
+	barra_vida_rede.custom_maximum_size = Vector2(86.0, 3.0)
 	barra_vida_rede.max_value = VIDA_MAXIMA
 	barra_vida_rede.value = vida
 	barra_vida_rede.show_percentage = false
