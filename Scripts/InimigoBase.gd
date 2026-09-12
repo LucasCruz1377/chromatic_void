@@ -122,10 +122,12 @@ func _configurar_sincronizador_multiplayer() -> void:
 	sincronizador.name = "MultiplayerSynchronizer"
 	sincronizador.root_path = NodePath("..")
 	var configuracao := SceneReplicationConfig.new()
-	for caminho in [
+	var propriedades_movimento: Array[NodePath] = [
 		NodePath(".:position"),
 		NodePath(".:rotation"),
 		NodePath(".:velocity"),
+	]
+	var propriedades_estado: Array[NodePath] = [
 		NodePath(".:Vida"),
 		NodePath(".:VidaMaxima"),
 		NodePath(".:morto"),
@@ -133,15 +135,23 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:self_modulate"),
 		NodePath(".:camadas_gelo"),
 		NodePath(".:congelado_totalmente"),
-	]:
+		NodePath(".:tempo_atordoado"),
+	]
+	for caminho in propriedades_movimento:
 		configuracao.add_property(caminho)
 		configuracao.property_set_spawn(caminho, true)
 		configuracao.property_set_replication_mode(
 			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
 		)
+	for caminho in propriedades_estado:
+		configuracao.add_property(caminho)
+		configuracao.property_set_spawn(caminho, true)
+		configuracao.property_set_replication_mode(
+			caminho, SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
+		)
 	sincronizador.replication_config = configuracao
-	# Quinze snapshots por segundo, combinados à previsão visual do cliente,
-	# usam menos banda sem alterar partículas, shaders ou lógica autoritativa.
+	# Movimento chega quinze vezes por segundo; vida, congelamento e visibilidade
+	# só ocupam banda quando mudam. Isso preserva os snapshots de posição sob carga.
 	sincronizador.replication_interval = 0.066
 	add_child(sincronizador)
 
@@ -808,4 +818,5 @@ static func calcular_fator_xp_combo(combo: int, indice_setor: int = 0) -> float:
 	var cadeia := maxi(combo, 0)
 	var bonus_combo := minf(0.10 * sqrt(float(cadeia) / 20.0), 0.50)
 	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.05, 0.0, 0.25)
-	return 1.0 + bonus_combo + bonus_setor
+	# A base 1.12 acelera levemente toda a progressão sem alterar os bônus.
+	return 1.12 + bonus_combo + bonus_setor
