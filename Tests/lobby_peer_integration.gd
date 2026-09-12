@@ -202,8 +202,11 @@ func _ready() -> void:
 	if not await _esperar_morte_individual(local):
 		_falhar("morte individual encerrou a partida ou não abriu espera")
 		return
-	print("TESTE OK: %s sincronizou posições, partículas, loadouts, XP, menu e morte" % papel)
-	await get_tree().create_timer(3.0).timeout
+	if not await _esperar_renascimento_sincronizado(local):
+		_falhar("contagem terminou sem reviver e sincronizar o jogador morto")
+		return
+	print("TESTE OK: %s sincronizou posições, partículas, loadouts, XP, menu, morte e renascimento" % papel)
+	await get_tree().create_timer(0.5).timeout
 	Rede.encerrar_lobby()
 	get_tree().quit(0)
 
@@ -491,6 +494,35 @@ func _esperar_morte_individual(local: Player) -> bool:
 		if jogador is Player:
 			estados.append("id=%d vivo=%s visible=%s vida=%.1f" % [jogador.peer_id_dono, jogador.vivo, jogador.visible, jogador.vida])
 	print("DIAGNOSTICO MORTE %s game_over=%s players=[%s]" % [papel, batalha.game_over, "; ".join(estados)])
+	return false
+
+
+func _esperar_renascimento_sincronizado(local: Player) -> bool:
+	var limite := batalha.TEMPO_RENASCIMENTO_COOP + 4.0
+	while limite > 0.0:
+		var alvo: Player = local
+		if papel == "host":
+			alvo = null
+			for jogador in get_tree().get_nodes_in_group("player"):
+				if jogador is Player and jogador.peer_id_dono != 1:
+					alvo = jogador
+					break
+		if (
+			is_instance_valid(alvo)
+			and alvo.vivo
+			and alvo.visible
+			and alvo.vida > 0.0
+			and not batalha.game_over
+		):
+			if papel == "client":
+				var painel := batalha.get_node("GUI/caixa gameover") as Control
+				if painel.visible:
+					await get_tree().create_timer(0.05).timeout
+					limite -= 0.05
+					continue
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
 	return false
 
 
