@@ -789,7 +789,9 @@ func _obter_cena_combate() -> Node:
 
 func conceder_recompensa() -> void:
 	var combo_apos_abate := Global.Combo + 1
-	var recompensa_xp := ValorXP * calcular_fator_xp_combo(
+	# A recompensa base recebe +12%; a curva histórica de combo/setor permanece
+	# intacta para não desbalancear melhorias ou conquistas relacionadas.
+	var recompensa_xp := ValorXP * 1.12 * calcular_fator_xp_combo(
 		combo_apos_abate, indice_setor_dificuldade
 	)
 	for jogador in get_tree().get_nodes_in_group("player"):
@@ -818,5 +820,4 @@ static func calcular_fator_xp_combo(combo: int, indice_setor: int = 0) -> float:
 	var cadeia := maxi(combo, 0)
 	var bonus_combo := minf(0.10 * sqrt(float(cadeia) / 20.0), 0.50)
 	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.05, 0.0, 0.25)
-	# A base 1.12 acelera levemente toda a progressão sem alterar os bônus.
-	return 1.12 + bonus_combo + bonus_setor
+	return 1.0 + bonus_combo + bonus_setor
