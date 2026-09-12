@@ -277,6 +277,7 @@ func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> v
 		"peer_id": id,
 		"nickname": Rede.sanitizar_nickname(nickname),
 		"configuracao": configuracao.duplicate(true),
+		"posicao_spawn": _posicao_inicial_peer(id),
 	}) as Player
 	if is_instance_valid(novo):
 		jogadores_rede[id] = novo
@@ -301,7 +302,7 @@ func _instanciar_jogador_rede(dados: Variant) -> Node:
 		str(dados.get("nickname", "PILOTO")),
 		Dictionary(dados.get("configuracao", {}))
 	)
-	novo.position = _posicao_inicial_peer(id)
+	novo.position = Vector2(dados.get("posicao_spawn", _posicao_inicial_peer(id)))
 	novo.set_multiplayer_authority(id, true)
 	jogadores_rede[id] = novo
 	call_deferred("_vincular_jogador_local")
@@ -707,6 +708,7 @@ func _vincular_jogador_local() -> void:
 	if is_instance_valid(controles_mobile):
 		controles_mobile.configurar(self, player)
 	_configurar_camera_local()
+	player.call_deferred("atualizar_ui")
 
 
 func _configurar_camera_local() -> void:
@@ -717,9 +719,12 @@ func _configurar_camera_local() -> void:
 		and is_instance_valid(player)
 		and camera_local.has_method("configurar_alvo")
 	):
+		var area_local := Global.calcular_retangulo_area_visivel(
+			get_viewport().get_visible_rect().size
+		)
 		camera_local.call(
 			"configurar_alvo", player, Global.obter_retangulo_area_visivel(),
-			area_visual_coop.size
+			area_local.size
 		)
 
 
@@ -812,6 +817,14 @@ func _atualizar_hud_boss_cliente() -> void:
 		_on_boss_fase_alterada((encontrado as BossMensal).fase if encontrado is BossMensal else 1)
 		if encontrado.has_method("obter_subtitulo_boss"):
 			_on_boss_subtitulo_alterado(str(encontrado.call("obter_subtitulo_boss")))
+	var fase_rede := 1
+	if encontrado._possui_propriedade_rede(&"fase"):
+		fase_rede = int(encontrado.get("fase"))
+	elif encontrado._possui_propriedade_rede(&"fase_atual"):
+		fase_rede = int(encontrado.get("fase_atual")) + 1
+	_on_boss_fase_alterada(fase_rede)
+	if encontrado.has_method("obter_subtitulo_boss"):
+		_on_boss_subtitulo_alterado(str(encontrado.call("obter_subtitulo_boss")))
 	_on_boss_vida_alterada(encontrado.Vida, maxf(encontrado.VidaMaxima, encontrado.Vida))
 
 
@@ -1015,8 +1028,11 @@ func spawnar_enemy() -> void:
 		if is_instance_valid(inimigo):
 			inimigo.queue_free()
 		return
+	# A posição precisa fazer parte do estado inicial recebido pelo
+	# MultiplayerSpawner. Alterá-la depois de add_child fazia clientes exibirem
+	# o inimigo por um frame na origem e podia divergir sob latência.
+	inimigo.position = spawner.global_position
 	add_child(inimigo, true)
-	inimigo.global_position = spawner.global_position
 
 
 func contar_inimigos_regulares() -> int:
@@ -1154,14 +1170,16 @@ func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
 		boss_em_teste = false
 		push_error("Não foi possível criar o boss %s." % boss_atual_id)
 		return
-	add_child(boss_ativo, true)
 	var area := Global.obter_retangulo_area_visivel(70.0)
 	var posicao_boss := Vector2(
 		lerpf(area.position.x, area.end.x, 0.78), area.get_center().y
 	)
 	if player.global_position.distance_to(posicao_boss) < 220.0:
 		posicao_boss.x = lerpf(area.position.x, area.end.x, 0.22)
-	boss_ativo.global_position = posicao_boss
+	# Configure o estado de spawn antes de inserir o boss na árvore, para que
+	# todos os peers recebam a mesma posição inicial.
+	boss_ativo.position = posicao_boss
+	add_child(boss_ativo, true)
 	if boss_ativo.has_method("configurar_dificuldade"):
 		boss_ativo.call("configurar_dificuldade", dificuldade)
 	aplicar_musica_boss(id)
@@ -1404,22 +1422,18 @@ func _registrar_tamanho_viewport(peer_id: int, tamanho: Vector2) -> void:
 
 
 func _publicar_area_coop() -> void:
-	if tamanhos_viewport_rede.is_empty():
-		return
-	var tamanhos: Array[Vector2] = []
-	for valor in tamanhos_viewport_rede.values():
-		tamanhos.append(Vector2(valor))
-	var area_visual := calcular_area_comum(tamanhos)
+	# A arena é canônica e idêntica para todos. Cada peer adapta somente sua
+	# própria câmera ao viewport local; nenhuma resolução cria vinhetas nos demais.
+	var area_visual := Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
 	var area := calcular_area_jogo(area_visual, Rede.jogadores.size())
-	var diferentes := resolucoes_sao_diferentes(tamanhos)
 	if Rede.esta_conectado():
 		_receber_area_coop.rpc(
-			area.position, area.size, diferentes,
+			area.position, area.size, false,
 			area_visual.position, area_visual.size
 		)
 	else:
 		_receber_area_coop(
-			area.position, area.size, diferentes,
+			area.position, area.size, false,
 			area_visual.position, area_visual.size
 		)
 
@@ -1439,7 +1453,8 @@ func _receber_area_coop(
 	area_coop_recebida = true
 	if is_instance_valid(limite_arena_coop):
 		var area_local := Global.calcular_retangulo_area_visivel(get_viewport().get_visible_rect().size)
-		limite_arena_coop.configurar(area_visual_coop, area_local, diferentes)
+		limite_arena_coop.configurar(area_visual_coop, area_local, false)
+		limite_arena_coop.visible = false
 	_atualizar_area_responsiva()
 	_configurar_camera_local()
 
@@ -1578,8 +1593,16 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 	if proximo_setor.is_empty():
 		mostrar_vitoria()
 	else:
+		if Rede.modo_multiplayer and multiplayer.is_server():
+			_apresentar_transicao_setor_remota.rpc(proximo_setor)
 		await apresentar_transicao_setor(proximo_setor)
 		aplicar_setor(proximo_setor)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _apresentar_transicao_setor_remota(id: StringName) -> void:
+	await apresentar_transicao_setor(id)
+	aplicar_setor(id)
 
 
 func apresentar_transicao_setor(id: StringName) -> void:

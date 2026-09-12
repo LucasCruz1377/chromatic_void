@@ -779,6 +779,10 @@ func _usa_rastro_exclusivo() -> bool:
 
 
 func atualizar_ui() -> void:
+	# Cada viewport possui um único HUD. Instâncias remotas não podem sobrescrever
+	# os controles do jogador local com nível, XP ou habilidade de outro peer.
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		return
 	if _nivel_exibido != nivel_atual:
 		_nivel_exibido = nivel_atual
 		lvl_text.text = "LVL: " + str(nivel_atual)

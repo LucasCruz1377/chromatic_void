@@ -137,6 +137,16 @@ func _ready() -> void:
 	batalha.tutorial_ativo = false
 	verificar(batalha.get_node_or_null("PlayerSpawner") is MultiplayerSpawner, "faltou MultiplayerSpawner dos jogadores")
 	verificar(batalha.get_node_or_null("WorldSpawner") is MultiplayerSpawner, "faltou MultiplayerSpawner do mundo")
+	verificar(
+		(batalha.get_node("PlayerSpawner") as MultiplayerSpawner).spawn_limit == 4,
+		"MultiplayerSpawner não aceita os quatro jogadores"
+	)
+	Rede.jogadores = {1: "P1", 2: "P2", 3: "P3", 4: "P4"}
+	var posicoes_spawn: Dictionary = {}
+	for peer_id in [1, 2, 3, 4]:
+		posicoes_spawn[batalha._posicao_inicial_peer(peer_id)] = true
+	verificar(posicoes_spawn.size() == 4, "jogadores podem nascer na mesma posição")
+	Rede.jogadores = {1: "HOST_TESTE", 2: "CLIENTE_TESTE"}
 	var remoto := batalha._instanciar_jogador_rede({
 		"peer_id": 2,
 		"nickname": "CLIENTE_TESTE",
@@ -186,10 +196,15 @@ func _ready() -> void:
 		Vector2(1920, 1080), Vector2(1024, 768)
 	]
 	var area_comum: Rect2 = batalha.calcular_area_comum(resolucoes)
-	verificar(area_comum.size.is_equal_approx(Vector2(960, 540)), "arena não escolheu o menor campo visível")
+	verificar(area_comum.size.is_equal_approx(Vector2(960, 540)), "cálculo legado da área visível mudou")
 	verificar(batalha.resolucoes_sao_diferentes(resolucoes), "resoluções diferentes não foram detectadas")
 	batalha._receber_area_coop(area_comum.position, area_comum.size, true)
-	verificar(is_instance_valid(batalha.limite_arena_coop) and batalha.limite_arena_coop.resolucoes_diferentes, "barreiras visuais da arena comum não apareceram")
+	verificar(
+		is_instance_valid(batalha.limite_arena_coop)
+			and not batalha.limite_arena_coop.visible
+			and not batalha.limite_arena_coop.resolucoes_diferentes,
+		"resoluções diferentes ainda criam vinhetas"
+	)
 	var area_dupla: Rect2 = batalha.calcular_area_jogo(area_comum, 2)
 	var area_quarteto: Rect2 = batalha.calcular_area_jogo(area_comum, 4)
 	verificar(area_dupla.size.x > area_comum.size.x, "arena não cresce para uma dupla")
@@ -238,6 +253,11 @@ func _ready() -> void:
 		batalha.add_child(boss)
 		await get_tree().process_frame
 		boss.process_mode = Node.PROCESS_MODE_DISABLED
+		verificar(
+			boss.has_method("_capturar_snapshot_visual_boss")
+				and boss.has_method("_aplicar_snapshot_visual_boss"),
+			"%s não possui sincronização visual de animações" % caminho_boss
+		)
 		verificar(
 			float(boss.call("obter_vida_maxima_atual")) >= vida_anterior * 1.75,
 			"%s não recebeu 175%% da vida anterior" % caminho_boss

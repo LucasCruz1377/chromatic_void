@@ -57,6 +57,13 @@ var tempo_morte_congelado := 0.0
 var tempo_pulso_abaixo_zero := 0.0
 var nevasca_ao_quebrar := false
 var abaixo_zero_ativo := false
+var tempo_snapshot_visual_rede := 0.0
+
+const INTERVALO_SNAPSHOT_BOSS_REDE := 0.08
+const ESTADOS_BOSS_REDE: Array[StringName] = [
+	&"fase", &"fase_atual", &"estado", &"tempo_estado", &"ataque_pendente",
+	&"angulo_visual", &"progresso_fusao", &"tempo_animacao_visual",
+]
 
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
@@ -135,6 +142,109 @@ func _configurar_sincronizador_multiplayer() -> void:
 	sincronizador.replication_config = configuracao
 	sincronizador.replication_interval = 0.033
 	add_child(sincronizador)
+
+
+func _process(delta: float) -> void:
+	if (
+		not Rede.modo_multiplayer
+		or not multiplayer.is_server()
+		or not is_in_group("boss")
+		or morto
+	):
+		return
+	tempo_snapshot_visual_rede -= delta
+	if tempo_snapshot_visual_rede > 0.0:
+		return
+	tempo_snapshot_visual_rede = INTERVALO_SNAPSHOT_BOSS_REDE
+	_aplicar_snapshot_visual_boss.rpc(_capturar_snapshot_visual_boss())
+
+
+func _capturar_snapshot_visual_boss() -> Dictionary:
+	var estados: Dictionary = {}
+	for propriedade in ESTADOS_BOSS_REDE:
+		if _possui_propriedade_rede(propriedade):
+			estados[propriedade] = get(propriedade)
+	var visuais: Array[Dictionary] = []
+	for candidato in find_children("*", "CanvasItem", true, false):
+		var item := candidato as CanvasItem
+		if not is_instance_valid(item):
+			continue
+		var dados: Dictionary = {
+			"caminho": get_path_to(item),
+			"visible": item.visible,
+			"modulate": item.modulate,
+			"self_modulate": item.self_modulate,
+		}
+		if item is Node2D:
+			var node_2d := item as Node2D
+			dados["position"] = node_2d.position
+			dados["rotation"] = node_2d.rotation
+			dados["scale"] = node_2d.scale
+		if item is GPUParticles2D:
+			dados["emitting"] = (item as GPUParticles2D).emitting
+		if item is Line2D:
+			dados["points"] = (item as Line2D).points
+		visuais.append(dados)
+	var animacoes: Array[Dictionary] = []
+	for candidato in find_children("*", "AnimationPlayer", true, false):
+		var reprodutor := candidato as AnimationPlayer
+		if is_instance_valid(reprodutor) and not reprodutor.current_animation.is_empty():
+			animacoes.append({
+				"caminho": get_path_to(reprodutor),
+				"animacao": reprodutor.current_animation,
+				"posicao": reprodutor.current_animation_position,
+				"tocando": reprodutor.is_playing(),
+			})
+	return {"estados": estados, "visuais": visuais, "animacoes": animacoes}
+
+
+@rpc("authority", "call_remote", "unreliable_ordered", 3)
+func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	var estados: Dictionary = snapshot.get("estados", {})
+	for propriedade in estados:
+		var nome := StringName(propriedade)
+		if _possui_propriedade_rede(nome):
+			set(nome, estados[propriedade])
+	for dados_variant in Array(snapshot.get("visuais", [])):
+		var dados := Dictionary(dados_variant)
+		var item := get_node_or_null(NodePath(str(dados.get("caminho", "")))) as CanvasItem
+		if not is_instance_valid(item):
+			continue
+		item.visible = bool(dados.get("visible", item.visible))
+		item.modulate = dados.get("modulate", item.modulate)
+		item.self_modulate = dados.get("self_modulate", item.self_modulate)
+		if item is Node2D:
+			var node_2d := item as Node2D
+			node_2d.position = dados.get("position", node_2d.position)
+			node_2d.rotation = float(dados.get("rotation", node_2d.rotation))
+			node_2d.scale = dados.get("scale", node_2d.scale)
+		if item is GPUParticles2D and dados.has("emitting"):
+			(item as GPUParticles2D).emitting = bool(dados["emitting"])
+		if item is Line2D and dados.has("points"):
+			(item as Line2D).points = dados["points"]
+	for dados_variant in Array(snapshot.get("animacoes", [])):
+		var dados := Dictionary(dados_variant)
+		var reprodutor := get_node_or_null(
+			NodePath(str(dados.get("caminho", "")))
+		) as AnimationPlayer
+		if not is_instance_valid(reprodutor):
+			continue
+		var animacao := StringName(dados.get("animacao", &""))
+		if bool(dados.get("tocando", false)) and reprodutor.current_animation != animacao:
+			reprodutor.play(animacao)
+		var posicao := float(dados.get("posicao", 0.0))
+		if absf(reprodutor.current_animation_position - posicao) > 0.16:
+			reprodutor.seek(posicao, true)
+	queue_redraw()
+
+
+func _possui_propriedade_rede(nome: StringName) -> bool:
+	for dados in get_property_list():
+		if StringName(dados.get("name", "")) == nome:
+			return true
+	return false
 
 
 func _physics_process(delta: float) -> void:
