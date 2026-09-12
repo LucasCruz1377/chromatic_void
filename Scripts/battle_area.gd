@@ -125,6 +125,8 @@ var combo_observado := 0
 var tamanhos_viewport_rede: Dictionary = {}
 var limite_arena_coop: LimiteArenaCoop
 var tempo_posicoes_rede := 0.0
+var cristais_coop_acumulados := 0
+var cristais_coop_aplicados := 0
 var area_coop_recebida := false
 var tempo_reenvio_viewport := 0.0
 var area_visual_coop := Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
@@ -234,12 +236,22 @@ func conceder_cristais_coop(quantidade: int) -> void:
 		return
 	Global.adicionar_cristais(quantidade)
 	if Rede.esta_conectado() and multiplayer.is_server():
-		_receber_cristais_coop.rpc(quantidade)
+		cristais_coop_acumulados += quantidade
+		_receber_cristais_coop.rpc(cristais_coop_acumulados)
 
 
-@rpc("authority", "call_remote", "reliable")
-func _receber_cristais_coop(quantidade: int) -> void:
-	Global.adicionar_cristais(clampi(quantidade, 0, 1000))
+@rpc("authority", "call_remote", "reliable", 0)
+func _receber_cristais_coop(total_sessao: int) -> void:
+	_aplicar_total_cristais_coop(total_sessao)
+
+
+func _aplicar_total_cristais_coop(total_sessao: int) -> void:
+	var total_seguro := maxi(total_sessao, 0)
+	if total_seguro <= cristais_coop_aplicados:
+		return
+	var diferenca := total_seguro - cristais_coop_aplicados
+	cristais_coop_aplicados = total_seguro
+	Global.adicionar_cristais(clampi(diferenca, 0, 1000))
 
 
 func _posicao_inicial_peer(id: int) -> Vector2:
@@ -849,13 +861,18 @@ func _capturar_posicoes_mundo() -> Dictionary:
 				"posicao": inimigo.global_position,
 				"rotacao": inimigo.rotation,
 			})
-	return {"players": posicoes_players, "inimigos": posicoes_inimigos}
+	return {
+		"players": posicoes_players,
+		"inimigos": posicoes_inimigos,
+		"cristais_coop": cristais_coop_acumulados,
+	}
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 0)
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
+	_aplicar_total_cristais_coop(int(snapshot.get("cristais_coop", 0)))
 	var posicoes_players: Dictionary = snapshot.get("players", {})
 	for peer_variant in posicoes_players:
 		var peer_id := int(peer_variant)
