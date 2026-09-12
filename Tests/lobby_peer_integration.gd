@@ -245,7 +245,13 @@ func _esperar_vida_inimigo(vida_maxima_esperada: float) -> bool:
 func _esperar_cristais_rede(valor_anterior: int) -> bool:
 	var limite := 4.0
 	while limite > 0.0:
-		if Global.cristais > valor_anterior:
+		if (
+			Global.cristais > valor_anterior
+			or (
+				papel == "client"
+				and batalha.cristais_coop_aplicados > 0
+			)
+		):
 			return true
 		await get_tree().create_timer(0.05).timeout
 		limite -= 0.05
