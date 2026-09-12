@@ -195,7 +195,7 @@ jobs:
           name: build-updater-windows
           path: dist-updater/Updater.exe
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
 
 
   # ==========================================================

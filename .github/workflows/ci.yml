@@ -157,10 +157,4 @@ jobs:
           archive_output: true
           cache: true
 
-      - name: Guardar build de ${{ matrix.nome }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Chromatic-Void-${{ matrix.artefato }}
-          path: ${{ steps.export.outputs.archive_directory }}
-          if-no-files-found: error
-          retention-days: 7
+     
