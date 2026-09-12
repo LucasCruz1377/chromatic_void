@@ -133,13 +133,14 @@ func _process(_delta: float) -> void:
 		batalha != null
 		and bool(batalha.get("escolha_setor_ativa"))
 	)
+	var pode_pausar := not Rede.modo_multiplayer or multiplayer.is_server()
 
 	if Input.is_action_just_pressed("pausar") and players > 0 and not escolhendo_setor:
 		if tela_upgrades.has_method("esta_aberta") and bool(
 			tela_upgrades.call("esta_aberta")
 		):
 			tela_upgrades.call("fechar_menu")
-		else:
+		elif pode_pausar:
 			if (
 				not get_tree().paused
 				and is_instance_valid(batalha)
@@ -163,7 +164,7 @@ func _process(_delta: float) -> void:
 				):
 					batalha.call("limpar_estado_visual_boss_pausa")
 
-	caixa_pause.visible = get_tree().paused and not escolhendo_setor
+	caixa_pause.visible = get_tree().paused and not escolhendo_setor and pode_pausar
 	if get_tree().paused != pausa_anterior:
 		pausa_anterior = get_tree().paused
 
