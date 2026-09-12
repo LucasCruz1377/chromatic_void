@@ -36,11 +36,27 @@ func _configurar_sincronizador_multiplayer() -> void:
 	sincronizador.name = "MultiplayerSynchronizer"
 	sincronizador.root_path = NodePath("..")
 	var configuracao := SceneReplicationConfig.new()
-	for caminho in [NodePath(".:position"), NodePath(".:rotation"), NodePath(".:direcao")]:
+	var propriedades_movimento: Array[NodePath] = [
+		NodePath(".:position"),
+		NodePath(".:rotation"),
+		NodePath(".:direcao"),
+	]
+	var propriedades_configuracao: Array[NodePath] = [
+		NodePath(".:velocidade"),
+		NodePath(".:usa_wrap"),
+		NodePath(".:rebotes_max"),
+	]
+	for caminho in propriedades_movimento:
 		configuracao.add_property(caminho)
 		configuracao.property_set_spawn(caminho, true)
 		configuracao.property_set_replication_mode(
 			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
+		)
+	for caminho in propriedades_configuracao:
+		configuracao.add_property(caminho)
+		configuracao.property_set_spawn(caminho, true)
+		configuracao.property_set_replication_mode(
+			caminho, SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 		)
 	sincronizador.replication_config = configuracao
 	sincronizador.replication_interval = 0.066
@@ -81,8 +97,13 @@ func configurar(
 func _physics_process(delta: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		# Predição visual entre snapshots; não processa bordas, vida ou colisão.
-		global_position += direcao * velocidade * delta
-		rotation = direcao.angle()
+		# No primeiro quadro de um spawn remoto, a direção configurada pode chegar
+		# depois do nó. A rotação inicial mantém o tiro em movimento nesse intervalo.
+		var direcao_visual := direcao
+		if direcao_visual.is_zero_approx():
+			direcao_visual = Vector2.RIGHT.rotated(rotation)
+		global_position += direcao_visual.normalized() * velocidade * delta
+		rotation = direcao_visual.angle()
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
