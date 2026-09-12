@@ -55,12 +55,17 @@ func _ready() -> void:
 		await get_tree().process_frame
 		var inimigos_host := get_tree().get_nodes_in_group("inimigo")
 		if not inimigos_host.is_empty():
-			(inimigos_host[0] as Node2D).global_position = Vector2(480.0, 120.0)
+			var inimigo_posicao := inimigos_host[0] as CharacterBody2D
+			inimigo_posicao.global_position = Vector2(480.0, 120.0)
+			inimigo_posicao.velocity = Vector2.ZERO
+			# Mantém o alvo estável enquanto as posições dos dois peers convergem.
+			inimigo_posicao.set_physics_process(false)
 	if not await _esperar_mundo_sincronizado():
 		_falhar("posição dos Players ou inimigos não foi sincronizada")
 		return
 	var inimigo_teste := get_tree().get_nodes_in_group("inimigo")[0] as InimigoBase
 	if papel == "host":
+		inimigo_teste.set_physics_process(true)
 		inimigo_teste.Dano = 0.0
 	var vida_esperada := inimigo_teste.VidaMaxima - 0.4
 	if papel == "client":
