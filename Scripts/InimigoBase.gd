@@ -135,7 +135,6 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:self_modulate"),
 		NodePath(".:camadas_gelo"),
 		NodePath(".:congelado_totalmente"),
-		NodePath(".:tempo_atordoado"),
 	]
 	for caminho in propriedades_movimento:
 		configuracao.add_property(caminho)
