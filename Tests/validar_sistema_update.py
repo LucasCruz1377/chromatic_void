@@ -43,7 +43,11 @@ def main() -> int:
     exigir(workflow, "ANDROID_KEYSTORE_BASE64", "release.yml")
     exigir(workflow, "apksigner", "release.yml")
     exigir(workflow, "PyInstaller", "release.yml")
-    exigir(workflow, "build-updater-windows", "release.yml")
+    exigir(workflow, "Preparar Release em rascunho", "release.yml")
+    exigir(workflow, 'gh release upload "$TAG"', "release.yml")
+    exigir(workflow, 'gh release download "$TAG"', "release.yml")
+    if "actions/upload-artifact" in workflow or "actions/download-artifact" in workflow:
+        raise AssertionError("release.yml: Actions artifacts não devem ser usados")
     exigir(workflow, "ChromaticVoid-Android.apk", "release.yml")
     exigir(workflow, "Windows.Desktop.zip", "release.yml")
     exigir(itch_workflow, "Windows.Desktop.zip", "itchio.yml")
