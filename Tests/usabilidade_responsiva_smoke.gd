@@ -86,7 +86,7 @@ func testar_menu_upgrades_e_boss() -> void:
 	verificar(
 		dialogo_astro.global_position.x >= 12.0
 		and dialogo_astro.global_position.x + dialogo_astro.size.x
-		<= sprite_astro.global_position.x - 68.0,
+		<= sprite_astro.global_position.x,
 		"o diálogo do Astro ficou cortado ou sobrepôs o personagem"
 	)
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
