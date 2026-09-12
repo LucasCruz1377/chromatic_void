@@ -310,7 +310,7 @@ func _raio_analogico(tamanho: Vector2) -> float:
 
 func _obter_botoes(tamanho: Vector2) -> Array[Dictionary]:
 	var unidade := minf(tamanho.x, tamanho.y)
-	return [
+	var resultado: Array[Dictionary] = [
 		{
 			"acao": &"atirar",
 			"texto": "TIRO",
@@ -323,13 +323,16 @@ func _obter_botoes(tamanho: Vector2) -> Array[Dictionary]:
 			"centro": Vector2(tamanho.x * 0.73, tamanho.y * 0.84),
 			"raio": unidade * 0.067,
 		},
-		{
+	]
+	# Pausar uma cópia cliente não paralisa o host e apenas causa dessincronia.
+	if not Rede.modo_multiplayer or multiplayer.is_server():
+		resultado.append({
 			"acao": &"pausar",
 			"texto": "II",
 			"centro": Vector2(tamanho.x * 0.94, tamanho.y * 0.10),
 			"raio": unidade * 0.052,
-		},
-	]
+		})
+	return resultado
 
 
 func _tentar_abrir_melhorias_pelo_indicador(posicao: Vector2) -> bool:
