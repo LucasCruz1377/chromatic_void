@@ -1,6 +1,9 @@
 extends Node
 
 
+const TEMPO_RENASCIMENTO_TESTE := 8.0
+
+
 var maior_lista_recebida := 0
 var papel := ""
 var batalha: Node2D
@@ -498,7 +501,7 @@ func _esperar_morte_individual(local: Player) -> bool:
 
 
 func _esperar_renascimento_sincronizado(local: Player) -> bool:
-	var limite := batalha.TEMPO_RENASCIMENTO_COOP + 4.0
+	var limite := TEMPO_RENASCIMENTO_TESTE + 4.0
 	while limite > 0.0:
 		var alvo: Player = local
 		if papel == "host":
