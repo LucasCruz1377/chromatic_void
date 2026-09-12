@@ -15,6 +15,9 @@ const DURACAO_COMBO := 3.0
 # Snapshot de recuperação; Player e inimigos já possuem MultiplayerSynchronizer.
 # Dez envios por segundo evitam duplicar tráfego sem perder correção de estado.
 const INTERVALO_POSICOES_REDE := 0.10
+const BONUS_CRISTAIS_COOP_POR_COMPANHEIRO := 0.10
+const MULTIPLICADOR_DANO_BOSSES_AJUSTADOS := 1.18
+const BOSSES_DANO_PRESERVADO: Array[StringName] = [&"pet0", &"flor_equinocio"]
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
@@ -236,6 +239,13 @@ func _configurar_spawners_multiplayer() -> void:
 func conceder_cristais_coop(quantidade: int) -> void:
 	if quantidade <= 0:
 		return
+	# Jogar acompanhado rende +10% por companheiro: +10% com 2 pilotos,
+	# +20% com 3 e +30% com 4. O host distribui o mesmo total a todos.
+	var quantidade_jogadores := clampi(Rede.jogadores.size(), 2, 4)
+	var bonus_coop := 1.0 + (
+		float(quantidade_jogadores - 1) * BONUS_CRISTAIS_COOP_POR_COMPANHEIRO
+	)
+	quantidade = maxi(roundi(float(quantidade) * bonus_coop), 1)
 	Global.adicionar_cristais(quantidade)
 	if Rede.esta_conectado() and multiplayer.is_server():
 		cristais_coop_acumulados += quantidade
@@ -858,10 +868,14 @@ func _capturar_posicoes_mundo() -> Dictionary:
 	for candidato in get_tree().get_nodes_in_group("inimigo"):
 		if candidato is Node2D and is_ancestor_of(candidato):
 			var inimigo := candidato as Node2D
+			var velocidade_inimigo := Vector2.ZERO
+			if inimigo is CharacterBody2D:
+				velocidade_inimigo = (inimigo as CharacterBody2D).velocity
 			posicoes_inimigos.append({
 				"caminho": get_path_to(inimigo),
 				"posicao": inimigo.global_position,
 				"rotacao": inimigo.rotation,
+				"velocidade": velocidade_inimigo,
 			})
 	return {
 		"players": posicoes_players,
@@ -897,6 +911,10 @@ func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 			continue
 		inimigo.global_position = estado.get("posicao", inimigo.global_position)
 		inimigo.rotation = float(estado.get("rotacao", inimigo.rotation))
+		if inimigo is CharacterBody2D:
+			(inimigo as CharacterBody2D).velocity = Vector2(
+				estado.get("velocidade", (inimigo as CharacterBody2D).velocity)
+			)
 
 
 func _atualizar_hud_boss_cliente() -> void:
@@ -1286,6 +1304,9 @@ func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
 	add_child(boss_ativo, true)
 	if boss_ativo.has_method("configurar_dificuldade"):
 		boss_ativo.call("configurar_dificuldade", dificuldade)
+	# Flor do Equinócio e PET-0 mantêm exatamente o dano anterior.
+	if boss_atual_id not in BOSSES_DANO_PRESERVADO:
+		boss_ativo.Dano *= MULTIPLICADOR_DANO_BOSSES_AJUSTADOS
 	aplicar_musica_boss(id)
 
 	criar_hud_boss()
