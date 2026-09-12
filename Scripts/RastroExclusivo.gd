@@ -32,13 +32,24 @@ func configurar(novo_alvo: Node2D, novo_tipo: StringName, nova_cor: Color) -> vo
 
 
 func definir_estado(novo_ativo: bool, nova_cor: Color) -> void:
+	var ativou_agora := novo_ativo and not ativo
 	ativo = novo_ativo
 	cor_base = nova_cor
+	if novo_ativo:
+		set_process(true)
+	if ativou_agora:
+		# Garante a primeira amostra imediatamente após acelerar.
+		acumulador = maxf(acumulador, 0.035)
 
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(alvo):
 		queue_free()
+		return
+	if not ativo and pontos.is_empty():
+		for linha in linhas_spectrum:
+			linha.visible = false
+		set_process(false)
 		return
 	for ponto in pontos:
 		ponto["idade"] = float(ponto.get("idade", 0.0)) + delta
