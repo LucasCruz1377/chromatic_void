@@ -73,6 +73,22 @@ func testar_menu_upgrades_e_boss() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	batalha.tutorial_ativo = false
+	var astro := batalha.get_node("GUI/Astro") as Control
+	astro._ancorar_astro_canto_inferior()
+	astro._atualizar_tela_preta_responsiva()
+	var dialogo_astro := astro.get_node("DialogoAstro") as RichTextLabel
+	var sprite_astro := astro.get_node("SpriteAstro") as Node2D
+	verificar(
+		is_equal_approx(astro.anchor_left, 1.0)
+		and is_equal_approx(astro.anchor_top, 1.0),
+		"o Astro do tutorial não foi ancorado no canto inferior direito"
+	)
+	verificar(
+		dialogo_astro.global_position.x >= 12.0
+		and dialogo_astro.global_position.x + dialogo_astro.size.x
+		<= sprite_astro.global_position.x - 68.0,
+		"o diálogo do Astro ficou cortado ou sobrepôs o personagem"
+	)
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
 	var centro_hud := Global.obter_retangulo_area_visivel(18.0).get_center().x
 	var barra_vida := batalha.get_node("GUI/Barra_vida") as TextureProgressBar
@@ -186,7 +202,7 @@ func finalizar() -> void:
 			objeto.queue_free()
 	await get_tree().process_frame
 	if falhas.is_empty():
-		print("TESTE OK: conquistas, cursor, pausa e layouts responsivos")
+		print("TESTE OK: conquistas, cursor, Astro, pausa e layouts responsivos")
 		get_tree().quit(0)
 	else:
 		print("TESTE FALHOU: %d problema(s) de usabilidade/responsividade" % falhas.size())
