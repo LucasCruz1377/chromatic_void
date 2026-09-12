@@ -1193,7 +1193,7 @@ func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia:
 	ajudante.configurar(self, tipo, cor, potencia)
 
 
-func _mutacao_atrasada(_estilo: StringName) -> void:
+func _mutacao_atrasada(estilo: StringName) -> void:
 	await get_tree().create_timer(0.45).timeout
 	if not vivo:
 		return

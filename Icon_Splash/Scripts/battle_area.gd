@@ -198,6 +198,7 @@ func _configurar_jogadores_multiplayer() -> void:
 		Rede.jogador_desconectado.connect(_on_jogador_rede_desconectado)
 	if not Rede.desconexao_detectada.is_connected(_on_desconexao_detectada):
 		Rede.desconexao_detectada.connect(_on_desconexao_detectada)
+	var peer_local := Rede.peer_local()
 	player.configurar_jogador_multiplayer(
 		1,
 		str(Rede.jogadores.get(1, "PILOTO")),
@@ -1049,7 +1050,7 @@ func _criar_aviso_rede() -> void:
 	aviso_rede.add_theme_stylebox_override("normal", fundo)
 	$GUI.add_child(aviso_rede)
 	aviso_rede.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	aviso_rede.position = Vector2((float(get_window().size.x) / 2.0) - 520.0 / 2.0, 24.0)
+	aviso_rede.position = Vector2((get_window().size.x/2) - 520/2 , 24.0)
 	aviso_rede.size = Vector2(520.0, 48.0)
 
 
@@ -1525,7 +1526,7 @@ func _publicar_area_coop() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _receber_area_coop(
-	posicao: Vector2, tamanho: Vector2, _diferentes: bool,
+	posicao: Vector2, tamanho: Vector2, diferentes: bool,
 	posicao_visual := Vector2.ZERO, tamanho_visual := Vector2.ZERO
 ) -> void:
 	var area := Rect2(posicao, tamanho)
