@@ -18,6 +18,7 @@ const INTERVALO_POSICOES_REDE := 0.10
 const BONUS_CRISTAIS_COOP_POR_COMPANHEIRO := 0.10
 const MULTIPLICADOR_DANO_BOSSES_AJUSTADOS := 1.18
 const BOSSES_DANO_PRESERVADO: Array[StringName] = [&"pet0", &"flor_equinocio"]
+const TEMPO_RENASCIMENTO_COOP := 8.0
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
@@ -123,6 +124,9 @@ var tempo_nova_solicitacao_rede := 0.0
 var aviso_rede: Label
 var texto_aguardando_morte: Label
 var painel_morte_local_exibido := false
+var renascimentos_pendentes: Dictionary = {}
+var aguardando_renascimento_local := false
+var tempo_renascimento_local := 0.0
 var preservar_conexao_ao_sair := false
 var disparos_visuais_rede: Dictionary = {}
 var tempo_combo_restante := 0.0
@@ -754,6 +758,8 @@ func _configurar_camera_local() -> void:
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
+	if multiplayer.is_server():
+		renascimentos_pendentes.erase(id)
 	if multiplayer.is_server() and tamanhos_viewport_rede.has(id):
 		tamanhos_viewport_rede.erase(id)
 		_publicar_area_coop()
@@ -786,7 +792,7 @@ func _process(delta: float) -> void:
 		_processar_posicoes_rede(delta)
 		_processar_sincronizacao_area_coop(delta)
 		_atualizar_hud_boss_cliente()
-		_atualizar_estado_morte_multiplayer()
+		_atualizar_estado_morte_multiplayer(delta)
 	if game_over or escolha_setor_ativa:
 		return
 	atualizar_pontos(delta)
@@ -999,9 +1005,11 @@ func _receber_combo_rede(valor: int, restante: float) -> void:
 func _on_player_morreu(jogador: Player) -> void:
 	if not Rede.modo_multiplayer or jogador.peer_id_dono != Rede.peer_local():
 		return
-	if not multiplayer.is_server():
-		_notificar_morte_ao_host.rpc_id(1)
 	_mostrar_painel_morte_local()
+	if multiplayer.is_server():
+		_iniciar_espera_renascimento(jogador.peer_id_dono)
+	else:
+		_notificar_morte_ao_host.rpc_id(1)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -1016,17 +1024,126 @@ func _notificar_morte_ao_host() -> void:
 		jogador.vivo = false
 		jogador.vida = 0.0
 		jogador.visible = false
+	_iniciar_espera_renascimento(remetente)
 
 
-func _atualizar_estado_morte_multiplayer() -> void:
+func _iniciar_espera_renascimento(peer_id: int) -> void:
+	if not multiplayer.is_server() or game_over or renascimentos_pendentes.has(peer_id):
+		return
+	renascimentos_pendentes[peer_id] = TEMPO_RENASCIMENTO_COOP
+	if peer_id == Rede.peer_local():
+		_iniciar_contagem_renascimento_local(TEMPO_RENASCIMENTO_COOP)
+	else:
+		_iniciar_contagem_renascimento_local.rpc_id(
+			peer_id, TEMPO_RENASCIMENTO_COOP
+		)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _iniciar_contagem_renascimento_local(duracao: float) -> void:
+	aguardando_renascimento_local = true
+	tempo_renascimento_local = maxf(duracao, 0.0)
+	_mostrar_painel_morte_local()
+	_atualizar_texto_renascimento_local()
+
+
+func _atualizar_estado_morte_multiplayer(delta: float) -> void:
+	_atualizar_contagem_renascimento_local(delta)
+	if is_instance_valid(player) and not player.vivo and not painel_morte_local_exibido:
+		_mostrar_painel_morte_local()
+	if not multiplayer.is_server():
+		return
+
+	var vivos := _quantidade_jogadores_vivos()
+	if vivos == 0:
+		if not game_over:
+			game_over = true
+			renascimentos_pendentes.clear()
+			_encerrar_renascimentos_sem_sobreviventes.rpc()
+		return
+	if game_over:
+		return
+
+	for peer_variant in renascimentos_pendentes.keys():
+		var peer_id := int(peer_variant)
+		var jogador_morto := _obter_jogador_rede(peer_id)
+		if not is_instance_valid(jogador_morto):
+			renascimentos_pendentes.erase(peer_id)
+			continue
+		if jogador_morto.vivo:
+			renascimentos_pendentes.erase(peer_id)
+			continue
+		var restante := maxf(
+			float(renascimentos_pendentes.get(peer_id, 0.0)) - delta, 0.0
+		)
+		renascimentos_pendentes[peer_id] = restante
+		if restante <= 0.0:
+			renascimentos_pendentes.erase(peer_id)
+			_reviver_peer(peer_id)
+
+
+func _quantidade_jogadores_vivos() -> int:
 	var vivos := 0
 	for candidato in get_tree().get_nodes_in_group("player"):
 		if candidato is Player and candidato.vivo and candidato.visible:
 			vivos += 1
-	if is_instance_valid(player) and not player.vivo and not painel_morte_local_exibido:
-		_mostrar_painel_morte_local()
-	if multiplayer.is_server() and vivos == 0:
-		game_over = true
+	return vivos
+
+
+func _atualizar_contagem_renascimento_local(delta: float) -> void:
+	if not aguardando_renascimento_local:
+		return
+	tempo_renascimento_local = maxf(tempo_renascimento_local - delta, 0.0)
+	_atualizar_texto_renascimento_local()
+
+
+func _atualizar_texto_renascimento_local() -> void:
+	if not is_instance_valid(texto_aguardando_morte):
+		return
+	var vivos := _quantidade_jogadores_vivos()
+	texto_aguardando_morte.text = (
+		"RENASCIMENTO EM %.1f s  •  %d PILOTO(S) AINDA EM COMBATE"
+		% [tempo_renascimento_local, vivos]
+	)
+
+
+func _reviver_peer(peer_id: int) -> void:
+	if not multiplayer.is_server() or _quantidade_jogadores_vivos() <= 0:
+		return
+	var posicao_retorno := _posicao_inicial_peer(peer_id)
+	if peer_id == Rede.peer_local():
+		_executar_renascimento(posicao_retorno)
+	else:
+		_executar_renascimento.rpc_id(peer_id, posicao_retorno)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _executar_renascimento(posicao_retorno: Vector2) -> void:
+	var jogador_local := _obter_jogador_rede(Rede.peer_local()) as Player
+	if not is_instance_valid(jogador_local):
+		return
+	jogador_local.reviver_multiplayer(posicao_retorno)
+	aguardando_renascimento_local = false
+	tempo_renascimento_local = 0.0
+	painel_morte_local_exibido = false
+	caixa_gameover.visible = false
+	Global.definir_cursor_interface(false)
+
+
+@rpc("authority", "call_local", "reliable")
+func _encerrar_renascimentos_sem_sobreviventes() -> void:
+	game_over = true
+	aguardando_renascimento_local = false
+	tempo_renascimento_local = 0.0
+	caixa_gameover.visible = true
+	$"GUI/caixa gameover/Tentatdenovotext".text = "TODA A EQUIPE FOI DESTRUÍDA"
+	var botao_reiniciar := $"GUI/caixa gameover/Tentar de novo" as Button
+	botao_reiniciar.visible = multiplayer.is_server()
+	botao_reiniciar.text = "REINICIAR PARTIDA"
+	$"GUI/caixa gameover/Voltarmenu2".text = "SAIR DA PARTIDA"
+	if is_instance_valid(texto_aguardando_morte):
+		texto_aguardando_morte.text = "NÃO HÁ PILOTOS VIVOS PARA GARANTIR O RENASCIMENTO"
+	Global.definir_cursor_interface(true)
 
 
 func _mostrar_painel_morte_local() -> void:
@@ -1040,12 +1157,17 @@ func _mostrar_painel_morte_local() -> void:
 	if not is_instance_valid(texto_aguardando_morte):
 		texto_aguardando_morte = Label.new()
 		texto_aguardando_morte.name = "AguardandoOutroPiloto"
-		texto_aguardando_morte.text = "A partida continua • você pode aguardar o outro piloto"
 		texto_aguardando_morte.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		texto_aguardando_morte.add_theme_font_size_override("font_size", 15)
-		texto_aguardando_morte.add_theme_color_override("font_color", Color(0.55, 0.9, 1.0))
+		texto_aguardando_morte.add_theme_color_override(
+			"font_color", Color(0.55, 0.9, 1.0)
+		)
 		caixa_gameover.add_child(texto_aguardando_morte)
 		caixa_gameover.move_child(texto_aguardando_morte, 1)
+	if aguardando_renascimento_local:
+		_atualizar_texto_renascimento_local()
+	else:
+		texto_aguardando_morte.text = "AGUARDANDO AUTORIZAÇÃO DE RENASCIMENTO DO HOST"
 	Global.definir_cursor_interface(true)
 
 
