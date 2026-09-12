@@ -101,11 +101,7 @@ func apresentar() -> void:
 	modo_menu = true
 	# Na tela inicial o Astro acompanha o canto inferior direito em qualquer
 	# proporção de tela, sem escapar em celulares ultrawide.
-	set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	offset_left = -79.0
-	offset_top = -72.0
-	offset_right = -39.0
-	offset_bottom = -32.0
+	_ancorar_astro_canto_inferior()
 	_atualizar_tela_preta_responsiva()
 	visible = true
 	texto_label.visible = true
@@ -115,6 +111,14 @@ func apresentar() -> void:
 		falar(apresentacao[0])
 	else:
 		mostrar_proxima_curiosidade()
+
+
+func _ancorar_astro_canto_inferior() -> void:
+	set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	offset_left = -79.0
+	offset_top = -72.0
+	offset_right = -39.0
+	offset_bottom = -32.0
 
 
 func _atualizar_tela_preta_responsiva() -> void:
@@ -131,14 +135,15 @@ func _atualizar_dialogo_responsivo() -> void:
 
 	var tamanho_tela := get_viewport_rect().size
 	var margem := 12.0
-	var espaco_astro := 152.0
-	var altura_dialogo := 120.0
+	# Reserva a largura total do sprite e uma folga real entre ele e o balão.
+	var espaco_astro := 174.0
+	var altura_dialogo := 132.0 if tamanho_tela.x < 720.0 else 120.0
 
 	var largura_disponivel := tamanho_tela.x - espaco_astro - margem * 2.0
 	var largura_dialogo := minf(clampf(tamanho_tela.x * 0.62, 220.0, 410.0), largura_disponivel)
 
-	var x_global := tamanho_tela.x - largura_dialogo - espaco_astro
-	var y_global := tamanho_tela.y - altura_dialogo - margem - 30
+	var x_global := tamanho_tela.x - largura_dialogo - espaco_astro - margem
+	var y_global := tamanho_tela.y - altura_dialogo - margem - 30.0
 
 	texto_label.global_position = Vector2(
 		maxf(margem, x_global),
@@ -175,6 +180,11 @@ func iniciar_tutorial(player: Player) -> void:
 		dialogo_inicial = dialogo_inicial_mobile.duplicate()
 	tutorial_ativo = true
 	tutorial_terminado = false
+
+	# A cena de batalha tinha offsets próprios e mantinha o Astro perto do centro.
+	# Reancorar antes da primeira fala evita que o texto seja cortado ou cubra o sprite.
+	_ancorar_astro_canto_inferior()
+	_atualizar_tela_preta_responsiva()
 
 	visible = true
 	texto_label.visible = true
