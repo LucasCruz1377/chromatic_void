@@ -140,14 +140,21 @@ func _configurar_sincronizador_multiplayer() -> void:
 			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
 		)
 	sincronizador.replication_config = configuracao
-	sincronizador.replication_interval = 0.033
+	# Quinze snapshots por segundo, combinados à previsão visual do cliente,
+	# usam menos banda sem alterar partículas, shaders ou lógica autoritativa.
+	sincronizador.replication_interval = 0.066
 	add_child(sincronizador)
 
 
 func _process(delta: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		# O cliente não executa IA, dano nem colisões. Apenas prolonga visualmente
+		# a última velocidade conhecida até o próximo snapshot do host.
+		if not morto and visible:
+			global_position += velocity * delta
+		return
 	if (
 		not Rede.modo_multiplayer
-		or not multiplayer.is_server()
 		or not is_in_group("boss")
 		or morto
 	):
