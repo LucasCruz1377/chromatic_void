@@ -189,13 +189,26 @@ jobs:
             throw "Updater.exe não foi gerado."
           }
 
-      - name: Guardar Updater.exe
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-updater-windows
-          path: dist-updater/Updater.exe
-          if-no-files-found: error
-          retention-days: 1
+      - name: Preparar Release em rascunho
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
+        run: |
+          gh release view "$env:TAG" *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create "$env:TAG" --title "Chromatic Void $env:TAG" --generate-notes --verify-tag --draft
+          }
+
+      - name: Enviar Updater.exe temporário
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
+        run: |
+          gh release upload "$env:TAG" "dist-updater/Updater.exe" --clobber
 
 
   # ==========================================================
@@ -403,7 +416,7 @@ jobs:
 
           archive_output: true
 
-          cache: true
+          cache: false
 
 
       # ========================================================
@@ -412,10 +425,17 @@ jobs:
 
       - name: Baixar Updater.exe recém-gerado
         if: matrix.preset == 'Windows Desktop'
-        uses: actions/download-artifact@v4
-        with:
-          name: build-updater-windows
-          path: ${{ runner.temp }}/updater-windows
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/updater-windows"
+          gh release download "$TAG" \
+            --pattern "Updater.exe" \
+            --dir "${RUNNER_TEMP}/updater-windows"
 
       - name: Adicionar Updater.exe ao build Windows
         if: matrix.preset == 'Windows Desktop'
@@ -622,23 +642,33 @@ jobs:
       # ARTEFATOS
       # ========================================================
 
-      - name: Guardar build para publicação
+      - name: Enviar build para a Release em rascunho
         if: matrix.android != true
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.artefato }}
-          path: ${{ steps.export.outputs.archive_directory }}
-          if-no-files-found: error
-          retention-days: 7
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          arquivos=("${{ steps.export.outputs.archive_directory }}"/*)
+          if [[ ${#arquivos[@]} -eq 0 ]]; then
+            echo "ERRO: nenhum arquivo exportado foi encontrado."
+            exit 1
+          fi
+          gh release upload "$TAG" "${arquivos[@]}" --clobber
 
-      - name: Guardar APK para publicação
+      - name: Enviar APK para a Release em rascunho
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-android
-          path: ${{ steps.apk.outputs.apk_path }}
-          if-no-files-found: error
-          retention-days: 7
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" "${{ steps.apk.outputs.apk_path }}" --clobber
 
 
   # ==========================================================
@@ -662,33 +692,17 @@ jobs:
           fetch-depth: 0
 
 
-      - name: Baixar builds aprovados
-        uses: actions/download-artifact@v4
-        with:
-          pattern: release-*
-          path: dist
-          merge-multiple: true
-
-
-      - name: Organizar arquivos e gerar checksums
+      - name: Baixar builds e gerar checksums
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
         run: |
           set -euo pipefail
-
           mkdir -p release-assets
-
-          while IFS= read -r -d '' arquivo; do
-            destino="release-assets/$(basename "$arquivo")"
-
-            if [[ -e "$destino" ]]; then
-              echo "ERRO: dois builds possuem o mesmo nome:"
-              echo "$destino"
-              exit 1
-            fi
-
-            cp "$arquivo" "$destino"
-
-          done < <(find dist -type f -print0)
+          gh release download "$TAG" --dir release-assets
+          rm -f release-assets/Updater.exe release-assets/SHA256SUMS.txt
 
           if [[ -z "$(find release-assets -maxdepth 1 -type f -print -quit)" ]]; then
             echo "ERRO: nenhum build foi encontrado."
@@ -698,12 +712,23 @@ jobs:
           echo "=========================================="
           echo "ARQUIVOS DA RELEASE"
           echo "=========================================="
-
           ls -lh release-assets
 
-          cd release-assets
+          (
+            cd release-assets
+            sha256sum ./* > SHA256SUMS.txt
+          )
 
-          sha256sum ./* > SHA256SUMS.txt
+      - name: Atualizar checksums e remover Updater temporário
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preparar.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" release-assets/SHA256SUMS.txt --clobber
+          gh release delete-asset "$TAG" Updater.exe --yes || true
 
 
       # ========================================================
@@ -720,10 +745,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh release create "$TAG" release-assets/* \
+          gh release edit "$TAG" \
             --title "Chromatic Void $TAG" \
-            --generate-notes \
-            --verify-tag \
+            --draft=false \
+            --prerelease=false \
             --latest
 
 
@@ -741,9 +766,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          gh release create "$TAG" release-assets/* \
+          gh release edit "$TAG" \
             --title "Chromatic Void $TAG" \
-            --generate-notes \
-            --verify-tag \
+            --draft=false \
             --prerelease \
             --latest=false
