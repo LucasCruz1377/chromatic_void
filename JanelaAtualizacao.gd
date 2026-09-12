@@ -18,8 +18,14 @@ extends CanvasLayer
 @onready var botao_atualizar: Button = $Centralizador/Painel/Margem/Conteudo/Botoes/BotaoAtualizar
 @onready var botao_mais_tarde: Button = $Centralizador/Painel/Margem/Conteudo/Botoes/BotaoMaisTarde
 
+const MAX_TENTATIVAS_VERIFICACAO := 3
+const ATRASO_PRIMEIRA_VERIFICACAO := 0.8
+const ATRASO_NOVA_TENTATIVA := 2.0
+
 var inicio_download_msec := 0
 var velocidade_suavizada := 0.0
+var tentativas_verificacao := 0
+var modo_falha_verificacao := false
 
 
 func _ready() -> void:
@@ -27,6 +33,7 @@ func _ready() -> void:
 	hide()
 
 	UpdateManager.update_available.connect(_mostrar_atualizacao)
+	UpdateManager.update_check_failed.connect(_on_verificacao_falhou)
 	UpdateManager.update_download_started.connect(_on_download_started)
 	UpdateManager.update_download_progress.connect(_on_download_progress)
 	UpdateManager.update_download_failed.connect(_on_download_failed)
@@ -38,10 +45,61 @@ func _ready() -> void:
 	_ajustar_ao_viewport()
 
 	if verificar_automaticamente:
-		UpdateManager.verificar_atualizacao()
+		_iniciar_verificacao_automatica()
+
+
+func _iniciar_verificacao_automatica() -> void:
+	# Dá tempo para a rede do sistema ficar pronta, principalmente no Android.
+	await get_tree().create_timer(ATRASO_PRIMEIRA_VERIFICACAO).timeout
+	if not verificar_automaticamente or UpdateManager.obter_plataforma_atual().is_empty():
+		return
+	tentativas_verificacao = 0
+	_tentar_verificar_atualizacao()
+
+
+func _tentar_verificar_atualizacao() -> void:
+	if UpdateManager.checking_update:
+		return
+	tentativas_verificacao += 1
+	UpdateManager.verificar_atualizacao()
+
+
+func _on_verificacao_falhou(erro: String) -> void:
+	if UpdateManager.obter_plataforma_atual().is_empty():
+		return
+	if tentativas_verificacao < MAX_TENTATIVAS_VERIFICACAO:
+		await get_tree().create_timer(ATRASO_NOVA_TENTATIVA).timeout
+		_tentar_verificar_atualizacao()
+		return
+	_mostrar_auxilio_verificacao(erro)
+
+
+func _mostrar_auxilio_verificacao(erro: String) -> void:
+	modo_falha_verificacao = true
+	versao_atual.text = "INSTALADA  •  v%s" % UpdateManager.current_version.trim_prefix("v")
+	nova_versao.text = "VERIFICAÇÃO PENDENTE"
+	titulo.text = "ATUALIZAÇÃO NÃO VERIFICADA"
+	mensagem.text = (
+		"Confira sua conexão e tente novamente. Seu progresso está seguro; "
+		+ "não é necessário reinstalar o jogo."
+	)
+	status.text = erro
+	aviso_android.visible = false
+	progresso.hide()
+	progresso_info.hide()
+	botao_atualizar.text = "TENTAR NOVAMENTE"
+	botao_atualizar.disabled = false
+	botao_mais_tarde.text = "AGORA NÃO"
+	botao_mais_tarde.disabled = false
+	show()
+	botao_atualizar.call_deferred("grab_focus")
 
 
 func _mostrar_atualizacao(version: String) -> void:
+	modo_falha_verificacao = false
+	tentativas_verificacao = 0
+	titulo.text = "NOVA ATUALIZAÇÃO"
+	botao_mais_tarde.text = "MAIS TARDE"
 	versao_atual.text = "INSTALADA  •  v%s" % UpdateManager.current_version.trim_prefix("v")
 	nova_versao.text = "DISPONÍVEL  •  v%s" % version.trim_prefix("v")
 	status.text = ""
@@ -54,7 +112,7 @@ func _mostrar_atualizacao(version: String) -> void:
 	aviso_android.visible = android
 	botao_atualizar.text = "BAIXAR APK" if android else "ATUALIZAR AGORA"
 	mensagem.text = (
-		"Baixe o novo APK e instale por cima desta versão."
+		"Baixe o APK assinado. Ao abrir, escolha Atualizar e mantenha o jogo instalado."
 		if android
 		else
 		"Uma nova jornada pelo vazio já está pronta para você."
@@ -74,6 +132,12 @@ func _mostrar_atualizacao(version: String) -> void:
 
 
 func _clicou_atualizar() -> void:
+	if modo_falha_verificacao:
+		modo_falha_verificacao = false
+		hide()
+		tentativas_verificacao = 0
+		_tentar_verificar_atualizacao()
+		return
 	botao_atualizar.disabled = true
 	status.text = "Preparando atualização..."
 	progresso.value = 0.0
