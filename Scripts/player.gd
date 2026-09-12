@@ -242,6 +242,10 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	_atualizar_nickname_rede()
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		# Predição somente visual: a autoridade continua sendo o dono da nave.
+		# Os snapshots corrigem a posição, mas a nave não congela entre pacotes.
+		if vivo and visible:
+			global_position += velocity * delta
 		_atualizar_efeitos_visuais_rede()
 		return
 	mira_mouse = Global.mira_mouse
@@ -261,15 +265,20 @@ func _process(delta: float) -> void:
 func _atualizar_efeitos_visuais_rede() -> void:
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
+	# A velocidade funciona como redundância visual caso a mudança booleana do
+	# rastro chegue depois do primeiro snapshot.
+	var emitindo_rastro := (
+		(rastro_ativo_rede or velocity.length_squared() > 64.0)
+		and visible
+	)
 	if is_instance_valid(particles):
 		particles.visible = not usando_estrelas_modelo_o and not usando_rastro_especial
-		particles.emitting = rastro_ativo_rede and visible and not usando_estrelas_modelo_o and not usando_rastro_especial
+		particles.emitting = emitindo_rastro and not usando_estrelas_modelo_o and not usando_rastro_especial
 	if is_instance_valid(particulas_rastro_modelo_o):
 		particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o
-		particulas_rastro_modelo_o.emitting = rastro_ativo_rede and visible and usando_estrelas_modelo_o
+		particulas_rastro_modelo_o.emitting = emitindo_rastro and usando_estrelas_modelo_o
 	if is_instance_valid(rastro_exclusivo):
-		rastro_exclusivo.definir_estado(rastro_ativo_rede and visible and usando_rastro_especial, obter_cor_personalizacao())
-	queue_redraw()
+		rastro_exclusivo.definir_estado(emitindo_rastro and usando_rastro_especial, obter_cor_personalizacao())
 
 
 func configurar_jogador_multiplayer(
@@ -1386,7 +1395,7 @@ func atualizar_movimento(delta: float) -> void:
 		if Input.is_action_pressed("freio"):
 			brake(delta, fator_movimento)
 
-	var emitindo_rastro := acelerando or UsandoHabilidade
+	var emitindo_rastro := acelerando or UsandoHabilidade or velocity.length_squared() > 64.0
 	rastro_ativo_rede = emitindo_rastro
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
