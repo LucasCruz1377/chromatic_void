@@ -77,7 +77,7 @@ func testar_menu_upgrades_e_boss() -> void:
 	astro._ancorar_astro_canto_inferior()
 	astro._atualizar_tela_preta_responsiva()
 	var dialogo_astro := astro.get_node("DialogoAstro") as RichTextLabel
-	var sprite_astro := astro.get_node("SpriteAstro") as Node2D
+	var sprite_astro := astro.get_node("SpriteAstro") as Control
 	verificar(
 		is_equal_approx(astro.anchor_left, 1.0)
 		and is_equal_approx(astro.anchor_top, 1.0),
