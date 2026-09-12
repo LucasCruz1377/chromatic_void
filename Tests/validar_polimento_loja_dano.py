@@ -124,7 +124,10 @@ assert 'calcular_area_comum' in BATALHA
 assert 'calcular_area_jogo' in BATALHA
 assert 'LimiteArenaCoop' in BATALHA
 assert 'func conceder_cristais_coop' in BATALHA
-assert '_receber_cristais_coop.rpc(quantidade)' in BATALHA
+assert 'cristais_coop_acumulados += quantidade' in BATALHA
+assert '_receber_cristais_coop.rpc(cristais_coop_acumulados)' in BATALHA
+assert 'func _aplicar_total_cristais_coop(total_sessao: int)' in BATALHA
+assert '"cristais_coop": cristais_coop_acumulados' in BATALHA
 assert 'func configurar_alvo(' in CAMERA
 assert 'intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in PLAYER
 assert 'particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o' in PLAYER
