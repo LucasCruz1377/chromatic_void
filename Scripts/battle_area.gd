@@ -12,7 +12,9 @@ const EfeitoCombateRedeCena = preload("res://Scripts/EfeitoCombate.gd")
 const IndicadorDanoRedeCena = preload("res://Scripts/IndicadorDano.gd")
 const LimiteArenaCoopCena = preload("res://Scripts/LimiteArenaCoop.gd")
 const DURACAO_COMBO := 3.0
-const INTERVALO_POSICOES_REDE := 0.05
+# Snapshot de recuperação; Player e inimigos já possuem MultiplayerSynchronizer.
+# Dez envios por segundo evitam duplicar tráfego sem perder correção de estado.
+const INTERVALO_POSICOES_REDE := 0.10
 
 const INIMIGOS: Dictionary = {
 	&"seguidor": preload("res://Entities/InimigoSeguidor.tscn"),
