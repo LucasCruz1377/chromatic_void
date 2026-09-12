@@ -23,9 +23,10 @@ func _ready() -> void:
 	aplicar_glow()
 	_configurar_sincronizador_multiplayer()
 	if Rede.modo_multiplayer and not multiplayer.is_server():
+		# O cliente mantém somente o movimento visual. Colisão e dano continuam
+		# exclusivamente no host.
 		monitoring = false
 		monitorable = false
-		set_physics_process(false)
 
 
 func _configurar_sincronizador_multiplayer() -> void:
@@ -42,7 +43,7 @@ func _configurar_sincronizador_multiplayer() -> void:
 			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
 		)
 	sincronizador.replication_config = configuracao
-	sincronizador.replication_interval = 0.033
+	sincronizador.replication_interval = 0.066
 	add_child(sincronizador)
 
 
@@ -79,6 +80,9 @@ func configurar(
 
 func _physics_process(delta: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
+		# Predição visual entre snapshots; não processa bordas, vida ou colisão.
+		global_position += direcao * velocidade * delta
+		rotation = direcao.angle()
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
