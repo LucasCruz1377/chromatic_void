@@ -69,9 +69,9 @@ func verificar_atualizacao() -> void:
 	current_version = _obter_versao_atual()
 	_limpar_release_selecionada()
 
-	var endpoint := ITCH_LATEST_API if plataforma == PLATFORM_ANDROID else RELEASES_API
-	var headers := download_headers if plataforma == PLATFORM_ANDROID else request_headers
-	var erro := http_request.request(endpoint, headers)
+	# A Release do GitHub contém os pacotes assinados de Windows e Android.
+	# Usar a mesma fonte evita que um canal do itch atrasado esconda o aviso.
+	var erro := http_request.request(RELEASES_API, request_headers)
 	if erro != OK:
 		checking_update = false
 		update_check_failed.emit("Não foi possível iniciar a verificação de atualizações.")
@@ -99,18 +99,6 @@ func _on_release_request_completed(
 		return
 
 	var resposta = JSON.parse_string(body.get_string_from_utf8())
-	if obter_plataforma_atual() == PLATFORM_ANDROID:
-		var versao_itch := selecionar_versao_itch(resposta, current_version)
-		if versao_itch.is_empty():
-			update_check_finished.emit()
-			return
-		latest_version = versao_itch
-		latest_asset_url = ITCH_GAME_URL
-		latest_release_url = ITCH_GAME_URL
-		update_available.emit(latest_version)
-		update_check_finished.emit()
-		return
-
 	var releases = resposta
 	if not (releases is Array):
 		update_check_failed.emit("O servidor retornou uma lista de versões inválida.")
