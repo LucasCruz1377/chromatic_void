@@ -2625,6 +2625,26 @@ func morrer() -> void:
 	queue_free()
 
 
+func reviver_multiplayer(posicao_retorno: Vector2) -> void:
+	if not Rede.modo_multiplayer or vivo:
+		return
+	global_position = posicao_retorno
+	velocity = Vector2.ZERO
+	vida = maxf(VIDA_MAXIMA * 0.60, 1.0)
+	vivo = true
+	visible = true
+	ctrlblock = false
+	giroblock = false
+	UsandoHabilidade = false
+	invencibilidade = true
+	invencibilidade_cd = 3.0
+	if HabilidadeEquipada:
+		HabilidadeEquipada.reiniciar_estado()
+		HabilidadeEquipada.ao_equipar(self)
+	atualizar_ui()
+	queue_redraw()
+
+
 func BloquearControle() -> void:
 	ctrlblock = true
 
