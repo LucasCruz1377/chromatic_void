@@ -79,8 +79,7 @@ func _acoplar_controladores() -> void:
 	for alvo in get_tree().get_nodes_in_group("boss"):
 		if (
 			is_instance_valid(alvo)
-			and alvo.get_script() != null
-			and alvo.get_script().get_global_name() == "BossCaosPrimaveril"
+			and alvo is BossCaosPrimaveril
 			and not alvo.has_node("FlowerPhaseController")
 		):
 			var controlador := CONTROLADOR_FLOR.new()
