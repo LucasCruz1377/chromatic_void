@@ -29,13 +29,12 @@ func _ready() -> void:
 		&"flor_equinocio": "CAOS PRIMAVERIL",
 		&"eclipse_colheita": "SIZÍGIA ETERNA",
 	}
-	var RetratoIntro := load("res://Scripts/BossIntroPortrait.gd")
 	for id in nomes_esperados:
 		checar(
-			RetratoIntro.nome_do_boss(id) == nomes_esperados[id],
+			BossIntroPortrait.nome_do_boss(id) == nomes_esperados[id],
 			"nome incorreto na intro de " + String(id)
 		)
-		var retrato := RetratoIntro.new() as Control
+		var retrato := BossIntroPortrait.new()
 		retrato.size = Vector2(300.0, 230.0)
 		retrato.configurar(id, Color.WHITE)
 		add_child(retrato)
