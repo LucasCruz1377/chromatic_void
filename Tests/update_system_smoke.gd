@@ -63,6 +63,11 @@ func _ready() -> void:
 	verificar(centro_painel.distance_to(centro_tela) < 2.0, "a janela não ficou centralizada")
 	verificar(janela.visible, "a janela não abriu ao receber uma atualização")
 	verificar(janela._formatar_tempo(75) == "~1 min 15 s", "o tempo restante não foi formatado corretamente")
+	janela._on_verificacao_sem_atualizacao()
+	verificar(not janela.visible, "o aviso antigo não fechou após confirmar a versão atual")
+	janela._mostrar_atualizacao("0.6.0")
+	janela._on_installer_opened(UpdateManager.PLATFORM_ANDROID)
+	verificar(not janela.visible, "o aviso Android não fechou após abrir o instalador")
 	janela.queue_free()
 
 	if falhas.is_empty():
