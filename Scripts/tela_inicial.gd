@@ -4,6 +4,7 @@ extends Node2D
 const CENA_BATALHA := "res://Rooms/Battle_area.tscn"
 const CENA_LOJA := "res://Rooms/Loja.tscn"
 const CENA_CONFIGURACOES := "res://Rooms/configuracoes.tscn"
+const TEMPO_MAXIMO_CARREGAMENTO := 30.0
 
 @onready var transition: AnimationPlayer = $transition
 @onready var som: AudioStreamPlayer2D = $som
@@ -670,9 +671,15 @@ func _carregar_cena(caminho: String) -> void:
 		return
 
 	var progresso: Array = []
+	var inicio_carregamento := Time.get_ticks_msec()
 	while true:
 		var estado: int = int(ResourceLoader.load_threaded_get_status(caminho, progresso))
 		if estado == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			var segundos := float(Time.get_ticks_msec() - inicio_carregamento) / 1000.0
+			if segundos >= TEMPO_MAXIMO_CARREGAMENTO:
+				push_warning("Carregamento assíncrono excedeu %.0f s: %s" % [TEMPO_MAXIMO_CARREGAMENTO, caminho])
+				_trocar_cena_direta_ou_recuperar(caminho)
+				return
 			await get_tree().process_frame
 			continue
 		if estado == ResourceLoader.THREAD_LOAD_LOADED:
@@ -682,13 +689,16 @@ func _carregar_cena(caminho: String) -> void:
 				if erro_troca != OK:
 					_recuperar_falha_carregamento(caminho, erro_troca)
 				return
+			push_warning("O recurso carregado não é uma cena: %s" % caminho)
+			_trocar_cena_direta_ou_recuperar(caminho)
+			return
 		if estado_carregamento_falhou(estado):
 			push_warning("Falha no carregamento em segundo plano: %s" % caminho)
 			_trocar_cena_direta_ou_recuperar(caminho)
 			return
-		# Nunca deixa um estado inesperado girar em loop sem devolver um frame.
-		await get_tree().process_frame
-
+		push_warning("Estado inesperado no carregamento de %s: %d" % [caminho, estado])
+		_trocar_cena_direta_ou_recuperar(caminho)
+		return
 
 static func estado_carregamento_falhou(estado: int) -> bool:
 	return estado in [
