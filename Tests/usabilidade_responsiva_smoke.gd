@@ -74,20 +74,23 @@ func testar_menu_upgrades_e_boss() -> void:
 	await get_tree().process_frame
 	batalha.tutorial_ativo = false
 	var astro := batalha.get_node("GUI/Astro") as Control
-	astro._ancorar_astro_canto_inferior()
-	astro._atualizar_tela_preta_responsiva()
+	astro.tutorial_ativo = true
+	astro.modo_menu = false
+	astro._configurar_layout_tutorial()
 	var dialogo_astro := astro.get_node("DialogoAstro") as RichTextLabel
 	var sprite_astro := astro.get_node("SpriteAstro") as Control
+	var centro_tela := get_viewport().get_visible_rect().get_center()
 	verificar(
 		is_equal_approx(astro.anchor_left, 1.0)
-		and is_equal_approx(astro.anchor_top, 1.0),
-		"o Astro do tutorial não foi ancorado no canto inferior direito"
+		and is_equal_approx(astro.anchor_top, 0.5),
+		"o Astro do tutorial não recebeu o layout central próprio"
 	)
 	verificar(
-		dialogo_astro.global_position.x >= 12.0
+		absf(dialogo_astro.get_global_rect().get_center().x - centro_tela.x) < 2.0
+		and absf(dialogo_astro.get_global_rect().get_center().y - centro_tela.y) < 2.0
 		and dialogo_astro.global_position.x + dialogo_astro.size.x
 		<= sprite_astro.global_position.x,
-		"o diálogo do Astro ficou cortado ou sobrepôs o personagem"
+		"o diálogo central do Astro ficou cortado ou sobrepôs o personagem"
 	)
 	batalha.get_node("GUI")._ajustar_hud_responsivo()
 	var centro_hud := Global.obter_retangulo_area_visivel(18.0).get_center().x
