@@ -35,6 +35,10 @@ func _ready() -> void:
 		) == "0.7.4-beta.2",
 		"Android não usa a versão mais recente publicada no itch.io"
 	)
+	verificar(
+		UpdateManager.selecionar_versao_itch({"latest": "v0.7.6"}, "0.7.6").is_empty(),
+		"Android oferece novamente a versão que já está instalada"
+	)
 
 	var releases := [
 		criar_release("v0.6.1", false, UpdateManager.ASSET_WINDOWS),
@@ -65,6 +69,12 @@ func _ready() -> void:
 	verificar(janela._formatar_tempo(75) == "~1 min 15 s", "o tempo restante não foi formatado corretamente")
 	janela._on_verificacao_sem_atualizacao()
 	verificar(not janela.visible, "o aviso antigo não fechou após confirmar a versão atual")
+	janela.show()
+	UpdateManager._on_release_request_completed(
+		HTTPRequest.RESULT_SUCCESS, 404, PackedStringArray(), PackedByteArray()
+	)
+	await get_tree().process_frame
+	verificar(not janela.visible, "o HTTP 404 abriu um falso aviso de atualização")
 	janela._mostrar_atualizacao("0.6.0")
 	janela._on_installer_opened(UpdateManager.PLATFORM_ANDROID)
 	verificar(not janela.visible, "o aviso Android não fechou após abrir o instalador")

@@ -123,7 +123,7 @@ assert (ROOT / "FX/canvas_shader/spectrum_rgb.gdshader").exists()
 assert (ROOT / "Scripts/RastroExclusivo.gd").exists()
 assert 'c08_modelo_spectrum' in PLAYER and 'c09_modelo_fspeed' in PLAYER
 assert 'spectrum.scale = Vector2(0.40, 0.40)' in PLAYER
-assert 'fspeed.scale = Vector2(0.30, 0.30)' in PLAYER
+assert 'fspeed.scale = Vector2(0.40, 0.40)' in PLAYER
 assert 'DISTANCIA_MAXIMA_ENTRE_AMOSTRAS := 110.0' in RASTRO_EXCLUSIVO
 assert '_interromper_tracado()' in RASTRO_EXCLUSIVO
 assert '_usa_rastro_modelo_o()' in PLAYER
@@ -144,7 +144,7 @@ assert 'func configurar_alvo(' in CAMERA
 assert 'intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in PLAYER
 assert 'particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o' in PLAYER
 assert 'spectrum.scale = Vector2(0.40, 0.40)' in PLAYER
-assert 'fspeed.scale = Vector2(0.30, 0.30)' in PLAYER
+assert 'fspeed.scale = Vector2(0.40, 0.40)' in PLAYER
 
 assert 'const DADOS_ARMAS' in UPGRADES
 assert UPGRADES.count('"arma_exclusiva":') == 27
@@ -181,7 +181,7 @@ assert 'func obter_limite_uso_feixe_perielio()' in PLAYER
 assert 'perielio_infinito' in UPGRADES and 'perielio_potencia' in UPGRADES
 linha_solsticio = next(linha for linha in CATALOGO.splitlines() if '&"a13_canhao_lua_fria"' in linha and '_item(' in linha)
 assert ', 16500, Color' in linha_solsticio
-assert 'Dano *= 1.0 + 0.30 * indice_setor_dificuldade' in ENEMY
+assert 'Dano *= 1.0 + 0.26 * indice_setor_dificuldade' in ENEMY
 assert 'var multiplicador_dano := 1.0 + float(indice_dificuldade - 1) * 0.10' in FLOR
 assert 'Dano = 42.0 * fator_dano' in SIZIGIA
 assert 'ataques_desde_raio_solar < 3' in SIZIGIA

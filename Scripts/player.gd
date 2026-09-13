@@ -751,9 +751,8 @@ func criar_visuais_modelos_exclusivos() -> void:
 	var fspeed := Sprite2D.new()
 	fspeed.name = "ModeloFspeed"
 	fspeed.texture = TEXTURA_MODELO_FSPEED
-	# O carrinho é comprido e baixo; 0.30 mantém o mesmo comprimento aparente
-	# das demais skins sem aumentar excessivamente sua altura.
-	fspeed.scale = Vector2(0.30, 0.30)
+	# Usa a mesma escala visual da Spectrum para não ficar pequeno no lobby.
+	fspeed.scale = Vector2(0.40, 0.40)
 	fspeed.z_index = 3
 	fspeed.visible = false
 	var material_fspeed := ShaderMaterial.new()

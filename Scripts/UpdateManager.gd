@@ -42,6 +42,7 @@ var latest_release_url := ""
 var latest_asset_digest := ""
 var latest_asset_size := 0
 var checking_update := false
+var verificando_itch := false
 
 var http_request: HTTPRequest
 var download_request: HTTPRequest
@@ -69,11 +70,14 @@ func verificar_atualizacao() -> void:
 	current_version = _obter_versao_atual()
 	_limpar_release_selecionada()
 
-	# A Release do GitHub contém os pacotes assinados de Windows e Android.
-	# Usar a mesma fonte evita que um canal do itch atrasado esconda o aviso.
-	var erro := http_request.request(RELEASES_API, request_headers)
+	# O repositório é privado: no Android, a versão pública do itch.io é
+	# a fonte consultável sem credenciais. Windows mantém as Releases.
+	verificando_itch = plataforma == PLATFORM_ANDROID
+	var endpoint := ITCH_LATEST_API if verificando_itch else RELEASES_API
+	var erro := http_request.request(endpoint, request_headers)
 	if erro != OK:
 		checking_update = false
+		verificando_itch = false
 		update_check_failed.emit("Não foi possível iniciar a verificação de atualizações.")
 
 
@@ -84,6 +88,8 @@ func _on_release_request_completed(
 	body: PackedByteArray
 ) -> void:
 	checking_update = false
+	var resposta_itch := verificando_itch
+	verificando_itch = false
 
 	if result != HTTPRequest.RESULT_SUCCESS:
 		push_warning("Falha HTTP ao verificar atualização. Resultado: %d" % result)
@@ -94,11 +100,30 @@ func _on_release_request_completed(
 		update_check_failed.emit("O servidor limitou temporariamente as verificações. Tente novamente mais tarde.")
 		return
 
+	if response_code == 404:
+		# Releases privadas respondem 404 para clientes sem token. Isso significa
+		# serviço indisponível, não atualização pendente nem falha de conexão.
+		push_warning("Fonte de atualização indisponível (HTTP 404).")
+		update_check_finished.emit()
+		return
+
 	if response_code != 200:
 		update_check_failed.emit("O servidor de atualizações respondeu com erro HTTP %d." % response_code)
 		return
 
 	var resposta = JSON.parse_string(body.get_string_from_utf8())
+	if resposta_itch:
+		var versao_itch := selecionar_versao_itch(resposta, current_version)
+		if versao_itch.is_empty():
+			update_check_finished.emit()
+			return
+		latest_version = versao_itch
+		latest_asset_url = ITCH_GAME_URL
+		latest_release_url = ITCH_GAME_URL
+		update_available.emit(latest_version)
+		update_check_finished.emit()
+		return
+
 	var releases = resposta
 	if not (releases is Array):
 		update_check_failed.emit("O servidor retornou uma lista de versões inválida.")
