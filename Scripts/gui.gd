@@ -21,6 +21,7 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 
 var pausa_anterior := false
 var gameover_anterior := false
+var menu_saida_cliente_aberto := false
 
 
 func _ready() -> void:
@@ -57,6 +58,9 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_ajustar_hud_responsivo)
 	_atualizar_indicador_habilidade()
 	call_deferred("_ajustar_hud_responsivo")
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		botao_despause.text = "CONTINUAR"
+		botao_voltar_pause.text = "SAIR DA PARTIDA"
 
 
 func definir_player_local(novo_player: Player) -> void:
@@ -163,8 +167,20 @@ func _process(_delta: float) -> void:
 					and batalha.has_method("limpar_estado_visual_boss_pausa")
 				):
 					batalha.call("limpar_estado_visual_boss_pausa")
+		else:
+			# O cliente pode abrir a saída local, mas nunca altera a pausa da árvore.
+			menu_saida_cliente_aberto = not menu_saida_cliente_aberto
+			Global.definir_cursor_interface(menu_saida_cliente_aberto)
+			if menu_saida_cliente_aberto:
+				botao_despause.call_deferred("grab_focus")
 
-	caixa_pause.visible = get_tree().paused and not escolhendo_setor and pode_pausar
+	caixa_pause.visible = (
+		not escolhendo_setor
+		and (
+			(get_tree().paused and pode_pausar)
+			or (menu_saida_cliente_aberto and Rede.modo_multiplayer and not pode_pausar)
+		)
+	)
 	if get_tree().paused != pausa_anterior:
 		pausa_anterior = get_tree().paused
 
@@ -180,6 +196,7 @@ func _process(_delta: float) -> void:
 
 
 func preparar_troca_de_cena() -> void:
+	menu_saida_cliente_aberto = false
 	if tela_upgrades.has_method("esta_aberta") and bool(
 		tela_upgrades.call("esta_aberta")
 	):
@@ -201,6 +218,11 @@ func _on_tentar_de_novo_pressed() -> void:
 
 
 func _on_despause_pressed() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		menu_saida_cliente_aberto = false
+		caixa_pause.hide()
+		Global.definir_cursor_interface(false)
+		return
 	get_tree().paused = false
 	Global.definir_cursor_interface(false)
 	var batalha = get_parent()
