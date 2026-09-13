@@ -134,15 +134,17 @@ func _desenhar_flor() -> void:
 	var verde := Color(0.20, 0.62, 0.18)
 	var petala := Color(0.94, 0.28, 0.65)
 	var miolo := Color(1.0, 0.78, 0.16)
+	var molde := PackedVector2Array([
+		Vector2(0, -46), Vector2(27, -5), Vector2(18, 31),
+		Vector2(0, 43), Vector2(-18, 31), Vector2(-27, -5)
+	])
 	for indice in range(6):
 		var angulo := tempo * 0.18 + indice * TAU / 6.0
 		var centro_petala := Vector2.from_angle(angulo) * 64.0
-		draw_set_transform_matrix(Transform2D(angulo + PI * 0.5, centro_petala))
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(0, -46), Vector2(27, -5), Vector2(18, 31),
-			Vector2(0, 43), Vector2(-18, 31), Vector2(-27, -5)
-		]), petala)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var pontos := PackedVector2Array()
+		for ponto in molde:
+			pontos.append(ponto.rotated(angulo + PI * 0.5) + centro_petala)
+		draw_colored_polygon(pontos, petala)
 	for indice in range(12):
 		var angulo := indice * TAU / 12.0
 		draw_line(Vector2.from_angle(angulo) * 89.0, Vector2.from_angle(angulo + 0.10) * 113.0, verde, 7.0, true)
