@@ -22,6 +22,40 @@ func _ready() -> void:
 		checar(ResourceLoader.exists(caminho), "som ausente: " + caminho)
 		checar(load(caminho) is AudioStream, "som inválido: " + caminho)
 
+	var nomes_esperados: Dictionary = {
+		&"pet0": "PET-0",
+		&"constelacao_amparo": "CONSTELAÇÃO DO AMPARO",
+		&"no_ametista": "NÓ DE AMETISTA",
+		&"flor_equinocio": "CAOS PRIMAVERIL",
+		&"eclipse_colheita": "SIZÍGIA ETERNA",
+	}
+	var RetratoIntro := load("res://Scripts/BossIntroPortrait.gd")
+	for id in nomes_esperados:
+		checar(
+			RetratoIntro.nome_do_boss(id) == nomes_esperados[id],
+			"nome incorreto na intro de " + String(id)
+		)
+		var retrato := RetratoIntro.new() as Control
+		retrato.size = Vector2(300.0, 230.0)
+		retrato.configurar(id, Color.WHITE)
+		add_child(retrato)
+		retrato.queue_redraw()
+		await get_tree().process_frame
+		retrato.queue_free()
+
+	var fonte_intro := FileAccess.get_file_as_string("res://Scripts/battle_area.gd")
+	checar(
+		"visual_original.duplicate()" not in fonte_intro,
+		"a intro ainda duplica o visual completo do boss"
+	)
+	checar(
+		"cena.instantiate()" not in fonte_intro.substr(
+			fonte_intro.find("func _mostrar_intro_boss"),
+			fonte_intro.find("func limpar_inimigos_sem_recompensa") - fonte_intro.find("func _mostrar_intro_boss")
+		),
+		"a intro ainda instancia bosses fora da arena"
+	)
+
 	var batalha := (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child.call_deferred(batalha)
 	await get_tree().process_frame
