@@ -201,7 +201,7 @@ func _iniciar_roubo_luz() -> void:
 		return
 	roubo_luz_ativo = false
 	boss.set("multiplicador_dano_recebido", 1.0)
-	var ondas := clampi(1 + disparos_absorvidos / 5, 1, 3)
+	var ondas := clampi(1 + int(float(disparos_absorvidos) / 5.0), 1, 3)
 	if boss.has_method("criar_corona"):
 		boss.call("criar_corona", ondas, true)
 	_encerrar_mecanica(7.5)
