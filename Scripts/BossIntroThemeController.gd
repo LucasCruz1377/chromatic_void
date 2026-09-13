@@ -43,7 +43,7 @@ func _process(_delta: float) -> void:
 
 func _aplicar_cor(intro: CanvasLayer, id: StringName) -> void:
 	var raiz := intro.get_child(0) if intro.get_child_count() > 0 else null
-	if not raiz is Control:
+	if not (raiz is Control):
 		return
 	var fundo: ColorRect
 	for filho in raiz.get_children():
