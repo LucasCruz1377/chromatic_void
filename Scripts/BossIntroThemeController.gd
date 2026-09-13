@@ -3,6 +3,7 @@ class_name BossIntroThemeController
 
 const CONTROLADOR_SIZIGIA = preload("res://Scripts/SizigiaFinalController.gd")
 const CONTROLADOR_FLOR = preload("res://Scripts/FlowerPhaseController.gd")
+const CONTROLADOR_AUDIO = preload("res://Scripts/CombatAudioController.gd")
 
 const SONS: Dictionary = {
 	&"pet0": "res://sounds/Bosses/snd_intro_pet.wav",
@@ -29,6 +30,9 @@ func _ready() -> void:
 	audio_intro = AudioStreamPlayer.new()
 	audio_intro.name = "AudioIntroBoss"
 	add_child(audio_intro)
+	var audio_combate := CONTROLADOR_AUDIO.new()
+	audio_combate.name = "CombatAudioController"
+	get_parent().add_child.call_deferred(audio_combate)
 
 
 func _process(_delta: float) -> void:
