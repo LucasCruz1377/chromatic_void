@@ -737,7 +737,9 @@ func criar_visuais_modelos_exclusivos() -> void:
 	var spectrum := Sprite2D.new()
 	spectrum.name = "ModeloSpectrum"
 	spectrum.texture = TEXTURA_MODELO_SPECTRUM
-	spectrum.scale = Vector2(0.25, 0.25)
+	# O SVG Spectrum ocupa menos área útil que o canvas de 160 px. Esta escala
+	# iguala sua presença visual às naves padrão no lobby e durante a partida.
+	spectrum.scale = Vector2(0.40, 0.40)
 	spectrum.z_index = 3
 	spectrum.visible = false
 	var material_spectrum := ShaderMaterial.new()
@@ -749,7 +751,9 @@ func criar_visuais_modelos_exclusivos() -> void:
 	var fspeed := Sprite2D.new()
 	fspeed.name = "ModeloFspeed"
 	fspeed.texture = TEXTURA_MODELO_FSPEED
-	fspeed.scale = Vector2(0.28, 0.28)
+	# O carrinho é comprido e baixo; 0.30 mantém o mesmo comprimento aparente
+	# das demais skins sem aumentar excessivamente sua altura.
+	fspeed.scale = Vector2(0.30, 0.30)
 	fspeed.z_index = 3
 	fspeed.visible = false
 	var material_fspeed := ShaderMaterial.new()
