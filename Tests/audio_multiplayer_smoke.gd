@@ -26,7 +26,7 @@ func _ready() -> void:
 	var controlador_script := load("res://Scripts/CombatAudioController.gd")
 	checar(controlador_script != null, "controlador de áudio não carregou")
 	if controlador_script != null:
-		var controlador := controlador_script.new()
+		var controlador: Node = controlador_script.new()
 		checar(controlador.SONS_TIRO.size() == 4, "não há quatro variações de tiro")
 		checar(controlador.has_method("_tocar_gravidade_remoto"), "som gravitacional não configurado")
 		checar(controlador.has_method("_tocar_ametista_remoto"), "som da Ametista não configurado")
