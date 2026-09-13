@@ -135,26 +135,40 @@ func _atualizar_dialogo_responsivo() -> void:
 
 	var tamanho_tela := get_viewport_rect().size
 	var margem := 12.0
-	# Reserva a largura total do sprite e uma folga real entre ele e o balão.
-	var espaco_astro := 174.0
-	var altura_dialogo := 132.0 if tamanho_tela.x < 720.0 else 120.0
+	var altura_dialogo := 148.0 if tamanho_tela.x < 720.0 else 132.0
+	var largura_dialogo: float
+	var x_global: float
+	var y_global: float
 
-	var largura_disponivel := tamanho_tela.x - espaco_astro - margem * 2.0
-	var largura_dialogo := minf(clampf(tamanho_tela.x * 0.62, 220.0, 410.0), largura_disponivel)
+	if tutorial_ativo and not modo_menu:
+		# O tutorial possui layout próprio: caixa central e Astro à direita.
+		largura_dialogo = minf(clampf(tamanho_tela.x * 0.66, 260.0, 560.0), tamanho_tela.x - margem * 2.0)
+		x_global = (tamanho_tela.x - largura_dialogo) * 0.5
+		y_global = (tamanho_tela.y - altura_dialogo) * 0.5
+	else:
+		# A apresentação da tela inicial continua no canto inferior direito.
+		var espaco_astro := 174.0
+		var largura_disponivel := tamanho_tela.x - espaco_astro - margem * 2.0
+		largura_dialogo = minf(clampf(tamanho_tela.x * 0.62, 220.0, 410.0), largura_disponivel)
+		x_global = tamanho_tela.x - largura_dialogo - espaco_astro - margem
+		y_global = tamanho_tela.y - altura_dialogo - margem - 30.0
 
-	var x_global := tamanho_tela.x - largura_dialogo - espaco_astro - margem
-	var y_global := tamanho_tela.y - altura_dialogo - margem - 30.0
-
-	texto_label.global_position = Vector2(
-		maxf(margem, x_global),
-		maxf(margem, y_global)
-	)
+	texto_label.global_position = Vector2(maxf(margem, x_global), maxf(margem, y_global))
 	texto_label.size = Vector2(largura_dialogo, altura_dialogo)
-	texto_label.custom_minimum_size = Vector2(220, altura_dialogo)
+	texto_label.custom_minimum_size = Vector2(minf(220.0, largura_dialogo), altura_dialogo)
 	texto_label.fit_content = false
 	texto_label.scroll_active = false
 	texto_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	texto_label.clip_contents = false
+
+
+func _configurar_layout_tutorial() -> void:
+	set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	offset_left = -79.0
+	offset_top = -20.0
+	offset_right = -39.0
+	offset_bottom = 20.0
+	_atualizar_tela_preta_responsiva()
 
 
 func _deve_se_apresentar(dados: Dictionary) -> bool:
@@ -181,10 +195,8 @@ func iniciar_tutorial(player: Player) -> void:
 	tutorial_ativo = true
 	tutorial_terminado = false
 
-	# A cena de batalha tinha offsets próprios e mantinha o Astro perto do centro.
-	# Reancorar antes da primeira fala evita que o texto seja cortado ou cubra o sprite.
-	_ancorar_astro_canto_inferior()
-	_atualizar_tela_preta_responsiva()
+	# O tutorial usa uma composição independente da apresentação da tela inicial.
+	_configurar_layout_tutorial()
 
 	visible = true
 	texto_label.visible = true
@@ -206,7 +218,7 @@ func falar(texto: String) -> void:
 
 	visible = true
 	texto_label.visible = true
-	texto_label.text = texto
+	texto_label.text = "[center]%s[/center]" % texto if tutorial_ativo and not modo_menu else texto
 	texto_label.visible_characters = 0
 
 	escrevendo = true
