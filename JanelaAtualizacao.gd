@@ -33,6 +33,7 @@ func _ready() -> void:
 	hide()
 
 	UpdateManager.update_available.connect(_mostrar_atualizacao)
+	UpdateManager.update_check_finished.connect(_on_verificacao_sem_atualizacao)
 	UpdateManager.update_check_failed.connect(_on_verificacao_falhou)
 	UpdateManager.update_download_started.connect(_on_download_started)
 	UpdateManager.update_download_progress.connect(_on_download_progress)
@@ -93,6 +94,13 @@ func _mostrar_auxilio_verificacao(erro: String) -> void:
 	botao_mais_tarde.disabled = false
 	show()
 	botao_atualizar.call_deferred("grab_focus")
+
+
+func _on_verificacao_sem_atualizacao() -> void:
+	# Fecha qualquer aviso antigo quando a versão instalada já é a mais recente.
+	modo_falha_verificacao = false
+	tentativas_verificacao = 0
+	hide()
 
 
 func _mostrar_atualizacao(version: String) -> void:
@@ -191,13 +199,9 @@ func _on_download_failed(erro: String) -> void:
 
 func _on_installer_opened(plataforma: String) -> void:
 	if plataforma == UpdateManager.PLATFORM_ANDROID:
-		status.text = "Download aberto. Ao instalar, escolha Atualizar — não desinstale o jogo."
-		progresso.value = 15.0
-		progresso_detalhes.text = "DOWNLOAD EXTERNO"
-		tempo_restante.text = "ACOMPANHE NO NAVEGADOR"
-		botao_atualizar.text = "ABRIR DOWNLOAD"
-		botao_atualizar.disabled = false
-		botao_mais_tarde.text = "FECHAR"
+		# O Android assume o fluxo no navegador/instalador. Manter este modal
+		# aberto dá a impressão de que a atualização ainda não foi aceita.
+		hide()
 	else:
 		status.text = "Aplicando atualização..."
 		progresso.value = 100.0
