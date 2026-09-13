@@ -113,6 +113,7 @@ var boss_detalhe_texto: Label
 var boss_detalhe: ProgressBar
 var spawns_pausados_desenvolvedor := false
 var boss_em_teste := false
+var intro_boss_ativa := false
 var painel_desenvolvedor: PainelDesenvolvedor
 var controles_mobile: ControlesMobile
 var musica_partida_padrao: AudioStream
@@ -793,7 +794,7 @@ func _process(delta: float) -> void:
 		_processar_sincronizacao_area_coop(delta)
 		_atualizar_hud_boss_cliente()
 		_atualizar_estado_morte_multiplayer(delta)
-	if game_over or escolha_setor_ativa:
+	if game_over or escolha_setor_ativa or intro_boss_ativa:
 		return
 	atualizar_pontos(delta)
 	if Rede.modo_multiplayer and not multiplayer.is_server():
@@ -992,12 +993,14 @@ func _processar_combo(delta: float) -> void:
 
 func _publicar_combo_rede() -> void:
 	if Rede.esta_conectado() and multiplayer.is_server():
-		_receber_combo_rede.rpc(Global.Combo, tempo_combo_restante)
+		_receber_combo_rede.rpc(Global.Combo, tempo_combo_restante, int(Global.Pontos))
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receber_combo_rede(valor: int, restante: float) -> void:
+func _receber_combo_rede(valor: int, restante: float, pontuacao: int) -> void:
 	Global.Combo = maxi(valor, 0)
+	Global.Pontos = maxi(pontuacao, 0)
+	pontos = float(Global.Pontos)
 	combo_observado = Global.Combo
 	tempo_combo_restante = clampf(restante, 0.0, DURACAO_COMBO)
 
@@ -1230,15 +1233,10 @@ func _ocultar_aviso_rede_depois(token: int) -> void:
 		aviso_rede.visible = false
 
 
-func atualizar_pontos(delta: float) -> void:
-	var pontos_alvo: float = Global.Pontos
-	if pontos < pontos_alvo:
-		pontos = move_toward(
-			pontos,
-			pontos_alvo,
-			20.0 * maxi(Global.Combo, 1) * delta
-		)
-	contpontos.text = str(int(pontos)).pad_zeros(8)
+func atualizar_pontos(_delta: float) -> void:
+	# HUD e resultado final usam a mesma fonte autoritativa.
+	pontos = float(Global.Pontos)
+	contpontos.text = str(int(Global.Pontos)).pad_zeros(8)
 
 
 func finalizar_tutorial() -> void:
@@ -1406,8 +1404,16 @@ func invocar_boss_teste(id: StringName) -> void:
 
 
 func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
+	if intro_boss_ativa:
+		return
 	boss_atual_id = id
 	boss_em_teste = em_teste
+	if not em_teste:
+		if Rede.esta_conectado() and multiplayer.is_server():
+			_receber_intro_boss.rpc(id)
+		await _mostrar_intro_boss(id)
+		if game_over:
+			return
 	var cena: PackedScene = BOSSES.get(boss_atual_id, BOSSES[&"pet0"])
 	boss_ativo = cena.instantiate() as InimigoBase
 	if not is_instance_valid(boss_ativo):
@@ -1447,6 +1453,95 @@ func _criar_boss(id: StringName, dificuldade: int, em_teste: bool) -> void:
 	if boss_atual_id == &"pet0":
 		var pet0 := boss_ativo as BossPet0
 		_on_boss_reciclagem_alterada(pet0.reciclagem_atual, pet0.meta_reciclagem)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_intro_boss(id: StringName) -> void:
+	await _mostrar_intro_boss(id)
+
+
+func _mostrar_intro_boss(id: StringName) -> void:
+	# Testes headless não precisam aguardar a animação, mas o conteúdo permanece
+	# disponível e é exibido normalmente no jogo desktop/mobile.
+	if OS.has_feature("headless"):
+		return
+	intro_boss_ativa = true
+	var jogador_local: Player = player as Player
+	if Rede.modo_multiplayer:
+		jogador_local = _obter_jogador_rede(Rede.peer_local()) as Player
+	if is_instance_valid(jogador_local):
+		jogador_local.BloquearControle()
+		jogador_local.BloquearGiro()
+
+	var dados: Dictionary = DadosSetores.obter(_identificar_setor_do_boss(id))
+	var cor: Color = dados.get("cor_destaque", Color(0.48, 0.95, 1.0))
+	var cena: PackedScene = BOSSES.get(id, BOSSES[&"pet0"])
+	var amostra: Node = cena.instantiate()
+	var nome_boss := "ANOMALIA DO VAZIO"
+	if amostra.has_method("obter_nome_boss"):
+		nome_boss = str(amostra.call("obter_nome_boss"))
+	var visual_original := amostra.get_node_or_null("Visual") as Node2D
+	var visual_copia: Node2D = null
+	if is_instance_valid(visual_original):
+		visual_copia = visual_original.duplicate() as Node2D
+	amostra.free()
+
+	var camada := CanvasLayer.new()
+	camada.name = "IntroBoss"
+	camada.layer = 145
+	add_child(camada)
+	var raiz := Control.new()
+	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	raiz.mouse_filter = Control.MOUSE_FILTER_STOP
+	camada.add_child(raiz)
+	var tamanho := get_viewport().get_visible_rect().size
+	var sombra := ColorRect.new()
+	sombra.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	sombra.color = Color(0.0, 0.0, 0.0, 0.60)
+	sombra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.add_child(sombra)
+
+	var faixa := Polygon2D.new()
+	faixa.polygon = PackedVector2Array([
+		Vector2(-32.0, tamanho.y * 0.31),
+		Vector2(tamanho.x + 32.0, tamanho.y * 0.22),
+		Vector2(tamanho.x + 32.0, tamanho.y * 0.72),
+		Vector2(-32.0, tamanho.y * 0.84),
+	])
+	faixa.color = cor.lightened(0.48)
+	raiz.add_child(faixa)
+
+	if is_instance_valid(visual_copia):
+		visual_copia.position = Vector2(tamanho.x * 0.22, tamanho.y * 0.55)
+		visual_copia.scale = Vector2.ONE * clampf(minf(tamanho.x / 960.0, tamanho.y / 540.0) * 2.2, 1.25, 2.4)
+		raiz.add_child(visual_copia)
+
+	var nome := Label.new()
+	nome.text = nome_boss
+	nome.position = Vector2(tamanho.x * 0.40, tamanho.y * 0.43)
+	nome.size = Vector2(tamanho.x * 0.53, tamanho.y * 0.18)
+	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nome.add_theme_font_size_override("font_size", clampi(roundi(tamanho.x * 0.054), 28, 58))
+	nome.add_theme_color_override("font_color", cor.darkened(0.72))
+	nome.add_theme_color_override("font_shadow_color", Color(1.0, 1.0, 1.0, 0.35))
+	nome.add_theme_constant_override("shadow_offset_x", 2)
+	nome.add_theme_constant_override("shadow_offset_y", 2)
+	raiz.add_child(nome)
+
+	raiz.modulate.a = 0.0
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_property(raiz, "modulate:a", 1.0, 0.22)
+	tween.tween_interval(1.45)
+	tween.tween_property(raiz, "modulate:a", 0.0, 0.30)
+	await tween.finished
+	if is_instance_valid(camada):
+		camada.queue_free()
+	intro_boss_ativa = false
+	if is_instance_valid(jogador_local) and jogador_local.vivo and not tutorial_ativo:
+		jogador_local.DesbloquearControle()
+		jogador_local.DesbloquearGiro()
 
 
 func limpar_inimigos_sem_recompensa() -> void:
@@ -2042,7 +2137,25 @@ func encerrar_escolha_setor() -> void:
 
 
 func mostrar_vitoria() -> void:
+	if Rede.esta_conectado() and not multiplayer.is_server():
+		return
+	var pontuacao_final := int(Global.Pontos)
+	if Rede.esta_conectado() and multiplayer.is_server():
+		_receber_vitoria_rede.rpc(pontuacao_final)
+	_apresentar_vitoria(pontuacao_final)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_vitoria_rede(pontuacao_final: int) -> void:
+	_apresentar_vitoria(pontuacao_final)
+
+
+func _apresentar_vitoria(pontuacao_final: int) -> void:
 	game_over = true
+	Global.Pontos = maxi(pontuacao_final, 0)
+	pontos = float(Global.Pontos)
+	if is_instance_valid(contpontos):
+		contpontos.text = str(Global.Pontos).pad_zeros(8)
 	Global.registrar_jogo_zerado()
 	var linha := iniciar_painel_escolha(
 		"CICLO DE SETORES CONCLUÍDO",
@@ -2050,7 +2163,7 @@ func mostrar_vitoria() -> void:
 	)
 	var botao := criar_cartao_setor(linha, {
 		"nome": "VOLTAR AO MENU",
-		"subtitulo": "PONTUAÇÃO %s" % str(int(Global.Pontos)).pad_zeros(8),
+		"subtitulo": "PONTUAÇÃO %s" % str(Global.Pontos).pad_zeros(8),
 		"descricao": "A tentativa foi concluída.",
 		"cor_destaque": Color(0.42, 1.0, 0.68)
 	})
