@@ -46,20 +46,13 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:usa_wrap"),
 		NodePath(".:rebotes_max"),
 	]
-	for caminho in propriedades_movimento:
+	# Direção, velocidade e posição já chegam no pacote de spawn. Depois disso,
+	# o movimento é determinístico nos peers e não ocupa banda a cada quadro.
+	for caminho in propriedades_movimento + propriedades_configuracao:
 		configuracao.add_property(caminho)
 		configuracao.property_set_spawn(caminho, true)
-		configuracao.property_set_replication_mode(
-			caminho, SceneReplicationConfig.REPLICATION_MODE_ALWAYS
-		)
-	for caminho in propriedades_configuracao:
-		configuracao.add_property(caminho)
-		configuracao.property_set_spawn(caminho, true)
-		configuracao.property_set_replication_mode(
-			caminho, SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
-		)
+		configuracao.property_set_sync(caminho, false)
 	sincronizador.replication_config = configuracao
-	sincronizador.replication_interval = 0.066
 	add_child(sincronizador)
 
 
@@ -104,6 +97,12 @@ func _physics_process(delta: float) -> void:
 			direcao_visual = Vector2.RIGHT.rotated(rotation)
 		global_position += direcao_visual.normalized() * velocidade * delta
 		rotation = direcao_visual.angle()
+		if usa_wrap:
+			var area_visual := Global.obter_retangulo_area_visivel()
+			global_position.x = wrapf(global_position.x, area_visual.position.x, area_visual.end.x)
+			global_position.y = wrapf(global_position.y, area_visual.position.y, area_visual.end.y)
+		else:
+			_processar_bordas_visual()
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
@@ -147,3 +146,14 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("tomar_dano"):
 		body.tomar_dano(dano)
 		queue_free()
+
+
+func _processar_bordas_visual() -> void:
+	var area := Global.obter_retangulo_area_visivel()
+	if global_position.x <= area.position.x or global_position.x >= area.end.x:
+		direcao.x *= -1.0
+		global_position.x = clampf(global_position.x, area.position.x + 2.0, area.end.x - 2.0)
+	if global_position.y <= area.position.y or global_position.y >= area.end.y:
+		direcao.y *= -1.0
+		global_position.y = clampf(global_position.y, area.position.y + 2.0, area.end.y - 2.0)
+	rotation = direcao.angle()

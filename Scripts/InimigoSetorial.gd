@@ -202,10 +202,12 @@ func _radial(q:int,vel:float,dano_tiro:float)->void:
 func _disparar(dir:Vector2,vel:float,dano_tiro:float)->void:
 	var cena := get_tree().current_scene
 	if not is_instance_valid(cena) or cena.is_queued_for_deletion(): return
-	var p:=PROJETIL.instantiate() as ProjetilInimigo; cena.add_child(p); p.global_position=global_position+dir*24
+	var p:=PROJETIL.instantiate() as ProjetilInimigo
+	p.position=global_position+dir*24
 	var forma:=p.get_node_or_null("Visual") as Polygon2D
 	if forma: forma.color=cor_setor
 	p.configurar(dir,dano_tiro,vel,0)
+	cena.add_child(p, true)
 
 func tomarDano(valor:float)->void:
 	if estilo==Estilo.SATELITE_BERCO and not drones_liberados: _soltar_drones()
@@ -220,7 +222,11 @@ func _soltar_drones()->void:
 		if batalha.has_method("contar_inimigos_regulares"):
 			if int(batalha.call("contar_inimigos_regulares")) >= 10:
 				break
-		var d:=cena.instantiate() as InimigoBase; batalha.add_child(d, true); d.global_position=global_position+Vector2(30*lado,10); d.VidaMaxima*=0.5; d.ValorXP=0.25
+		var d:=cena.instantiate() as InimigoBase
+		d.position=global_position+Vector2(30*lado,10)
+		d.VidaMaxima*=0.5
+		d.ValorXP=0.25
+		batalha.add_child(d, true)
 
 func morrer()->void:
 	_limpar_escudo()
