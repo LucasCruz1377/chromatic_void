@@ -1,6 +1,9 @@
 extends Node
 class_name BossIntroThemeController
 
+const CONTROLADOR_SIZIGIA = preload("res://Scripts/SizigiaFinalController.gd")
+const CONTROLADOR_FLOR = preload("res://Scripts/FlowerPhaseController.gd")
+
 const SONS: Dictionary = {
 	&"pet0": "res://sounds/Bosses/snd_intro_pet.wav",
 	&"constelacao_amparo": "res://sounds/Bosses/snd_intro_boss2.wav",
@@ -29,6 +32,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	_acoplar_controladores()
 	var batalha := get_parent()
 	if not is_instance_valid(batalha):
 		return
@@ -64,3 +68,21 @@ func _tocar_som(id: StringName) -> void:
 	audio_intro.stop()
 	audio_intro.stream = fluxo
 	audio_intro.play()
+
+
+func _acoplar_controladores() -> void:
+	for alvo in get_tree().get_nodes_in_group("boss_sizigia"):
+		if is_instance_valid(alvo) and not alvo.has_node("SizigiaFinalController"):
+			var controlador := CONTROLADOR_SIZIGIA.new()
+			controlador.name = "SizigiaFinalController"
+			alvo.add_child(controlador)
+	for alvo in get_tree().get_nodes_in_group("boss"):
+		if (
+			is_instance_valid(alvo)
+			and alvo.get_script() != null
+			and alvo.get_script().get_global_name() == "BossCaosPrimaveril"
+			and not alvo.has_node("FlowerPhaseController")
+		):
+			var controlador := CONTROLADOR_FLOR.new()
+			controlador.name = "FlowerPhaseController"
+			alvo.add_child(controlador)
