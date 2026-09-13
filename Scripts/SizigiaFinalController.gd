@@ -138,7 +138,8 @@ func _iniciar_sombra_passado() -> void:
 		_encerrar_mecanica(4.0)
 		return
 	var caminho := PackedVector2Array(historico)
-	_mostrar_sombra.rpc(caminho)
+	if multiplayer.has_multiplayer_peer():
+		_mostrar_sombra.rpc(caminho)
 	_mostrar_sombra(caminho)
 	await get_tree().create_timer(1.10).timeout
 	if not _boss_valido():
@@ -194,7 +195,8 @@ func _iniciar_roubo_luz() -> void:
 	roubo_luz_ativo = true
 	disparos_absorvidos = 0
 	boss.set("multiplicador_dano_recebido", 0.0)
-	_mostrar_roubo_luz.rpc()
+	if multiplayer.has_multiplayer_peer():
+		_mostrar_roubo_luz.rpc()
 	_mostrar_roubo_luz()
 	await get_tree().create_timer(2.15).timeout
 	if not _boss_valido():
@@ -235,7 +237,8 @@ func _iniciar_ocultacao(suprema: bool) -> void:
 		Vector2(retangulo.position.x + retangulo.size.x * 0.72, y),
 	])
 	var aviso := 1.40 if not suprema else 1.85
-	_mostrar_ocultacao.rpc(abrigos, aviso, suprema)
+	if multiplayer.has_multiplayer_peer():
+		_mostrar_ocultacao.rpc(abrigos, aviso, suprema)
 	_mostrar_ocultacao(abrigos, aviso, suprema)
 	await get_tree().create_timer(aviso).timeout
 	if not _boss_valido():
@@ -300,7 +303,8 @@ func _iniciar_eclipse_absoluto() -> void:
 	boss.set("gravidade_tempo", 0.0)
 	if boss.has_method("limpar_ataques_astrais"):
 		boss.call("limpar_ataques_astrais")
-	_tocar_eclipse.rpc()
+	if multiplayer.has_multiplayer_peer():
+		_tocar_eclipse.rpc()
 	_tocar_eclipse()
 	if boss.has_signal("subtitulo_alterado"):
 		boss.emit_signal("subtitulo_alterado", "ECLIPSE ABSOLUTO — REPITA O PASSADO E BUSQUE A SOMBRA")
