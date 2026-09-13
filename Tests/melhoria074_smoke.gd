@@ -77,6 +77,27 @@ func testar_modelos_spectrum_e_fspeed() -> void:
 	verificar(&"c22_rastro_spectrum" in Global.CONQUISTAS[&"combo_213_spectrum"]["recompensas"], "Spectrum não libera seu rastro")
 	verificar(&"c23_rastro_fspeed" in Global.CONQUISTAS[&"pontos_75000000_fspeed"]["recompensas"], "Fspeed não libera seu rastro")
 
+	# Simula o wrap entre as bordas da arena. O rastro deve descartar o trecho
+	# anterior em vez de criar uma linha atravessando toda a tela.
+	var alvo_rastro := Node2D.new()
+	add_child(alvo_rastro)
+	var rastro := RastroExclusivo.new()
+	add_child(rastro)
+	rastro.configurar(alvo_rastro, &"spectrum", Color.WHITE)
+	rastro.definir_estado(true, Color.WHITE)
+	rastro.pontos = [{"posicao": Vector2.ZERO, "idade": 0.0}]
+	rastro.acumulador = 0.035
+	alvo_rastro.global_position = Vector2(900.0, 0.0)
+	rastro._process(0.0)
+	verificar(rastro.pontos.size() == 1, "o Spectrum ligou as duas bordas após o wrap")
+	if not rastro.pontos.is_empty():
+		verificar(
+			Vector2(rastro.pontos[0]["posicao"]).x > 800.0,
+			"o Spectrum não iniciou um trecho novo no destino"
+		)
+	rastro.free()
+	alvo_rastro.free()
+
 
 func testar_feedback_vinculos() -> void:
 	var inimigo := InimigoSetorial.new()
