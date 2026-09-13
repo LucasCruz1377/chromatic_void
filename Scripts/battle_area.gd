@@ -1475,33 +1475,31 @@ func _mostrar_intro_boss(id: StringName) -> void:
 
 	var dados: Dictionary = DadosSetores.obter(_identificar_setor_do_boss(id))
 	var cor: Color = dados.get("cor_destaque", Color(0.48, 0.95, 1.0))
-	var cena: PackedScene = BOSSES.get(id, BOSSES[&"pet0"])
-	var amostra: Node = cena.instantiate()
-	var nome_boss := "ANOMALIA DO VAZIO"
-	if amostra.has_method("obter_nome_boss"):
-		nome_boss = str(amostra.call("obter_nome_boss"))
-	var visual_original := amostra.get_node_or_null("Visual") as Node2D
-	if not is_instance_valid(visual_original):
-		visual_original = amostra.get_node_or_null("VisualFase") as Node2D
-	var visual_copia: Node2D = null
-	if is_instance_valid(visual_original):
-		visual_copia = visual_original.duplicate() as Node2D
-	amostra.free()
+	# A intro usa identidade estática: nunca instancia o boss real nem duplica
+	# materiais, partículas ou texturas que pertencem à arena.
+	var nomes_boss: Dictionary = {
+		&"pet0": "PET-0",
+		&"constelacao_amparo": "CONSTELAÇÃO DO AMPARO",
+		&"no_ametista": "NÓ DE AMETISTA",
+		&"flor_equinocio": "CAOS PRIMAVERIL",
+		&"eclipse_colheita": "SIZÍGIA ETERNA",
+	}
+	var nome_boss: String = str(nomes_boss.get(id, "ANOMALIA DO VAZIO"))
 
 	var camada := CanvasLayer.new()
 	camada.name = "IntroBoss"
 	camada.layer = 145
 	add_child(camada)
 	var raiz := Control.new()
+	camada.add_child(raiz)
 	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	raiz.mouse_filter = Control.MOUSE_FILTER_STOP
-	camada.add_child(raiz)
 	var tamanho := get_viewport().get_visible_rect().size
 	var sombra := ColorRect.new()
+	raiz.add_child(sombra)
 	sombra.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	sombra.color = Color(0.0, 0.0, 0.0, 0.60)
 	sombra.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.add_child(sombra)
 
 	var faixa := Polygon2D.new()
 	faixa.polygon = PackedVector2Array([
@@ -1513,21 +1511,12 @@ func _mostrar_intro_boss(id: StringName) -> void:
 	faixa.color = cor.lightened(0.48)
 	raiz.add_child(faixa)
 
-	if not is_instance_valid(visual_copia):
-		# Bosses desenhados por código recebem uma silhueta temática na intro.
-		var silhueta := Polygon2D.new()
-		var pontos_icone := PackedVector2Array()
-		for indice in 16:
-			var angulo := TAU * float(indice) / 16.0
-			var raio := 74.0 if indice % 2 == 0 else 42.0
-			pontos_icone.append(Vector2.from_angle(angulo) * raio)
-		silhueta.polygon = pontos_icone
-		silhueta.color = cor.darkened(0.38)
-		visual_copia = silhueta
-	if is_instance_valid(visual_copia):
-		visual_copia.position = Vector2(tamanho.x * 0.22, tamanho.y * 0.55)
-		visual_copia.scale = Vector2.ONE * clampf(minf(tamanho.x / 960.0, tamanho.y / 540.0) * 2.2, 1.25, 2.4)
-		raiz.add_child(visual_copia)
+	var visual_copia := preload("res://Scripts/BossIntroPortrait.gd").new() as Control
+	visual_copia.name = "RetratoBoss"
+	visual_copia.position = Vector2(tamanho.x * 0.055, tamanho.y * 0.285)
+	visual_copia.size = Vector2(tamanho.x * 0.32, tamanho.y * 0.50)
+	visual_copia.call("configurar", id, cor)
+	raiz.add_child(visual_copia)
 
 	var nome := Label.new()
 	nome.text = nome_boss
