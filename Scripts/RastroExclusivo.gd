@@ -6,6 +6,7 @@ const CORES_ARCO_IRIS := [
 	Color("ff4f68"), Color("ffb83f"), Color("fff45a"),
 	Color("58f58b"), Color("42dfff"), Color("7280ff"), Color("db59ff"),
 ]
+const DISTANCIA_MAXIMA_ENTRE_AMOSTRAS := 110.0
 
 var alvo: Node2D
 var tipo: StringName = &""
@@ -59,11 +60,28 @@ func _process(delta: float) -> void:
 	if ativo and alvo.visible and acumulador >= 0.035:
 		acumulador = 0.0
 		var origem := alvo.global_position - Vector2(25.0, 0.0).rotated(alvo.global_rotation)
+		if (
+			not pontos.is_empty()
+			and Vector2(pontos.back()["posicao"]).distance_to(origem)
+			> DISTANCIA_MAXIMA_ENTRE_AMOSTRAS
+		):
+			# O wrap transporta a nave para o lado oposto da arena. A Line2D
+			# não pode ligar as duas bordas, portanto inicia um trecho novo.
+			_interromper_tracado()
 		if pontos.is_empty() or Vector2(pontos.back()["posicao"]).distance_to(origem) >= 3.0:
 			pontos.append({"posicao": origem, "idade": 0.0})
 			if pontos.size() > 42:
 				pontos.pop_front()
 	_atualizar_linhas_spectrum()
+	queue_redraw()
+
+
+func _interromper_tracado() -> void:
+	pontos.clear()
+	acumulador = 0.0
+	for linha in linhas_spectrum:
+		linha.clear_points()
+		linha.visible = false
 	queue_redraw()
 
 
