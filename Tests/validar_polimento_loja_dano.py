@@ -23,6 +23,7 @@ BATALHA = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
 CATALOGO = (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
 MENU = (ROOT / "Scripts/tela_inicial.gd").read_text(encoding="utf-8")
 REDE = (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
+RASTRO_EXCLUSIVO = (ROOT / "Scripts/RastroExclusivo.gd").read_text(encoding="utf-8")
 
 assert '"PERSONALIZAÇÃO"' in SHOP
 assert 'botao_acao.clip_text = false' in SHOP
@@ -114,6 +115,10 @@ for nome in [
 assert (ROOT / "FX/canvas_shader/spectrum_rgb.gdshader").exists()
 assert (ROOT / "Scripts/RastroExclusivo.gd").exists()
 assert 'c08_modelo_spectrum' in PLAYER and 'c09_modelo_fspeed' in PLAYER
+assert 'spectrum.scale = Vector2(0.40, 0.40)' in PLAYER
+assert 'fspeed.scale = Vector2(0.30, 0.30)' in PLAYER
+assert 'DISTANCIA_MAXIMA_ENTRE_AMOSTRAS := 110.0' in RASTRO_EXCLUSIVO
+assert '_interromper_tracado()' in RASTRO_EXCLUSIVO
 assert '_usa_rastro_modelo_o()' in PLAYER
 assert 'BarraVidaRede' in PLAYER
 assert 'PORTA_DESCOBERTA := 24568' in (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
