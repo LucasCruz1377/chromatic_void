@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Scripts/BossNoAmetista.gd" id="1"]
 
 [sub_resource type="CircleShape2D" id="Shape"]
-radius = 50.0
+radius = 84.0
 
 [node name="BossNoAmetista" type="CharacterBody2D" groups=["boss", "inimigo"]]
 z_index = 3

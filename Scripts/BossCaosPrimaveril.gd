@@ -79,7 +79,7 @@ func _ready() -> void:
 func configurar_dificuldade(indice: int) -> void:
 	indice_dificuldade = maxi(indice, 1)
 	var multiplicador_vida := 1.0 + float(indice_dificuldade - 1) * 0.28
-	var multiplicador_dano := 1.0 + float(indice_dificuldade - 1) * 0.08
+	var multiplicador_dano := 1.0 + float(indice_dificuldade - 1) * 0.10
 	VidaMaxima *= multiplicador_vida
 	Vida = VidaMaxima
 	Dano *= multiplicador_dano

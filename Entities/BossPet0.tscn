@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://dib4t0j7ajfgo" path="res://Scripts/BossPet0.gd" id="1"]
 
 [sub_resource type="CapsuleShape2D" id="Capsule"]
-radius = 31.0
-height = 112.0
+radius = 36.0
+height = 142.0
 
 [node name="BossPet0" type="CharacterBody2D" unique_id=167804022 groups=["boss", "inimigo"]]
 z_index = 3

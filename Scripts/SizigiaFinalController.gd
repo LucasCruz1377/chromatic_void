@@ -251,7 +251,7 @@ func _iniciar_ocultacao(suprema: bool) -> void:
 				seguro = true
 				break
 		if not seguro:
-			alvo.call("tomar_dano", float(boss.get("Dano")) * (0.95 if suprema else 0.72))
+			alvo.call("tomar_dano", float(boss.get("Dano")) * (1.75 if suprema else 1.35))
 	await get_tree().create_timer(0.45).timeout
 	if not _boss_valido():
 		return
@@ -261,7 +261,7 @@ func _iniciar_ocultacao(suprema: bool) -> void:
 	if not _boss_valido():
 		return
 	boss.set("multiplicador_dano_recebido", 1.0)
-	_encerrar_mecanica(9.5)
+	_encerrar_mecanica(13.0)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -292,8 +292,16 @@ func _mostrar_ocultacao(abrigos: PackedVector2Array, aviso: float, suprema: bool
 	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var tween := flash.create_tween()
 	tween.tween_property(flash, "color:a", 0.95, aviso)
+	tween.tween_callback(_impacto_clarao.bind(suprema))
 	tween.tween_property(flash, "color:a", 0.0, 0.48)
 	tween.tween_callback(camada.queue_free)
+
+
+func _impacto_clarao(suprema: bool) -> void:
+	var camera := get_viewport().get_camera_2d()
+	if is_instance_valid(camera) and camera.has_method("shake"):
+		camera.shake(18.0 if suprema else 12.0, true)
+	Global.vibrar_controle(0.92 if suprema else 0.72, 1.0, 0.26)
 
 
 func _iniciar_eclipse_absoluto() -> void:

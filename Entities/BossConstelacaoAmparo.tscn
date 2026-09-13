@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Scripts/BossConstelacaoAmparo.gd" id="1"]
 
 [sub_resource type="CircleShape2D" id="Shape"]
-radius = 54.0
+radius = 110.0
 
 [node name="BossConstelacaoAmparo" type="CharacterBody2D" groups=["boss", "inimigo"]]
 z_index = 3

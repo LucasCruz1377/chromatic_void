@@ -53,6 +53,8 @@ var tempo_ataque := 1.8
 var tempo_estado := 0.0
 var tempo_contato := 0.0
 var ultimo_ataque := -1
+# O raio direto é decisivo, mas não deve dominar a rotação de ataques.
+var ataques_desde_raio_solar := 3
 var gravidade_tempo := 0.0
 var gravidade_sinal := 1.0
 var direcao_investida := Vector2.LEFT
@@ -79,7 +81,7 @@ func _ready() -> void:
 	VidaMaxima = vidas_fases[0]
 	Vida = VidaMaxima
 	escala_base_impacto = scale
-	atualizar_colisao(46.0)
+	atualizar_colisao(64.0)
 	criar_visuais_transicao()
 	atualizar_visual_fase()
 	vida_alterada.emit(Vida, VidaMaxima)
@@ -93,7 +95,7 @@ func configurar_dificuldade(nivel_dificuldade: int) -> void:
 	vidas_fases = []
 	for vida_base in VIDA_BASE_FASES:
 		vidas_fases.append(float(vida_base) * MULTIPLICADOR_VIDA_BOSS * fator_vida)
-	Dano = 34.0 * fator_dano
+	Dano = 42.0 * fator_dano
 	VidaMaxima = vidas_fases[fase_atual - 1]
 	Vida = VidaMaxima
 	vida_alterada.emit(Vida, VidaMaxima)
@@ -218,9 +220,15 @@ func escolher_ataque() -> void:
 	var opcoes: Array[int] = [0, 1, 2, 3, 4]
 	if fase_atual == Fase.LUA: opcoes.erase(3)
 	elif fase_atual == Fase.ECLIPSE: opcoes = [0, 1, 2, 4, 5]
+	if fase_atual != Fase.LUA and ataques_desde_raio_solar < 3:
+		opcoes.erase(1)
 	opcoes.erase(ultimo_ataque)
 	var escolha: int = opcoes.pick_random()
 	ultimo_ataque = escolha
+	if escolha == 1:
+		ataques_desde_raio_solar = 0
+	elif fase_atual != Fase.LUA:
+		ataques_desde_raio_solar = mini(ataques_desde_raio_solar + 1, 3)
 	var frenesi := fase_atual == Fase.ECLIPSE and Vida <= obter_vida_maxima_atual() * 0.25
 	tempo_ataque = (1.65 if frenesi else 2.05) + randf_range(0.18, 0.52)
 	if fase_atual == Fase.LUA:
@@ -290,6 +298,13 @@ func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
 
 func anunciar_ataque(texto: String) -> void:
 	subtitulo_alterado.emit(texto)
+	if multiplayer.has_multiplayer_peer():
+		_reproduzir_impacto_ataque.rpc()
+	_reproduzir_impacto_ataque()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _reproduzir_impacto_ataque() -> void:
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
 		EfeitoCombateCena.criar(
@@ -297,8 +312,12 @@ func anunciar_ataque(texto: String) -> void:
 			global_position,
 			EfeitoCombate.Tipo.AVISO,
 			obter_cor_fase(),
-			1.18
+			1.72 if fase_atual == Fase.ECLIPSE else 1.45
 		)
+	var camera := get_viewport().get_camera_2d()
+	if is_instance_valid(camera) and camera.has_method("shake"):
+		camera.shake(5.5 if fase_atual == Fase.ECLIPSE else 3.5, true)
+	Global.vibrar_controle(0.48 if fase_atual == Fase.ECLIPSE else 0.34, 0.82, 0.12)
 
 
 func lancar_crescentes(quantidade: int, abertura: float, em_chamas: bool, boomerang: bool) -> void:
@@ -422,7 +441,7 @@ func criar_raio_solar(eclipse: bool) -> void:
 	var tempo_carga := 2.35 if eclipse else 2.70
 	tempo_ataque = maxf(tempo_ataque, tempo_carga + 1.05)
 	get_tree().current_scene.add_child(raio, true)
-	raio.configurar(self, global_position.direction_to(player.global_position), Dano * (0.70 if eclipse else 0.66), Color(1.0, 0.34, 0.12) if eclipse else Color(1.0, 0.74, 0.18), tempo_carga, 0.10, 38.0 if eclipse else 32.0, true, 0.0, Dano * 0.23, 2.7)
+	raio.configurar(self, global_position.direction_to(player.global_position), Dano * (0.84 if eclipse else 0.76), Color(1.0, 0.34, 0.12) if eclipse else Color(1.0, 0.74, 0.18), tempo_carga, 0.10, 44.0 if eclipse else 38.0, true, 0.0, Dano * 0.23, 2.7)
 
 
 func lancar_prominencias(quantidade: int) -> void:
@@ -444,7 +463,7 @@ func criar_corona(quantidade: int, alternar_sentido: bool) -> void:
 		var contrair := alternar_sentido and indice % 2 == 1
 		var inicio := 720.0 if contrair else 40.0
 		var fim := 40.0 if contrair else 720.0
-		onda.configurar_onda(global_position, Dano * 0.34, obter_cor_fase(), inicio, fim, 1.52 + indice * 0.26, randf_range(-PI, PI), 0.82)
+		onda.configurar_onda(global_position, Dano * 0.40, obter_cor_fase(), inicio, fim, 1.52 + indice * 0.26, randf_range(-PI, PI), 0.82)
 
 
 func criar_manchas_solares(quantidade: int) -> void:
@@ -470,8 +489,11 @@ func criar_reflexos_astrais(frenesi: bool) -> void:
 
 func iniciar_totalidade(frenesi: bool) -> void:
 	tempo_ataque = maxf(tempo_ataque, 7.25)
-	criar_chuva_meteoros(4 if frenesi else 3, Color(0.8, 0.32, 1.0), Dano * 0.30)
-	criar_raio_totalidade_atrasado(fase_atual, 2.45)
+	criar_chuva_meteoros(4 if frenesi else 3, Color(0.8, 0.32, 1.0), Dano * 0.36)
+	# O segundo raio aparece apenas no frenesi e respeita o intervalo global.
+	if frenesi and ataques_desde_raio_solar >= 3:
+		ataques_desde_raio_solar = 0
+		criar_raio_totalidade_atrasado(fase_atual, 2.45)
 
 
 func criar_raio_totalidade_atrasado(fase_esperada: int, atraso: float) -> void:
@@ -539,7 +561,7 @@ func concluir_transicao_para_sol() -> void:
 	VidaMaxima = vidas_fases[1]
 	Vida = VidaMaxima
 	Velocidade = 118.0
-	atualizar_colisao(53.0)
+	atualizar_colisao(68.0)
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.35
 	ultimo_ataque = -1
@@ -655,7 +677,7 @@ func preparar_dados_fase_eclipse() -> void:
 	VidaMaxima = vidas_fases[2]
 	Vida = VidaMaxima
 	Velocidade = 128.0
-	atualizar_colisao(58.0)
+	atualizar_colisao(70.0)
 	atualizar_visual_fase()
 	# O corpo definitivo já nasce luminoso sob a tela escura; a onda de choque
 	# não é mais responsável por "ligar" o neon depois.

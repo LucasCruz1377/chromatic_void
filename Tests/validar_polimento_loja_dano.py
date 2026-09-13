@@ -24,6 +24,13 @@ CATALOGO = (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
 MENU = (ROOT / "Scripts/tela_inicial.gd").read_text(encoding="utf-8")
 REDE = (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
 RASTRO_EXCLUSIVO = (ROOT / "Scripts/RastroExclusivo.gd").read_text(encoding="utf-8")
+SIZIGIA_FINAL = (ROOT / "Scripts/SizigiaFinalController.gd").read_text(encoding="utf-8")
+FLOR = (ROOT / "Scripts/BossCaosPrimaveril.gd").read_text(encoding="utf-8")
+BOSS_PET = (ROOT / "Entities/BossPet0.tscn").read_text(encoding="utf-8")
+BOSS_AMPARO = (ROOT / "Entities/BossConstelacaoAmparo.tscn").read_text(encoding="utf-8")
+BOSS_AMETISTA = (ROOT / "Entities/BossNoAmetista.tscn").read_text(encoding="utf-8")
+BOSS_FLOR = (ROOT / "Entities/BossFlorEquinocio.tscn").read_text(encoding="utf-8")
+BOSS_SIZIGIA = (ROOT / "Entities/BossEclipseColheita.tscn").read_text(encoding="utf-8")
 
 assert '"PERSONALIZAÇÃO"' in SHOP
 assert 'botao_acao.clip_text = false' in SHOP
@@ -174,7 +181,18 @@ assert 'func obter_limite_uso_feixe_perielio()' in PLAYER
 assert 'perielio_infinito' in UPGRADES and 'perielio_potencia' in UPGRADES
 linha_solsticio = next(linha for linha in CATALOGO.splitlines() if '&"a13_canhao_lua_fria"' in linha and '_item(' in linha)
 assert ', 16500, Color' in linha_solsticio
-assert 'Dano *= 1.0 + 0.24 * indice_setor_dificuldade' in ENEMY
+assert 'Dano *= 1.0 + 0.30 * indice_setor_dificuldade' in ENEMY
+assert 'var multiplicador_dano := 1.0 + float(indice_dificuldade - 1) * 0.10' in FLOR
+assert 'Dano = 42.0 * fator_dano' in SIZIGIA
+assert 'ataques_desde_raio_solar < 3' in SIZIGIA
+assert 'Dano * (0.84 if eclipse else 0.76)' in SIZIGIA
+assert 'float(boss.get("Dano")) * (1.75 if suprema else 1.35)' in SIZIGIA_FINAL
+assert '_encerrar_mecanica(13.0)' in SIZIGIA_FINAL
+assert 'radius = 36.0\nheight = 142.0' in BOSS_PET
+assert 'radius = 110.0' in BOSS_AMPARO
+assert 'radius = 84.0' in BOSS_AMETISTA
+assert 'radius = 82.0' in BOSS_FLOR and 'Dano = 48.0' in BOSS_FLOR
+assert 'radius = 64.0' in BOSS_SIZIGIA and 'Dano = 42.0' in BOSS_SIZIGIA
 assert 'return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)' in ENEMY
 assert '"cor": cor_particulas' in ENEMY
 assert '&"hitflash_inimigo"' in BATALHA

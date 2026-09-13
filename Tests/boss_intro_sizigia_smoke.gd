@@ -67,7 +67,11 @@ func _ready() -> void:
 	var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate()
 	batalha.add_child(flor)
 	await get_tree().process_frame
-	checar(flor.Dano >= 40.0, "o dano do Florecimento não foi aumentado")
+	checar(flor.Dano >= 48.0, "o dano do Florecimento não foi aumentado")
+	checar(
+		(flor.get_node("CollisionShape2D") as CollisionShape2D).shape.radius >= 82.0,
+		"a área vulnerável do Florecimento não cobre o corpo visível"
+	)
 	checar(
 		flor.has_node("FlowerPhaseController"),
 		"a Dança dos Caules não recebeu o controlador de duas execuções"
@@ -76,6 +80,11 @@ func _ready() -> void:
 	var sizigia := (load("res://Entities/BossEclipseColheita.tscn") as PackedScene).instantiate()
 	batalha.add_child(sizigia)
 	await get_tree().process_frame
+	checar(sizigia.Dano >= 42.0, "o dano-base da Sizígia não foi aumentado")
+	checar(
+		(sizigia.get_node("CollisionShape2D") as CollisionShape2D).shape.radius >= 64.0,
+		"a área vulnerável da Sizígia não cobre o astro visível"
+	)
 	checar(
 		sizigia.has_node("SizigiaFinalController"),
 		"a Sizígia não recebeu o controlador das mecânicas finais"

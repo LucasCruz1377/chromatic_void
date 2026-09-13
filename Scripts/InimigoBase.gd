@@ -89,7 +89,7 @@ func _ready() -> void:
 				0
 			)
 		VidaMaxima *= 1.0 + 0.18 * indice_setor_dificuldade
-		Dano *= 1.0 + 0.24 * indice_setor_dificuldade
+		Dano *= 1.0 + 0.30 * indice_setor_dificuldade
 		Velocidade *= 1.0 + 0.05 * indice_setor_dificuldade
 
 	escala_base_impacto = scale

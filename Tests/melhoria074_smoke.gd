@@ -36,7 +36,7 @@ func testar_curva_xp_e_dano() -> void:
 	inimigo.VidaMaxima = 100.0
 	inimigo.Dano = 10.0
 	add_child(inimigo)
-	verificar(is_equal_approx(inimigo.Dano, 14.8), "o dano pós-PET-0 não escalou 24% por setor")
+	verificar(is_equal_approx(inimigo.Dano, 16.0), "o dano pós-PET-0 não escalou 30% por setor")
 	var intervalo := inimigo.calcular_intervalo_ataque(2.8)
 	verificar(intervalo < 2.8 and intervalo >= 0.5, "o intervalo de ataque não acelerou com piso de 0,5 s")
 	inimigo.free()
