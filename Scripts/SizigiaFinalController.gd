@@ -322,7 +322,8 @@ func _eclipse_memoria() -> void:
 		await get_tree().create_timer(0.4).timeout
 		return
 	var caminho := PackedVector2Array(historico)
-	_mostrar_sombra.rpc(caminho)
+	if multiplayer.has_multiplayer_peer():
+		_mostrar_sombra.rpc(caminho)
 	_mostrar_sombra(caminho)
 	await get_tree().create_timer(2.75).timeout
 
