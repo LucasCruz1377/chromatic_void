@@ -20,6 +20,7 @@ var vida_anterior := 0.0
 var dano_janela := 0.0
 var tempo_janela_dano := 0.0
 var audio_eclipse: AudioStreamPlayer
+var lado_abrigo := 1
 
 
 func _ready() -> void:
@@ -232,9 +233,11 @@ func _mostrar_roubo_luz() -> void:
 func _iniciar_ocultacao(suprema: bool) -> void:
 	var retangulo := Global.obter_retangulo_area_visivel()
 	var y := retangulo.position.y + retangulo.size.y * 0.72
+	# Um único abrigo alterna entre esquerda e direita a cada clarão.
+	lado_abrigo *= -1
+	var proporcao_x := 0.28 if lado_abrigo < 0 else 0.72
 	var abrigos := PackedVector2Array([
-		Vector2(retangulo.position.x + retangulo.size.x * 0.28, y),
-		Vector2(retangulo.position.x + retangulo.size.x * 0.72, y),
+		Vector2(retangulo.position.x + retangulo.size.x * proporcao_x, y),
 	])
 	var aviso := 1.40 if not suprema else 1.85
 	if multiplayer.has_multiplayer_peer():
@@ -268,19 +271,43 @@ func _iniciar_ocultacao(suprema: bool) -> void:
 func _mostrar_ocultacao(abrigos: PackedVector2Array, aviso: float, suprema: bool) -> void:
 	var cena := get_tree().current_scene
 	for posicao in abrigos:
-		var circulo := Line2D.new()
-		circulo.add_to_group("mecanica_sizigia")
-		circulo.width = 5.0
-		circulo.default_color = Color(0.90, 0.95, 1.0, 0.94)
 		var pontos := PackedVector2Array()
 		for i in 49:
 			pontos.append(posicao + Vector2.from_angle(TAU * float(i) / 48.0) * 82.0)
+
+		var zona_segura := Polygon2D.new()
+		zona_segura.add_to_group("mecanica_sizigia")
+		zona_segura.polygon = pontos
+		zona_segura.color = Color(0.34, 0.82, 1.0, 0.16)
+		zona_segura.z_index = 19
+		cena.add_child(zona_segura)
+		zona_segura.create_tween().tween_callback(zona_segura.queue_free).set_delay(aviso + 0.55)
+
+		var circulo := Line2D.new()
+		circulo.add_to_group("mecanica_sizigia")
+		circulo.width = 6.0
+		circulo.default_color = Color(0.90, 0.95, 1.0, 0.98)
 		circulo.points = pontos
+		circulo.z_index = 20
 		cena.add_child(circulo)
 		var pulso := circulo.create_tween().set_loops(3)
 		pulso.tween_property(circulo, "default_color:a", 0.30, aviso / 6.0)
 		pulso.tween_property(circulo, "default_color:a", 1.0, aviso / 6.0)
 		circulo.create_tween().tween_callback(circulo.queue_free).set_delay(aviso + 0.55)
+
+		var aviso_area := Label.new()
+		aviso_area.add_to_group("mecanica_sizigia")
+		aviso_area.text = "ÁREA SEGURA — MOVA-SE"
+		aviso_area.position = posicao - Vector2(130.0, 122.0)
+		aviso_area.size = Vector2(260.0, 36.0)
+		aviso_area.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		aviso_area.add_theme_font_size_override("font_size", 18)
+		aviso_area.add_theme_color_override("font_color", Color(0.88, 0.98, 1.0))
+		aviso_area.add_theme_color_override("font_outline_color", Color(0.02, 0.05, 0.12))
+		aviso_area.add_theme_constant_override("outline_size", 5)
+		aviso_area.z_index = 21
+		cena.add_child(aviso_area)
+		aviso_area.create_tween().tween_callback(aviso_area.queue_free).set_delay(aviso + 0.55)
 	var camada := CanvasLayer.new()
 	camada.layer = 88
 	camada.add_to_group("mecanica_sizigia")

@@ -794,8 +794,12 @@ func conceder_recompensa() -> void:
 		combo_apos_abate, indice_setor_dificuldade
 	)
 	for jogador in get_tree().get_nodes_in_group("player"):
-		if is_instance_valid(jogador) and jogador.has_method("conceder_xp_rede"):
-			jogador.call("conceder_xp_rede", recompensa_xp)
+		if not is_instance_valid(jogador) or not jogador.has_method("conceder_xp_rede"):
+			continue
+		var multiplicador_xp := 1.0
+		if jogador.has_method("obter_multiplicador_xp_loja"):
+			multiplicador_xp = float(jogador.call("obter_multiplicador_xp_loja"))
+		jogador.call("conceder_xp_rede", recompensa_xp * multiplicador_xp)
 
 	Global.registrar_kill()
 	Global.Combo += 1

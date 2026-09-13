@@ -201,7 +201,7 @@ func atualizar_contato(delta: float) -> void:
 	if global_position.distance_to(player.global_position) <= raio_contato:
 		tempo_contato = 0.85
 		if player.has_method("tomar_dano"):
-			player.tomar_dano(Dano * 0.56)
+			player.tomar_dano(Dano * 0.64)
 		if fase_atual >= Fase.SOL and player.has_method("aplicar_queimadura"):
 			player.aplicar_queimadura(Dano * 0.24, 2.7)
 
@@ -248,7 +248,7 @@ func executar_ataque_lua(indice: int) -> void:
 			ativar_mare_gravitacional()
 		2:
 			anunciar_ataque("CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS")
-			criar_chuva_meteoros(4, Color(0.52, 0.68, 1.0), Dano * 0.38)
+			criar_chuva_meteoros(4, Color(0.52, 0.68, 1.0), Dano * 0.48)
 		3:
 			lancar_crescentes(4, 0.21, false, false)
 		_:
@@ -355,7 +355,7 @@ func ativar_mare_gravitacional() -> void:
 	)
 	criar_campo_gravitacional(gravidade_tempo)
 	criar_corona(2, gravidade_sinal < 0.0)
-	criar_chuva_meteoros(2, Color(0.48, 0.66, 1.0), Dano * 0.31)
+	criar_chuva_meteoros(2, Color(0.48, 0.66, 1.0), Dano * 0.40)
 
 
 func ativar_gravidade_eclipse() -> void:
@@ -452,7 +452,7 @@ func lancar_prominencias(quantidade: int) -> void:
 		get_tree().current_scene.add_child(proj)
 		var lateral := -1.0 if indice % 2 == 0 else 1.0
 		var angulo := base + (float(indice) - quantidade * 0.5) * 0.14
-		proj.configurar(global_position, Vector2.from_angle(angulo), Dano * 0.25, 250.0, Color(1.0, 0.43, 0.08), ProjetilAstral.Tipo.FOGO, lateral * 0.62, self, false, Dano * 0.16, 2.4)
+		proj.configurar(global_position, Vector2.from_angle(angulo), Dano * 0.30, 250.0, Color(1.0, 0.43, 0.08), ProjetilAstral.Tipo.FOGO, lateral * 0.62, self, false, Dano * 0.20, 2.4)
 
 
 func criar_corona(quantidade: int, alternar_sentido: bool) -> void:
@@ -463,7 +463,7 @@ func criar_corona(quantidade: int, alternar_sentido: bool) -> void:
 		var contrair := alternar_sentido and indice % 2 == 1
 		var inicio := 720.0 if contrair else 40.0
 		var fim := 40.0 if contrair else 720.0
-		onda.configurar_onda(global_position, Dano * 0.40, obter_cor_fase(), inicio, fim, 1.52 + indice * 0.26, randf_range(-PI, PI), 0.82)
+		onda.configurar_onda(global_position, Dano * 0.46, obter_cor_fase(), inicio, fim, 1.52 + indice * 0.26, randf_range(-PI, PI), 0.82)
 
 
 func criar_manchas_solares(quantidade: int) -> void:
@@ -471,7 +471,7 @@ func criar_manchas_solares(quantidade: int) -> void:
 	for indice in quantidade:
 		var orbe := OrbeAstralCena.new() as OrbeAstral
 		get_tree().current_scene.add_child(orbe, true)
-		orbe.configurar(self, TAU * indice / quantidade, Dano * 0.27)
+		orbe.configurar(self, TAU * indice / quantidade, Dano * 0.34)
 
 
 func criar_reflexos_astrais(frenesi: bool) -> void:

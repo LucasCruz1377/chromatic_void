@@ -45,16 +45,19 @@ func conceder_recompensa() -> void:
 		if not is_instance_valid(jogador) or jogador.get("vivo") == false:
 			continue
 		var cura_calculada := calcular_cura(jogador)
-		xp_calculado = maxf(xp_calculado, calcular_xp(jogador))
+		var xp_jogador := calcular_xp(jogador)
+		if jogador.has_method("obter_multiplicador_xp_loja"):
+			xp_jogador *= float(jogador.call("obter_multiplicador_xp_loja"))
+		xp_calculado = maxf(xp_calculado, xp_jogador)
 		maior_cura = maxf(maior_cura, cura_calculada)
 		if jogador.has_method("conceder_cura_rede"):
 			jogador.call("conceder_cura_rede", cura_calculada)
 		elif jogador.has_method("curar"):
 			jogador.call("curar", cura_calculada)
 		if jogador.has_method("conceder_xp_rede"):
-			jogador.call("conceder_xp_rede", calcular_xp(jogador))
+			jogador.call("conceder_xp_rede", xp_jogador)
 		elif jogador.has_method("ganhar_xp"):
-			jogador.call("ganhar_xp", calcular_xp(jogador))
+			jogador.call("ganhar_xp", xp_jogador)
 	mostrar_recompensa(
 		"EQUIPE: +%d VIDA  •  +%d XP" % [roundi(maior_cura), roundi(xp_calculado)],
 		Color(0.82, 0.86, 0.95, 1.0)

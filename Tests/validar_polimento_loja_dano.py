@@ -24,6 +24,7 @@ CATALOGO = (ROOT / "Scripts/MonthlyCatalog.gd").read_text(encoding="utf-8")
 MENU = (ROOT / "Scripts/tela_inicial.gd").read_text(encoding="utf-8")
 REDE = (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
 RASTRO_EXCLUSIVO = (ROOT / "Scripts/RastroExclusivo.gd").read_text(encoding="utf-8")
+ASTEROIDE_BONUS = (ROOT / "Scripts/AsteroideBonus.gd").read_text(encoding="utf-8")
 SIZIGIA_FINAL = (ROOT / "Scripts/SizigiaFinalController.gd").read_text(encoding="utf-8")
 FLOR = (ROOT / "Scripts/BossCaosPrimaveril.gd").read_text(encoding="utf-8")
 BOSS_PET = (ROOT / "Entities/BossPet0.tscn").read_text(encoding="utf-8")
@@ -186,6 +187,15 @@ assert 'var multiplicador_dano := 1.0 + float(indice_dificuldade - 1) * 0.10' in
 assert 'Dano = 42.0 * fator_dano' in SIZIGIA
 assert 'ataques_desde_raio_solar < 3' in SIZIGIA
 assert 'Dano * (0.84 if eclipse else 0.76)' in SIZIGIA
+assert 'Dano * 0.48' in SIZIGIA and 'Dano * 0.40' in SIZIGIA
+assert 'Dano * 0.30' in SIZIGIA and 'Dano * 0.46' in SIZIGIA
+assert 'lado_abrigo *= -1' in SIZIGIA_FINAL
+assert 'ÁREA SEGURA — MOVA-SE' in SIZIGIA_FINAL
+assert 'Vector2(52, 52) if detalhes else Vector2(56, 56)' in SHOP
+assert '&"u13_dupla_experiencia"' in CATALOGO and '30000' in CATALOGO
+assert 'func obter_multiplicador_xp_loja() -> float:' in PLAYER
+assert 'recompensa_xp * multiplicador_xp' in ENEMY
+assert 'xp_jogador *= float(jogador.call("obter_multiplicador_xp_loja"))' in ASTEROIDE_BONUS
 assert 'float(boss.get("Dano")) * (1.75 if suprema else 1.35)' in SIZIGIA_FINAL
 assert '_encerrar_mecanica(13.0)' in SIZIGIA_FINAL
 assert 'radius = 36.0\nheight = 142.0' in BOSS_PET

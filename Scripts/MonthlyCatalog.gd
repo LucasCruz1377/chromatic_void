@@ -68,6 +68,7 @@ const FONTES_SITE: Dictionary = {
 	&"u10_marca_cacador": "Outubro • Lua do Caçador",
 	&"u11_barragem_castor": "Novembro • Lua do Castor",
 	&"u12_noite_congelada": "Dezembro • Lua Fria",
+	&"u13_dupla_experiencia": "Monthly Colors • progressão cromática",
 }
 
 
@@ -149,6 +150,7 @@ static func upgrades() -> Array[Dictionary]:
 	_item(&"u10_marca_cacador", "MARCA DO CAÇADOR", "A habilidade procura o inimigo mais resistente e concentra fogo nele.", 0, Color("ff9852"), "OUT • LUA DO CAÇADOR", [5, 2, 3], &"boss_sizigia"),
 	_item(&"u11_barragem_castor", "BARRAGEM DO CASTOR", "Ergue uma barreira temporária no lado oposto ao movimento.", 0, Color("d99c63"), "NOV • LUA DO CASTOR", [2, 5, 2], &"constelacao_1000"),
 	_item(&"u12_noite_congelada", "NOITE CONGELADA", "Projéteis inimigos alcançados pela habilidade congelam e se desfazem.", 0, Color("8fc7ff"), "DEZ • LUA FRIA", [3, 5, 2], &"boss_sizigia"),
+	_item(&"u13_dupla_experiencia", "DOBRO DE EXPERIÊNCIA", "Enquanto equipado, dobra toda experiência recebida durante a partida.", 30000, Color("7dffbc"), "UPGRADE • EXPERIÊNCIA", [3, 5, 4], &"", "A progressão cromática transforma cada vitória em aprendizado acelerado."),
 	]
 
 

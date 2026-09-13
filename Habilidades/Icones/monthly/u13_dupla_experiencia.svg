@@ -1,0 +1,6 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>.base{fill:#071A22;stroke:#7DFFBC;stroke-width:6}.accent{fill:#7DFFBC}.line{stroke:#D7FFF0;stroke-width:5;stroke-linecap:round}</style>
+<circle class="base" cx="64" cy="64" r="50"/>
+<path class="accent" d="M35 42H55L64 56L73 42H93L76 65L94 88H74L64 73L54 88H34L52 65L35 42Z"/>
+<path class="line" d="M21 64H31M97 64H107M64 21V31M64 97V107"/>
+</svg>

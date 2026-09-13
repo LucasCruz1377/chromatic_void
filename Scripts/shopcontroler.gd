@@ -1366,6 +1366,8 @@ static func tamanho_icone_item(id: StringName, detalhes := false) -> Vector2:
 		return Vector2(50, 70) if detalhes else Vector2(42, 60)
 	if id == &"c09_modelo_fspeed":
 		return Vector2(92, 44) if detalhes else Vector2(76, 38)
+	if id in [&"c20_rastro_padrao", &"c21_rastro_estelar_o", &"c22_rastro_spectrum", &"c23_rastro_fspeed"]:
+		return Vector2(52, 52) if detalhes else Vector2(56, 56)
 	return Vector2(78, 78) if detalhes else Vector2(68, 68)
 
 

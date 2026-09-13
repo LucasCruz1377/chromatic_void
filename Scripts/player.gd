@@ -997,6 +997,10 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 			_criar_feedback_monthly(global_position, cor, 1.7, 10.0)
 
 
+func obter_multiplicador_xp_loja() -> float:
+	return 2.0 if mutacao_habilidade == &"u13_dupla_experiencia" else 1.0
+
+
 func aplicar_mutacao_habilidade() -> void:
 	if mutacao_habilidade.is_empty():
 		return
