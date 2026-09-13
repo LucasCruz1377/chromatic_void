@@ -1463,7 +1463,7 @@ func _receber_intro_boss(id: StringName) -> void:
 func _mostrar_intro_boss(id: StringName) -> void:
 	# Testes headless não precisam aguardar a animação, mas o conteúdo permanece
 	# disponível e é exibido normalmente no jogo desktop/mobile.
-	if OS.has_feature("headless"):
+	if DisplayServer.get_name() == "headless":
 		return
 	intro_boss_ativa = true
 	var jogador_local: Player = player as Player
@@ -1481,6 +1481,8 @@ func _mostrar_intro_boss(id: StringName) -> void:
 	if amostra.has_method("obter_nome_boss"):
 		nome_boss = str(amostra.call("obter_nome_boss"))
 	var visual_original := amostra.get_node_or_null("Visual") as Node2D
+	if not is_instance_valid(visual_original):
+		visual_original = amostra.get_node_or_null("VisualFase") as Node2D
 	var visual_copia: Node2D = null
 	if is_instance_valid(visual_original):
 		visual_copia = visual_original.duplicate() as Node2D
@@ -1511,6 +1513,17 @@ func _mostrar_intro_boss(id: StringName) -> void:
 	faixa.color = cor.lightened(0.48)
 	raiz.add_child(faixa)
 
+	if not is_instance_valid(visual_copia):
+		# Bosses desenhados por código recebem uma silhueta temática na intro.
+		var silhueta := Polygon2D.new()
+		var pontos_icone := PackedVector2Array()
+		for indice in 16:
+			var angulo := TAU * float(indice) / 16.0
+			var raio := 74.0 if indice % 2 == 0 else 42.0
+			pontos_icone.append(Vector2.from_angle(angulo) * raio)
+		silhueta.polygon = pontos_icone
+		silhueta.color = cor.darkened(0.38)
+		visual_copia = silhueta
 	if is_instance_valid(visual_copia):
 		visual_copia.position = Vector2(tamanho.x * 0.22, tamanho.y * 0.55)
 		visual_copia.scale = Vector2.ONE * clampf(minf(tamanho.x / 960.0, tamanho.y / 540.0) * 2.2, 1.25, 2.4)
