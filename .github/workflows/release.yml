@@ -287,6 +287,8 @@ jobs:
       - name: Preparar Android SDK
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'
         uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
 
       - name: Instalar componentes Android
         if: matrix.android == true && vars.ANDROID_RELEASE_ENABLED == 'true'

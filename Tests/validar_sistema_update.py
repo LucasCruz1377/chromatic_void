@@ -44,6 +44,9 @@ def main() -> int:
     exigir(presets, 'permissions/internet=true', "export_presets.cfg")
 
     exigir(workflow, "ANDROID_KEYSTORE_BASE64", "release.yml")
+    exigir(workflow, "packages: platform-tools", "release.yml")
+    if "packages: tools" in workflow:
+        raise AssertionError("release.yml: pacote Android legado tools não deve ser instalado")
     exigir(workflow, "apksigner", "release.yml")
     exigir(workflow, "PyInstaller", "release.yml")
     exigir(workflow, "Preparar Release em rascunho", "release.yml")
