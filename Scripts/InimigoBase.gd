@@ -7,6 +7,7 @@ const IndicadorDanoCena = preload("res://Scripts/IndicadorDano.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 const ShaderHitflash = preload("res://FX/canvas_shader/enemy.gdshader")
 const MorteBossCena = preload("res://Scripts/MorteBossFX.gd")
+const AudioCombateCena = preload("res://Scripts/AudioCombate.gd")
 
 # AJUSTE GLOBAL DO BRILHO DOS INIMIGOS.
 # 1.35 recupera o neon alto antigo. Para regular, tente entre 0.80 e 1.60.
@@ -683,16 +684,20 @@ func morrer() -> void:
 	for forma in find_children("*", "CollisionShape2D", true, false):
 		(forma as CollisionShape2D).set_deferred("disabled", true)
 	morreu.emit(self)
-	if not is_in_group("boss"):
-		preload("res://Scripts/AudioCombate.gd").tocar(
-			get_tree().current_scene, &"morte_inimigo", 0.04
-		)
-
 	if is_instance_valid(camera) and camera.has_method("shake"):
 		camera.shake(obter_tremor_morte(), is_in_group("boss"))
 
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
+		if is_in_group("boss"):
+			if not bool(get_meta("som_morte_personalizado", false)):
+				AudioCombateCena.tocar_posicional(
+					cena, global_position, &"explosoes", 0.0, 0.74, 0.92, -2.5
+				)
+		else:
+			AudioCombateCena.tocar_posicional(
+				cena, global_position, &"explosoes", 0.0, 0.88, 1.18, -5.0
+			)
 		EfeitoCombateCena.criar(
 			cena,
 			global_position,
@@ -824,4 +829,3 @@ static func calcular_fator_xp_combo(combo: int, indice_setor: int = 0) -> float:
 	var bonus_combo := minf(0.10 * sqrt(float(cadeia) / 20.0), 0.50)
 	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.05, 0.0, 0.25)
 	return 1.0 + bonus_combo + bonus_setor
-

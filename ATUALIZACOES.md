@@ -1,5 +1,16 @@
 # Sistema de atualização
 
+## Variações sonoras de combate e interface
+
+- Os inimigos alternam entre quatro explosões com variação aleatória de tom.
+- O jogador alterna entre três sons de impacto ao sofrer dano real no casco.
+- A Flor recebeu som próprio no disparo dos espinhos e em sua derrota.
+- A Sizígia Eterna recebeu uma sequência exclusiva de morte.
+- Todos os botões conectados à interface alternam entre dois cliques com
+  `pitch_scale` variável, incluindo botões criados dinamicamente.
+- Os emissores de morte são anexados à cena, portanto o áudio termina mesmo
+  depois que o inimigo ou boss é removido.
+
 ## Perfil visual mobile restaurado da 0.7.1
 
 - O Android voltou a usar o renderer **Mobile**, como na 0.7.1, mantendo o

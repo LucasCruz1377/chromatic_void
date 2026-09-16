@@ -7,7 +7,6 @@ const CENA_CONFIGURACOES := "res://Rooms/configuracoes.tscn"
 const TEMPO_MAXIMO_CARREGAMENTO := 30.0
 
 @onready var transition: AnimationPlayer = $transition
-@onready var som: AudioStreamPlayer2D = $som
 @onready var musica_menu: AudioStreamPlayer2D = $menumusica
 @onready var botao_loja: Button = $CanvasLayer/CaixaMenu2/Shop
 @onready var botao_conquistas: Button = $CanvasLayer/CaixaMenu2/Achievements
@@ -133,7 +132,6 @@ func _on_start_pressed() -> void:
 func _on_solo_pressed() -> void:
 	Rede.iniciar_solo()
 	Global.primeira_vez_jogando = false
-	click_som()
 	await _carregar_cena(CENA_BATALHA)
 
 
@@ -614,14 +612,12 @@ func _on_status_rede_alterado(mensagem: String, erro: bool) -> void:
 func _on_shop_pressed() -> void:
 	if not _pode_executar_acao_menu():
 		return
-	click_som()
 	await _carregar_cena(CENA_LOJA)
 
 
 func _on_achievements_pressed() -> void:
 	if not _pode_executar_acao_menu():
 		return
-	click_som()
 	conquistas_abertas = true
 	_atualizar_lista_conquistas()
 	camada_conquistas.show()
@@ -633,7 +629,6 @@ func _on_achievements_pressed() -> void:
 func _on_options_pressed() -> void:
 	if not _pode_executar_acao_menu():
 		return
-	click_som()
 	await _carregar_cena(CENA_CONFIGURACOES)
 
 
@@ -643,13 +638,8 @@ func _on_exit_pressed() -> void:
 	carregando_cena = true
 	for botao in botoes_menu:
 		botao.disabled = true
-	click_som()
 	await get_tree().create_timer(0.5).timeout
 	get_tree().quit()
-
-
-func click_som() -> void:
-	som.play()
 
 
 func _carregar_cena(caminho: String) -> void:

@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://coyynmarr6r7e"]
 
 [ext_resource type="Script" uid="uid://c07646k0ienly" path="res://Scripts/InimigoSomMorte.gd" id="1_85ype"]
-[ext_resource type="AudioStream" uid="uid://bogy4m7ubg1hj" path="res://sounds/enemydeath.wav" id="2_3anii"]
 
 [sub_resource type="Gradient" id="Gradient_8h2to"]
 offsets = PackedFloat32Array(0, 0.57608694, 1)
@@ -27,12 +26,6 @@ gravity = Vector3(0, 0, 0)
 scale_curve = SubResource("CurveTexture_85ype")
 color_ramp = SubResource("GradientTexture1D_85ype")
 
-[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_h1ni1"]
-random_pitch = 1.1892071
-random_volume_offset_db = 0.5
-streams_count = 1
-stream_0/stream = ExtResource("2_3anii")
-
 [node name="enemydeathpart" type="GPUParticles2D" unique_id=217961140]
 modulate = Color(1.8247963, 0, 0.4552579, 1)
 self_modulate = Color(4.415934, 4.415934, 4.415934, 1)
@@ -44,10 +37,4 @@ explosiveness = 1.0
 randomness = 0.26
 process_material = SubResource("ParticleProcessMaterial_3anii")
 script = ExtResource("1_85ype")
-
-[node name="som" type="AudioStreamPlayer2D" parent="." unique_id=1997420391]
-stream = SubResource("AudioStreamRandomizer_h1ni1")
-volume_db = 1.0
-pitch_scale = 3.45
-bus = &"Sound"
 

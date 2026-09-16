@@ -204,6 +204,9 @@ func processar_onda_espinhos(delta: float) -> void:
 
 
 func disparar_anel_espinhos() -> void:
+	preload("res://Scripts/AudioCombate.gd").tocar(
+		self, &"espinhos_flor", 0.16, 0.88, 1.14, -4.0
+	)
 	var quantidade := 5 + fase * 2
 	var deslocamento := petalas.rotation
 	for indice in quantidade:
@@ -552,6 +555,16 @@ func ao_colidir_com_player(alvo: Node) -> void:
 func morrer() -> void:
 	if morto or Vida > 0.0:
 		return
+	set_meta("som_morte_personalizado", true)
+	preload("res://Scripts/AudioCombate.gd").tocar_posicional(
+		get_tree().current_scene,
+		global_position,
+		&"morte_flor",
+		0.0,
+		0.94,
+		1.06,
+		-1.5
+	)
 	cancelar_petalas_restantes()
 	limpar_vinhas()
 	for node in get_tree().get_nodes_in_group("projetil_primaveril"):

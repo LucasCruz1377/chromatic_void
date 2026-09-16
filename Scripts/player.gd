@@ -18,6 +18,7 @@ const TEXTURA_MODELO_FSPEED = preload("res://UI/modelo_fspeed.svg")
 const SHADER_SPECTRUM = preload("res://FX/canvas_shader/spectrum_rgb.gdshader")
 const RASTRO_EXCLUSIVO_CENA = preload("res://Scripts/RastroExclusivo.gd")
 const AJUDANTE_MONTHLY = preload("res://Scripts/AjudanteMonthly.gd")
+const AudioCombateCena = preload("res://Scripts/AudioCombate.gd")
 const EFEITO_HABILIDADE_MONTHLY = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const REROLLS_UPGRADES_INICIAIS := 3
 const BONUS_DANO_POR_NIVEL := [0.25, 0.18, 0.14, 0.10, 0.08]
@@ -2091,6 +2092,8 @@ func tomar_dano(valor: float) -> void:
 	invencibilidade = true
 	invencibilidade_cd = invencibilidade_cd_max
 	Global.vibrar_controle(0.35, 0.75, 0.2)
+	if dano_final > 0.0:
+		AudioCombateCena.tocar(self, &"player_hit", 0.08, 0.86, 1.14, -5.5)
 
 	reproduzir_feedback_dano(dano_final)
 	if modulo_nave == &"n03_rede_apoio":
@@ -2696,4 +2699,3 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	var dano_contato = body.get("Dano")
 	if dano_contato != null:
 		tomar_dano(float(dano_contato))
-

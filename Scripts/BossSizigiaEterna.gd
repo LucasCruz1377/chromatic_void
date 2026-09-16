@@ -812,6 +812,16 @@ func atualizar_colisao(raio: float) -> void:
 func morrer() -> void:
 	if Vida > 0.0:
 		return
+	set_meta("som_morte_personalizado", true)
+	preload("res://Scripts/AudioCombate.gd").tocar_posicional(
+		get_tree().current_scene,
+		global_position,
+		&"morte_sizigia",
+		0.0,
+		0.96,
+		1.04,
+		0.0
+	)
 	limpar_ataques_astrais()
 	proteger_player(false)
 	remover_overlay_transicao()
