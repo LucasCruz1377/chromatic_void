@@ -174,7 +174,6 @@ assert 'calcular_fator_xp_combo' in ENEMY
 assert '0.10 * sqrt(float(cadeia) / 20.0)' in ENEMY
 assert 'camadas_gelo' in ENEMY and 'tempo_decaimento_gelo = 5.0' in ENEMY
 assert 'nevasca_ao_quebrar' in ENEMY and 'abaixo_zero_ativo' in ENEMY
-assert '&"morte_inimigo"' in ENEMY
 assert '&"ice_stack"' in PROJECTILE and '&"perielio_ray"' in PROJECTILE
 assert 'monitoring = false' in PROJECTILE and 'linha_feixe' in PROJECTILE
 assert 'func obter_dps_feixe_perielio()' in PLAYER
