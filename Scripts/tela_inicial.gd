@@ -125,7 +125,6 @@ func _input(event: InputEvent) -> void:
 func _on_start_pressed() -> void:
 	if not _pode_executar_acao_menu():
 		return
-	click_som()
 	_mostrar_escolha_modo()
 
 
@@ -136,33 +135,28 @@ func _on_solo_pressed() -> void:
 
 
 func _on_multiplayer_pressed() -> void:
-	click_som()
 	_mostrar_escolha_multiplayer()
 
 
 func _on_criar_lobby_pressed() -> void:
-	click_som()
 	var erro := Rede.criar_lobby(_salvar_nickname())
 	if erro == OK:
 		_mostrar_lobby()
 
 
 func _on_entrar_lobby_pressed() -> void:
-	click_som()
 	_mostrar_entrada_ip()
 
 
 func _on_conectar_ip_pressed() -> void:
 	if not is_instance_valid(campo_ip):
 		return
-	click_som()
 	var erro := Rede.entrar_lobby(campo_ip.text, _salvar_nickname())
 	if erro == OK:
 		_mostrar_lobby()
 
 
 func _on_iniciar_lobby_pressed() -> void:
-	click_som()
 	Global.primeira_vez_jogando = false
 	Rede.solicitar_inicio_partida()
 
@@ -489,7 +483,6 @@ func _on_viewport_menu_alterado() -> void:
 
 
 func _conectar_lobby_lan(ip: String) -> void:
-	click_som()
 	var erro := Rede.entrar_lobby(ip, _salvar_nickname())
 	if erro == OK:
 		_mostrar_lobby()
