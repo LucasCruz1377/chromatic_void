@@ -228,3 +228,4 @@ bus = &"Music"
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Achievements" to="." method="_on_achievements_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]
+

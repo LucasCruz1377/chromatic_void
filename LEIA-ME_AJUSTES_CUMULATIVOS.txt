@@ -40,9 +40,9 @@ O PACOTE CONTÉM
 
 VALIDAÇÃO REALIZADA
 - importação e compilação de todos os scripts no Godot 4.7.
-- 21 cenas de smoke test aprovadas.
-- 107 scripts carregados e compilados no Godot 4.7.
-- 297 referências res:// verificadas.
+- 22 cenas de smoke test aprovadas.
+- 109 scripts carregados e compilados no Godot 4.7.
+- 310 referências res:// verificadas.
 - validadores do updater, catálogo, loja, iOS e CI aprovados.
 - empacotamento PCK aprovado nos presets Windows, Web, Android e iOS.
 

@@ -186,3 +186,4 @@ Cada release deve conter exatamente:
 - `SHA256SUMS.txt`.
 
 Versões estáveis recebem apenas outras versões estáveis. Quem estiver em alpha, beta ou RC também pode receber uma pré-release mais nova.
+

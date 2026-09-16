@@ -1016,3 +1016,4 @@ func ocultar_visuais_transicao() -> void:
 		if is_instance_valid(sprite):
 			sprite.visible = false
 	queue_redraw()
+

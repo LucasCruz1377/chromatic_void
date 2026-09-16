@@ -955,3 +955,4 @@ func _estilo_conquistas(
 func _on_dispositivo_alterado(tipo: StringName) -> void:
 	if tipo == &"controle":
 		botao_iniciar.grab_focus()
+

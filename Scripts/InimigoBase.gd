@@ -824,3 +824,4 @@ static func calcular_fator_xp_combo(combo: int, indice_setor: int = 0) -> float:
 	var bonus_combo := minf(0.10 * sqrt(float(cadeia) / 20.0), 0.50)
 	var bonus_setor := clampf(float(maxi(indice_setor, 0)) * 0.05, 0.0, 0.25)
 	return 1.0 + bonus_combo + bonus_setor
+

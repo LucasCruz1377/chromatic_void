@@ -2696,3 +2696,4 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	var dano_contato = body.get("Dano")
 	if dano_contato != null:
 		tomar_dano(float(dano_contato))
+

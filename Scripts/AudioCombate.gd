@@ -23,3 +23,4 @@ static func tocar(emissor: Node, id: StringName, intervalo: float = 0.12) -> voi
  emissor.add_child(som)
  som.finished.connect(som.queue_free)
  som.play()
+

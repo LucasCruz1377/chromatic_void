@@ -558,3 +558,4 @@ func morrer() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 	super.morrer()
+
