@@ -127,14 +127,6 @@ text = "B_OPTIONS"
 scale_amount = Vector2(1.2, 1.2)
 color1 = Color(1, 0.78039217, 1, 1)
 
-[node name="Credits" parent="CanvasLayer/CaixaMenu2" unique_id=1455264261 instance=ExtResource("2_3sat0")]
-layout_mode = 2
-text = "B_CREDITS"
-
-[node name="Start2" parent="CanvasLayer/CaixaMenu2/Credits" unique_id=141900471 instance=ExtResource("3_jstqx")]
-scale_amount = Vector2(1.2, 1.2)
-color1 = Color(0.56078434, 0.7137255, 0.87058824, 1)
-
 [node name="Exit" parent="CanvasLayer/CaixaMenu2" unique_id=2125811040 instance=ExtResource("2_3sat0")]
 layout_mode = 2
 text = "B_QUIT"
