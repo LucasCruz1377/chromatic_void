@@ -18,7 +18,6 @@ const TEMPO_MAXIMO_CARREGAMENTO := 30.0
 	$CanvasLayer/CaixaMenu2/Shop as Button,
 	$CanvasLayer/CaixaMenu2/Achievements as Button,
 	$CanvasLayer/CaixaMenu2/Options as Button,
-	$CanvasLayer/CaixaMenu2/Credits as Button,
 	$CanvasLayer/CaixaMenu2/Exit as Button,
 ]
 var tela_carregamento: Control

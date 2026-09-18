@@ -141,7 +141,7 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 109.0
+offset_left = 46.0
 offset_top = -61.0
 offset_right = 469.0
 offset_bottom = 65.0
@@ -150,7 +150,7 @@ grow_vertical = 2
 theme_override_fonts/normal_font = ExtResource("4_kal6l")
 theme_override_font_sizes/normal_font_size = 64
 bbcode_enabled = true
-text = "[wave][rainbow]Chr[img=40x40]res://Icon_Splash/AstroO.png[/img]matic[/rainbow] Void"
+text = "[wave][rainbow]Chromatic[/rainbow] Void"
 fit_content = true
 vertical_alignment = 1
 
