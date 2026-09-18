@@ -16,7 +16,8 @@ config/version="0.7.6"
 run/main_scene="res://Rooms/TelaInicial.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 boot_splash/bg_color=Color(0.023529412, 0.05490196, 0.09019608, 1)
-config/icon="res://Icon_Splash/PolyIcon.png"
+boot_splash/show_image=false
+config/icon="uid://bxl851y0wi0nc"
 
 [autoload]
 

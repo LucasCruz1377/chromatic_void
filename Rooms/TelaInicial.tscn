@@ -159,7 +159,7 @@ grow_vertical = 2
 theme_override_fonts/normal_font = ExtResource("4_kal6l")
 theme_override_font_sizes/normal_font_size = 64
 bbcode_enabled = true
-text = "[wave amp=30 freq=12][rainbow]Chromatic[/rainbow] Void[/wave]"
+text = "[wave][rainbow]Chr[img=40x40]res://Icon_Splash/AstroO.png[/img]matic[/rainbow] Void"
 fit_content = true
 vertical_alignment = 1
 
@@ -218,4 +218,3 @@ bus = &"Music"
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Achievements" to="." method="_on_achievements_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Options" to="." method="_on_options_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Exit" to="." method="_on_exit_pressed"]
-

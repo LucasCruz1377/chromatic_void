@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bxl851y0wi0nc"
-path="res://.godot/imported/PolyIcon.png-db880b9c8e4666f8358d73b8e7de136a.ctex"
+uid="uid://otim62d425hg"
+path="res://.godot/imported/AstroO.png-51be43219a0aefec66555d20b8673ad7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Icon_Splash/PolyIcon.png"
-dest_files=["res://.godot/imported/PolyIcon.png-db880b9c8e4666f8358d73b8e7de136a.ctex"]
+source_file="res://Icon_Splash/AstroO.png"
+dest_files=["res://.godot/imported/AstroO.png-51be43219a0aefec66555d20b8673ad7.ctex"]
 
 [params]
 
