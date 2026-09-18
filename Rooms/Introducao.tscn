@@ -1,0 +1,294 @@
+[gd_scene format=3 uid="uid://44oe0oa5he1k"]
+
+[ext_resource type="Script" uid="uid://eprjre8y6wqb" path="res://Scripts/introducao.gd" id="1_18lhf"]
+[ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="2_hrjmu"]
+[ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_dxi7p"]
+[ext_resource type="PackedScene" uid="uid://cvhvbtre63cad" path="res://Entities/Camera.tscn" id="4_sl71k"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_5dpad"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(130.56, 1, 1)
+direction = Vector3(-1, 1, 0)
+spread = 0.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, 0, 0)
+
+[sub_resource type="Animation" id="Animation_t1im8"]
+resource_name = "Intro"
+length = 11.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("apresentação:visible_ratio")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2.0333333, 3, 4, 5.0333333, 6.0333333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("apresentação:text")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": ["
+Um jogo feito por Lucas e Tamires", "Fazendo parte da coleção Creatively:"]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Title:visible_ratio")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(6.0333333, 8.033333),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 1.0]
+}
+tracks/3/type = "method"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Camera")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(6.2, 6.35, 6.5, 6.65, 6.77, 6.98, 7.07, 7.23, 7.36, 7.65, 7.8, 7.95, 8.1),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}, {
+"args": [10.0, false],
+"method": &"shake"
+}]
+}
+tracks/4/type = "method"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath(".")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(10.8),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"iniciar"
+}]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("ColorRect:modulate")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 10.133333, 10.533334),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_4tshm"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("apresentação:visible_ratio")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("apresentação:text")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": ["
+Um jogo feito por Lucas e Tamires"]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Title:visible_ratio")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("ColorRect:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_mese5"]
+resource_name = "fade"
+length = 1.2333333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ColorRect:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(1.1666666),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"iniciar"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_5dpad"]
+_data = {
+&"Intro": SubResource("Animation_t1im8"),
+&"RESET": SubResource("Animation_4tshm"),
+&"fade": SubResource("Animation_mese5")
+}
+
+[node name="IntroTela" type="Node2D" unique_id=696517473]
+script = ExtResource("1_18lhf")
+
+[node name="apresentação" type="RichTextLabel" parent="." unique_id=362282698]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 139.0
+offset_top = 32.0
+offset_right = 797.0
+offset_bottom = 175.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("2_hrjmu")
+theme_override_font_sizes/normal_font_size = 39
+bbcode_enabled = true
+text = "
+Um jogo feito por Lucas e Tamires"
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+visible_characters = 0
+visible_characters_behavior = 1
+visible_ratio = 0.0
+
+[node name="Title" type="RichTextLabel" parent="." unique_id=985477791]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 279.0
+offset_top = 161.0
+offset_right = 671.0
+offset_bottom = 437.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("2_hrjmu")
+theme_override_font_sizes/normal_font_size = 64
+bbcode_enabled = true
+text = "[wave][rainbow]Chr[img=40x40]res://Icon_Splash/AstroO.png[/img]matic[/rainbow] Void"
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+visible_characters = 0
+visible_characters_behavior = 1
+visible_ratio = 0.0
+
+[node name="WorldEnvironment" parent="." unique_id=996982090 instance=ExtResource("3_dxi7p")]
+
+[node name="parts_fundo" type="GPUParticles2D" parent="." unique_id=1757205819]
+position = Vector2(734, -33)
+scale = Vector2(5.080004, 6.055698)
+amount = 200
+lifetime = 10.0
+preprocess = 1.5
+process_material = SubResource("ParticleProcessMaterial_5dpad")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1389068973]
+libraries/ = SubResource("AnimationLibrary_5dpad")
+autoplay = &"Intro"
+
+[node name="Camera" parent="." unique_id=142676959 groups=["camera"] instance=ExtResource("4_sl71k")]
+position = Vector2(487, 271)
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1102805384]
+modulate = Color(1, 1, 1, 0)
+offset_right = 976.0
+offset_bottom = 552.0
+color = Color(0, 0, 0, 1)

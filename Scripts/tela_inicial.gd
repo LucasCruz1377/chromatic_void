@@ -12,7 +12,7 @@ const TEMPO_MAXIMO_CARREGAMENTO := 30.0
 @onready var botao_conquistas: Button = $CanvasLayer/CaixaMenu2/Achievements
 @onready var botao_iniciar: Button = $CanvasLayer/CaixaMenu2/Start
 @onready var botao_sair: Button = $CanvasLayer/CaixaMenu2/Exit
-@onready var texto_debug: Control = $Debug_text
+
 @onready var botoes_menu: Array[Button] = [
 	$CanvasLayer/CaixaMenu2/Start as Button,
 	$CanvasLayer/CaixaMenu2/Shop as Button,
@@ -51,7 +51,6 @@ func _ready() -> void:
 	Global.definir_cursor_interface(true)
 	_criar_tela_carregamento()
 	botao_sair.visible = not Global.dispositivo_mobile()
-	texto_debug.visible = Global.modo_desenvolvedor
 	if not botao_sair.visible:
 		botoes_menu.erase(botao_sair)
 	$Astro.apresentar()
@@ -938,4 +937,3 @@ func _estilo_conquistas(
 func _on_dispositivo_alterado(tipo: StringName) -> void:
 	if tipo == &"controle":
 		botao_iniciar.grab_focus()
-

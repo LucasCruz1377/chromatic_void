@@ -9,7 +9,6 @@
 [ext_resource type="PackedScene" uid="uid://ppkx3b4gmokr" path="res://janela_atualizacao.tscn" id="6_5uabe"]
 [ext_resource type="PackedScene" uid="uid://ck4b1aeayj01l" path="res://Entities/astro.tscn" id="6_chynn"]
 [ext_resource type="PackedScene" uid="uid://xojwpysblfm4" path="res://Entities/aim.tscn" id="6_u38va"]
-[ext_resource type="PackedScene" uid="uid://sxsschqveb56" path="res://tool/debug_text.tscn" id="9_0lnna"]
 [ext_resource type="AudioStream" uid="uid://bxmtp2to71ll6" path="res://sounds/OST/The colors of the void.ogg" id="10_asbdl"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kal6l"]
@@ -150,10 +149,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -30.0
-offset_top = -42.0
-offset_right = 450.0
-offset_bottom = 46.0
+offset_left = 109.0
+offset_top = -61.0
+offset_right = 469.0
+offset_bottom = 65.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_fonts/normal_font = ExtResource("4_kal6l")
@@ -168,6 +167,7 @@ top_level = true
 
 [node name="telapreta_init" type="ColorRect" parent="Astro" unique_id=357191067]
 modulate = Color(1, 1, 1, 0)
+z_index = 8
 y_sort_enabled = true
 layout_mode = 0
 offset_left = -881.0
@@ -198,21 +198,13 @@ process_material = SubResource("ParticleProcessMaterial_kal6l")
 libraries/ = SubResource("AnimationLibrary_asbdl")
 autoplay = &"fade_out"
 
-[node name="Debug_text" parent="." unique_id=740519804 instance=ExtResource("9_0lnna")]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = 574.0
-offset_right = 959.0
-grow_horizontal = 0
-text = ""
-
 [node name="menumusica" type="AudioStreamPlayer2D" parent="." unique_id=993762537]
 stream = ExtResource("10_asbdl")
 autoplay = true
 bus = &"Music"
 
 [node name="JanelaAtualizacao" parent="." unique_id=990779837 instance=ExtResource("6_5uabe")]
+visible = false
 
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Start" to="." method="_on_start_pressed"]
 [connection signal="pressed" from="CanvasLayer/CaixaMenu2/Achievements" to="." method="_on_achievements_pressed"]
