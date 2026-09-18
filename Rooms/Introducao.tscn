@@ -4,6 +4,7 @@
 [ext_resource type="FontFile" uid="uid://joq464p7lcgi" path="res://Fonts/Stereohead.otf" id="2_hrjmu"]
 [ext_resource type="PackedScene" uid="uid://d1jckmkmpfnxf" path="res://FX/Shader.tscn" id="3_dxi7p"]
 [ext_resource type="PackedScene" uid="uid://cvhvbtre63cad" path="res://Entities/Camera.tscn" id="4_sl71k"]
+[ext_resource type="AudioStream" uid="uid://dv8lopvu3gkhj" path="res://sounds/OST/Intro Song.ogg" id="5_hrjmu"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_5dpad"]
 particle_flag_disable_z = true
@@ -16,7 +17,7 @@ gravity = Vector3(0, 0, 0)
 
 [sub_resource type="Animation" id="Animation_t1im8"]
 resource_name = "Intro"
-length = 11.0
+length = 15.0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -111,7 +112,7 @@ tracks/4/path = NodePath(".")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
-"times": PackedFloat32Array(10.8),
+"times": PackedFloat32Array(14.6),
 "transitions": PackedFloat32Array(1),
 "values": [{
 "args": [],
@@ -125,7 +126,7 @@ tracks/5/path = NodePath("ColorRect:modulate")
 tracks/5/interp = 1
 tracks/5/loop_wrap = true
 tracks/5/keys = {
-"times": PackedFloat32Array(0, 10.133333, 10.533334),
+"times": PackedFloat32Array(0, 12.266666, 14.366667),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
 "values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
@@ -292,3 +293,8 @@ modulate = Color(1, 1, 1, 0)
 offset_right = 976.0
 offset_bottom = 552.0
 color = Color(0, 0, 0, 1)
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1805623509]
+stream = ExtResource("5_hrjmu")
+volume_db = -24.535
+autoplay = true

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dv8lopvu3gkhj"
+path="res://.godot/imported/Intro Song.ogg-c866ddbdbc323ff8204147cd20299033.oggvorbisstr"
+
+[deps]
+
+source_file="res://sounds/OST/Intro Song.ogg"
+dest_files=["res://.godot/imported/Intro Song.ogg-c866ddbdbc323ff8204147cd20299033.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
