@@ -17,7 +17,7 @@ gravity = Vector3(0, 0, 0)
 
 [sub_resource type="Animation" id="Animation_t1im8"]
 resource_name = "Intro"
-length = 15.0
+length = 17.0
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -112,7 +112,7 @@ tracks/4/path = NodePath(".")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
-"times": PackedFloat32Array(14.6),
+"times": PackedFloat32Array(16.933332),
 "transitions": PackedFloat32Array(1),
 "values": [{
 "args": [],
@@ -221,6 +221,11 @@ _data = {
 &"fade": SubResource("Animation_mese5")
 }
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g4v7s"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yf5fn"]
+bg_color = Color(1, 1, 1, 1)
+
 [node name="IntroTela" type="Node2D" unique_id=696517473]
 script = ExtResource("1_18lhf")
 
@@ -298,3 +303,21 @@ color = Color(0, 0, 0, 1)
 stream = ExtResource("5_hrjmu")
 volume_db = -24.535
 autoplay = true
+
+[node name="AvisoPular" type="Label" parent="." unique_id=1673130588]
+offset_left = 649.0
+offset_top = 501.0
+offset_right = 960.0
+offset_bottom = 524.0
+text = "T_SKIPANIM"
+horizontal_alignment = 2
+
+[node name="ProgressoPular" type="ProgressBar" parent="." unique_id=1267965100]
+offset_left = 699.0
+offset_top = 524.0
+offset_right = 955.0
+offset_bottom = 533.0
+theme_override_styles/background = SubResource("StyleBoxEmpty_g4v7s")
+theme_override_styles/fill = SubResource("StyleBoxFlat_yf5fn")
+value = 18.13
+show_percentage = false

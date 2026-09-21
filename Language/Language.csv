@@ -30,6 +30,7 @@ T_IDIOMA, Idioma, Language
 T_SETTINGS_TITLE,CONFIGURAÇÕES,SETTINGS
 T_SETTINGS_TAB_HINT,Q / E ou LB / RB troca de aba,Q / E or LB / RB changes tabs
 T_LANGUAGE,Idioma,Language
+T_SKIPANIM, mantenha pressionado para pular, keep pressed to skip
 T_MOUSE_AIM,Mirar com o mouse,Mouse aiming
 T_CONTROLLER_VIBRATION,Vibração do controle,Controller vibration
 T_CONTROLLER_DEADZONE,Zona morta dos analógicos,Stick deadzone

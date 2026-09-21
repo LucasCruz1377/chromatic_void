@@ -11,7 +11,6 @@ var alvo_seguido: Node2D
 var limites_arena := Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
 var tamanho_visivel := Global.TAMANHO_BASE_JOGO
 
-
 func configurar_alvo(
 	novo_alvo: Node2D, nova_area: Rect2, novo_tamanho_visivel: Vector2
 ) -> void:
