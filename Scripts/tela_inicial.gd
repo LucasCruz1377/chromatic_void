@@ -47,6 +47,11 @@ var mensagem_rede_erro := false
 
 
 func _ready() -> void:
+	var dados: Dictionary = GerenciadorDeSave.carregar()
+	
+	if not bool(dados.get("ja_iniciou_jogo", false)):
+		GerenciadorDeSave.salvar({"ja_iniciou_jogo": true})
+	
 	Global.definir_cursor_interface(true)
 	_criar_tela_carregamento()
 	botao_sair.visible = not Global.dispositivo_mobile()
