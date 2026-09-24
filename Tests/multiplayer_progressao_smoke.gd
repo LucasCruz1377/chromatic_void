@@ -33,7 +33,12 @@ func _ready() -> void:
 	for filho in conteudo.get_children():
 		if filho is Button:
 			textos.append((filho as Button).text)
-	verificar(textos.size() >= 2 and textos[0] == "JOGAR SOLO" and textos[1] == "MULTIPLAYER", "Start não mostra Solo acima de Multiplayer")
+	verificar(
+		textos.size() >= 2
+			and textos[0] == tr("JOGAR SOLO")
+			and textos[1] == tr("MULTIPLAYER"),
+		"Start não mostra Solo acima de Multiplayer"
+	)
 	var painel_fluxo := menu.get("painel_fluxo") as PanelContainer
 	var largura_fluxo_normal := painel_fluxo.custom_minimum_size.x
 	await get_tree().process_frame
@@ -48,8 +53,8 @@ func _ready() -> void:
 	if is_instance_valid(opcoes):
 		verificar(
 			opcoes.get_child_count() == 2
-				and (opcoes.get_child(0) as Button).text == "CRIAR LOBBY"
-				and (opcoes.get_child(1) as Button).text == "ENTRAR POR IP",
+				and (opcoes.get_child(0) as Button).text == tr("CRIAR LOBBY")
+				and (opcoes.get_child(1) as Button).text == tr("ENTRAR POR IP"),
 			"as ações principais do multiplayer não estão lado a lado"
 		)
 	verificar(
@@ -82,7 +87,7 @@ func _ready() -> void:
 		var linha_lobby := lista_lan.get_child(0) as HBoxContainer
 		var informacoes_lobby := linha_lobby.get_child(0) as VBoxContainer
 		verificar(
-			(informacoes_lobby.get_child(0) as Label).text == "HOST: HOST LIVRE",
+			(informacoes_lobby.get_child(0) as Label).text == tr("HOST: %s") % "HOST LIVRE",
 			"a lista LAN não mostra o nickname do criador"
 		)
 	var lobby_renovado: Dictionary = lobbies_visiveis[0].duplicate(true)
@@ -211,7 +216,11 @@ func _ready() -> void:
 	verificar(area_quarteto.size.x > area_dupla.size.x, "arena não cresce até quatro jogadores")
 	batalha._on_jogador_rede_desconectado(2)
 	var aviso_rede := batalha.get_node("GUI/AvisoRede") as Label
-	verificar(aviso_rede.visible and "DESCONECTOU" in aviso_rede.text, "desconexão não mostra aviso durante a partida")
+	verificar(
+		aviso_rede.visible
+			and aviso_rede.text == tr("%s DESCONECTOU • A PARTIDA CONTINUA") % "CLIENTE_TESTE",
+		"desconexão não mostra aviso durante a partida"
+	)
 	var disparo_liberado := Node2D.new()
 	batalha.add_child(disparo_liberado)
 	batalha.disparos_visuais_rede["2:liberado"] = disparo_liberado
