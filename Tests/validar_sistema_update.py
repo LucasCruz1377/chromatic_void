@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Valida o contrato entre o jogo, os exports e as Releases do GitHub."""
+"""Valida o contrato entre a versão instalada e os canais públicos do itch.io."""
 
 from pathlib import Path
 
@@ -22,15 +22,14 @@ def main() -> int:
     workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
     itch_workflow = (ROOT / ".github/workflows/itchio.yml").read_text(encoding="utf-8")
 
-    exigir(manager, "Windows.Desktop.zip", "UpdateManager.gd")
-    exigir(manager, "ChromaticVoid-Android.apk", "UpdateManager.gd")
-    exigir(manager, "api.github.com/repos/%s/releases", "UpdateManager.gd")
-    exigir(manager, "itch.io/api/1/x/wharf/latest", "UpdateManager.gd")
-    exigir(manager, "var endpoint := ITCH_LATEST_API if verificando_itch else RELEASES_API", "UpdateManager.gd")
-    exigir(manager, "if response_code == 404:", "UpdateManager.gd")
+    exigir(manager, "https://api.itch.io/wharf/latest?target=%s&channel_name=%s", "UpdateManager.gd")
+    exigir(manager, 'const ITCH_TARGET := "lukass-1377/chromatic-void"', "UpdateManager.gd")
+    exigir(manager, "canal_itch_atual = plataforma", "UpdateManager.gd")
+    exigir(manager, "application/config/version", "UpdateManager.gd")
     exigir(manager, "update_check_finished.emit()", "UpdateManager.gd")
     exigir(manager, "lukass-1377.itch.io/chromatic-void", "UpdateManager.gd")
-    exigir(manager, "FileAccess.get_sha256", "UpdateManager.gd")
+    if "api.github.com" in manager or "GITHUB_REPO" in manager or "RELEASES_API" in manager:
+        raise AssertionError("UpdateManager.gd: a detecção não pode depender do repositório GitHub")
     exigir(janela, "UpdateManager.iniciar_atualizacao()", "JanelaAtualizacao.gd")
     exigir(cena, 'anchor_right = 1.0', "janela_atualizacao.tscn")
     exigir(cena, 'anchor_bottom = 1.0', "janela_atualizacao.tscn")
@@ -58,8 +57,11 @@ def main() -> int:
     exigir(workflow, "Windows.Desktop.zip", "release.yml")
     exigir(itch_workflow, "Windows.Desktop.zip", "itchio.yml")
     exigir(itch_workflow, "ChromaticVoid-Android.apk", "itchio.yml")
+    exigir(itch_workflow, '"$ITCHIO_GAME:windows"', "itchio.yml")
+    exigir(itch_workflow, '"$ITCHIO_GAME:android"', "itchio.yml")
+    exigir(itch_workflow, '--userversion "$TAG"', "itchio.yml")
 
-    print("TESTE OK: contrato do sistema de atualização Windows/Android")
+    print("TESTE OK: atualização Windows/Android usa somente as tags públicas do itch.io")
     return 0
 
 

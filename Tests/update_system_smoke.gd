@@ -9,21 +9,6 @@ func verificar(condicao: bool, mensagem: String) -> void:
 		push_error("UPDATE: " + mensagem)
 
 
-func criar_release(versao: String, prerelease: bool, asset: String) -> Dictionary:
-	return {
-		"tag_name": versao,
-		"draft": false,
-		"prerelease": prerelease,
-		"html_url": "https://example.test/" + versao,
-		"assets": [{
-			"name": asset,
-			"browser_download_url": "https://example.test/" + asset,
-			"digest": "sha256:abc123",
-			"size": 2048,
-		}],
-	}
-
-
 func _ready() -> void:
 	verificar(UpdateManager._versao_eh_mais_nova("0.6.0", "0.5.9"), "não detectou versão estável mais nova")
 	verificar(UpdateManager._versao_eh_mais_nova("0.6.0-beta.2", "0.6.0-alpha.9"), "não ordenou pré-releases")
@@ -33,24 +18,12 @@ func _ready() -> void:
 		UpdateManager.selecionar_versao_itch(
 			{"latest": "v0.7.4-beta.2"}, "0.7.4-beta.1"
 		) == "0.7.4-beta.2",
-		"Android não usa a versão mais recente publicada no itch.io"
+		"não usa a versão mais recente publicada no itch.io"
 	)
 	verificar(
 		UpdateManager.selecionar_versao_itch({"latest": "v0.7.6"}, "0.7.6").is_empty(),
-		"Android oferece novamente a versão que já está instalada"
+		"oferece novamente a versão que já está instalada"
 	)
-
-	var releases := [
-		criar_release("v0.6.1", false, UpdateManager.ASSET_WINDOWS),
-		criar_release("v0.7.0-beta.2", true, UpdateManager.ASSET_WINDOWS),
-		criar_release("v0.6.2", false, UpdateManager.ASSET_ANDROID),
-	]
-	var windows_beta := UpdateManager.selecionar_melhor_release(releases, UpdateManager.PLATFORM_WINDOWS, "0.5.0-beta.1")
-	verificar(str(windows_beta.get("version", "")) == "0.7.0-beta.2", "canal beta não escolheu a maior versão do Windows")
-	var windows_estavel := UpdateManager.selecionar_melhor_release(releases, UpdateManager.PLATFORM_WINDOWS, "0.5.0")
-	verificar(str(windows_estavel.get("version", "")) == "0.6.1", "canal estável selecionou pré-release")
-	var android := UpdateManager.selecionar_melhor_release(releases, UpdateManager.PLATFORM_ANDROID, "0.5.0-beta.1")
-	verificar(str(android.get("version", "")) == "0.6.2", "não encontrou o APK Android")
 
 	var cena := load("res://janela_atualizacao.tscn") as PackedScene
 	var janela := cena.instantiate()
@@ -70,14 +43,9 @@ func _ready() -> void:
 	janela._on_verificacao_sem_atualizacao()
 	verificar(not janela.visible, "o aviso antigo não fechou após confirmar a versão atual")
 	janela.show()
-	UpdateManager._on_release_request_completed(
-		HTTPRequest.RESULT_SUCCESS, 404, PackedStringArray(), PackedByteArray()
-	)
-	await get_tree().process_frame
-	verificar(not janela.visible, "o HTTP 404 abriu um falso aviso de atualização")
 	janela._mostrar_atualizacao("0.6.0")
-	janela._on_installer_opened(UpdateManager.PLATFORM_ANDROID)
-	verificar(not janela.visible, "o aviso Android não fechou após abrir o instalador")
+	janela._on_installer_opened(UpdateManager.PLATFORM_WINDOWS)
+	verificar(not janela.visible, "o aviso não fechou após abrir o itch.io")
 	janela.queue_free()
 
 	if falhas.is_empty():

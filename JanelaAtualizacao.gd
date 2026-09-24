@@ -77,20 +77,19 @@ func _on_verificacao_falhou(erro: String) -> void:
 
 func _mostrar_auxilio_verificacao(erro: String) -> void:
 	modo_falha_verificacao = true
-	versao_atual.text = "INSTALADA  •  v%s" % UpdateManager.current_version.trim_prefix("v")
-	nova_versao.text = "VERIFICAÇÃO PENDENTE"
-	titulo.text = "ATUALIZAÇÃO NÃO VERIFICADA"
+	versao_atual.text = tr("INSTALADA  •  v%s") % UpdateManager.current_version.trim_prefix("v")
+	nova_versao.text = tr("VERIFICAÇÃO PENDENTE")
+	titulo.text = tr("ATUALIZAÇÃO NÃO VERIFICADA")
 	mensagem.text = (
-		"Confira sua conexão e tente novamente. Seu progresso está seguro; "
-		+ "não é necessário reinstalar o jogo."
+		tr("Confira sua conexão e tente novamente. Seu progresso está seguro; não é necessário reinstalar o jogo.")
 	)
 	status.text = erro
 	aviso_android.visible = false
 	progresso.hide()
 	progresso_info.hide()
-	botao_atualizar.text = "TENTAR NOVAMENTE"
+	botao_atualizar.text = tr("TENTAR NOVAMENTE")
 	botao_atualizar.disabled = false
-	botao_mais_tarde.text = "AGORA NÃO"
+	botao_mais_tarde.text = tr("AGORA NÃO")
 	botao_mais_tarde.disabled = false
 	show()
 	botao_atualizar.call_deferred("grab_focus")
@@ -106,10 +105,10 @@ func _on_verificacao_sem_atualizacao() -> void:
 func _mostrar_atualizacao(version: String) -> void:
 	modo_falha_verificacao = false
 	tentativas_verificacao = 0
-	titulo.text = "NOVA ATUALIZAÇÃO"
-	botao_mais_tarde.text = "MAIS TARDE"
-	versao_atual.text = "INSTALADA  •  v%s" % UpdateManager.current_version.trim_prefix("v")
-	nova_versao.text = "DISPONÍVEL  •  v%s" % version.trim_prefix("v")
+	titulo.text = tr("NOVA ATUALIZAÇÃO")
+	botao_mais_tarde.text = tr("MAIS TARDE")
+	versao_atual.text = tr("INSTALADA  •  v%s") % UpdateManager.current_version.trim_prefix("v")
+	nova_versao.text = tr("DISPONÍVEL  •  v%s") % version.trim_prefix("v")
 	status.text = ""
 	progresso.hide()
 	progresso_info.hide()
@@ -118,12 +117,12 @@ func _mostrar_atualizacao(version: String) -> void:
 
 	var android: bool = UpdateManager.obter_plataforma_atual() == UpdateManager.PLATFORM_ANDROID
 	aviso_android.visible = android
-	botao_atualizar.text = "BAIXAR APK" if android else "ATUALIZAR AGORA"
+	botao_atualizar.text = tr("ABRIR DOWNLOAD")
 	mensagem.text = (
-		"Baixe o APK assinado. Ao abrir, escolha Atualizar e mantenha o jogo instalado."
+		tr("Baixe o APK assinado. Ao abrir, escolha Atualizar e mantenha o jogo instalado.")
 		if android
 		else
-		"Uma nova jornada pelo vazio já está pronta para você."
+		tr("Uma nova jornada pelo vazio já está pronta para você.")
 	)
 
 	show()
@@ -147,12 +146,9 @@ func _clicou_atualizar() -> void:
 		_tentar_verificar_atualizacao()
 		return
 	botao_atualizar.disabled = true
-	status.text = "Preparando atualização..."
-	progresso.value = 0.0
-	progresso.show()
-	progresso_info.show()
-	progresso_detalhes.text = "0%  •  preparando download"
-	tempo_restante.text = "CALCULANDO TEMPO..."
+	status.text = tr("Abrindo página de download do itch.io...")
+	progresso.hide()
+	progresso_info.hide()
 	UpdateManager.iniciar_atualizacao()
 
 
@@ -166,14 +162,14 @@ func _on_download_started(total_bytes: int) -> void:
 	progresso.show()
 	progresso_info.show()
 	progresso.value = 0.0
-	status.text = "Baixando • %s" % _formatar_bytes(total_bytes)
+	status.text = tr("Baixando • %s") % _formatar_bytes(total_bytes)
 	botao_mais_tarde.disabled = true
 
 
 func _on_download_progress(baixado: int, total: int) -> void:
 	var porcentagem := clampf(float(baixado) / float(total) * 100.0, 0.0, 100.0) if total > 0 else 0.0
 	progresso.value = porcentagem
-	status.text = "%s de %s" % [_formatar_bytes(baixado), _formatar_bytes(total)]
+	status.text = tr("%s de %s") % [_formatar_bytes(baixado), _formatar_bytes(total)]
 	var segundos := maxf(float(Time.get_ticks_msec() - inicio_download_msec) / 1000.0, 0.001)
 	var velocidade_atual := float(baixado) / segundos
 	velocidade_suavizada = (
@@ -186,7 +182,7 @@ func _on_download_progress(baixado: int, total: int) -> void:
 		var restante := float(maxi(total - baixado, 0)) / velocidade_suavizada
 		tempo_restante.text = _formatar_tempo(restante)
 	else:
-		tempo_restante.text = "CALCULANDO TEMPO..."
+		tempo_restante.text = tr("CALCULANDO TEMPO...")
 
 
 func _on_download_failed(erro: String) -> void:
@@ -197,16 +193,9 @@ func _on_download_failed(erro: String) -> void:
 	botao_mais_tarde.disabled = false
 
 
-func _on_installer_opened(plataforma: String) -> void:
-	if plataforma == UpdateManager.PLATFORM_ANDROID:
-		# O Android assume o fluxo no navegador/instalador. Manter este modal
-		# aberto dá a impressão de que a atualização ainda não foi aceita.
-		hide()
-	else:
-		status.text = "Aplicando atualização..."
-		progresso.value = 100.0
-		progresso_detalhes.text = "100%  •  download concluído"
-		tempo_restante.text = "INSTALANDO..."
+func _on_installer_opened(_plataforma: String) -> void:
+	# A página pública do itch.io assume o download da build da plataforma.
+	hide()
 
 
 func _ajustar_ao_viewport() -> void:
@@ -227,7 +216,7 @@ func _ajustar_ao_viewport() -> void:
 
 func _formatar_bytes(valor: int) -> String:
 	if valor <= 0:
-		return "tamanho desconhecido"
+		return tr("tamanho desconhecido")
 	if valor >= 1024 * 1024:
 		return "%.1f MB" % (float(valor) / 1048576.0)
 	if valor >= 1024:
@@ -237,10 +226,10 @@ func _formatar_bytes(valor: int) -> String:
 
 func _formatar_tempo(segundos: float) -> String:
 	if segundos <= 1.0:
-		return "FINALIZANDO..."
+		return tr("FINALIZANDO...")
 	var total := ceili(segundos)
 	if total < 60:
-		return "~%d s RESTANTES" % total
+		return tr("~%d s RESTANTES") % total
 	var minutos := int(float(total) / 60.0)
 	var resto := total % 60
 	return "~%d min %02d s" % [minutos, resto]
