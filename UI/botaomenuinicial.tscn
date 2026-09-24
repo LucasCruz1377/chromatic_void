@@ -20,7 +20,7 @@ theme_override_font_sizes/font_size = 52
 theme_override_styles/normal = ExtResource("1_p45a4")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_jstqx")
 theme_override_styles/hover = SubResource("StyleBoxFlat_u38va")
-text = "START"
+text = "B_START"
 
 [node name="button_fx" type="Node" parent="." unique_id=516148884]
 script = ExtResource("2_66lr3")

@@ -59,8 +59,8 @@ func _ready() -> void:
 	_atualizar_indicador_habilidade()
 	call_deferred("_ajustar_hud_responsivo")
 	if Rede.modo_multiplayer and not multiplayer.is_server():
-		botao_despause.text = "CONTINUAR"
-		botao_voltar_pause.text = "SAIR DA PARTIDA"
+		botao_despause.text = tr("CONTINUAR")
+		botao_voltar_pause.text = tr("SAIR DA PARTIDA")
 
 
 func definir_player_local(novo_player: Player) -> void:

@@ -297,7 +297,7 @@ func _mostrar_ocultacao(abrigos: PackedVector2Array, aviso: float, suprema: bool
 
 		var aviso_area := Label.new()
 		aviso_area.add_to_group("mecanica_sizigia")
-		aviso_area.text = "ÁREA SEGURA — MOVA-SE"
+		aviso_area.text = tr("ÁREA SEGURA — MOVA-SE")
 		aviso_area.position = posicao - Vector2(130.0, 122.0)
 		aviso_area.size = Vector2(260.0, 36.0)
 		aviso_area.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

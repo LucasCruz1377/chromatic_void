@@ -181,7 +181,7 @@ func _configurar_opcoes() -> void:
 
 	limite_fps.clear()
 	for fps in fps_disponiveis:
-		limite_fps.add_item("SEM LIMITE" if fps == 0 else "%d FPS" % fps)
+		limite_fps.add_item(tr("SEM LIMITE") if fps == 0 else "%d FPS" % fps)
 		limite_fps.set_item_metadata(limite_fps.item_count - 1, fps)
 
 
@@ -362,20 +362,20 @@ func _atualizar_valores() -> void:
 
 
 func _texto_volume(valor: float) -> String:
-	return "MUDO" if valor <= -79.5 else "%+.0f dB" % valor
+	return tr("MUDO") if valor <= -79.5 else "%+.0f dB" % valor
 
 
 func atualizar_controles_detectados() -> void:
 	var controles := Input.get_connected_joypads()
 	if controles.is_empty():
-		controle_detectado.text = "Nenhum controle conectado. Conecte-o antes ou durante o jogo."
+		controle_detectado.text = tr("Nenhum controle conectado. Conecte-o antes ou durante o jogo.")
 		_atualizar_textos_mapeamentos()
 		return
 
 	var nomes: Array[String] = []
 	for dispositivo in controles:
 		nomes.append(Input.get_joy_name(dispositivo))
-	controle_detectado.text = "Detectado: " + ", ".join(nomes)
+	controle_detectado.text = tr("Detectado: %s") % ", ".join(nomes)
 	_atualizar_textos_mapeamentos()
 
 
@@ -543,9 +543,9 @@ func _criar_cabecalho_mapeamentos() -> void:
 	cabecalho.name = "Cabecalho"
 	cabecalho.add_theme_constant_override("separation", 8)
 	lista_mapeamentos.add_child(cabecalho)
-	for texto in ["AÇÃO", "SLOT 1", "SLOT 2", "SLOT 3"]:
+	for texto in [tr("AÇÃO"), tr("SLOT 1"), tr("SLOT 2"), tr("SLOT 3")]:
 		var rotulo := Label.new()
-		rotulo.custom_minimum_size = Vector2(160.0, 24.0) if texto == "AÇÃO" else Vector2(142.0, 24.0)
+		rotulo.custom_minimum_size = Vector2(160.0, 24.0) if texto == tr("AÇÃO") else Vector2(142.0, 24.0)
 		rotulo.text = texto
 		rotulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		rotulo.add_theme_color_override("font_color", Color(0.38, 0.78, 0.94, 1.0))
@@ -722,7 +722,7 @@ func _nome_botao_controle(indice: int) -> String:
 	var nomes_xbox := ["A", "B", "X", "Y", "VIEW", "HOME", "MENU", "L3", "R3", "LB", "RB", "D-PAD ↑", "D-PAD ↓", "D-PAD ←", "D-PAD →"]
 	var nomes_ps := ["X", "CÍRCULO", "QUADRADO", "TRIÂNGULO", "SHARE", "PS", "OPTIONS", "L3", "R3", "L1", "R1", "D-PAD ↑", "D-PAD ↓", "D-PAD ←", "D-PAD →"]
 	var nomes := nomes_ps if playstation else nomes_xbox
-	return nomes[indice] if indice >= 0 and indice < nomes.size() else "BOTÃO %d" % (indice + 1)
+	return nomes[indice] if indice >= 0 and indice < nomes.size() else tr("BOTÃO %d") % (indice + 1)
 
 
 func _nome_eixo_controle(eixo: int, valor: float) -> String:
@@ -732,7 +732,7 @@ func _nome_eixo_controle(eixo: int, valor: float) -> String:
 		return "LT / L2"
 	if eixo == JOY_AXIS_TRIGGER_RIGHT:
 		return "RT / R2"
-	return (nomes[eixo] if eixo >= 0 and eixo < nomes.size() else "EIXO %d" % eixo) + " " + direcao
+	return (nomes[eixo] if eixo >= 0 and eixo < nomes.size() else tr("EIXO %d") % eixo) + " " + direcao
 
 
 func _controle_conectado_e_playstation() -> bool:

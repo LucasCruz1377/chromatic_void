@@ -860,7 +860,7 @@ func atualizar_barra_cooldown_habilidade() -> void:
 		barra_cooldown_habilidade.max_value
 	)
 	barra_cooldown_habilidade.modulate = Color.WHITE
-	barra_cooldown_habilidade.tooltip_text = "Recarga: %.1f s" % [
+	barra_cooldown_habilidade.tooltip_text = tr("Recarga: %.1f s") % [
 		HabilidadeEquipada.cooldown_atual
 	]
 

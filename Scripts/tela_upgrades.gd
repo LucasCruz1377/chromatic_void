@@ -119,7 +119,7 @@ func construir_interface() -> void:
 	var titulo := Label.new()
 	titulo.position = Vector2(32, 12)
 	titulo.size = Vector2(400, 34)
-	titulo.text = "MATRIZ DE EVOLUÇÃO DA NAVE"
+	titulo.text = tr("MATRIZ DE EVOLUÇÃO DA NAVE")
 	titulo.add_theme_font_size_override("font_size", 25)
 	titulo.add_theme_color_override("font_color", Color(0.58, 0.94, 1.0))
 	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -154,7 +154,7 @@ func construir_interface() -> void:
 	botao_fechar = Button.new()
 	botao_fechar.position = Vector2(830, 15)
 	botao_fechar.size = Vector2(98, 38)
-	botao_fechar.text = "FECHAR"
+	botao_fechar.text = tr("FECHAR")
 	botao_fechar.pressed.connect(fechar_menu)
 	botao_fechar.add_theme_stylebox_override(
 		"normal", criar_estilo_botao(Color(0.08, 0.1, 0.18), Color(0.34, 0.44, 0.65))
@@ -178,7 +178,7 @@ func construir_interface() -> void:
 	botao_rerrolar = Button.new()
 	botao_rerrolar.position = Vector2(382, 438)
 	botao_rerrolar.size = Vector2(196, 40)
-	botao_rerrolar.text = "RECALCULAR OPÇÕES"
+	botao_rerrolar.text = tr("RECALCULAR OPÇÕES")
 	botao_rerrolar.pressed.connect(_on_rerrolar_pressed)
 	botao_rerrolar.add_theme_stylebox_override(
 		"normal", criar_estilo_botao(Color(0.06, 0.15, 0.22), Color(0.2, 0.75, 1.0))
@@ -261,7 +261,7 @@ func _atualizar_dica_menu() -> void:
 		filho.queue_free()
 
 	var texto := Label.new()
-	texto.text = "Escolha um mod ou feche o menu para guardar os pontos. Abre/fecha:"
+	texto.text = tr("Escolha um mod ou feche o menu para guardar os pontos. Abre/fecha:")
 	texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	texto.add_theme_font_size_override("font_size", 12)
 	texto.add_theme_color_override("font_color", Color(0.44, 0.54, 0.7))
@@ -313,7 +313,7 @@ func _texto_tecla_melhorias() -> String:
 			partes.append("META")
 		partes.append(nome.to_upper())
 		return "+".join(partes)
-	return "SEM TECLA"
+	return tr("SEM TECLA")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -358,12 +358,12 @@ func atualizar_indicador() -> void:
 	indicador.icon = icone if usando_controle else null
 	if Global.dispositivo_mobile():
 		indicador.icon = null
-		indicador.text = "◆  MELHORIAS: %d" % pontos
+		indicador.text = tr("◆  MELHORIAS: %d") % pontos
 	else:
 		indicador.text = (
-			"◆  MELHORIAS: %d" % pontos
+			tr("◆  MELHORIAS: %d") % pontos
 			if usando_controle
-			else "◆  MELHORIAS: %d  [%s]" % [pontos, _texto_tecla_melhorias()]
+			else tr("◆  MELHORIAS: %d  [%s]") % [pontos, _texto_tecla_melhorias()]
 		)
 
 
@@ -437,15 +437,15 @@ func pode_manter_menu_aberto() -> bool:
 
 
 func atualizar_cabecalho() -> void:
-	texto_pontos.text = "PONTOS PENDENTES: %d" % player.pontos_upgrade_pendentes
-	var nome_habilidade := "NENHUMA"
+	texto_pontos.text = tr("PONTOS PENDENTES: %d") % player.pontos_upgrade_pendentes
+	var nome_habilidade := tr("NENHUMA")
 	if player.HabilidadeEquipada:
-		nome_habilidade = player.HabilidadeEquipada.Nome
+		nome_habilidade = tr(player.HabilidadeEquipada.Nome)
 	texto_habilidade.text = (
-		"HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO" %
+		tr("HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO") %
 		nome_habilidade.to_upper()
 	)
-	texto_rotas.text = "CONSTRUÇÃO ATUAL   •   " + DadosUpgrades.resumo_rotas(
+	texto_rotas.text = tr("CONSTRUÇÃO ATUAL") + "   •   " + DadosUpgrades.resumo_rotas(
 		player.niveis_upgrades,
 		player.HabilidadeEquipada,
 		player.arma_monthly
@@ -505,7 +505,7 @@ func _atualizar_botao_rerrolar() -> void:
 	if not is_instance_valid(botao_rerrolar) or not is_instance_valid(player):
 		return
 	var restantes: int = player.rerolls_upgrades_restantes
-	botao_rerrolar.text = "RECALCULAR (%d)" % restantes
+	botao_rerrolar.text = tr("RECALCULAR (%d)") % restantes
 	botao_rerrolar.disabled = restantes <= 0
 	botao_rerrolar.focus_mode = (
 		Control.FOCUS_NONE if botao_rerrolar.disabled else Control.FOCUS_ALL

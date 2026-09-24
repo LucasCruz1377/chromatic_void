@@ -772,7 +772,7 @@ func _on_jogador_rede_desconectado(id: int) -> void:
 		nome = str((remoto as Node).get("nickname_rede"))
 		(remoto as Node).queue_free()
 	jogadores_rede.erase(id)
-	_mostrar_aviso_rede("%s DESCONECTOU • A PARTIDA CONTINUA" % nome.to_upper(), false)
+	_mostrar_aviso_rede(tr("%s DESCONECTOU • A PARTIDA CONTINUA") % nome.to_upper(), false)
 
 
 func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
@@ -781,9 +781,9 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 		game_over = true
 		painel_morte_local_exibido = true
 		caixa_gameover.visible = true
-		$"GUI/caixa gameover/Tentatdenovotext".text = "HOST DESCONECTADO"
+		$"GUI/caixa gameover/Tentatdenovotext".text = tr("HOST DESCONECTADO")
 		$"GUI/caixa gameover/Tentar de novo".visible = false
-		$"GUI/caixa gameover/Voltarmenu2".text = "VOLTAR AO MENU"
+		$"GUI/caixa gameover/Voltarmenu2".text = tr("VOLTAR AO MENU")
 		Global.definir_cursor_interface(true)
 
 
@@ -1105,7 +1105,7 @@ func _atualizar_texto_renascimento_local() -> void:
 		return
 	var vivos := _quantidade_jogadores_vivos()
 	texto_aguardando_morte.text = (
-		"RENASCIMENTO EM %.1f s  •  %d PILOTO(S) AINDA EM COMBATE"
+		tr("RENASCIMENTO EM %.1f s  •  %d PILOTO(S) AINDA EM COMBATE")
 		% [tempo_renascimento_local, vivos]
 	)
 
@@ -1139,24 +1139,24 @@ func _encerrar_renascimentos_sem_sobreviventes() -> void:
 	aguardando_renascimento_local = false
 	tempo_renascimento_local = 0.0
 	caixa_gameover.visible = true
-	$"GUI/caixa gameover/Tentatdenovotext".text = "TODA A EQUIPE FOI DESTRUÍDA"
+	$"GUI/caixa gameover/Tentatdenovotext".text = tr("TODA A EQUIPE FOI DESTRUÍDA")
 	var botao_reiniciar := $"GUI/caixa gameover/Tentar de novo" as Button
 	botao_reiniciar.visible = multiplayer.is_server()
-	botao_reiniciar.text = "REINICIAR PARTIDA"
-	$"GUI/caixa gameover/Voltarmenu2".text = "SAIR DA PARTIDA"
+	botao_reiniciar.text = tr("REINICIAR PARTIDA")
+	$"GUI/caixa gameover/Voltarmenu2".text = tr("SAIR DA PARTIDA")
 	if is_instance_valid(texto_aguardando_morte):
-		texto_aguardando_morte.text = "NÃO HÁ PILOTOS VIVOS PARA GARANTIR O RENASCIMENTO"
+		texto_aguardando_morte.text = tr("NÃO HÁ PILOTOS VIVOS PARA GARANTIR O RENASCIMENTO")
 	Global.definir_cursor_interface(true)
 
 
 func _mostrar_painel_morte_local() -> void:
 	painel_morte_local_exibido = true
 	caixa_gameover.visible = true
-	$"GUI/caixa gameover/Tentatdenovotext".text = "SUA NAVE FOI DESTRUÍDA"
+	$"GUI/caixa gameover/Tentatdenovotext".text = tr("SUA NAVE FOI DESTRUÍDA")
 	var botao_reiniciar := $"GUI/caixa gameover/Tentar de novo" as Button
 	botao_reiniciar.visible = multiplayer.is_server()
-	botao_reiniciar.text = "REINICIAR PARTIDA"
-	$"GUI/caixa gameover/Voltarmenu2".text = "SAIR DA PARTIDA"
+	botao_reiniciar.text = tr("REINICIAR PARTIDA")
+	$"GUI/caixa gameover/Voltarmenu2".text = tr("SAIR DA PARTIDA")
 	if not is_instance_valid(texto_aguardando_morte):
 		texto_aguardando_morte = Label.new()
 		texto_aguardando_morte.name = "AguardandoOutroPiloto"
@@ -1170,7 +1170,7 @@ func _mostrar_painel_morte_local() -> void:
 	if aguardando_renascimento_local:
 		_atualizar_texto_renascimento_local()
 	else:
-		texto_aguardando_morte.text = "AGUARDANDO AUTORIZAÇÃO DE RENASCIMENTO DO HOST"
+		texto_aguardando_morte.text = tr("AGUARDANDO AUTORIZAÇÃO DE RENASCIMENTO DO HOST")
 	Global.definir_cursor_interface(true)
 
 
@@ -1179,7 +1179,7 @@ func solicitar_reinicio_multiplayer() -> void:
 		get_tree().reload_current_scene()
 		return
 	if not multiplayer.is_server():
-		_mostrar_aviso_rede("APENAS O HOST PODE REINICIAR A PARTIDA", false)
+		_mostrar_aviso_rede(tr("APENAS O HOST PODE REINICIAR A PARTIDA"), false)
 		return
 	_reiniciar_partida_rede.rpc()
 
@@ -1519,7 +1519,7 @@ func _mostrar_intro_boss(id: StringName) -> void:
 	raiz.add_child(visual_copia)
 
 	var nome := Label.new()
-	nome.text = nome_boss
+	nome.text = tr(nome_boss)
 	nome.position = Vector2(tamanho.x * 0.40, tamanho.y * 0.43)
 	nome.size = Vector2(tamanho.x * 0.53, tamanho.y * 0.18)
 	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1657,7 +1657,7 @@ func criar_hud_boss() -> void:
 	boss_vida.modulate = cor
 	boss_hud.add_child(boss_vida)
 	boss_detalhe_texto = Label.new()
-	boss_detalhe_texto.text = str(dados_setor.get("subtitulo", ""))
+	boss_detalhe_texto.text = tr(str(dados_setor.get("subtitulo", "")))
 	boss_detalhe_texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_detalhe_texto.add_theme_font_size_override("font_size", 11)
 	boss_hud.add_child(boss_detalhe_texto)
@@ -1876,14 +1876,14 @@ func _on_boss_fase_alterada(fase: int) -> void:
 	var nome := "PET-0: O RESÍDUO ETERNO"
 	if is_instance_valid(boss_ativo) and boss_ativo.has_method("obter_nome_boss"):
 		nome = str(boss_ativo.call("obter_nome_boss"))
-	boss_nome.text = "%s — FASE %d" % [nome, fase]
+	boss_nome.text = tr("%s — FASE %d") % [tr(nome), fase]
 	if is_instance_valid(boss_vida) and is_instance_valid(boss_ativo) and boss_ativo.has_method("obter_cor_fase"):
 		boss_vida.modulate = boss_ativo.call("obter_cor_fase")
 
 
 func _on_boss_subtitulo_alterado(texto: String) -> void:
 	if is_instance_valid(boss_detalhe_texto):
-		boss_detalhe_texto.text = texto
+		boss_detalhe_texto.text = tr(texto)
 
 
 func _on_boss_reciclagem_alterada(atual: int, meta: int) -> void:
@@ -1893,9 +1893,9 @@ func _on_boss_reciclagem_alterada(atual: int, meta: int) -> void:
 	boss_detalhe.max_value = meta
 	boss_detalhe.value = atual
 	boss_detalhe_texto.text = (
-		"RÓTULO RECICLADO — NÚCLEO EXPOSTO!"
+		tr("RÓTULO RECICLADO — NÚCLEO EXPOSTO!")
 		if atual >= meta
-		else "RECICLE OS FRAGMENTOS: %d/%d" % [atual, meta]
+		else tr("RECICLE OS FRAGMENTOS: %d/%d") % [atual, meta]
 	)
 
 
@@ -1906,9 +1906,9 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 		boss_ativo = null
 		timer = TIMER_MAX
 		if is_instance_valid(boss_nome):
-			boss_nome.text = "TESTE CONCLUÍDO"
+			boss_nome.text = tr("TESTE CONCLUÍDO")
 		if is_instance_valid(boss_detalhe_texto):
-			boss_detalhe_texto.text = "PROGRESSÃO DA PARTIDA PRESERVADA"
+			boss_detalhe_texto.text = tr("PROGRESSÃO DA PARTIDA PRESERVADA")
 		if is_instance_valid(boss_hud):
 			var tween_teste := create_tween()
 			tween_teste.tween_interval(0.65)
@@ -1922,9 +1922,9 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 	proximo_nivel_boss += INTERVALO_BOSS
 	timer = TIMER_MAX
 	if is_instance_valid(boss_nome):
-		boss_nome.text = "SETOR CONCLUÍDO"
+		boss_nome.text = tr("SETOR CONCLUÍDO")
 	if is_instance_valid(boss_detalhe_texto):
-		boss_detalhe_texto.text = str(DadosSetores.obter(setor_atual).get("nome", ""))
+		boss_detalhe_texto.text = tr(str(DadosSetores.obter(setor_atual).get("nome", "")))
 	if is_instance_valid(boss_hud):
 		var tween := create_tween()
 		tween.tween_interval(0.9)
@@ -1977,13 +1977,13 @@ func apresentar_transicao_setor(id: StringName) -> void:
 	simbolo.add_theme_color_override("font_color", cor)
 	coluna.add_child(simbolo)
 	var titulo := Label.new()
-	titulo.text = str(dados.get("nome", "PRÓXIMO SETOR"))
+	titulo.text = tr(str(dados.get("nome", "PRÓXIMO SETOR")))
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 25)
 	titulo.add_theme_color_override("font_color", cor)
 	coluna.add_child(titulo)
 	var subtitulo := Label.new()
-	subtitulo.text = str(dados.get("subtitulo", ""))
+	subtitulo.text = tr(str(dados.get("subtitulo", "")))
 	subtitulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitulo.add_theme_font_size_override("font_size", 12)
 	coluna.add_child(subtitulo)
@@ -2024,8 +2024,8 @@ func aplicar_setor(id: StringName) -> void:
 	fundo_setor.visible = not usar_original
 	rotulo_setor.visible = not usar_original
 	fundo_setor.color = dados.get("cor_fundo", Color(0.004, 0.006, 0.022))
-	rotulo_setor.text = "%s  •  PRÓXIMO BOSS: LVL %d" % [
-		dados.get("nome", "SETOR"), proximo_nivel_boss
+	rotulo_setor.text = tr("%s  •  PRÓXIMO BOSS: LVL %d") % [
+		tr(str(dados.get("nome", "SETOR"))), proximo_nivel_boss
 	]
 	var cor: Color = dados.get("cor_destaque", Color.WHITE)
 	cor.a = 0.76
@@ -2064,13 +2064,13 @@ func iniciar_painel_escolha(titulo: String, subtitulo: String) -> HBoxContainer:
 	coluna.add_theme_constant_override("separation", 12)
 	fundo.add_child(coluna)
 	var titulo_label := Label.new()
-	titulo_label.text = titulo
+	titulo_label.text = tr(titulo)
 	titulo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo_label.add_theme_font_size_override("font_size", 25)
 	titulo_label.add_theme_color_override("font_color", Color(0.68, 0.94, 1.0))
 	coluna.add_child(titulo_label)
 	var subtitulo_label := Label.new()
-	subtitulo_label.text = subtitulo
+	subtitulo_label.text = tr(subtitulo)
 	subtitulo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitulo_label.add_theme_font_size_override("font_size", 11)
 	subtitulo_label.add_theme_color_override("font_color", Color(0.58, 0.66, 0.80))
@@ -2089,9 +2089,9 @@ func criar_cartao_setor(pai: HBoxContainer, dados: Dictionary) -> Button:
 	botao.custom_minimum_size = Vector2(300.0, 260.0)
 	botao.text = "%s\n%s\n\n%s\n\n%s" % [
 		dados.get("simbolo", "◇"),
-		dados.get("nome", "SETOR"),
-		dados.get("subtitulo", ""),
-		dados.get("descricao", "")
+		tr(str(dados.get("nome", "SETOR"))),
+		tr(str(dados.get("subtitulo", ""))),
+		tr(str(dados.get("descricao", "")))
 	]
 	botao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	botao.add_theme_font_size_override("font_size", 13)
@@ -2165,7 +2165,7 @@ func _apresentar_vitoria(pontuacao_final: int) -> void:
 	)
 	var botao := criar_cartao_setor(linha, {
 		"nome": "VOLTAR AO MENU",
-		"subtitulo": "PONTUAÇÃO %s" % str(Global.Pontos).pad_zeros(8),
+		"subtitulo": tr("PONTUAÇÃO %s") % str(Global.Pontos).pad_zeros(8),
 		"descricao": "A tentativa foi concluída.",
 		"cor_destaque": Color(0.42, 1.0, 0.68)
 	})

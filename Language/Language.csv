@@ -30,7 +30,7 @@ T_IDIOMA, Idioma, Language
 T_SETTINGS_TITLE,CONFIGURAÇÕES,SETTINGS
 T_SETTINGS_TAB_HINT,Q / E ou LB / RB troca de aba,Q / E or LB / RB changes tabs
 T_LANGUAGE,Idioma,Language
-T_SKIPANIM, mantenha pressionado para pular, keep pressed to skip
+T_SKIPANIM,Mantenha pressionado para pular,Hold to skip
 T_MOUSE_AIM,Mirar com o mouse,Mouse aiming
 T_CONTROLLER_VIBRATION,Vibração do controle,Controller vibration
 T_CONTROLLER_DEADZONE,Zona morta dos analógicos,Stick deadzone
@@ -45,7 +45,7 @@ T_GRAPHICS_HINT,Neon muda a intensidade luminosa; bloom controla o quanto a luz 
 T_MASTER_VOLUME,Volume geral,Master volume
 T_MUSIC_VOLUME,Música,Music
 T_EFFECTS_VOLUME,Efeitos,Effects
-T_CONTROLLER_MAP,"MOVIMENTO: analógico esquerdo | MIRA: analógico direito | TIRO: RT/R2 ou RB/R1 | HABILIDADE: A/X | MELHORIAS: Y/Triângulo | PAUSA: Menu/Options","MOVE: left stick | AIM: right stick | SHOOT: RT/R2 or RB/R1 | ABILITY: A/Cross | UPGRADES: Y/Triangle | PAUSE: Menu/Options"
+T_CONTROLLER_MAP,MOVIMENTO: analógico esquerdo | MIRA: analógico direito | TIRO: RT/R2 ou RB/R1 | HABILIDADE: A/X | MELHORIAS: Y/Triângulo | PAUSA: Menu/Options,MOVE: left stick | AIM: right stick | SHOOT: RT/R2 or RB/R1 | ABILITY: A/Cross | UPGRADES: Y/Triangle | PAUSE: Menu/Options
 T_CONTROLLER_SUPPORT,"O Godot reconhece controles Xbox/XInput, DualShock 4, DualSense e a maioria dos controles genéricos SDL.","Godot supports Xbox/XInput, DualShock 4, DualSense and most generic SDL controllers."
 B_RESTORE_DEFAULTS,Restaurar padrões,Restore defaults
 T_TAB_GAME,JOGO,GAME
@@ -54,8 +54,8 @@ T_TAB_GRAPHICS,GRÁFICOS,GRAPHICS
 T_TAB_AUDIO,ÁUDIO,AUDIO
 T_TAB_CONTROLS,CONTROLES,CONTROLS
 T_ADVANCED_CONTROLLER,Controle avançado,Advanced controls
-T_ADVANCED_CONTROLLER_HINT,"Desligado: analógico esquerdo aponta e acelera; L2 aplica ré. Ligado: mantém o controle clássico com movimento e mira separados.","Off: left stick aims and accelerates; L2 reverses. On: keeps classic controls with separate movement and aiming."
-T_BIND_INSTRUCTION,"Selecione um slot para remapear. Delete ou X/Quadrado limpa o slot.","Select a slot to remap. Delete or X/Square clears it."
+T_ADVANCED_CONTROLLER_HINT,Desligado: analógico esquerdo aponta e acelera; L2 aplica ré. Ligado: mantém o controle clássico com movimento e mira separados.,Off: left stick aims and accelerates; L2 reverses. On: keeps classic controls with separate movement and aiming.
+T_BIND_INSTRUCTION,Selecione um slot para remapear. Delete ou X/Quadrado limpa o slot.,Select a slot to remap. Delete or X/Square clears it.
 T_BIND_WAITING,"Pressione uma tecla, botão, gatilho ou direção do analógico. Esc cancela.","Press a key, button, trigger or stick direction. Esc cancels."
 T_BIND_EMPTY,VAZIO,EMPTY
 B_RESTORE_CONTROLS,Restaurar controles,Restore controls
@@ -82,7 +82,7 @@ LOJA,LOJA,SHOP
 TERMINAL CROMÁTICO,TERMINAL CROMÁTICO,CHROMATIC TERMINAL
 <  VOLTAR,<  VOLTAR,<  BACK
 VISITAR MONTHLY COLORS,VISITAR MONTHLY COLORS,VISIT MONTHLY COLORS
-"LIGAÇÃO COM MONTHLY COLORS\n%s\n%s","LIGAÇÃO COM MONTHLY COLORS\n%s\n%s","MONTHLY COLORS CONNECTION\n%s\n%s"
+LIGAÇÃO COM MONTHLY COLORS\n%s\n%s,LIGAÇÃO COM MONTHLY COLORS\n%s\n%s,MONTHLY COLORS CONNECTION\n%s\n%s
 RECARGA  %.1f s,RECARGA  %.1f s,COOLDOWN  %.1f s
 POTÊNCIA,POTÊNCIA,POWER
 DURAÇÃO,DURAÇÃO,DURATION
@@ -119,17 +119,17 @@ FRENESI CARNAVALESCO,FRENESI CARNAVALESCO,CARNIVAL FRENZY
 ESCUDO PROTETOR,ESCUDO PROTETOR,PROTECTIVE SHIELD
 ABRAÇO MATERNO,ABRAÇO MATERNO,MATERNAL EMBRACE
 TRANSFUSÃO,TRANSFUSÃO,TRANSFUSION
-FOGUEIRA ARDENTE,FOGUEIRA ARDENTE,BLAZING BONFIRE
-LEQUE DA PRIMAVERA,LEQUE DA PRIMAVERA,SPRING FAN
+FOGUEIRA ARDENTE,FOGUEIRA ARDENTE,BONFIRE ARDENTE
+LEQUE DA PRIMAVERA,LEQUE DA PRIMAVERA,LEQUE DA SPRING
 FOGOS DO RECOMEÇO,FOGOS DO RECOMEÇO,RENEWAL FIREWORKS
 CANHÃO DO ESTURJÃO,CANHÃO DO ESTURJÃO,STURGEON CANNON
-SINALIZADORES AMARELOS,SINALIZADORES AMARELOS,YELLOW FLARES
-FEIXE DO PERIÉLIO,FEIXE DO PERIÉLIO,PERIHELION BEAM
-ARCO DA COLHEITA,ARCO DA COLHEITA,HARVEST ARC
-RAIZ DO DIA DA TERRA,RAIZ DO DIA DA TERRA,EARTH DAY ROOT
-MORTEIRO DA FOGUEIRA,MORTEIRO DA FOGUEIRA,BONFIRE MORTAR
+SINALIZADORES AMARELOS,SINALIZADORES AMARELOS,SINALIZADORES YELLOWS
+FEIXE DO PERIÉLIO,FEIXE DO PERIÉLIO,FEIXE DO PERIHELION
+ARCO DA COLHEITA,ARCO DA COLHEITA,ARCO DA HARVEST
+RAIZ DO DIA DA TERRA,RAIZ DO DIA DA TERRA,RAIZ DO EARTH DAY
+MORTEIRO DA FOGUEIRA,MORTEIRO DA FOGUEIRA,MORTEIRO DA BONFIRE
 SEMENTES VERMELHAS,SEMENTES VERMELHAS,RED SEEDS
-PROJETOR FEVEREIRO ROXO,PROJETOR FEVEREIRO ROXO,PURPLE FEBRUARY PROJECTOR
+PROJETOR FEVEREIRO ROXO,PROJETOR FEVEREIRO ROXO,PROJETOR PURPLE FEBRUARY
 JARDIM ORBITAL,JARDIM ORBITAL,ORBITAL GARDEN
 CANHÃO DO SOLSTÍCIO,CANHÃO DO SOLSTÍCIO,SOLSTICE CANNON
 NAVE PADRÃO,NAVE PADRÃO,DEFAULT SHIP
@@ -141,29 +141,29 @@ ESTRELA ROSA,ESTRELA ROSA,PINK STAR
 MODELO O,MODELO O,MODEL O
 MODELO SPECTRUM,MODELO SPECTRUM,SPECTRUM MODEL
 MODELO FSPEED,MODELO FSPEED,FSPEED MODEL
-VERDE ORIGINAL,VERDE ORIGINAL,ORIGINAL GREEN
+VERDE ORIGINAL,VERDE ORIGINAL,GREEN ORIGINAL
 CIANO,CIANO,CYAN
 ROSA,ROSA,PINK
 VIOLETA,VIOLETA,VIOLET
-DOURADO,DOURADO,GOLD
-BRANCO LUNAR,BRANCO LUNAR,MOON WHITE
+DOURADO,DOURADO,GOLDEN
+BRANCO LUNAR,BRANCO LUNAR,WHITE LUNAR
 RASTRO PADRÃO,RASTRO PADRÃO,DEFAULT TRAIL
 RASTRO ESTELAR O,RASTRO ESTELAR O,MODEL O STAR TRAIL
 ARCO-ÍRIS SPECTRUM,ARCO-ÍRIS SPECTRUM,SPECTRUM RAINBOW
 MARCAS FSPEED,MARCAS FSPEED,FSPEED TRACKS
-"Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.","Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.","Continuous infinite-range laser: rises from 0.2 to 5 DPS and overheats after 10 seconds."
-"Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.","Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.","Fires low-damage light-blue ice. Each hit reduces speed by 10%; at five stacks the target freezes and shatters after 3 seconds."
+"Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.","Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.",Continuous infinite-range laser: rises from 0.2 to 5 DPS and overheats after 10 seconds.
+Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.,Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.,Fires low-damage light-blue ice. Each hit reduces speed by 10%; at five stacks the target freezes and shatters after 3 seconds.
 Chassi cromático que percorre lentamente todo o espectro RGB.,Chassi cromático que percorre lentamente todo o espectro RGB.,Chromatic chassis that slowly cycles through the full RGB spectrum.
-"Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.","Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.","B-EL model awarded for sustaining a 300x combo. Includes an exclusive rainbow trail."
-"Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.","Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.","Long racing ship accompanied by tire tracks in the selected customization color."
-"Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.","Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.","C4RLOS model awarded for reaching 38 million points. Includes an exclusive tire-track trail."
+Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.,Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.,B-EL model awarded for sustaining a 300x combo. Includes an exclusive rainbow trail.
+"Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.","Nave longa de corrida, acompanhada por marcas de pneu na cor da personalização.",Long racing ship accompanied by tire tracks in the selected customization color.
+Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.,Modelo C4RLOS integrado como recompensa por alcançar 38 milhões de pontos. Inclui rastro de pneus exclusivo.,C4RLOS model awarded for reaching 38 million points. Includes an exclusive tire-track trail.
 PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS,PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS,VISUAL CUSTOMIZATION • NO ATTRIBUTE BONUS
 EQUIPAMENTO ÚNICO • 1 POR CATEGORIA,EQUIPAMENTO ÚNICO • 1 POR CATEGORIA,UNIQUE EQUIPMENT • 1 PER CATEGORY
 OVO SURPRESA,OVO SURPRESA,SURPRISE EGG
 CLONE ENGANADOR,CLONE ENGANADOR,DECEPTIVE CLONE
 RENASCIMENTO,RENASCIMENTO,REBIRTH
 ESPÍRITO PROTETOR,ESPÍRITO PROTETOR,PROTECTIVE SPIRIT
-FLORESCIMENTO,FLORESCIMENTO,BLOOM
+FLORESCIMENTO,FLORESCIMENTO,FLOWERSCIMENTO
 ROSA ESPINHOSA,ROSA ESPINHOSA,THORNY ROSE
 FORMA FANTASMA,FORMA FANTASMA,GHOST FORM
 PRESENTE MISTERIOSO,PRESENTE MISTERIOSO,MYSTERIOUS GIFT
@@ -171,7 +171,7 @@ LAÇO DA UNIÃO,LAÇO DA UNIÃO,BOND OF UNITY
 IMAGINAÇÃO SEM LIMITES,IMAGINAÇÃO SEM LIMITES,BOUNDLESS IMAGINATION
 FÚRIA DA NATUREZA,FÚRIA DA NATUREZA,NATURE'S FURY
 ONDA GIGANTE,ONDA GIGANTE,GIANT WAVE
-TEMPESTADE VERDE,TEMPESTADE VERDE,GREEN STORM
+TEMPESTADE VERDE,TEMPESTADE VERDE,TEMPESTADE GREEN
 DETERMINAÇÃO INABALÁVEL,DETERMINAÇÃO INABALÁVEL,UNSHAKABLE DETERMINATION
 REFLEXOS RÁPIDOS,REFLEXOS RÁPIDOS,QUICK REFLEXES
 LUZ VITAL,LUZ VITAL,VITAL LIGHT
@@ -182,7 +182,7 @@ SCANNER PREVENTIVO,SCANNER PREVENTIVO,PREVENTIVE SCANNER
 PROPULSOR DE DUAS FACES,PROPULSOR DE DUAS FACES,TWO-FACED THRUSTER
 MOTOR DO CRESCIMENTO,MOTOR DO CRESCIMENTO,GROWTH ENGINE
 FAMÍLIA DE SATÉLITES,FAMÍLIA DE SATÉLITES,SATELLITE FAMILY
-CHASSI DO EQUINÓCIO,CHASSI DO EQUINÓCIO,EQUINOX CHASSIS
+CHASSI DO EQUINÓCIO,CHASSI DO EQUINÓCIO,CHASSI DO EQUINOX
 ALCATEIA LUNAR,ALCATEIA LUNAR,LUNAR PACK
 COBERTURA DE NEVE,COBERTURA DE NEVE,SNOW COVER
 RETORNO SUBTERRÂNEO,RETORNO SUBTERRÂNEO,UNDERGROUND RETURN
@@ -199,22 +199,22 @@ Cria um eco da nave que repete sua direção e dispara uma cópia atrasada.,Cria
 Planta uma semente de retorno. Se o casco cair você renasce nela uma vez.,Planta uma semente de retorno. Se o casco cair você renasce nela uma vez.,Plants a return seed. If the hull fails you are reborn there once.
 Invoca um guardião que intercepta tiros e responde com uma rajada dourada.,Invoca um guardião que intercepta tiros e responde com uma rajada dourada.,Summons a guardian that intercepts shots and answers with a golden burst.
 "Por 3 segundos, vinhas infectam e congelam inimigos próximos; as flores explodem juntas no fim.","Por 3 segundos, vinhas infectam e congelam inimigos próximos; as flores explodem juntas no fim.","For 3 seconds, vines infect and freeze nearby enemies; the flowers explode together at the end."
-"Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.","Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.",Opens a short counterattack window; the next hit erupts into thorns.
-"Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.","Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.","Become intangible for 3.5 seconds and leave orbs; they all explode together at the end."
+Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.,Abre uma janela curta de contra-ataque: o próximo dano explode em espinhos.,Opens a short counterattack window; the next hit erupts into thorns.
+"Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.","Fica intangível por 3,5 segundos e deixa orbes; todos explodem juntos no fim.",Become intangible for 3.5 seconds and leave orbs; they all explode together at the end.
 "Planta uma caixa que atrai inimigos e explode, derrotando quem se aproximar.","Planta uma caixa que atrai inimigos e explode, derrotando quem se aproximar.",Plants a box that attracts enemies and explodes to defeat anything nearby.
-"Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.","Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.","Links enemies in the area to a central bond; destroy it to break them all at once."
+Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.,Conecta os inimigos da área a um laço central; destrua o laço para romper todos de uma vez.,Links enemies in the area to a central bond; destroy it to break them all at once.
 Transforma temporariamente o tiro em um brinquedo cromático imprevisível.,Transforma temporariamente o tiro em um brinquedo cromático imprevisível.,Temporarily transforms your shot into an unpredictable chromatic toy.
 "Ergue raízes, rochas e cristais em sequência na direção da mira.","Ergue raízes, rochas e cristais em sequência na direção da mira.",Raises roots rocks and crystals in sequence toward the aim direction.
 "Uma onda larga apaga projéteis pequenos, empurra inimigos e deixa correnteza.","Uma onda larga apaga projéteis pequenos, empurra inimigos e deixa correnteza.","A wide wave clears small projectiles, pushes enemies, and leaves a current."
 "Invoca uma chuva diagonal de folhas a 315°, com dano baixo e perfuração evolutiva.","Invoca uma chuva diagonal de folhas a 315°, com dano baixo e perfuração evolutiva.","Summons diagonal leaf rain at 315°, with low damage and upgradeable piercing."
-Marca ameaças próximas e libera proteção com uma explosão concentrada.,Marca ameaças próximas e libera proteção com uma explosão concentrada.,Marks nearby threats and releases protection with a concentrated blast.
+Marca ameaças próximas e libera proteção com uma explosão concentrada.,Marca ameaças próximas e libera proteção com uma explosão concentrada.,Marks nearby threats and grants protection with a concentrated blast.
 Quase-colisões carregam uma curva evasiva instantânea.,Quase-colisões carregam uma curva evasiva instantânea.,Near misses charge an instant evasive turn.
 Experiência enche um halo que cura e concede escudo.,Experiência enche um halo que cura e concede escudo.,Experience fills a halo that heals and grants a shield.
-"Após sofrer dano, alcançar um ponto seguro concede proteção.","Após sofrer dano, alcançar um ponto seguro concede proteção.",After taking damage reaching a safe point grants protection.
+"Após sofrer dano, alcançar um ponto seguro concede proteção.","Após sofrer dano, alcançar um ponto seguro concede proteção.","After taking damage, reaching a safe point grants protection."
 Placas frontais reduzem dano quando você encara o perigo.,Placas frontais reduzem dano quando você encara o perigo.,Front plates reduce damage while you face the danger.
 Cura excedente vira células orbitais consumidas ao receber dano.,Cura excedente vira células orbitais consumidas ao receber dano.,Excess healing becomes orbital cells consumed when taking damage.
 Destaca projéteis que seguem rota de colisão com a nave.,Destaca projéteis que seguem rota de colisão com a nave.,Highlights projectiles on a collision course with the ship.
-"Acelerar protege a frente; dar ré protege a traseira.","Acelerar protege a frente; dar ré protege a traseira.","Accelerating protects the front; reversing protects the rear."
+Acelerar protege a frente; dar ré protege a traseira.,Acelerar protege a frente; dar ré protege a traseira.,Accelerating protects the front; reversing protects the rear.
 Viajar sem colidir evolui o motor em três estágios.,Viajar sem colidir evolui o motor em três estágios.,Traveling without collisions upgrades the engine through three stages.
 Satélites ligados absorvem impactos e mudam de formação.,Satélites ligados absorvem impactos e mudam de formação.,Linked satellites absorb impacts and change formation.
 Cada habilidade alterna entre ataque solar e defesa lunar.,Cada habilidade alterna entre ataque solar e defesa lunar.,Each ability alternates between solar attack and lunar defense.
@@ -230,3 +230,836 @@ A ativação puxa experiência e a converte em projéteis orbitais.,A ativação
 A habilidade procura o inimigo mais resistente e concentra fogo nele.,A habilidade procura o inimigo mais resistente e concentra fogo nele.,The ability seeks the toughest enemy and focuses fire on it.
 Ergue uma barreira temporária no lado oposto ao movimento.,Ergue uma barreira temporária no lado oposto ao movimento.,Raises a temporary barrier opposite the movement direction.
 Projéteis inimigos alcançados pela habilidade congelam e se desfazem.,Projéteis inimigos alcançados pela habilidade congelam e se desfazem.,Enemy projectiles reached by the ability freeze and break apart.
+T_INTRO_MADE_BY,Um jogo feito por Lucas e Tamires,A game by Lucas and Tamires
+T_INTRO_CREATIVELY,Fazendo parte da coleção Creatively:,Part of the Creatively collection:
+INSTALADA  •  v%s,INSTALADA  •  v%s,INSTALLED  •  v%s
+VERIFICAÇÃO PENDENTE,VERIFICAÇÃO PENDENTE,CHECK PENDING
+ATUALIZAÇÃO NÃO VERIFICADA,ATUALIZAÇÃO NÃO VERIFICADA,UPDATE NOT CHECKED
+Confira sua conexão e tente novamente. Seu progresso está seguro; não é necessário reinstalar o jogo.,Confira sua conexão e tente novamente. Seu progresso está seguro; não é necessário reinstalar o jogo.,Check your connection and try again. Your progress is safe; you do not need to reinstall the game.
+TENTAR NOVAMENTE,TENTAR NOVAMENTE,TRY AGAIN
+AGORA NÃO,AGORA NÃO,NOT NOW
+NOVA ATUALIZAÇÃO,NOVA ATUALIZAÇÃO,NEW UPDATE
+MAIS TARDE,MAIS TARDE,LATER
+DISPONÍVEL  •  v%s,DISPONÍVEL  •  v%s,AVAILABLE  •  v%s
+ABRIR DOWNLOAD,ABRIR DOWNLOAD,OPEN DOWNLOAD
+"Baixe o APK assinado. Ao abrir, escolha Atualizar e mantenha o jogo instalado.","Baixe o APK assinado. Ao abrir, escolha Atualizar e mantenha o jogo instalado.","Download the signed APK. When you open it, choose Update and keep the game installed."
+Uma nova jornada pelo vazio já está pronta para você.,Uma nova jornada pelo vazio já está pronta para você.,A new journey through the void is ready for you.
+Abrindo página de download do itch.io...,Abrindo página de download do itch.io...,Opening the itch.io download page...
+Baixando • %s,Baixando • %s,Downloading • %s
+%s de %s,%s de %s,%s of %s
+CALCULANDO TEMPO...,CALCULANDO TEMPO...,CALCULATING TIME...
+tamanho desconhecido,tamanho desconhecido,unknown size
+FINALIZANDO...,FINALIZANDO...,FINISHING...
+~%d s RESTANTES,~%d s RESTANTES,~%d s REMAINING
+NÍVEL %d  →  %d/%d,NÍVEL %d  →  %d/%d,LEVEL %d  →  %d/%d
+PASSIVO DE PILOTAGEM,PASSIVO DE PILOTAGEM,PILOTING PASSIVE
+PASSIVO DE SOBREVIVÊNCIA,PASSIVO DE SOBREVIVÊNCIA,SURVIVAL PASSIVE
+PASSIVO DA NAVE,PASSIVO DA NAVE,SHIP PASSIVE
+COBERTURA E CONTROLE,COBERTURA E CONTROLE,COVERAGE AND CONTROL
+IMPACTO CONCENTRADO,IMPACTO CONCENTRADO,FOCUSED IMPACT
+LIMPEZA DE GRUPOS,LIMPEZA DE GRUPOS,GROUP CLEARING
+PRECISÃO GUIADA,PRECISÃO GUIADA,GUIDED PRECISION
+POSICIONAMENTO,POSICIONAMENTO,POSITIONING
+SINERGIA DE HABILIDADE,SINERGIA DE HABILIDADE,ABILITY SYNERGY
+MÓDULO DA NAVE,MÓDULO DA NAVE,SHIP MODULE
+HOST DESCONECTADO,HOST DESCONECTADO,HOST DISCONNECTED
+VOLTAR AO MENU,VOLTAR AO MENU,BACK TO MENU
+TODA A EQUIPE FOI DESTRUÍDA,TODA A EQUIPE FOI DESTRUÍDA,THE ENTIRE TEAM WAS DESTROYED
+REINICIAR PARTIDA,REINICIAR PARTIDA,RESTART MATCH
+SAIR DA PARTIDA,SAIR DA PARTIDA,LEAVE MATCH
+NÃO HÁ PILOTOS VIVOS PARA GARANTIR O RENASCIMENTO,NÃO HÁ PILOTOS VIVOS PARA GARANTIR O RENASCIMENTO,NO PILOTS ARE ALIVE TO SECURE THE REVIVAL
+SUA NAVE FOI DESTRUÍDA,SUA NAVE FOI DESTRUÍDA,YOUR SHIP WAS DESTROYED
+AGUARDANDO AUTORIZAÇÃO DE RENASCIMENTO DO HOST,AGUARDANDO AUTORIZAÇÃO DE RENASCIMENTO DO HOST,WAITING FOR THE HOST TO AUTHORIZE REVIVAL
+%s — FASE %d,%s — FASE %d,%s — PHASE %d
+RÓTULO RECICLADO — NÚCLEO EXPOSTO!,RÓTULO RECICLADO — NÚCLEO EXPOSTO!,LABEL RECYCLED — CORE EXPOSED!
+RECICLE OS FRAGMENTOS: %d/%d,RECICLE OS FRAGMENTOS: %d/%d,RECYCLE THE FRAGMENTS: %d/%d
+TESTE CONCLUÍDO,TESTE CONCLUÍDO,TEST COMPLETE
+PROGRESSÃO DA PARTIDA PRESERVADA,PROGRESSÃO DA PARTIDA PRESERVADA,MATCH PROGRESSION PRESERVED
+SETOR CONCLUÍDO,SETOR CONCLUÍDO,SECTOR COMPLETE
+%s  •  PRÓXIMO BOSS: LVL %d,%s  •  PRÓXIMO BOSS: LVL %d,%s  •  NEXT BOSS: LVL %d
+CONTINUAR,CONTINUAR,CONTINUE
+CARREGANDO,CARREGANDO,LOADING
+NICKNAME DO PILOTO,NICKNAME DO PILOTO,PILOT NICKNAME
+PILOTO,PILOTO,PILOT
+LOBBIES DISPONÍVEIS NESTA REDE,LOBBIES DISPONÍVEIS NESTA REDE,LOBBIES AVAILABLE ON THIS NETWORK
+PROCURANDO LOBBIES DISPONÍVEIS NO WI-FI...,PROCURANDO LOBBIES DISPONÍVEIS NO WI-FI...,SEARCHING FOR LOBBIES ON WI-FI...
+HOST: %s,HOST: %s,HOST: %s
+%s:%d  •  %d/%d JOGADORES,%s:%d  •  %d/%d JOGADORES,%s:%d  •  %d/%d PLAYERS
+Digite o IPv4 informado pelo host. Porta UDP %d.,Digite o IPv4 informado pelo host. Porta UDP %d.,Enter the IPv4 address provided by the host. UDP port %d.
+HOST UDP %d • %d/%d JOGADORES,HOST UDP %d • %d/%d JOGADORES,UDP HOST %d • %d/%d PLAYERS
+  [HOST],  [HOST],  [HOST]
+AGUARDANDO OUTRO PILOTO...,AGUARDANDO OUTRO PILOTO...,WAITING FOR ANOTHER PILOT...
+"SE O LOBBY NÃO APARECER, TOQUE NO IP PARA COPIAR:","SE O LOBBY NÃO APARECER, TOQUE NO IP PARA COPIAR:","IF THE LOBBY DOES NOT APPEAR, TAP THE IP TO COPY IT:"
+COPIAR IP  %s,COPIAR IP  %s,COPY IP  %s
+IP %s COPIADO,IP %s COPIADO,IP %s COPIED
+✦  CONQUISTAS,✦  CONQUISTAS,✦  ACHIEVEMENTS
+FECHAR,FECHAR,CLOSE
+%d DE %d DESBLOQUEADAS,%d DE %d DESBLOQUEADAS,%d OF %d UNLOCKED
+?  CONQUISTA SECRETA,?  CONQUISTA SECRETA,?  SECRET ACHIEVEMENT
+Continue explorando o ciclo cromático para revelar esta conquista.,Continue explorando o ciclo cromático para revelar esta conquista.,Keep exploring the chromatic cycle to reveal this achievement.
+OCULTA,OCULTA,HIDDEN
+MATRIZ DE EVOLUÇÃO DA NAVE,MATRIZ DE EVOLUÇÃO DA NAVE,SHIP EVOLUTION MATRIX
+RECALCULAR OPÇÕES,RECALCULAR OPÇÕES,REROLL OPTIONS
+Escolha um mod ou feche o menu para guardar os pontos. Abre/fecha:,Escolha um mod ou feche o menu para guardar os pontos. Abre/fecha:,Choose a mod or close the menu to save your points. Open/close:
+◆  MELHORIAS: %d,◆  MELHORIAS: %d,◆  UPGRADES: %d
+◆  MELHORIAS: %d  [%s],◆  MELHORIAS: %d  [%s],◆  UPGRADES: %d  [%s]
+PONTOS PENDENTES: %d,PONTOS PENDENTES: %d,PENDING POINTS: %d
+NENHUMA,NENHUMA,NONE
+HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO,HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO,ABILITY: %s   •   CHOOSE A STYLE AND DEVELOP YOUR BUILD
+RECALCULAR (%d),RECALCULAR (%d),REROLL (%d)
+Não foi possível criar a sala na porta UDP %d.,Não foi possível criar a sala na porta UDP %d.,Could not create a room on UDP port %d.
+Sala criada • IP %s • porta UDP %d,Sala criada • IP %s • porta UDP %d,Room created • IP %s • UDP port %d
+indisponível,indisponível,unavailable
+Digite o IP do host.,Digite o IP do host.,Enter the host IP.
+Não foi possível iniciar a conexão com %s.,Não foi possível iniciar a conexão com %s.,Could not connect to %s.
+Conectando a %s:%d...,Conectando a %s:%d...,Connecting to %s:%d...
+Busca automática indisponível; ainda é possível digitar o IP.,Busca automática indisponível; ainda é possível digitar o IP.,Automatic search is unavailable; you can still enter the IP.
+Aguardando pelo menos dois jogadores na sala.,Aguardando pelo menos dois jogadores na sala.,Waiting for at least two players in the room.
+Piloto conectado. Recebendo nickname...,Piloto conectado. Recebendo nickname...,Pilot connected. Receiving nickname...
+Um jogador saiu da sala.,Um jogador saiu da sala.,A player left the room.
+Conectado ao lobby.,Conectado ao lobby.,Connected to the lobby.
+Falha ao conectar. Confira o IP e a porta UDP %d.,Falha ao conectar. Confira o IP e a porta UDP %d.,Connection failed. Check the IP and UDP port %d.
+O host encerrou a sala.,O host encerrou a sala.,The host closed the room.
+CONEXÃO PERDIDA: o host encerrou a partida.,CONEXÃO PERDIDA: o host encerrou a partida.,CONNECTION LOST: the host ended the match.
+Atualizações automáticas não estão disponíveis nesta plataforma.,Atualizações automáticas não estão disponíveis nesta plataforma.,Automatic updates are not available on this platform.
+Não foi possível iniciar a verificação de atualizações.,Não foi possível iniciar a verificação de atualizações.,Could not start the update check.
+Sem conexão com o servidor de atualizações.,Sem conexão com o servidor de atualizações.,Could not connect to the update server.
+O servidor limitou temporariamente as verificações. Tente novamente mais tarde.,O servidor limitou temporariamente as verificações. Tente novamente mais tarde.,The server temporarily limited update checks. Try again later.
+O servidor de atualizações respondeu com erro HTTP %d.,O servidor de atualizações respondeu com erro HTTP %d.,The update server returned HTTP error %d.
+O servidor retornou uma versão inválida.,O servidor retornou uma versão inválida.,The server returned an invalid version.
+O arquivo desta atualização não foi encontrado.,O arquivo desta atualização não foi encontrado.,The update file was not found.
+Esta plataforma não possui instalação automática.,Esta plataforma não possui instalação automática.,This platform does not support automatic installation.
+Não foi possível abrir a página de download do itch.io.,Não foi possível abrir a página de download do itch.io.,Could not open the itch.io download page.
+Nenhum controle conectado. Conecte-o antes ou durante o jogo.,Nenhum controle conectado. Conecte-o antes ou durante o jogo.,No controller connected. Connect one before or during the game.
+Detectado: %s,Detectado: %s,Detected: %s
+✦  CONQUISTA DESBLOQUEADA,✦  CONQUISTA DESBLOQUEADA,✦  ACHIEVEMENT UNLOCKED
+ÁREA SEGURA — MOVA-SE,ÁREA SEGURA — MOVA-SE,SAFE AREA — MOVE NOW
+Recarga: %.1f s,Recarga: %.1f s,Cooldown: %.1f s
+PRIMEIRO BRILHO,PRIMEIRO BRILHO,FIRST SPARK
+Derrote o primeiro inimigo.,Derrote o primeiro inimigo.,Defeat your first enemy.
+PEQUENA CONSTELAÇÃO,PEQUENA CONSTELAÇÃO,SMALL CONSTELLATION
+Derrote 10 inimigos.,Derrote 10 inimigos.,Defeat 10 enemies.
+CÉU MOVIMENTADO,CÉU MOVIMENTADO,BUSY SKY
+Derrote 50 inimigos.,Derrote 50 inimigos.,Defeat 50 enemies.
+ÓRBITA VETERANA,ÓRBITA VETERANA,VETERAN ORBIT
+Derrote 250 inimigos.,Derrote 250 inimigos.,Defeat 250 enemies.
+LENDA CROMÁTICA,LENDA CROMÁTICA,CHROMATIC LEGEND
+Derrote 1.000 inimigos.,Derrote 1.000 inimigos.,"Defeat 1,000 enemies."
+RECICLAGEM COMPLETA,RECICLAGEM COMPLETA,FULLY RECYCLED
+Derrote PET-0.,Derrote PET-0.,Defeat PET-0.
+DEPOIS DA PRIMAVERA,DEPOIS DA PRIMAVERA,AFTER SPRING
+Derrote o Florecimento.,Derrote o Florecimento.,Defeat Bloom.
+CONSTELAÇÃO ACOLHIDA,CONSTELAÇÃO ACOLHIDA,EMBRACED CONSTELLATION
+Derrote a Constelação do Amparo.,Derrote a Constelação do Amparo.,Defeat the Constellation of Care.
+NÓ DESATADO,NÓ DESATADO,KNOT UNDONE
+Derrote o Nó de Ametista.,Derrote o Nó de Ametista.,Defeat the Amethyst Knot.
+LUZ APÓS O ECLIPSE,LUZ APÓS O ECLIPSE,LIGHT AFTER THE ECLIPSE
+Derrote a Sizígia Eterna.,Derrote a Sizígia Eterna.,Defeat the Eternal Syzygy.
+PRIMEIRO GUARDIÃO,PRIMEIRO GUARDIÃO,FIRST GUARDIAN
+Derrote qualquer boss.,Derrote qualquer boss.,Defeat any boss.
+TRÊS CORES DO VAZIO,TRÊS CORES DO VAZIO,THREE COLORS OF THE VOID
+Derrote três bosses diferentes.,Derrote três bosses diferentes.,Defeat three different bosses.
+PALETA COMPLETA,PALETA COMPLETA,FULL PALETTE
+Derrote os cinco bosses.,Derrote os cinco bosses.,Defeat all five bosses.
+CICLO CROMÁTICO,CICLO CROMÁTICO,CHROMATIC CYCLE
+Conclua uma partida derrotando os cinco bosses.,Conclua uma partida derrotando os cinco bosses.,Complete a run by defeating all five bosses.
+SINAL DA ESTRELA,SINAL DA ESTRELA,SIGN OF THE STAR
+Conclua um ciclo cromático completo para revelar o Modelo O na loja.,Conclua um ciclo cromático completo para revelar o Modelo O na loja.,Complete a full chromatic cycle to reveal Model O in the shop.
+CADEIA CROMÁTICA,CADEIA CROMÁTICA,CHROMATIC CHAIN
+Alcance multiplicador de combo 10.,Alcance multiplicador de combo 10.,Reach a 10x combo multiplier.
+ÓRBITA PERFEITA,ÓRBITA PERFEITA,PERFECT ORBIT
+Alcance multiplicador de combo 25.,Alcance multiplicador de combo 25.,Reach a 25x combo multiplier.
+ESPECTRO COMPLETO,ESPECTRO COMPLETO,FULL SPECTRUM
+Alcance multiplicador de combo 50.,Alcance multiplicador de combo 50.,Reach a 50x combo multiplier.
+COMETA ININTERRUPTO,COMETA ININTERRUPTO,UNBROKEN COMET
+Alcance multiplicador de combo 100.,Alcance multiplicador de combo 100.,Reach a 100x combo multiplier.
+ESPECTRO INFINITO,ESPECTRO INFINITO,INFINITE SPECTRUM
+Alcance multiplicador de combo 213.,Alcance multiplicador de combo 213.,Reach a 213x combo multiplier.
+PRIMEIRA MARCA,PRIMEIRA MARCA,FIRST MARK
+Alcance 25.000 pontos em uma partida.,Alcance 25.000 pontos em uma partida.,"Score 25,000 points in one run."
+CEM MIL CORES,CEM MIL CORES,ONE HUNDRED THOUSAND COLORS
+Alcance 100.000 pontos em uma partida.,Alcance 100.000 pontos em uma partida.,"Score 100,000 points in one run."
+ALÉM DO VAZIO,ALÉM DO VAZIO,BEYOND THE VOID
+Alcance 500.000 pontos em uma partida.,Alcance 500.000 pontos em uma partida.,"Score 500,000 points in one run."
+UM MILHÃO DE CORES,UM MILHÃO DE CORES,ONE MILLION COLORS
+Alcance 1 milhão de pontos em uma partida.,Alcance 1 milhão de pontos em uma partida.,Score 1 million points in one run.
+GALÁXIA ACESA,GALÁXIA ACESA,LIT GALAXY
+Alcance 5 milhões de pontos em uma partida.,Alcance 5 milhões de pontos em uma partida.,Score 5 million points in one run.
+DEZ MILHÕES,DEZ MILHÕES,TEN MILLION
+Alcance 10 milhões de pontos em uma partida.,Alcance 10 milhões de pontos em uma partida.,Score 10 million points in one run.
+CÉU CROMÁTICO,CÉU CROMÁTICO,CHROMATIC SKY
+Alcance 20 milhões de pontos em uma partida.,Alcance 20 milhões de pontos em uma partida.,Score 20 million points in one run.
+ALÉM DO ESPECTRO,ALÉM DO ESPECTRO,BEYOND THE SPECTRUM
+Alcance 25 milhões de pontos em uma partida.,Alcance 25 milhões de pontos em uma partida.,Score 25 million points in one run.
+VELOCIDADE MÁXIMA,VELOCIDADE MÁXIMA,MAXIMUM SPEED
+Alcance 75 milhões de pontos em uma partida.,Alcance 75 milhões de pontos em uma partida.,Score 75 million points in one run.
+BRILHO INTACTO,BRILHO INTACTO,UNTOUCHED GLOW
+Permaneça 60 segundos sem sofrer dano.,Permaneça 60 segundos sem sofrer dano.,Survive 60 seconds without taking damage.
+DANÇA IMPECÁVEL,DANÇA IMPECÁVEL,FLAWLESS DANCE
+Permaneça 3 minutos sem sofrer dano.,Permaneça 3 minutos sem sofrer dano.,Survive 3 minutes without taking damage.
+LUZ INALCANÇÁVEL,LUZ INALCANÇÁVEL,UNREACHABLE LIGHT
+Permaneça 5 minutos sem sofrer dano.,Permaneça 5 minutos sem sofrer dano.,Survive 5 minutes without taking damage.
+PODER INALTERADO,PODER INALTERADO,UNCHANGED POWER
+Conclua uma partida sem escolher nenhum upgrade de partida.,Conclua uma partida sem escolher nenhum upgrade de partida.,Complete a run without choosing any in-run upgrades.
+SETOR 01 • ORIGEM,SETOR 01 • ORIGEM,SECTOR 01 • ORIGIN
+A formação original do jogo e o território do PET-0.,A formação original do jogo e o território do PET-0.,The game's original formation and PET-0's territory.
+PRIMAVERA • SETEMBRO,PRIMAVERA • SETEMBRO,SPRING • SEPTEMBER
+"Espinhos, pétalas e vinhas transformam a arena em uma dança.","Espinhos, pétalas e vinhas transformam a arena em uma dança.","Thorns, petals, and vines turn the arena into a dance."
+ÓRBITA DA SIZÍGIA,ÓRBITA DA SIZÍGIA,ORBIT OF SYZYGY
+SOL • LUA • ECLIPSE ABSOLUTO,SOL • LUA • ECLIPSE ABSOLUTO,SUN • MOON • ABSOLUTE ECLIPSE
+A rota mais longa culmina na união dos dois astros.,A rota mais longa culmina na união dos dois astros.,The longest route culminates in the union of both celestial bodies.
+CONSTELAÇÃO DO AMPARO,CONSTELAÇÃO DO AMPARO,CONSTELLATION OF CARE
+AGOSTO DOURADO • CUIDADO,AGOSTO DOURADO • CUIDADO,GOLDEN AUGUST • CARE
+"Satélites cooperam, formam elos e protegem o núcleo da constelação.","Satélites cooperam, formam elos e protegem o núcleo da constelação.","Satellites cooperate, form bonds, and protect the constellation's core."
+NÓ DE AMETISTA,NÓ DE AMETISTA,AMETHYST KNOT
+AGOSTO LILÁS,AGOSTO LILÁS,PURPLE AUGUST
+Fitas cristalinas tecem caminhos perigosos que precisam ser desatados.,Fitas cristalinas tecem caminhos perigosos que precisam ser desatados.,Crystalline ribbons weave dangerous paths that must be untied.
+"Olá! Eu sou o Astro, seu guia pelo Chromatic Void e pelas histórias do Monthly Colors!","Olá! Eu sou o Astro, seu guia pelo Chromatic Void e pelas histórias do Monthly Colors!","Hello! I'm Astro, your guide through Chromatic Void and the stories of Monthly Colors!"
+"Janeiro recebeu esse nome por causa de Janus, o deus romano que olhava para o passado e para o futuro.","Janeiro recebeu esse nome por causa de Janus, o deus romano que olhava para o passado e para o futuro.","January was named after Janus, the Roman god who looked to both the past and the future."
+"No calendário romano original, o ano começava em março e possuía apenas dez meses.","No calendário romano original, o ano começava em março e possuía apenas dez meses.","In the original Roman calendar, the year began in March and had only ten months."
+No começo de janeiro acontece o periélio: o ponto em que a Terra fica mais próxima do Sol.,No começo de janeiro acontece o periélio: o ponto em que a Terra fica mais próxima do Sol.,"Perihelion happens in early January, when Earth is closest to the Sun."
+"A Lua Cheia de janeiro é chamada [color=#72e7ff]Lua do Lobo[/color], por uma tradição do Hemisfério Norte.","A Lua Cheia de janeiro é chamada [color=#72e7ff]Lua do Lobo[/color], por uma tradição do Hemisfério Norte.","January's full moon is called the [color=#72e7ff]Wolf Moon[/color], following a Northern Hemisphere tradition."
+"Fevereiro vem de [i]Februarius[/i], nome ligado a um antigo ritual romano de purificação.","Fevereiro vem de [i]Februarius[/i], nome ligado a um antigo ritual romano de purificação.","February comes from [i]Februarius[/i], a name tied to an ancient Roman purification ritual."
+A [color=#72e7ff]Lua da Neve[/color] recebeu esse nome por causa das nevascas de fevereiro no Hemisfério Norte.,A [color=#72e7ff]Lua da Neve[/color] recebeu esse nome por causa das nevascas de fevereiro no Hemisfério Norte.,The [color=#72e7ff]Snow Moon[/color] was named after February snowstorms in the Northern Hemisphere.
+"O Carnaval possui raízes em festas antigas e, no Brasil, misturou influências africanas, indígenas e europeias.","O Carnaval possui raízes em festas antigas e, no Brasil, misturou influências africanas, indígenas e europeias.","Carnival has roots in ancient festivals and, in Brazil, blended African, Indigenous, and European influences."
+"Março vem de Marte, que além da guerra também era considerado protetor da agricultura pelos romanos.","Março vem de Marte, que além da guerra também era considerado protetor da agricultura pelos romanos.","March comes from Mars, whom the Romans regarded as a protector of agriculture as well as a god of war."
+"No equinócio de março, dia e noite ficam com durações muito próximas em todo o planeta.","No equinócio de março, dia e noite ficam com durações muito próximas em todo o planeta.","At the March equinox, day and night are nearly equal in length across the planet."
+A [color=#72e7ff]Lua do Verme[/color] marca o degelo e o retorno das minhocas no Hemisfério Norte.,A [color=#72e7ff]Lua do Verme[/color] marca o degelo e o retorno das minhocas no Hemisfério Norte.,The [color=#72e7ff]Worm Moon[/color] marks the thaw and the return of earthworms in the Northern Hemisphere.
+"Abril pode vir do latim [i]aperire[/i], que significa abrir, como as flores na primavera do Hemisfério Norte.","Abril pode vir do latim [i]aperire[/i], que significa abrir, como as flores na primavera do Hemisfério Norte.","April may come from the Latin [i]aperire[/i], meaning to open, like flowers in Northern Hemisphere spring."
+"A [color=#ff8fd8]Lua Rosa[/color] não fica rosa, o nome vem de uma flor que desabrocha em abril.","A [color=#ff8fd8]Lua Rosa[/color] não fica rosa, o nome vem de uma flor que desabrocha em abril.",The [color=#ff8fd8]Pink Moon[/color] does not turn pink; its name comes from a flower that blooms in April.
+O Dia da Terra é celebrado em 22 de abril e chama atenção para a preservação ambiental.,O Dia da Terra é celebrado em 22 de abril e chama atenção para a preservação ambiental.,Earth Day is celebrated on April 22 and draws attention to environmental preservation.
+"O nome do mês de Maio homenageia Maia, deusa romana ligada ao crescimento e à fertilidade.","O nome do mês de Maio homenageia Maia, deusa romana ligada ao crescimento e à fertilidade.","May is named after Maia, a Roman goddess associated with growth and fertility."
+A [color=#72e7ff]Lua das Flores[/color] representa o período de muitas flores silvestres no Hemisfério Norte.,A [color=#72e7ff]Lua das Flores[/color] representa o período de muitas flores silvestres no Hemisfério Norte.,The [color=#72e7ff]Flower Moon[/color] represents the season of abundant wildflowers in the Northern Hemisphere.
+"Junho recebeu esse nome em homenagem a Juno, divindade romana ligada à família.","Junho recebeu esse nome em homenagem a Juno, divindade romana ligada à família.","June was named after Juno, the Roman deity associated with family."
+"As festas juninas celebram Santo Antônio no dia 13, São João no dia 24 e São Pedro no dia 29.","As festas juninas celebram Santo Antônio no dia 13, São João no dia 24 e São Pedro no dia 29.","Brazil's June festivals celebrate Saint Anthony on the 13th, Saint John on the 24th, and Saint Peter on the 29th."
+O solstício de junho traz o dia mais curto e a noite mais longa do ano para o Hemisfério Sul.,O solstício de junho traz o dia mais curto e a noite mais longa do ano para o Hemisfério Sul.,The June solstice brings the shortest day and longest night of the year to the Southern Hemisphere.
+A [color=#ff7070]Lua de Morango[/color] não fica vermelha: o nome vem da época de colher morangos silvestres.,A [color=#ff7070]Lua de Morango[/color] não fica vermelha: o nome vem da época de colher morangos silvestres.,The [color=#ff7070]Strawberry Moon[/color] does not turn red; its name comes from the wild strawberry harvest season.
+Julho já se chamou [i]Quintilis[/i] e foi renomeado em homenagem a Júlio César.,Julho já se chamou [i]Quintilis[/i] e foi renomeado em homenagem a Júlio César.,July was once called [i]Quintilis[/i] and was renamed in honor of Julius Caesar.
+A [color=#72e7ff]Lua dos Cervos[/color] lembra a época em que novas galhadas crescem nesses animais.,A [color=#72e7ff]Lua dos Cervos[/color] lembra a época em que novas galhadas crescem nesses animais.,The [color=#72e7ff]Buck Moon[/color] recalls the season when deer grow new antlers.
+Agosto já se chamou [i]Sextilis[/i] e recebeu o nome atual em homenagem ao imperador César Augusto.,Agosto já se chamou [i]Sextilis[/i] e recebeu o nome atual em homenagem ao imperador César Augusto.,August was once called [i]Sextilis[/i] and received its current name in honor of Emperor Augustus.
+A [color=#72e7ff]Lua do Esturjão[/color] lembra a época de pesca abundante desse peixe nos grandes lagos.,A [color=#72e7ff]Lua do Esturjão[/color] lembra a época de pesca abundante desse peixe nos grandes lagos.,The [color=#72e7ff]Sturgeon Moon[/color] recalls the season when these fish were plentiful in the Great Lakes.
+"Setembro vem de [i]septem[/i], sete em latim, porque já foi o sétimo mês do calendário romano.","Setembro vem de [i]septem[/i], sete em latim, porque já foi o sétimo mês do calendário romano.","September comes from [i]septem[/i], Latin for seven, because it was once the seventh month of the Roman calendar."
+A [color=#ffd86b]Lua da Colheita[/color] é a Lua Cheia mais próxima do equinócio de setembro.,A [color=#ffd86b]Lua da Colheita[/color] é a Lua Cheia mais próxima do equinócio de setembro.,The [color=#ffd86b]Harvest Moon[/color] is the full moon closest to the September equinox.
+"Outubro vem de [i]octo[/i], oito em latim, embora hoje seja o décimo mês.","Outubro vem de [i]octo[/i], oito em latim, embora hoje seja o décimo mês.","October comes from [i]octo[/i], Latin for eight, although it is now the tenth month."
+A [color=#72e7ff]Lua do Caçador[/color] é a Lua Cheia que tradicionalmente sucede a Lua da Colheita.,A [color=#72e7ff]Lua do Caçador[/color] é a Lua Cheia que tradicionalmente sucede a Lua da Colheita.,The [color=#72e7ff]Hunter's Moon[/color] is the full moon that traditionally follows the Harvest Moon.
+"Novembro vem de [i]novem[/i], nove em latim, posição que ocupava no calendário romano antigo.","Novembro vem de [i]novem[/i], nove em latim, posição que ocupava no calendário romano antigo.","November comes from [i]novem[/i], Latin for nine, its position in the ancient Roman calendar."
+A [color=#72e7ff]Lua do Castor[/color] está ligada ao período de preparação para o inverno no Hemisfério Norte.,A [color=#72e7ff]Lua do Castor[/color] está ligada ao período de preparação para o inverno no Hemisfério Norte.,The [color=#72e7ff]Beaver Moon[/color] is tied to preparations for winter in the Northern Hemisphere.
+"Dezembro vem de [i]decem[/i], dez em latim, embora atualmente encerre os doze meses do ano.","Dezembro vem de [i]decem[/i], dez em latim, embora atualmente encerre os doze meses do ano.","December comes from [i]decem[/i], Latin for ten, although it now ends the twelve-month year."
+A [color=#72e7ff]Lua Fria[/color] recebeu esse nome por causa das noites longas de dezembro no Hemisfério Norte.,A [color=#72e7ff]Lua Fria[/color] recebeu esse nome por causa das noites longas de dezembro no Hemisfério Norte.,The [color=#72e7ff]Cold Moon[/color] was named after December's long nights in the Northern Hemisphere.
+Gostou da curiosidade? Há muito mais nos cards de [rainbow][wave]tami4lvess.github.io/Monthly-Colors[/wave][/rainbow]!,Gostou da curiosidade? Há muito mais nos cards de [rainbow][wave]tami4lvess.github.io/Monthly-Colors[/wave][/rainbow]!,Enjoyed the fact? There is much more in the cards at [rainbow][wave]tami4lvess.github.io/Monthly-Colors[/wave][/rainbow]!
+"O Monthly Colors também reúne campanhas, datas e fases da Lua. Visite o site e escolha um mês para explorar!","O Monthly Colors também reúne campanhas, datas e fases da Lua. Visite o site e escolha um mês para explorar!","Monthly Colors also brings together campaigns, dates, and moon phases. Visit the site and choose a month to explore!"
+Agora vou te ensinar o básico sobre o jogo.,Agora vou te ensinar o básico sobre o jogo.,Now I'll teach you the basics of the game.
+"O jogo ainda está em desenvolvimento, então podem existir alguns erros.","O jogo ainda está em desenvolvimento, então podem existir alguns erros.","The game is still in development, so you may encounter some issues."
+Para acelerar use W e para frear use S.,Para acelerar use W e para frear use S.,Press W to accelerate and S to brake.
+"Para virar a nave, use o mouse. Nas configurações você pode mudar para usar apenas o teclado.","Para virar a nave, use o mouse. Nas configurações você pode mudar para usar apenas o teclado.","Use the mouse to turn the ship. In Settings, you can switch to keyboard-only controls."
+"Para atirar, use o botão esquerdo do mouse ou a tecla [color=yellow]F[/color].","Para atirar, use o botão esquerdo do mouse ou a tecla [color=yellow]F[/color].","To shoot, use the left mouse button or press [color=yellow]F[/color]."
+Pressione Espaço para usar sua habilidade especial.,Pressione Espaço para usar sua habilidade especial.,Press Space to use your special ability.
+Arraste o analógico do lado esquerdo para apontar e acelerar a nave.,Arraste o analógico do lado esquerdo para apontar e acelerar a nave.,Drag the left stick to aim and accelerate the ship.
+Segure [color=yellow]TIRO[/color] para disparar. Você pode mover e atirar com dois dedos ao mesmo tempo.,Segure [color=yellow]TIRO[/color] para disparar. Você pode mover e atirar com dois dedos ao mesmo tempo.,Hold [color=yellow]FIRE[/color] to shoot. You can move and fire with two fingers at the same time.
+Toque em [color=yellow]PODER[/color] para usar sua habilidade especial.,Toque em [color=yellow]PODER[/color] para usar sua habilidade especial.,Tap [color=yellow]POWER[/color] to use your special ability.
+"Quando houver uma melhoria, toque no aviso no alto da tela. O botão [color=yellow]II[/color] abre a pausa. Toque no texto para avançar mais rápido.","Quando houver uma melhoria, toque no aviso no alto da tela. O botão [color=yellow]II[/color] abre a pausa. Toque no texto para avançar mais rápido.","When an upgrade is available, tap the notice at the top of the screen. The [color=yellow]II[/color] button pauses the game. Tap the text to advance faster."
+DANO CALIBRADO,DANO CALIBRADO,CALIBRATED DAMAGE
+"Aumenta o dano em +25%, +18%, +14%, +10% e +8%. Forte cedo, controlado depois.","Aumenta o dano em +25%, +18%, +14%, +10% e +8%. Forte cedo, controlado depois.","Increases damage by +25%, +18%, +14%, +10%, and +8%. Strong early, controlled later."
+ARMA,ARMA,WEAPON
+COMUM,COMUM,COMMON
+CÂMARA ACELERADA,CÂMARA ACELERADA,ACCELERATED CHAMBER
+"Aumenta muito a cadência nos primeiros níveis, com retornos decrescentes.","Aumenta muito a cadência nos primeiros níveis, com retornos decrescentes.","Greatly increases fire rate in early levels, with diminishing returns."
+BLINDAGEM VIVA,BLINDAGEM VIVA,LIVING ARMOR
+Aumenta bastante a vida máxima e recupera somente a vida adicionada.,Aumenta bastante a vida máxima e recupera somente a vida adicionada.,Greatly increases maximum health and restores only the health added.
+CASCO,CASCO,HULL
+PROPULSÃO VETORIAL,PROPULSÃO VETORIAL,VECTOR THRUST
+Aumenta aceleração e velocidade; o primeiro nível concede +15%.,Aumenta aceleração e velocidade; o primeiro nível concede +15%.,Increases acceleration and speed; the first level grants +15%.
+MOBILIDADE,MOBILIDADE,MOBILITY
+NÚCLEO PRISMÁTICO,NÚCLEO PRISMÁTICO,PRISMATIC CORE
+"ESTILO PRISMA: duas linhas paralelas, cada uma com 62% do dano. Bloqueia os outros estilos de tiro.","ESTILO PRISMA: duas linhas paralelas, cada uma com 62% do dano. Bloqueia os outros estilos de tiro.","PRISM STYLE: two parallel lines, each dealing 62% damage. Locks out other shot styles."
+ESTILO DE TIRO • PRISMA,ESTILO DE TIRO • PRISMA,SHOT STYLE • PRISM
+INCOMUM,INCOMUM,UNCOMMON
+FORMAÇÃO TRIDENTE,FORMAÇÃO TRIDENTE,TRIDENT FORMATION
+PRISMA II: um tiro central e dois laterais a 7°. Cada projétil causa 42% do dano.,PRISMA II: um tiro central e dois laterais a 7°. Cada projétil causa 42% do dano.,PRISM II: one central shot and two side shots at 7°. Each projectile deals 42% damage.
+ESTILO PRISMA • EVOLUÇÃO,ESTILO PRISMA • EVOLUÇÃO,PRISM STYLE • EVOLUTION
+RARA,RARA,RARE
+LEQUE PRISMÁTICO,LEQUE PRISMÁTICO,PRISMATIC FAN
++1 projétil e +8° de cobertura; o dano total permanece próximo de 125%.,+1 projétil e +8° de cobertura; o dano total permanece próximo de 125%.,+1 projectile and +8° coverage; total damage remains near 125%.
+NÚCLEO DE IMPACTO,NÚCLEO DE IMPACTO,IMPACT CORE
+"ESTILO IMPACTO: projétil maior e muito mais forte, mas 10% mais lento por nível. Bloqueia os outros estilos.","ESTILO IMPACTO: projétil maior e muito mais forte, mas 10% mais lento por nível. Bloqueia os outros estilos.","IMPACT STYLE: a larger, much stronger projectile, but 10% slower per level. Locks out other styles."
+ESTILO DE TIRO • IMPACTO,ESTILO DE TIRO • IMPACTO,SHOT STYLE • IMPACT
+PONTA PERFURANTE,PONTA PERFURANTE,PIERCING TIP
+IMPACTO II: o projétil pesado atravessa +1 inimigo por nível.,IMPACTO II: o projétil pesado atravessa +1 inimigo por nível.,IMPACT II: the heavy projectile pierces +1 enemy per level.
+ESTILO IMPACTO • EVOLUÇÃO,ESTILO IMPACTO • EVOLUÇÃO,IMPACT STYLE • EVOLUTION
+NÚCLEO DE ESTILHAÇOS,NÚCLEO DE ESTILHAÇOS,SHRAPNEL CORE
+ESTILO ESTILHAÇOS: o impacto gera dois fragmentos de 28% do dano; eles não se replicam.,ESTILO ESTILHAÇOS: o impacto gera dois fragmentos de 28% do dano; eles não se replicam.,SHRAPNEL STYLE: impact creates two fragments dealing 28% damage; they do not replicate.
+ESTILO DE TIRO • ESTILHAÇOS,ESTILO DE TIRO • ESTILHAÇOS,SHOT STYLE • SHRAPNEL
+NÚCLEO PREDADOR,NÚCLEO PREDADOR,PREDATOR CORE
+"ESTILO PREDADOR: projéteis perseguem alvos, mas causam somente 88% do dano. Bloqueia os outros estilos.","ESTILO PREDADOR: projéteis perseguem alvos, mas causam somente 88% do dano. Bloqueia os outros estilos.",PREDATOR STYLE: projectiles track targets but deal only 88% damage. Locks out other styles.
+ESTILO DE TIRO • PREDADOR,ESTILO DE TIRO • PREDADOR,SHOT STYLE • PREDATOR
+NÚCLEO DE RICOCHETE,NÚCLEO DE RICOCHETE,RICOCHET CORE
+ESTILO RICOCHETE: projéteis rebatem nas bordas da arena. Bloqueia os outros estilos de tiro.,ESTILO RICOCHETE: projéteis rebatem nas bordas da arena. Bloqueia os outros estilos de tiro.,RICOCHET STYLE: projectiles bounce off arena edges. Locks out other shot styles.
+ESTILO DE TIRO • RICOCHETE,ESTILO DE TIRO • RICOCHETE,SHOT STYLE • RICOCHET
+FORMAÇÃO CONVERGENTE,FORMAÇÃO CONVERGENTE,CONVERGENT FORMATION
+Os projéteis partem separados e convergem à frente. Concentra dano sem bônus oculto.,Os projéteis partem separados e convergem à frente. Concentra dano sem bônus oculto.,Projectiles launch apart and converge ahead. Focuses damage without hidden bonuses.
+ONDA DE IMPACTO,ONDA DE IMPACTO,IMPACT WAVE
+"Projéteis pesados explodem ao acertar, causando dano em área. Cada nível amplia dano e raio.","Projéteis pesados explodem ao acertar, causando dano em área. Cada nível amplia dano e raio.","Heavy projectiles explode on hit, dealing area damage. Each level increases damage and radius."
+RESSONÂNCIA DE BORDA,RESSONÂNCIA DE BORDA,EDGE RESONANCE
+Cada ricochete aumenta em 28% o dano restante do projétil e produz um pulso neon.,Cada ricochete aumenta em 28% o dano restante do projétil e produz um pulso neon.,Each ricochet increases the projectile's remaining damage by 28% and creates a neon pulse.
+ESTILO RICOCHETE • EVOLUÇÃO,ESTILO RICOCHETE • EVOLUÇÃO,RICOCHET STYLE • EVOLUTION
+PREDAÇÃO GRAVITACIONAL,PREDAÇÃO GRAVITACIONAL,GRAVITATIONAL PREDATION
+A mira corrige com mais força e recupera parte da penalidade de dano dos projéteis guiados.,A mira corrige com mais força e recupera parte da penalidade de dano dos projéteis guiados.,Tracking corrects more strongly and recovers part of the guided projectiles' damage penalty.
+ESTILO PREDADOR • EVOLUÇÃO,ESTILO PREDADOR • EVOLUÇÃO,PREDATOR STYLE • EVOLUTION
+ESTILHAÇOS PREDADORES,ESTILHAÇOS PREDADORES,PREDATOR SHRAPNEL
+Fragmentos causam +8% do dano-base e recebem uma correção gravitacional leve.,Fragmentos causam +8% do dano-base e recebem uma correção gravitacional leve.,Fragments deal +8% base damage and gain light gravitational guidance.
+ESTILO ESTILHAÇOS • EVOLUÇÃO,ESTILO ESTILHAÇOS • EVOLUÇÃO,SHRAPNEL STYLE • EVOLUTION
+VETOR OFENSIVO,VETOR OFENSIVO,OFFENSIVE VECTOR
+"Quanto mais rápido a nave se move, maior o dano: até +16% por nível.","Quanto mais rápido a nave se move, maior o dano: até +16% por nível.","The faster the ship moves, the greater the damage: up to +16% per level."
+PASSIVO • PILOTAGEM,PASSIVO • PILOTAGEM,PASSIVE • PILOTING
+CASCO REGENERATIVO,CASCO REGENERATIVO,REGENERATIVE HULL
+"Após 5 s sem sofrer dano, recupera 1,25 de vida por segundo por nível.","Após 5 s sem sofrer dano, recupera 1,25 de vida por segundo por nível.","After 5 seconds without taking damage, restores 1.25 health per second per level."
+PASSIVO • CASCO,PASSIVO • CASCO,PASSIVE • HULL
+PRECISÃO CRÍTICA,PRECISÃO CRÍTICA,CRITICAL PRECISION
++4 pontos percentuais de chance crítica por nível. Base depende da arma.,+4 pontos percentuais de chance crítica por nível. Base depende da arma.,+4 percentage points of critical chance per level. Base chance depends on the weapon.
+COMBATE • CRÍTICO,COMBATE • CRÍTICO,COMBAT • CRITICAL
+IMPACTO CRÍTICO,IMPACTO CRÍTICO,CRITICAL IMPACT
++15 pontos percentuais de dano nos acertos críticos por nível.,+15 pontos percentuais de dano nos acertos críticos por nível.,+15 percentage points of critical-hit damage per level.
+REAÇÃO ADRENAL,REAÇÃO ADRENAL,ADRENAL REACTION
+"Ao sofrer dano, ganha +12% de cadência por nível durante 2,4 segundos.","Ao sofrer dano, ganha +12% de cadência por nível durante 2,4 segundos.","After taking damage, gain +12% fire rate per level for 2.4 seconds."
+PASSIVO • DEFESA,PASSIVO • DEFESA,PASSIVE • DEFENSE
+FLUXO DA HABILIDADE,FLUXO DA HABILIDADE,ABILITY FLOW
+"A habilidade recarrega mais rápido, com bônus menor a cada nível.","A habilidade recarrega mais rápido, com bônus menor a cada nível.","The ability recharges faster, with a smaller bonus at each level."
+HABILIDADE,HABILIDADE,ABILITY
+RESSONÂNCIA ARMADA,RESSONÂNCIA ARMADA,ARMED RESONANCE
+Usar a habilidade sobrecarrega a arma: +25% de dano e cadência temporariamente.,Usar a habilidade sobrecarrega a arma: +25% de dano e cadência temporariamente.,"Using the ability overcharges the weapon, temporarily granting +25% damage and fire rate."
+HABILIDADE + ARMA,HABILIDADE + ARMA,ABILITY + WEAPON
+CONVERSOR DE IMPACTO,CONVERSOR DE IMPACTO,IMPACT CONVERTER
+"Acertos reduzem a recarga em até 0,06 s no total; níveis posteriores rendem menos.","Acertos reduzem a recarga em até 0,06 s no total; níveis posteriores rendem menos.",Hits reduce cooldown by up to 0.06 s total; later levels yield less.
+HABILIDADE + PROJÉTIL,HABILIDADE + PROJÉTIL,ABILITY + PROJECTILE
+NOVA DE ATIVAÇÃO,NOVA DE ATIVAÇÃO,ACTIVATION NOVA
+"Ao usar a habilidade, dispara uma explosão circular de projéteis.","Ao usar a habilidade, dispara uma explosão circular de projéteis.",Using the ability fires a circular burst of projectiles.
+ESCUDO DE FASE,ESCUDO DE FASE,PHASE SHIELD
+"Usar a habilidade concede 0,35 s de invulnerabilidade por nível.","Usar a habilidade concede 0,35 s de invulnerabilidade por nível.",Using the ability grants 0.35 s of invulnerability per level.
+HABILIDADE + CASCO,HABILIDADE + CASCO,ABILITY + HULL
+TEMPESTADE PRISMÁTICA,TEMPESTADE PRISMÁTICA,PRISMATIC STORM
+"SUPERMOD: +1 projétil e +10% de cadência, mas -15% de velocidade dos projéteis.","SUPERMOD: +1 projétil e +10% de cadência, mas -15% de velocidade dos projéteis.","SUPERMOD: +1 projectile and +10% fire rate, but -15% projectile speed."
+SUPERMOD,SUPERMOD,SUPERMOD
+COLAPSO DE SINGULARIDADE,COLAPSO DE SINGULARIDADE,SINGULARITY COLLAPSE
+"SUPERMOD DE IMPACTO: projétil colossal e perfurante ganha atração própria, mas perde 25% de velocidade.","SUPERMOD DE IMPACTO: projétil colossal e perfurante ganha atração própria, mas perde 25% de velocidade.",IMPACT SUPERMOD: a colossal piercing projectile gains its own pull but loses 25% speed.
+REATOR SINCRONIZADO,REATOR SINCRONIZADO,SYNCHRONIZED REACTOR
+"SUPERMOD: a Nova dispara mais projéteis e o overdrive dura o dobro, mas a habilidade recarrega 15% mais devagar.","SUPERMOD: a Nova dispara mais projéteis e o overdrive dura o dobro, mas a habilidade recarrega 15% mais devagar.","SUPERMOD: the Nova fires more projectiles and overdrive lasts twice as long, but the ability recharges 15% slower."
+PÉTALAS EXTRAS,PÉTALAS EXTRAS,EXTRA PETALS
++2 pétalas por disparo. O leque continua curto e cada pétala mantém seu dano.,+2 pétalas por disparo. O leque continua curto e cada pétala mantém seu dano.,+2 petals per shot. The fan remains short and each petal keeps its damage.
+FLORAÇÃO CONCENTRADA,FLORAÇÃO CONCENTRADA,CONCENTRATED BLOOM
+Fecha o cone e aumenta o dano próximo. A distância máxima não aumenta.,Fecha o cone e aumenta o dano próximo. A distância máxima não aumenta.,Narrows the cone and increases close-range damage. Maximum range does not increase.
+CONSTELAÇÃO DE FOGOS,CONSTELAÇÃO DE FOGOS,FIREWORK CONSTELLATION
+"+1 foguete por salva, lançado por um novo ângulo ao redor do alvo.","+1 foguete por salva, lançado por um novo ângulo ao redor do alvo.","+1 rocket per volley, launched from a new angle around the target."
+VIRADA LUMINOSA,VIRADA LUMINOSA,LUMINOUS TURN
+Amplia a explosão e o dano em área de cada fogo do recomeço.,Amplia a explosão e o dano em área de cada fogo do recomeço.,Increases the explosion and area damage of each renewal firework.
+CORRENTEZA CRESCENTE,CORRENTEZA CRESCENTE,RISING CURRENT
+"A carga completa chega 20% mais rápido por nível, sem reduzir o impacto final.","A carga completa chega 20% mais rápido por nível, sem reduzir o impacto final.",Full charge is reached 20% faster per level without reducing final impact.
+MIGRAÇÃO PROFUNDA,MIGRAÇÃO PROFUNDA,DEEP MIGRATION
++1 perfuração e mais dano para o disparo completamente carregado.,+1 perfuração e mais dano para o disparo completamente carregado.,+1 pierce and more damage for a fully charged shot.
+CONTAGEM PREVENTIVA,CONTAGEM PREVENTIVA,SAFETY COUNTDOWN
+O sinalizador detona 1 segundo antes por nível. O tempo mínimo é 2 segundos.,O sinalizador detona 1 segundo antes por nível. O tempo mínimo é 2 segundos.,The flare detonates 1 second earlier per level. Minimum time is 2 seconds.
+SENSOR DE PROXIMIDADE,SENSOR DE PROXIMIDADE,PROXIMITY SENSOR
+DETONADOR RARO: troca o temporizador por uma zona que reage a ameaças próximas.,DETONADOR RARO: troca o temporizador por uma zona que reage a ameaças próximas.,RARE DETONATOR: replaces the timer with a zone that reacts to nearby threats.
+COMANDO DE SEGURANÇA,COMANDO DE SEGURANÇA,SAFETY COMMAND
+DETONADOR RARO: o próximo disparo explode todas as minas armadas; o seguinte instala outra.,DETONADOR RARO: o próximo disparo explode todas as minas armadas; o seguinte instala outra.,RARE DETONATOR: the next shot explodes every armed mine; the following one deploys another.
+JANELA DO PERIÉLIO,JANELA DO PERIÉLIO,PERIHELION WINDOW
+"+2,5 segundos de uso contínuo por nível e reduz o bloqueio após uma sobrecarga.","+2,5 segundos de uso contínuo por nível e reduz o bloqueio após uma sobrecarga.",+2.5 seconds of continuous use per level and shorter lockout after overheating.
+CONVERGÊNCIA SOLAR,CONVERGÊNCIA SOLAR,SOLAR CONVERGENCE
+A curva exponencial alcança o dano máximo 28% mais rápido por nível.,A curva exponencial alcança o dano máximo 28% mais rápido por nível.,The exponential curve reaches maximum damage 28% faster per level.
+NÚCLEO HIPERQUENTE,NÚCLEO HIPERQUENTE,SUPERHEATED CORE
+"Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,2 DPS.","Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,2 DPS.","Raises the beam cap to 10, 20, and 30 DPS while keeping its starting value at 0.2 DPS."
+SOL SEM OCASO,SOL SEM OCASO,SUN WITHOUT SUNSET
+"ULTRARRARA: remove a sobrecarga. Após o limite, o feixe fica vermelho e devolve 1% do próprio DPS ao casco por segundo.","ULTRARRARA: remove a sobrecarga. Após o limite, o feixe fica vermelho e devolve 1% do próprio DPS ao casco por segundo.","ULTRA RARE: removes overheating. Beyond the limit, the beam turns red and deals 1% of its own DPS to the hull each second."
+ULTRARRARA,ULTRARRARA,ULTRA RARE
+CEIFA EM DUPLA,CEIFA EM DUPLA,DOUBLE REAP
+"+1 arco de colheita por disparo, abrindo trajetórias laterais de ida e volta.","+1 arco de colheita por disparo, abrindo trajetórias laterais de ida e volta.","+1 harvest arc per shot, creating side paths on both the outward and return trips."
+COLHEITA COMPLETA,COLHEITA COMPLETA,FULL HARVEST
+"Aumenta o dano, a velocidade de retorno e a capacidade de atravessar inimigos.","Aumenta o dano, a velocidade de retorno e a capacidade de atravessar inimigos.","Increases damage, return speed, and the ability to pierce enemies."
+RAÍZES GÊMEAS,RAÍZES GÊMEAS,TWIN ROOTS
+"+1 raiz subterrânea, emergindo por uma trajetória lateral diferente.","+1 raiz subterrânea, emergindo por uma trajetória lateral diferente.",+1 underground root emerging along a different side path.
+SOLO RENOVADO,SOLO RENOVADO,RENEWED SOIL
+Aumenta o raio e o dano da erupção quando a raiz deixa o solo.,Aumenta o raio e o dano da erupção quando a raiz deixa o solo.,Increases the eruption's radius and damage when the root leaves the ground.
+RODA DE BRASAS,RODA DE BRASAS,EMBER WHEEL
+"+1 brasa de morteiro por disparo, distribuída ao redor da mira.","+1 brasa de morteiro por disparo, distribuída ao redor da mira.","+1 mortar ember per shot, spread around the aim point."
+FOGUEIRA MAIOR,FOGUEIRA MAIOR,GREATER BONFIRE
+Amplia o círculo incendiado e o dano da explosão de cada brasa.,Amplia o círculo incendiado e o dano da explosão de cada brasa.,Expands the burning circle and the explosion damage of each ember.
+CACHO DE MORANGOS,CACHO DE MORANGOS,STRAWBERRY CLUSTER
+"+2 projéteis por rajada, preservando a formação simétrica.","+2 projéteis por rajada, preservando a formação simétrica.",+2 projectiles per burst while preserving the symmetrical formation.
+SEMENTES SILVESTRES,SEMENTES SILVESTRES,WILD SEEDS
++1 semente criada em cada impacto e mais dano no projétil principal.,+1 semente criada em cada impacto e mais dano no projétil principal.,+1 seed created on each impact and more damage for the main projectile.
+NEBLINA VIOLETA,NEBLINA VIOLETA,VIOLET MIST
+"+2 partículas no cone de fevereiro, cobrindo melhor a área próxima.","+2 partículas no cone de fevereiro, cobrindo melhor a área próxima.","+2 particles in the February cone, providing better nearby coverage."
+CUIDADO CONTÍNUO,CUIDADO CONTÍNUO,CONTINUOUS CARE
+Os impactos desaceleram o inimigo por mais tempo e causam mais dano.,Os impactos desaceleram o inimigo por mais tempo e causam mais dano.,Impacts slow the enemy for longer and deal more damage.
+JARDIM EM FLORAÇÃO,JARDIM EM FLORAÇÃO,BLOOMING GARDEN
++2 pétalas orbitais por nível antes do ataque conjunto.,+2 pétalas orbitais por nível antes do ataque conjunto.,+2 orbital petals per level before the combined attack.
+DESABROCHAR CONJUNTO,DESABROCHAR CONJUNTO,SYNCHRONIZED BLOOM
+As pétalas orbitam por menos tempo e avançam com mais dano.,As pétalas orbitam por menos tempo e avançam com mais dano.,Petals orbit for less time and launch with more damage.
+NEVASCA,NEVASCA,BLIZZARD
+"Ao romper após cinco camadas, o alvo libera uma onda de 250 px que aplica duas camadas de gelo aos inimigos próximos.","Ao romper após cinco camadas, o alvo libera uma onda de 250 px que aplica duas camadas de gelo aos inimigos próximos.","When it shatters after five stacks, the target releases a 250 px wave that applies two frost stacks to nearby enemies."
+ABAIXO DE ZERO,ABAIXO DE ZERO,BELOW ZERO
+ULTRARRARA: o congelamento total dura 5 segundos e irradia uma camada de gelo por segundo em 250 px.,ULTRARRARA: o congelamento total dura 5 segundos e irradia uma camada de gelo por segundo em 250 px.,ULTRA RARE: full freeze lasts 5 seconds and radiates one frost stack per second within 250 px.
+O modelo clássico do Chromatic Void. Disponível gratuitamente para todos os pilotos.,O modelo clássico do Chromatic Void. Disponível gratuitamente para todos os pilotos.,The classic Chromatic Void ship. Available free to every pilot.
+MODELO • PADRÃO,MODELO • PADRÃO,MODEL • DEFAULT
+O visual original da nave permanece selecionado por padrão.,O visual original da nave permanece selecionado por padrão.,The ship's original appearance remains selected by default.
+"Uma variação triangular de três pontas, compacta e próxima da silhueta clássica.","Uma variação triangular de três pontas, compacta e próxima da silhueta clássica.",A compact three-pointed triangular variant close to the classic silhouette.
+MODELO • DELTA,MODELO • DELTA,MODEL • DELTA
+"Inspirada nas naves triangulares da referência, simplificada para o traço geométrico do jogo.","Inspirada nas naves triangulares da referência, simplificada para o traço geométrico do jogo.",Inspired by the reference's triangular ships and simplified for the game's geometric style.
+"Asas curtas ao redor de um núcleo hexagonal, mantendo direção e leitura imediatas.","Asas curtas ao redor de um núcleo hexagonal, mantendo direção e leitura imediatas.",Short wings around a hexagonal core preserve clear direction and instant readability.
+MODELO • ORBITAL,MODELO • ORBITAL,MODEL • ORBITAL
+Reinterpreta o modelo triangular com núcleo circular visto na referência.,Reinterpreta o modelo triangular com núcleo circular visto na referência.,Reinterprets the triangular model with a circular core seen in the reference.
+"Uma nave alongada, simples e estreita, com o mesmo volume visual do modelo padrão.","Uma nave alongada, simples e estreita, com o mesmo volume visual do modelo padrão.","A long, simple, narrow ship with the same visual weight as the default model."
+MODELO • DARDO,MODELO • DARDO,MODEL • DART
+Derivada das pequenas naves em forma de seta da referência.,Derivada das pequenas naves em forma de seta da referência.,Derived from the small arrow-shaped ships in the reference.
+Asas recuadas e nariz curto formam uma alternativa ágil sem mudar a jogabilidade.,Asas recuadas e nariz curto formam uma alternativa ágil sem mudar a jogabilidade.,Swept-back wings and a short nose create an agile alternative without changing gameplay.
+MODELO • INTERCEPTOR,MODELO • INTERCEPTOR,MODEL • INTERCEPTOR
+Combina as asas curvas e pontudas mais próximas da nave padrão.,Combina as asas curvas e pontudas mais próximas da nave padrão.,"Combines curved, pointed wings closest to the default ship."
+"Chassi arredondado e estrelado, alegre e compacto, sem alterar a colisão ou os atributos.","Chassi arredondado e estrelado, alegre e compacto, sem alterar a colisão ou os atributos.","A cheerful, compact, rounded star chassis that does not change collision or attributes."
+MODELO • ESTELAR,MODELO • ESTELAR,MODEL • STELLAR
+Uma nave original inspirada em aventuras espaciais coloridas e formas simples.,Uma nave original inspirada em aventuras espaciais coloridas e formas simples.,An original ship inspired by colorful space adventures and simple shapes.
+MODELO K,MODELO K,MODEL K
+Uma estrela pilotável. A nave inteira acompanha a paleta escolhida.,Uma estrela pilotável. A nave inteira acompanha a paleta escolhida.,A pilotable star. The entire ship follows the selected palette.
+MODELO • K,MODELO • K,MODEL • K
+"O contorno da estrela enviada virou uma nave original, leve e legível.","O contorno da estrela enviada virou uma nave original, leve e legível.","The submitted star outline became an original, light, readable ship."
+MODELO • SPECTRUM,MODELO • SPECTRUM,MODEL • SPECTRUM
+Uma homenagem ao primeiro jogador à atingir o combo de 213x. Inclui rastro arco-íris exclusivo.,Uma homenagem ao primeiro jogador à atingir o combo de 213x. Inclui rastro arco-íris exclusivo.,A tribute to the first player to reach a 213x combo. Includes an exclusive rainbow trail.
+MODELO • FSPEED,MODELO • FSPEED,MODEL • FSPEED
+Uma homenagem ao primeiro jogadora zerar o jogo com a marca de 75 milhões de pontos. Inclui rastro de pneus exclusivo.,Uma homenagem ao primeiro jogadora zerar o jogo com a marca de 75 milhões de pontos. Inclui rastro de pneus exclusivo.,A tribute to the first player to complete the game with 75 million points. Includes an exclusive tire trail.
+Mantém o propulsor luminoso original da nave.,Mantém o propulsor luminoso original da nave.,Keeps the ship's original glowing thruster.
+RASTRO • PADRÃO,RASTRO • PADRÃO,TRAIL • DEFAULT
+O rastro clássico permanece gratuito e pode ser restaurado a qualquer momento.,O rastro clássico permanece gratuito e pode ser restaurado a qualquer momento.,The classic trail remains free and can be restored at any time.
+Deixa pequenas estrelas da mesma cor da nave enquanto o Modelo O acelera.,Deixa pequenas estrelas da mesma cor da nave enquanto o Modelo O acelera.,Leaves small stars matching the ship's color while Model O accelerates.
+RASTRO • EXCLUSIVO,RASTRO • EXCLUSIVO,TRAIL • EXCLUSIVE
+Este rastro acompanha gratuitamente o Modelo O e não pode ser usado por outros modelos.,Este rastro acompanha gratuitamente o Modelo O e não pode ser usado por outros modelos.,This trail comes free with Model O and cannot be used by other models.
+"Sete faixas suaves formam um rastro arco-íris contínuo, sem pixelização.","Sete faixas suaves formam um rastro arco-íris contínuo, sem pixelização.",Seven smooth bands form a continuous rainbow trail without pixelation.
+"Recompensa inseparável do Spectrum, inspirada em rastros de arco-íris, mas redesenhada no neon do jogo.","Recompensa inseparável do Spectrum, inspirada em rastros de arco-íris, mas redesenhada no neon do jogo.",An inseparable Spectrum reward inspired by rainbow trails and redesigned in the game's neon style.
+Duas marcas intermitentes de pneu acompanham as curvas e a cor da nave.,Duas marcas intermitentes de pneu acompanham as curvas e a cor da nave.,Two intermittent tire marks follow the ship's turns and color.
+"Rastro exclusivo do Fspeed, com marcas suaves de corrida em vez de partículas genéricas.","Rastro exclusivo do Fspeed, com marcas suaves de corrida em vez de partículas genéricas.",Fspeed's exclusive trail uses smooth racing marks instead of generic particles.
+"Troca a paleta principal da nave sem alterar atributos. No Modelo O, colore a estrela e seu rastro.","Troca a paleta principal da nave sem alterar atributos. No Modelo O, colore a estrela e seu rastro.","Changes the ship's main palette without altering attributes. On Model O, it colors the star and its trail."
+COR • PALETA,COR • PALETA,COLOR • PALETTE
+MODO DESENVOLVEDOR • CATÁLOGO LIBERADO • + adiciona moeda de teste,MODO DESENVOLVEDOR • CATÁLOGO LIBERADO • + adiciona moeda de teste,DEVELOPER MODE • CATALOG UNLOCKED • + adds test currency
+DEV: adicionar 1.000 cristais,DEV: adicionar 1.000 cristais,"DEV: add 1,000 crystals"
+"LIGAÇÃO COM MONTHLY COLORS
+%s
+%s","LIGAÇÃO COM MONTHLY COLORS
+%s
+%s","MONTHLY COLORS CONNECTION
+%s
+%s"
+BLOQUEADA POR CONQUISTA,BLOQUEADA POR CONQUISTA,LOCKED BY ACHIEVEMENT
+Crítico: %d%% de chance • %d%% do dano.,Crítico: %d%% de chance • %d%% do dano.,Critical: %d%% chance • %d%% damage.
+EXCLUSIVO DO MODELO,EXCLUSIVO DO MODELO,MODEL EXCLUSIVE
+USAR PADRÃO,USAR PADRÃO,USE DEFAULT
+BLOQUEADO • CONQUISTA SECRETA,BLOQUEADO • CONQUISTA SECRETA,LOCKED • SECRET ACHIEVEMENT
+ESSA É A HABILIDADE PADRÃO,ESSA É A HABILIDADE PADRÃO,THIS IS THE DEFAULT ABILITY
+HABILIDADE DESEQUIPADA • RETROCESSO RESTAURADO,HABILIDADE DESEQUIPADA • RETROCESSO RESTAURADO,ABILITY UNEQUIPPED • REWIND RESTORED
+CRISTAIS INSUFICIENTES,CRISTAIS INSUFICIENTES,NOT ENOUGH CRYSTALS
+%s DESBLOQUEADA,%s DESBLOQUEADA,%s UNLOCKED
+EQUIPADA PELO MODO DESENVOLVEDOR,EQUIPADA PELO MODO DESENVOLVEDOR,EQUIPPED BY DEVELOPER MODE
+ESSA PERSONALIZAÇÃO CHEGARÁ EM BREVE,ESSA PERSONALIZAÇÃO CHEGARÁ EM BREVE,THIS CUSTOMIZATION IS COMING SOON
+%s DESEQUIPADO • EQUIPAMENTO PADRÃO RESTAURADO,%s DESEQUIPADO • EQUIPAMENTO PADRÃO RESTAURADO,%s UNEQUIPPED • DEFAULT EQUIPMENT RESTORED
+%s DESBLOQUEADO,%s DESBLOQUEADO,%s UNLOCKED
+EQUIPE O MODELO CORRESPONDENTE PARA USAR ESTE RASTRO,EQUIPE O MODELO CORRESPONDENTE PARA USAR ESTE RASTRO,EQUIP THE MATCHING MODEL TO USE THIS TRAIL
+CONQUISTA SECRETA AINDA NÃO DESBLOQUEADA,CONQUISTA SECRETA AINDA NÃO DESBLOQUEADA,SECRET ACHIEVEMENT NOT YET UNLOCKED
+VISUAL PADRÃO RESTAURADO,VISUAL PADRÃO RESTAURADO,DEFAULT APPEARANCE RESTORED
++1.000 CRISTAIS DE TESTE,+1.000 CRISTAIS DE TESTE,"+1,000 TEST CRYSTALS"
+RITMO INTENSO,RITMO INTENSO,INTENSE RHYTHM
+"+12% de ataque e +0,18 de dano dos rastros.","+12% de ataque e +0,18 de dano dos rastros.",+12% attack and +0.18 trail damage.
+BLOCO SEM FIM,BLOCO SEM FIM,ENDLESS PARADE
++1 segundo de duração.,+1 segundo de duração.,+1 second duration.
+PASSARELA NEON,PASSARELA NEON,NEON RUNWAY
++8 de raio para os rastros de dano.,+8 de raio para os rastros de dano.,+8 damage-trail radius.
+IMPACTO CINÉTICO,IMPACTO CINÉTICO,KINETIC IMPACT
++2 de dano ao atravessar inimigos.,+2 de dano ao atravessar inimigos.,+2 damage when passing through enemies.
+ROTA ESTENDIDA,ROTA ESTENDIDA,EXTENDED ROUTE
+"+0,08 s de duração e +8% de velocidade.","+0,08 s de duração e +8% de velocidade.",+0.08 s duration and +8% speed.
+VETOR PRONTO,VETOR PRONTO,VECTOR READY
+Recarga 12% mais rápida.,Recarga 12% mais rápida.,12% faster cooldown.
+GEMA RESTAURADORA,GEMA RESTAURADORA,RESTORATIVE GEM
++8 de cura no resultado restaurador.,+8 de cura no resultado restaurador.,+8 healing from the restorative outcome.
+PINTINHO ARMADO,PINTINHO ARMADO,ARMED CHICK
++25% de dano do ajudante.,+25% de dano do ajudante.,+25% helper damage.
+CASCA RESISTENTE,CASCA RESISTENTE,HARD SHELL
+"+1,5 segundo de duração do ajudante.","+1,5 segundo de duração do ajudante.",+1.5 seconds of helper duration.
+VINHAS VORAZES,VINHAS VORAZES,VORACIOUS VINES
+Cria vinhas 18% mais rápido quando há alvos.,Cria vinhas 18% mais rápido quando há alvos.,Creates vines 18% faster when targets are present.
+SEMENTES EXPLOSIVAS,SEMENTES EXPLOSIVAS,EXPLOSIVE SEEDS
+Flores destruídas espalham seis pétalas perfurantes.,Flores destruídas espalham seis pétalas perfurantes.,Destroyed flowers scatter six piercing petals.
+PRIMAVERA LONGA,PRIMAVERA LONGA,LONG SPRING
+"+0,75 segundo infectando inimigos próximos.","+0,75 segundo infectando inimigos próximos.",+0.75 seconds infecting nearby enemies.
+JARDIM PROFUNDO,JARDIM PROFUNDO,DEEP GARDEN
+"+1 raiz simultânea, até o limite de cinco.","+1 raiz simultânea, até o limite de cinco.","+1 simultaneous root, up to a maximum of five."
+FOLHAS CORTANTES,FOLHAS CORTANTES,CUTTING LEAVES
+"+1,25 de dano por folha.","+1,25 de dano por folha.",+1.25 damage per leaf.
+FRENTE VERDE,FRENTE VERDE,GREEN FRONT
++1 segundo de chuva diagonal.,+1 segundo de chuva diagonal.,+1 second of diagonal rain.
+VENTO PENETRANTE,VENTO PENETRANTE,PIERCING WIND
+Cada folha atravessa mais um inimigo.,Cada folha atravessa mais um inimigo.,Each leaf pierces one more enemy.
+ACOLHIMENTO,ACOLHIMENTO,WARM EMBRACE
++8 de cura imediata.,+8 de cura imediata.,+8 immediate healing.
+CUIDADO DURADOURO,CUIDADO DURADOURO,LASTING CARE
++1 segundo de resistência.,+1 segundo de resistência.,+1 second of resistance.
+PROTEÇÃO MATERNA,PROTEÇÃO MATERNA,MATERNAL PROTECTION
+Recebe mais 8% de redução de dano.,Recebe mais 8% de redução de dano.,Gain 8% more damage reduction.
+BRASA VIVA,BRASA VIVA,LIVING EMBER
++1 de dano por segundo.,+1 de dano por segundo.,+1 damage per second.
+FOGO ALIMENTADO,FOGO ALIMENTADO,FED FLAME
+"+1,5 segundo de duração.","+1,5 segundo de duração.",+1.5 seconds duration.
+RODA DA FOGUEIRA,RODA DA FOGUEIRA,BONFIRE WHEEL
++18 de raio da zona ardente.,+18 de raio da zona ardente.,+18 burning-zone radius.
+PERCEPÇÃO EXPANDIDA,PERCEPÇÃO EXPANDIDA,EXPANDED PERCEPTION
+"+0,6 segundo de duração real.","+0,6 segundo de duração real.",+0.6 seconds of real-time duration.
+MUNDO EM DETALHES,MUNDO EM DETALHES,WORLD IN DETAIL
+Desacelera o mundo mais 12%.,Desacelera o mundo mais 12%.,Slows the world by an additional 12%.
+CLAREZA RENOVADA,CLAREZA RENOVADA,RENEWED CLARITY
+PULSO DE POTÊNCIA,PULSO DE POTÊNCIA,POWER PULSE
++2 de dano da onda.,+2 de dano da onda.,+2 wave damage.
+ANEL EXPANSIVO,ANEL EXPANSIVO,EXPANDING RING
++30 de raio da onda.,+30 de raio da onda.,+30 wave radius.
+RESSONÂNCIA,RESSONÂNCIA,RESONANCE
+"+0,2 s de atordoamento e +100 de empurrão.","+0,2 s de atordoamento e +100 de empurrão.",+0.2 s stun and +100 knockback.
+MEMÓRIA AMPLIADA,MEMÓRIA AMPLIADA,EXPANDED MEMORY
++30 estados registrados para voltar mais longe.,+30 estados registrados para voltar mais longe.,+30 recorded states to rewind farther.
+SEGUNDA CHANCE,SEGUNDA CHANCE,SECOND CHANCE
++8 de cura ao concluir o retorno.,+8 de cura ao concluir o retorno.,+8 healing when the rewind completes.
+ATALHO TEMPORAL,ATALHO TEMPORAL,TEMPORAL SHORTCUT
+BARREIRA REFORÇADA,BARREIRA REFORÇADA,REINFORCED BARRIER
++15 de resistência do escudo.,+15 de resistência do escudo.,+15 shield strength.
+PREVENÇÃO CONTÍNUA,PREVENÇÃO CONTÍNUA,CONTINUOUS PREVENTION
+"+1,2 segundo de duração.","+1,2 segundo de duração.",+1.2 seconds duration.
+RESPOSTA PREVENTIVA,RESPOSTA PREVENTIVA,PREVENTIVE RESPONSE
+DRENAGEM PROFUNDA,DRENAGEM PROFUNDA,DEEP DRAIN
++6 de dano roubado do alvo.,+6 de dano roubado do alvo.,+6 damage drained from the target.
+VEIA CROMÁTICA,VEIA CROMÁTICA,CHROMATIC VEIN
++55 de alcance para escolher o inimigo.,+55 de alcance para escolher o inimigo.,+55 range when selecting an enemy.
+CICLO VITAL,CICLO VITAL,LIFE CYCLE
++12% do dano convertido em cura.,+12% do dano convertido em cura.,+12% of damage converted into healing.
+RESPIRAÇÃO SERENA,RESPIRAÇÃO SERENA,SERENE BREATHING
+"+1,5 de regeneração por segundo.","+1,5 de regeneração por segundo.",+1.5 regeneration per second.
+PAUSA CONSCIENTE,PAUSA CONSCIENTE,MINDFUL PAUSE
+MENTE PROTEGIDA,MENTE PROTEGIDA,PROTECTED MIND
+Recebe mais 7% de redução de dano.,Recebe mais 7% de redução de dano.,Gain 7% more damage reduction.
+INICIAR PARTIDA,INICIAR PARTIDA,START MATCH
+JOGAR SOLO,JOGAR SOLO,PLAY SOLO
+MULTIPLAYER,MULTIPLAYER,MULTIPLAYER
+VOLTAR,VOLTAR,BACK
+Jogue com outro piloto na mesma rede Wi-Fi ou informe o IP manualmente.,Jogue com outro piloto na mesma rede Wi-Fi ou informe o IP manualmente.,Play with another pilot on the same Wi-Fi network or enter the IP manually.
+CRIAR LOBBY,CRIAR LOBBY,CREATE LOBBY
+ENTRAR POR IP,ENTRAR POR IP,JOIN BY IP
+ENTRAR,ENTRAR,JOIN
+ENTRAR NO LOBBY,ENTRAR NO LOBBY,JOIN LOBBY
+CONECTAR,CONECTAR,CONNECT
+LOBBY,LOBBY,LOBBY
+SAIR DO LOBBY,SAIR DO LOBBY,LEAVE LOBBY
+RENASCIMENTO EM %.1f s  •  %d PILOTO(S) AINDA EM COMBATE,RENASCIMENTO EM %.1f s  •  %d PILOTO(S) AINDA EM COMBATE,REVIVAL IN %.1f s  •  %d PILOT(S) STILL FIGHTING
+ESCOLHA O PRÓXIMO SETOR,ESCOLHA O PRÓXIMO SETOR,CHOOSE THE NEXT SECTOR
+"O primeiro setor foi concluído. A próxima escolha define inimigos, paleta e boss.","O primeiro setor foi concluído. A próxima escolha define inimigos, paleta e boss.","The first sector is complete. Your next choice defines its enemies, palette, and boss."
+CICLO DE SETORES CONCLUÍDO,CICLO DE SETORES CONCLUÍDO,SECTOR CYCLE COMPLETE
+Todos os cinco bosses foram derrotados sem repetir setores.,Todos os cinco bosses foram derrotados sem repetir setores.,All five bosses were defeated without repeating sectors.
+PONTUAÇÃO %s,PONTUAÇÃO %s,SCORE %s
+A tentativa foi concluída.,A tentativa foi concluída.,The run is complete.
+SEM TECLA,SEM TECLA,UNBOUND
+MUDO,MUDO,MUTED
+SEM LIMITE,SEM LIMITE,UNLIMITED
+AÇÃO,AÇÃO,ACTION
+SLOT 1,SLOT 1,SLOT 1
+SLOT 2,SLOT 2,SLOT 2
+SLOT 3,SLOT 3,SLOT 3
+BOTÃO %d,BOTÃO %d,BUTTON %d
+EIXO %d,EIXO %d,AXIS %d
+DEV LIBERADA,DEV LIBERADA,DEV UNLOCKED
+★ CONQUISTA,★ CONQUISTA,★ ACHIEVEMENT
+★ CONQUISTA SECRETA,★ CONQUISTA SECRETA,★ SECRET ACHIEVEMENT
+RECOMPENSA OBTIDA,RECOMPENSA OBTIDA,REWARD OBTAINED
+CONQUISTA • %d/%d,CONQUISTA • %d/%d,ACHIEVEMENT • %d/%d
+CONQUISTA: %s,CONQUISTA: %s,ACHIEVEMENT: %s
+Continue jogando para desbloquear.,Continue jogando para desbloquear.,Keep playing to unlock.
+ESTILO DE TIRO,ESTILO DE TIRO,SHOT STYLE
+DETONADOR DA MINA,DETONADOR DA MINA,MINE DETONATOR
+PRISMA,PRISMA,PRISM
+PREDADOR,PREDADOR,PREDATOR
+RICOCHETE,RICOCHETE,RICOCHET
+IMPACTO PESADO,IMPACTO PESADO,HEAVY IMPACT
+ESTILHAÇOS,ESTILHAÇOS,SHRAPNEL
+TEMPESTADE,TEMPESTADE,STORM
+SINGULARIDADE,SINGULARIDADE,SINGULARITY
+REATOR,REATOR,REACTOR
+PROXIMIDADE,PROXIMIDADE,PROXIMITY
+COMANDO REMOTO,COMANDO REMOTO,REMOTE COMMAND
+LIVRE,LIVRE,FREE
+%s   •   %d MELHORIA(S) PRÓPRIA(S),%s   •   %d MELHORIA(S) PRÓPRIA(S),%s   •   %d UNIQUE UPGRADE(S)
+ESTILO DE TIRO: %s   •   SUPERMOD: %s,ESTILO DE TIRO: %s   •   SUPERMOD: %s,SHOT STYLE: %s   •   SUPERMOD: %s
+ROTA: %s • %s,ROTA: %s • %s,PATH: %s • %s
+EXCLUSIVO DA ARMA EQUIPADA,EXCLUSIVO DA ARMA EQUIPADA,EXCLUSIVE TO EQUIPPED WEAPON
+EXCLUSIVO DA HABILIDADE EQUIPADA,EXCLUSIVO DA HABILIDADE EQUIPADA,EXCLUSIVE TO EQUIPPED ABILITY
+SEM PRÉ-REQUISITOS,SEM PRÉ-REQUISITOS,NO PREREQUISITES
+REQUER: %s,REQUER: %s,REQUIRES: %s
+ARMA PADRÃO,ARMA PADRÃO,DEFAULT WEAPON
+LUA DA SIZÍGIA,LUA DA SIZÍGIA,MOON OF SYZYGY
+SOL DA SIZÍGIA,SOL DA SIZÍGIA,SUN OF SYZYGY
+SIZÍGIA ETERNA — ECLIPSE ABSOLUTO,SIZÍGIA ETERNA — ECLIPSE ABSOLUTO,ETERNAL SYZYGY — ABSOLUTE ECLIPSE
+"MARÉS, CRATERAS E A FACE OCULTA","MARÉS, CRATERAS E A FACE OCULTA","TIDES, CRATERS, AND THE FAR SIDE"
+CORONA INCANDESCENTE — QUEIMADURA NÃO ACUMULA,CORONA INCANDESCENTE — QUEIMADURA NÃO ACUMULA,BLAZING CORONA — BURN DOES NOT STACK
+TOTALIDADE — SOBREVIVA À UNIÃO DOS ASTROS,TOTALIDADE — SOBREVIVA À UNIÃO DOS ASTROS,TOTALITY — SURVIVE THE UNION OF THE CELESTIAL BODIES
+PET-0: O RESÍDUO ETERNO,PET-0: O RESÍDUO ETERNO,PET-0: THE ETERNAL REMNANT
+CAOS PRIMAVERIL,CAOS PRIMAVERIL,SPRING CHAOS
+SIZÍGIA ETERNA,SIZÍGIA ETERNA,ETERNAL SYZYGY
+ANOMALIA DO VAZIO,ANOMALIA DO VAZIO,VOID ANOMALY
+ESCUDO  •  -52% DANO,ESCUDO  •  -52% DANO,SHIELD  •  -52% DAMAGE
+ELO  •  DANO COMPARTILHADO,ELO  •  DANO COMPARTILHADO,BOND  •  SHARED DAMAGE
+NÓ  •  RESISTÊNCIA,NÓ  •  RESISTÊNCIA,KNOT  •  RESISTANCE
+FORMAÇÃO ORBITAL,FORMAÇÃO ORBITAL,ORBITAL FORMATION
+✦  SINAL DO VAZIO RECEBIDO  ✦,✦  SINAL DO VAZIO RECEBIDO  ✦,✦  VOID SIGNAL RECEIVED  ✦
+"Se o Android perguntar, permita instalar desta fonte. Escolha Atualizar e não desinstale o jogo.","Se o Android perguntar, permita instalar desta fonte. Escolha Atualizar e não desinstale o jogo.","If Android asks, allow installation from this source. Choose Update and do not uninstall the game."
+0%  •  preparando,0%  •  preparando,0%  •  preparing
+ATUALIZAR AGORA,ATUALIZAR AGORA,UPDATE NOW
+Nenhum controle conectado.,Nenhum controle conectado.,No controller connected.
+Não foi possível iniciar o download da atualização.,Não foi possível iniciar o download da atualização.,Could not start the update download.
+Falha ao baixar a atualização (HTTP %d).,Falha ao baixar a atualização (HTTP %d).,Failed to download the update (HTTP %d).
+O arquivo baixado não foi encontrado.,O arquivo baixado não foi encontrado.,The downloaded file was not found.
+A verificação de integridade da atualização falhou.,A verificação de integridade da atualização falhou.,The update integrity check failed.
+Updater.exe não foi encontrado ao lado do jogo.,Updater.exe não foi encontrado ao lado do jogo.,Updater.exe was not found beside the game.
+A pasta do jogo não permite alterações. Mova o jogo para uma pasta do seu usuário.,A pasta do jogo não permite alterações. Mova o jogo para uma pasta do seu usuário.,The game folder does not allow changes. Move the game to a folder owned by your user account.
+Não foi possível iniciar o atualizador do Windows.,Não foi possível iniciar o atualizador do Windows.,Could not start the Windows updater.
+LABORATÓRIO DE TESTES,LABORATÓRIO DE TESTES,TEST LABORATORY
+Somente modo desenvolvedor • F10 ou L3+R3 • ESC volta ao jogo,Somente modo desenvolvedor • F10 ou L3+R3 • ESC volta ao jogo,Developer mode only • F10 or L3+R3 • ESC returns to the game
+PROGRESSÃO E ESTADO,PROGRESSÃO E ESTADO,PROGRESSION AND STATE
++1 PONTO,+1 PONTO,+1 POINT
++1 NÍVEL,+1 NÍVEL,+1 LEVEL
++5 NÍVEIS,+5 NÍVEIS,+5 LEVELS
+CURAR,CURAR,HEAL
+INVULNERÁVEL,INVULNERÁVEL,INVULNERABLE
+PAUSAR SPAWNS,PAUSAR SPAWNS,PAUSE SPAWNS
+LIMPAR ARENA,LIMPAR ARENA,CLEAR ARENA
+REINICIAR,REINICIAR,RESTART
+INVOCAR BOSS PARA TESTE,INVOCAR BOSS PARA TESTE,SUMMON BOSS FOR TESTING
+FLOR,FLOR,FLOWER
+SIZÍGIA,SIZÍGIA,SYZYGY
+AMPARO,AMPARO,CARE
+AMETISTA,AMETISTA,AMETHYST
+PAUSADOS,PAUSADOS,PAUSED
+ATIVOS,ATIVOS,ACTIVE
+%s  •  LVL %d  •  PONTOS %d  •  INVULN %s  •  SPAWNS %s,%s  •  LVL %d  •  PONTOS %d  •  INVULN %s  •  SPAWNS %s,%s  •  LVL %d  •  POINTS %d  •  INVULN %s  •  SPAWNS %s
+Painel de testes ativo,Painel de testes ativo,Test panel active
+Ponto concedido,Ponto concedido,Point granted
+Nível ajustado,Nível ajustado,Level adjusted
+Casco restaurado,Casco restaurado,Hull restored
+Invulnerabilidade alternada,Invulnerabilidade alternada,Invulnerability toggled
+Spawns alternados,Spawns alternados,Spawns toggled
+Arena limpa,Arena limpa,Arena cleared
+%s DESCONECTOU • A PARTIDA CONTINUA,%s DESCONECTOU • A PARTIDA CONTINUA,%s DISCONNECTED • THE MATCH CONTINUES
+APENAS O HOST PODE REINICIAR A PARTIDA,APENAS O HOST PODE REINICIAR A PARTIDA,ONLY THE HOST CAN RESTART THE MATCH
+CONSTRUÇÃO ATUAL,CONSTRUÇÃO ATUAL,CURRENT BUILD
+Os criadores deste jogo estão juntos há mais de 1 ano,Os criadores deste jogo estão juntos há mais de 1 ano,The creators of this game have been together for over a year
+OUT • HALLOWEEN,OUT • HALLOWEEN,OCT • HALLOWEEN
+Uma brincadeira visual inspirada no Dia da Mentira.,Uma brincadeira visual inspirada no Dia da Mentira.,A visual prank inspired by April Fools' Day.
+Maio • origem do nome e Maia,Maio • origem do nome e Maia,May • name origin and Maia
+"Cria uma barreira lilás que absorve 48 pontos de dano durante 7 segundos. No Monthly Colors, Março Lilás representa prevenção ao câncer do colo do útero por meio de informação, vacina contra HPV e exames; o escudo transforma essa ideia de prevenção em proteção direta.","Cria uma barreira lilás que absorve 48 pontos de dano durante 7 segundos. No Monthly Colors, Março Lilás representa prevenção ao câncer do colo do útero por meio de informação, vacina contra HPV e exames; o escudo transforma essa ideia de prevenção em proteção direta.","Creates a purple barrier that absorbs 48 damage for 7 seconds. In Monthly Colors, Purple March represents cervical cancer prevention through information, HPV vaccination, and screening; the shield turns that idea of prevention into direct protection."
+ABR • DIA DA TERRA,ABR • DIA DA TERRA,APR • EARTH DAY
+"A Lua do Esturjão, apresentada no card de agosto, inspira um disparo profundo que avança como correnteza.","A Lua do Esturjão, apresentada no card de agosto, inspira um disparo profundo que avança como correnteza.",The Sturgeon Moon featured on the August card inspires a deep shot that moves like a current.
+Recupera 32 de vida e reduz temporariamente o dano recebido. O Monthly Colors marca o Dia das Mães no calendário de maio e apresenta o mês pelas ideias de proteção e cuidado; a habilidade traduz esse acolhimento em cura e resistência.,Recupera 32 de vida e reduz temporariamente o dano recebido. O Monthly Colors marca o Dia das Mães no calendário de maio e apresenta o mês pelas ideias de proteção e cuidado; a habilidade traduz esse acolhimento em cura e resistência.,Restores 32 health and temporarily reduces incoming damage. Monthly Colors marks Mother's Day in May through ideas of protection and care; the ability translates that welcome into healing and resistance.
+Maio Amarelo • prevenção de acidentes,Maio Amarelo • prevenção de acidentes,May Amarelo • accident prevention
+A cor clássica do Chromatic Void.,A cor clássica do Chromatic Void.,The classic color of Chromatic Void.
+ABR • LUA ROSA,ABR • LUA ROSA,APR • PINK MOON
+Outubro • Halloween,Outubro • Halloween,October • Halloween
+Julho Verde • cuidado e recomeço,Julho Verde • cuidado e recomeço,July Verde • care and renewal
+JUN • AMBIENTE,JUN • AMBIENTE,JUN • ENVIRONMENT
+JUN • LUA DE MORANGO,JUN • LUA DE MORANGO,JUN • STRAWBERRY MOON
+UPGRADE • EXPERIÊNCIA,UPGRADE • EXPERIÊNCIA,UPGRADE • EXPERIENCE
+Um tom neon ligado às campanhas roxas do calendário.,Um tom neon ligado às campanhas roxas do calendário.,A neon hue tied to the calendar's purple campaigns.
+Setembro Amarelo • rede de apoio,Setembro Amarelo • rede de apoio,September Amarelo • support network
+A fita VHS guarda registros; rebobiná-la simboliza revisitar memórias. O site apresenta o Alzheimer entre as causas do Fevereiro Roxo.,A fita VHS guarda registros; rebobiná-la simboliza revisitar memórias. O site apresenta o Alzheimer entre as causas do Fevereiro Roxo.,The VHS tape stores records; rewinding it symbolizes revisiting memories. The site features Alzheimer's among the Purple February causes.
+Abril • Lua Rosa,Abril • Lua Rosa,April • Pink Moon
+Março e setembro • equinócios,Março e setembro • equinócios,March and September • equinoxes
+Julho • Lua dos Cervos,Julho • Lua dos Cervos,July • Buck Moon
+Janeiro • fogos e Ano-Novo,Janeiro • fogos e Ano-Novo,January • fireworks and New Year
+Janeiro • origem do nome e Janus,Janeiro • origem do nome e Janus,January • name origin and Janus
+LUA DO LOBO,LUA DO LOBO,WOLF MOON
+Agosto Dourado • proteção à vida,Agosto Dourado • proteção à vida,August Dourado • protection of life
+Agosto Lilás • enfrentamento à violência,Agosto Lilás • enfrentamento à violência,August Purple • fighting violence
+JAN • JANUS,JAN • JANUS,JAN • JANUS
+Agosto Dourado • proteção e cuidado,Agosto Dourado • proteção e cuidado,August Dourado • protection and care
+MAR • ÁGUA,MAR • ÁGUA,MAR • WATER
+O fluxo entre inimigo e jogador remete à circulação e à importância da doação de sangue apresentada pelo site.,O fluxo entre inimigo e jogador remete à circulação e à importância da doação de sangue apresentada pelo site.,The flow between enemy and player evokes circulation and the importance of blood donation presented on the site.
+LUA DE MORANGO,LUA DE MORANGO,STRAWBERRY MOON
+A relação está no respeito às diferentes percepções de mundo; a habilidade não associa capacidades especiais a pessoas autistas.,A relação está no respeito às diferentes percepções de mundo; a habilidade não associa capacidades especiais a pessoas autistas.,The connection lies in respecting different perceptions of the world; the ability does not associate special powers with autistic people.
+MAR • MULHERES,MAR • MULHERES,MAR • WOMEN
+JUNHO • FESTA JUNINA,JUNHO • FESTA JUNINA,JUNE • JUNE FESTIVAL
+MARÇO • DIA MUNDIAL DA ÁGUA,MARÇO • DIA MUNDIAL DA ÁGUA,MARCH • WORLD WATER DAY
+LUA ROSA,LUA ROSA,PINK MOON
+Crescente bumerangue que causa dano na ida e na volta.,Crescente bumerangue que causa dano na ida e na volta.,A crescent boomerang that deals damage on the way out and back.
+Março • Dia Internacional da Mulher,Março • Dia Internacional da Mulher,March • International Women's Day
+AGO • LILÁS,AGO • LILÁS,AUG • PURPLE
+AGO • DOURADO,AGO • DOURADO,AUG • GOLDEN
+As noites longas do solstício de dezembro viram acúmulo de frio e controle progressivo.,As noites longas do solstício de dezembro viram acúmulo de frio e controle progressivo.,The long nights of the December solstice become stacking cold and progressive control.
+MAIO • DIA DAS MÃES,MAIO • DIA DAS MÃES,MAY • MOTHER'S DAY
+Formas simples e lúdicas celebram a infância.,Formas simples e lúdicas celebram a infância.,"Simple, playful shapes celebrate childhood."
+MAI • LUA DAS FLORES,MAI • LUA DAS FLORES,MAY • FLOWER MOON
+"Acende uma fogueira por 8 segundos que causa dano contínuo nos inimigos próximos. A página de junho do Monthly Colors usa o dourado das fogueiras, as bandeirinhas e as noites frias como identidade cultural das festas juninas; aqui essa imagem vira uma zona de fogo.","Acende uma fogueira por 8 segundos que causa dano contínuo nos inimigos próximos. A página de junho do Monthly Colors usa o dourado das fogueiras, as bandeirinhas e as noites frias como identidade cultural das festas juninas; aqui essa imagem vira uma zona de fogo.","Lights a bonfire for 8 seconds that continuously damages nearby enemies. The June Monthly Colors page uses golden bonfires, flags, and cold nights as the cultural identity of Brazil's June festivals; here that imagery becomes a fire zone."
+Junho Vermelho • solidariedade,Junho Vermelho • solidariedade,June Vermelho • solidariedade
+JUN • SOLIDARIEDADE,JUN • SOLIDARIEDADE,JUN • SOLIDARITY
+ABRIL AZUL • INCLUSÃO,ABRIL AZUL • INCLUSÃO,BLUE APRIL • INCLUSION
+Cura e resistência representam o acolhimento e a proteção associados a maio no site.,Cura e resistência representam o acolhimento e a proteção associados a maio no site.,Healing and resistance represent the welcome and protection associated with May on the site.
+LUA DO CAÇADOR,LUA DO CAÇADOR,HUNTER'S MOON
+"Espingarda de sete pétalas: curto alcance, baixa cadência e alto dano de perto.","Espingarda de sete pétalas: curto alcance, baixa cadência e alto dano de perto.","Seven-petal shotgun: short range, low fire rate, and high close-range damage."
+Setembro • Lua da Colheita,Setembro • Lua da Colheita,September • Harvest Moon
+"Desacelera o mundo enquanto a nave mantém sua capacidade de manobra. No Monthly Colors, Abril Azul reforça conscientização sobre o autismo, inclusão e respeito às diferentes formas de perceber o mundo; o foco temporal funciona somente como metáfora visual do jogo.","Desacelera o mundo enquanto a nave mantém sua capacidade de manobra. No Monthly Colors, Abril Azul reforça conscientização sobre o autismo, inclusão e respeito às diferentes formas de perceber o mundo; o foco temporal funciona somente como metáfora visual do jogo.","Slows the world while the ship retains its maneuverability. In Monthly Colors, Blue April promotes autism awareness, inclusion, and respect for different ways of perceiving the world; the time focus is only a visual gameplay metaphor."
+Abril • Dia da Mentira,Abril • Dia da Mentira,April • April Fools' Day
+JAN • LUA DO LOBO,JAN • LUA DO LOBO,JAN • WOLF MOON
+Outubro • Dia das Crianças,Outubro • Dia das Crianças,October • Children's Day
+AGO • LUA DO ESTURJÃO,AGO • LUA DO ESTURJÃO,AUG • STURGEON MOON
+Abril • Dia da Terra,Abril • Dia da Terra,April • Earth Day
+"Planta uma semente de retorno. Se o casco cair, você renasce nela uma vez.","Planta uma semente de retorno. Se o casco cair, você renasce nela uma vez.","Plants a return seed. If the hull fails, you are reborn there once."
+DEZ • SOLSTÍCIO,DEZ • SOLSTÍCIO,DEC • SOLSTICE
+JAN • ANO NOVO,JAN • ANO NOVO,JAN • NEW YEAR
+Dezembro • solstício e Lua Fria,Dezembro • solstício e Lua Fria,December • solstice e Cold Moon
+ABR • MENTIRA,ABR • MENTIRA,APR • FOOLS
+JUL • VERDE,JUL • VERDE,JUL • GREEN
+MAI • CUIDADO,MAI • CUIDADO,MAY • CARE
+JAN • BRANCO,JAN • BRANCO,JAN • WHITE
+Uma defesa ativa que transforma ruptura em reação.,Uma defesa ativa que transforma ruptura em reação.,An active defense that turns rupture into reaction.
+"Prepara a nave e dispara um avanço veloz, invulnerável e com rastro. No Monthly Colors, Maio Amarelo chama atenção para a segurança no trânsito e para a redução de acidentes; no jogo, velocidade exige escolher e controlar a trajetória.","Prepara a nave e dispara um avanço veloz, invulnerável e com rastro. No Monthly Colors, Maio Amarelo chama atenção para a segurança no trânsito e para a redução de acidentes; no jogo, velocidade exige escolher e controlar a trajetória.","Charges the ship and launches a fast, invulnerable dash with a trail. In Monthly Colors, Yellow May promotes road safety and accident reduction; in the game, speed requires choosing and controlling your path."
+OUT • CRIANÇAS,OUT • CRIANÇAS,OCT • CHILDREN
+Janeiro • periélio,Janeiro • periélio,January • perihelion
+Um brilho frio inspirado no vazio espacial.,Um brilho frio inspirado no vazio espacial.,A cold glow inspired by the void of space.
+MAI • AMARELO,MAI • AMARELO,MAY • YELLOW
+Setembro • primavera e floração,Setembro • primavera e floração,September • spring and blooming
+"Cria um período de calma que reduz o dano recebido e regenera vida. No Monthly Colors, Janeiro Branco usa a folha em branco do novo ano para incentivar a reflexão sobre saúde mental, bem-estar e projetos de vida; a aura transforma pausa e autocuidado em proteção.","Cria um período de calma que reduz o dano recebido e regenera vida. No Monthly Colors, Janeiro Branco usa a folha em branco do novo ano para incentivar a reflexão sobre saúde mental, bem-estar e projetos de vida; a aura transforma pausa e autocuidado em proteção.","Creates a period of calm that reduces incoming damage and regenerates health. In Monthly Colors, White January uses the new year's blank page to encourage reflection on mental health, well-being, and life goals; the aura turns pause and self-care into protection."
+Some no solo e emerge sob o inimigo marcado.,Some no solo e emerge sob o inimigo marcado.,Burrows underground and emerges beneath the marked enemy.
+"Emite uma onda circular que causa dano, empurra e atordoa inimigos próximos. O calendário de março do Monthly Colors destaca o Dia Mundial da Água, criado para lembrar a importância do acesso à água potável; a expansão do poder usa as ondas da água como referência visual.","Emite uma onda circular que causa dano, empurra e atordoa inimigos próximos. O calendário de março do Monthly Colors destaca o Dia Mundial da Água, criado para lembrar a importância do acesso à água potável; a expansão do poder usa as ondas da água como referência visual.","Emits a circular wave that damages, pushes, and stuns nearby enemies. The March Monthly Colors calendar highlights World Water Day and the importance of access to safe water; the expanding power uses water waves as its visual reference."
+"Enquanto equipado, dobra toda experiência recebida durante a partida.","Enquanto equipado, dobra toda experiência recebida durante a partida.","While equipped, doubles all experience gained during the run."
+"Rouba vida do inimigo mais próximo em até 420 de alcance: causa 28 de dano e transforma 65% do dano causado em cura. No Monthly Colors, Junho Vermelho incentiva a doação regular de sangue para ajudar tratamentos, cirurgias e emergências; a habilidade representa a circulação de vitalidade sem sacrificar a vida do jogador.","Rouba vida do inimigo mais próximo em até 420 de alcance: causa 28 de dano e transforma 65% do dano causado em cura. No Monthly Colors, Junho Vermelho incentiva a doação regular de sangue para ajudar tratamentos, cirurgias e emergências; a habilidade representa a circulação de vitalidade sem sacrificar a vida do jogador.","Drains the nearest enemy within 420 range: deals 28 damage and converts 65% of it into healing. In Monthly Colors, Red June encourages regular blood donation to support treatments, surgeries, and emergencies; the ability represents circulating vitality without sacrificing the player's life."
+LUA DA COLHEITA,LUA DA COLHEITA,HARVEST MOON
+Outubro Rosa • prevenção,Outubro Rosa • prevenção,October Pink • prevention
+JUNHO VERMELHO • DOAÇÃO,JUNHO VERMELHO • DOAÇÃO,RED JUNE • DONATION
+JUN • VERMELHO,JUN • VERMELHO,JUN • RED
+FEV • ROXO,FEV • ROXO,FEB • PURPLE
+LUA DO CASTOR,LUA DO CASTOR,BEAVER MOON
+Maio Amarelo • segurança no trânsito,Maio Amarelo • segurança no trânsito,May Amarelo • road safety
+"O impulso veloz representa deslocamento, enquanto a direção controlada reforça a atenção defendida pelo Maio Amarelo.","O impulso veloz representa deslocamento, enquanto a direção controlada reforça a atenção defendida pelo Maio Amarelo.","The fast boost represents movement, while controlled direction reinforces the awareness promoted by Yellow May."
+Os anéis que se propagam lembram ondas na água e conectam o efeito à data de 22 de março apresentada pelo site.,Os anéis que se propagam lembram ondas na água e conectam o efeito à data de 22 de março apresentada pelo site.,The spreading rings resemble ripples in water and connect the effect to the March 22 date featured on the site.
+As pétalas orbitam primeiro e atacam juntas depois.,As pétalas orbitam primeiro e atacam juntas depois.,"The petals orbit first, then attack together."
+Uma frente verde transforma o ambiente em chuva ofensiva.,Uma frente verde transforma o ambiente em chuva ofensiva.,A green front turns the environment into offensive rain.
+"A chegada da primavera e sua floração, apresentadas no site, viram uma rajada curta e colorida.","A chegada da primavera e sua floração, apresentadas no site, viram uma rajada curta e colorida.","The arrival and blossoming of spring featured on the site become a short, colorful burst."
+SET • CUIDADO,SET • CUIDADO,SEP • CARE
+OUT • ROSA,OUT • ROSA,OCT • ROSA
+NOV • LUA DO CASTOR,NOV • LUA DO CASTOR,NOV • BEAVER MOON
+JUN • FESTA JUNINA,JUN • FESTA JUNINA,JUN • JUNE FESTIVAL
+FEVEREIRO ROXO • ALZHEIMER,FEVEREIRO ROXO • ALZHEIMER,PURPLE FEBRUARY • ALZHEIMER
+MAR/SET • EQUINÓCIO,MAR/SET • EQUINÓCIO,MAR/SEP • EQUINOX
+DOBRO DE EXPERIÊNCIA,DOBRO DE EXPERIÊNCIA,DOUBLE EXPERIENCE
+"Verde representa recomeço, cuidado e crescimento.","Verde representa recomeço, cuidado e crescimento.","Green represents renewal, care, and growth."
+Rajada em cachos que se divide em sementes no impacto.,Rajada em cachos que se divide em sementes no impacto.,A clustered burst that splits into seeds on impact.
+Outubro • Lua do Caçador,Outubro • Lua do Caçador,October • Hunter's Moon
+A progressão cromática transforma cada vitória em aprendizado acelerado.,A progressão cromática transforma cada vitória em aprendizado acelerado.,Chromatic progression turns every victory into accelerated learning.
+"Aumenta velocidade, dano e cadência por alguns segundos, deixando rastros multicoloridos que ferem inimigos. No Monthly Colors, fevereiro apresenta o Carnaval como uma explosão de cor, ritmo e identidade cultural — por isso o poder vira um frenesi neon.","Aumenta velocidade, dano e cadência por alguns segundos, deixando rastros multicoloridos que ferem inimigos. No Monthly Colors, fevereiro apresenta o Carnaval como uma explosão de cor, ritmo e identidade cultural — por isso o poder vira um frenesi neon.","Increases speed, damage, and fire rate for a few seconds, leaving multicolored trails that hurt enemies. In Monthly Colors, February presents Carnival as an explosion of color, rhythm, and cultural identity, so the power becomes a neon frenzy."
+JUL • LUA DOS CERVOS,JUL • LUA DOS CERVOS,JUL • BUCK MOON
+Uma cor viva inspirada na primavera e no Outubro Rosa.,Uma cor viva inspirada na primavera e no Outubro Rosa.,A vivid color inspired by spring and Pink October.
+Uma névoa violeta transforma a cor de conscientização de fevereiro em controle de espaço.,Uma névoa violeta transforma a cor de conscientização de fevereiro em controle de espaço.,A violet mist turns February's awareness color into area control.
+ABR • AZUL,ABR • AZUL,APR • BLUE
+JANEIRO BRANCO • SAÚDE MENTAL,JANEIRO BRANCO • SAÚDE MENTAL,WHITE JANUARY • MENTAL HEALTH
+LUA FRIA,LUA FRIA,COLD MOON
+SET • COLHEITA,SET • COLHEITA,SEP • HARVEST
+Fogos de Ano Novo representam o encerramento de um ciclo e o começo do próximo.,Fogos de Ano Novo representam o encerramento de um ciclo e o começo do próximo.,New Year's fireworks represent the end of one cycle and the beginning of the next.
+O Maio Amarelo chama atenção para segurança e prevenção; o sinalizador usa contagem visível antes do perigo.,O Maio Amarelo chama atenção para segurança e prevenção; o sinalizador usa contagem visível antes do perigo.,Yellow May promotes safety and prevention; the flare uses a visible countdown before danger.
+A fogueira e o tom dourado são elementos culturais destacados na página de junho.,A fogueira e o tom dourado são elementos culturais destacados na página de junho.,The bonfire and golden hue are cultural elements highlighted on the June page.
+MAI • MAIA,MAI • MAIA,MAY • MAIA
+DEZ • LUA FRIA,DEZ • LUA FRIA,DEC • COLD MOON
+A proximidade máxima da Terra ao Sol inspira um feixe que intensifica enquanto permanece ativo.,A proximidade máxima da Terra ao Sol inspira um feixe que intensifica enquanto permanece ativo.,Earth's closest approach to the Sun inspires a beam that intensifies while active.
+MAIO AMARELO • ATENÇÃO,MAIO AMARELO • ATENÇÃO,YELLOW MAY • AWARENESS
+LUA DOS CERVOS,LUA DOS CERVOS,BUCK MOON
+LUA DO VERME,LUA DO VERME,WORM MOON
+"Rebobina os estados recentes da nave e recupera a vida registrada, como uma fita VHS voltando a uma lembrança gravada. No Monthly Colors, Fevereiro Roxo dá visibilidade ao Alzheimer, ao lúpus e à fibromialgia; a habilidade se relaciona à memória como metáfora de jogo, sem representar cura ou tratamento.","Rebobina os estados recentes da nave e recupera a vida registrada, como uma fita VHS voltando a uma lembrança gravada. No Monthly Colors, Fevereiro Roxo dá visibilidade ao Alzheimer, ao lúpus e à fibromialgia; a habilidade se relaciona à memória como metáfora de jogo, sem representar cura ou tratamento.","Rewinds the ship's recent states and restores recorded health, like a VHS tape returning to a recorded memory. In Monthly Colors, Purple February raises awareness of Alzheimer's, lupus, and fibromyalgia; the ability uses memory as a gameplay metaphor and does not represent a cure or treatment."
+Agosto • Lua do Esturjão,Agosto • Lua do Esturjão,August • Sturgeon Moon
+MARÇO LILÁS • PREVENÇÃO,MARÇO LILÁS • PREVENÇÃO,PURPLE MARCH • PREVENTION
+Uma opção clara inspirada no céu e nas fases da Lua.,Uma opção clara inspirada no céu e nas fases da Lua.,A bright option inspired by the sky and the phases of the Moon.
+OUT • LUA DO CAÇADOR,OUT • LUA DO CAÇADOR,OCT • HUNTER'S MOON
+O Junho Vermelho ganha uma rajada que se espalha e mantém o combate em movimento.,O Junho Vermelho ganha uma rajada que se espalha e mantém o combate em movimento.,Red June becomes a spreading burst that keeps combat moving.
+Três foguetes inteligentes cercam o alvo por ângulos diferentes.,Três foguetes inteligentes cercam o alvo por ângulos diferentes.,Three smart rockets surround the target from different angles.
+O brilho acolhedor associado ao Agosto Dourado.,O brilho acolhedor associado ao Agosto Dourado.,The welcoming glow associated with Golden August.
+Fevereiro • Lua da Neve,Fevereiro • Lua da Neve,February • Snow Moon
+Junho • Lua de Morango,Junho • Lua de Morango,June • Strawberry Moon
+JAN • PERIÉLIO,JAN • PERIÉLIO,JAN • PERIHELION
+"Segure para carregar um único disparo ondulante, pesado e perfurante.","Segure para carregar um único disparo ondulante, pesado e perfurante.","Hold to charge a single heavy, piercing, wave-like shot."
+Proteção presente na campanha do Agosto Dourado.,Proteção presente na campanha do Agosto Dourado.,Protection featured in the Golden August campaign.
+SET • LUA DA COLHEITA,SET • LUA DA COLHEITA,SEP • HARVEST MOON
+"Instala até quatro sinais que explodem após 5 segundos. Melhorias liberam pavio curto, sensor ou comando remoto.","Instala até quatro sinais que explodem após 5 segundos. Melhorias liberam pavio curto, sensor ou comando remoto.","Deploys up to four flares that explode after 5 seconds. Upgrades unlock a short fuse, proximity sensor, or remote command."
+FEVEREIRO • CARNAVAL,FEVEREIRO • CARNAVAL,FEBRUARY • CARNAVAL
+"Um presente legível antes de abrir, sem depender apenas da sorte.","Um presente legível antes de abrir, sem depender apenas da sorte.",A gift that can be read before opening instead of relying only on luck.
+Setembro • primavera e flores,Setembro • primavera e flores,September • spring and flowers
+LUA DO ESTURJÃO,LUA DO ESTURJÃO,STURGEON MOON
+"A serenidade, a regeneração e a pausa defensiva traduzem o cuidado com o bem-estar psicológico apresentado pelo site.","A serenidade, a regeneração e a pausa defensiva traduzem o cuidado com o bem-estar psicológico apresentado pelo site.","Serenity, regeneration, and a defensive pause express the care for psychological well-being presented on the site."
+Dezembro • Natal,Dezembro • Natal,December • Natal
+MAI • FAMÍLIA,MAI • FAMÍLIA,MAY • FAMILY
+Monthly Colors • progressão cromática,Monthly Colors • progressão cromática,Monthly Colors • chromatic progression
+FEV • LUA DA NEVE,FEV • LUA DA NEVE,FEB • SNOW MOON
+Novembro • Lua do Castor,Novembro • Lua do Castor,November • Beaver Moon
+Maio • Lua das Flores,Maio • Lua das Flores,May • Flower Moon
+Janeiro • Lua do Lobo,Janeiro • Lua do Lobo,January • Wolf Moon
+Abril • Páscoa e renovação,Abril • Páscoa e renovação,April • Easter e renewal
+Maio • Dia da Família,Maio • Dia da Família,May • Family Day
+Junho • festas juninas,Junho • festas juninas,June • festas juninas
+"A barreira simboliza o cuidado preventivo, o exame e a vacina destacados pelo site.","A barreira simboliza o cuidado preventivo, o exame e a vacina destacados pelo site.","The barrier symbolizes the preventive care, screening, and vaccination highlighted on the site."
+"Conexão, cuidado e responsabilidade compartilhada.","Conexão, cuidado e responsabilidade compartilhada.","Connection, care, and shared responsibility."
+Agosto Lilás • proteção,Agosto Lilás • proteção,August Purple • protection
+"Água como força, movimento e preservação.","Água como força, movimento e preservação.","Water as strength, movement, and preservation."
+"O planeta responde em camadas: solo, raiz e cristal.","O planeta responde em camadas: solo, raiz e cristal.","The planet responds in layers: soil, root, and crystal."
+LUA DA NEVE,LUA DA NEVE,SNOW MOON
+A renovação e as cores da Páscoa viram uma escolha rápida em combate.,A renovação e as cores da Páscoa viram uma escolha rápida em combate.,Easter renewal and colors become a quick choice in combat.
+Fevereiro Roxo • conscientização,Fevereiro Roxo • conscientização,February Roxo • awareness
+Março • Lua do Verme,Março • Lua do Verme,March • Worm Moon
+Junho Verde • meio ambiente,Junho Verde • meio ambiente,June Verde • environment
+Junho Vermelho • doação de sangue,Junho Vermelho • doação de sangue,June Vermelho • blood donation
+O Dia da Terra inspira um ataque que viaja sob o solo antes de reaparecer.,O Dia da Terra inspira um ataque que viaja sob o solo antes de reaparecer.,Earth Day inspires an attack that travels underground before resurfacing.
+SET • PRIMAVERA,SET • PRIMAVERA,SEP • SPRING
+Março • Dia Mundial da Água,Março • Dia Mundial da Água,March • World Water Day
+Cone violeta; impactos seguidos desaceleram o alvo.,Cone violeta; impactos seguidos desaceleram o alvo.,A violet cone whose repeated hits slow the target.
+DEZ • NATAL,DEZ • NATAL,DEC • CHRISTMAS
+ABR • TERRA,ABR • TERRA,APR • TERRA
+MAR • LUA DO VERME,MAR • LUA DO VERME,MAR • WORM MOON
+AGO • PROTEÇÃO,AGO • PROTEÇÃO,AUG • PROTECTION
+FEV • CARNAVAL,FEV • CARNAVAL,FEB • CARNAVAL
+MAI • MAIO AMARELO,MAI • MAIO AMARELO,MAY • YELLOW MAY
+"A primavera vira movimento, raiz e floração.","A primavera vira movimento, raiz e floração.","Spring becomes movement, roots, and blossoms."
+Dezembro • Lua Fria,Dezembro • Lua Fria,December • Cold Moon
+LUA DAS FLORES,LUA DAS FLORES,FLOWER MOON
+SET • FLORES,SET • FLORES,SEP • FLOWERS
+Brasas lentas explodem e deixam uma zona curta de fogo.,Brasas lentas explodem e deixam uma zona curta de fogo.,Slow embers explode and leave a short-lived fire zone.
+"O site liga o Carnaval à cor, ao ritmo e à identidade cultural brasileira.","O site liga o Carnaval à cor, ao ritmo e à identidade cultural brasileira.","The site connects Carnival with color, rhythm, and Brazilian cultural identity."
+Força e autonomia representadas por pressão seguida de resposta.,Força e autonomia representadas por pressão seguida de resposta.,Strength and autonomy represented by pressure followed by response.
+ABR • PÁSCOA,ABR • PÁSCOA,APR • EASTER
+Fantasmas e o imaginário do Halloween em movimento neon.,Fantasmas e o imaginário do Halloween em movimento neon.,Ghosts and Halloween imagery in neon motion.
+JUN • FOGUEIRA,JUN • FOGUEIRA,JUN • BONFIRE
+MAR • LILÁS,MAR • LILÁS,MAR • PURPLE
+NOME,NOME,NAME
+DESC,DESCRIÇÃO,DESCRIPTION
+EQUIPE: +%d VIDA  •  +%d XP,EQUIPE: +%d VIDA  •  +%d XP,TEAM: +%d HEALTH  •  +%d XP
+LB / RB troca abas • A confirma • analógico direito rola,LB / RB troca abas • A confirma • analógico direito rola,LB / RB changes tabs • A confirms • right stick scrolls
+INSTALADA  •  v0.0.0,INSTALADA  •  v0.0.0,INSTALLED  •  v0.0.0
+DISPONÍVEL  •  v0.0.0,DISPONÍVEL  •  v0.0.0,AVAILABLE  •  v0.0.0
+[color=yellow]Astro,[color=yellow]Astro,[color=yellow]Astro
+TROCA ABAS  •,TROCA ABAS  •,CHANGES TABS  •
+COMPRA/EQUIPA  •  ANALÓGICO DIREITO ROLA,COMPRA/EQUIPA  •  ANALÓGICO DIREITO ROLA,BUYS/EQUIPS  •  RIGHT STICK SCROLLS
+FLOR DO EQUINÓCIO,FLOR DO EQUINÓCIO,EQUINOX BLOOM
+RUPTURA LILÁS,RUPTURA LILÁS,PURPLE RUPTURE
+SENTINELA DOURADA,SENTINELA DOURADA,GOLDEN SENTINEL
+AGOSTO LILÁS • ROMPER O CICLO,AGOSTO LILÁS • ROMPER O CICLO,PURPLE AUGUST • BREAK THE CYCLE
+AGOSTO DOURADO • CUIDADO EM ÓRBITA,AGOSTO DOURADO • CUIDADO EM ÓRBITA,GOLDEN AUGUST • CARE IN ORBIT
+AGOSTO LILÁS • DESATAR O CICLO,AGOSTO LILÁS • DESATAR O CICLO,PURPLE AUGUST • UNTIE THE CYCLE
+AGOSTO DOURADO • REDE DE CUIDADO,AGOSTO DOURADO • REDE DE CUIDADO,GOLDEN AUGUST • CARE NETWORK
+CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS,CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS,LUNAR CRESCENTS — MOVE THROUGH THE GAPS
+CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS,CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS,CRATER RAIN — LEAVE THE MARKED TARGETS
+ONDA LUNAR — ATRAVESSE A LACUNA VERDE,ONDA LUNAR — ATRAVESSE A LACUNA VERDE,LUNAR WAVE — MOVE THROUGH THE GREEN GAP
+INVESTIDA SOLAR — SAIA DA LINHA VERMELHA,INVESTIDA SOLAR — SAIA DA LINHA VERMELHA,SOLAR CHARGE — LEAVE THE RED LINE
+RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO,RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO,SOLAR BEAM — THE AIM LOCKS BEFORE FIRING
+PROMINÊNCIAS — CHAMAS CURVAS EM ALTERNÂNCIA,PROMINÊNCIAS — CHAMAS CURVAS EM ALTERNÂNCIA,PROMINENCES — ALTERNATING CURVED FLAMES
+CORONA — ATRAVESSE SOMENTE PELA LACUNA,CORONA — ATRAVESSE SOMENTE PELA LACUNA,CORONA — MOVE ONLY THROUGH THE GAP
+MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO,MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO,SUNSPOTS — DESTROY THEM BEFORE THEY EXPLODE
+CRESCENTES INCENDIÁRIOS — ELES RETORNAM,CRESCENTES INCENDIÁRIOS — ELES RETORNAM,BLAZING CRESCENTS — THEY RETURN
+RAIO DA TOTALIDADE — A MIRA TRAVA ANTES DO DISPARO,RAIO DA TOTALIDADE — A MIRA TRAVA ANTES DO DISPARO,TOTALITY BEAM — THE AIM LOCKS BEFORE FIRING
+CHUVA DA TOTALIDADE — FUJA DAS MIRAS,CHUVA DA TOTALIDADE — FUJA DAS MIRAS,TOTALITY RAIN — ESCAPE THE TARGETS
+REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS,REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS,ASTRAL REFLECTIONS — ATTACKS FROM BOTH SIDES
+TOTALIDADE — SOBREVIVA E LEIA OS MARCADORES,TOTALIDADE — SOBREVIVA E LEIA OS MARCADORES,TOTALITY — SURVIVE AND READ THE MARKERS
+MARÉ GRAVITACIONAL — PUXÃO PARA O CENTRO,MARÉ GRAVITACIONAL — PUXÃO PARA O CENTRO,GRAVITATIONAL TIDE — PULL TOWARD THE CENTER
+MARÉ GRAVITACIONAL — REPULSÃO PARA FORA,MARÉ GRAVITACIONAL — REPULSÃO PARA FORA,GRAVITATIONAL TIDE — PUSH OUTWARD
+SINGULARIDADE SOLAR — O CAMPO PUXA E O RAIO TRAVA,SINGULARIDADE SOLAR — O CAMPO PUXA E O RAIO TRAVA,SOLAR SINGULARITY — THE FIELD PULLS AND THE BEAM LOCKS
+PET-0,PET-0,PET-0

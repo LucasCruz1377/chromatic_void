@@ -12,7 +12,7 @@ const CONFIG_PADRAO := {
 	"volume_master": 0.0,
 	"volume_musica": 0.0,
 	"volume_som": 0.0,
-	"idioma": "pt_BR",
+	"idioma": "",
 	"tela_cheia": true,
 	"vsync": true,
 	"limite_fps": 60,
@@ -58,7 +58,7 @@ var volume_som := 0.0
 var volume_musica := 0.0
 
 var volume_master := 0.0
-var idioma := "pt_BR"
+var idioma := "en"
 var tela_cheia := true
 var vsync := true
 var limite_fps := 60
@@ -345,6 +345,7 @@ func _ready() -> void:
 	)
 	_capturar_mapeamentos_padrao()
 	carregar_configuracoes()
+	TranslationServer.set_locale(idioma)
 	carregar_economia()
 	conquistas_disponiveis.assign(CONQUISTAS.keys())
 	carregar_conquistas()
@@ -533,12 +534,12 @@ func _mostrar_aviso_conquista(dados: Dictionary) -> void:
 	var coluna := VBoxContainer.new()
 	margem.add_child(coluna)
 	var titulo := Label.new()
-	titulo.text = "✦  CONQUISTA DESBLOQUEADA"
+	titulo.text = tr("✦  CONQUISTA DESBLOQUEADA")
 	titulo.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0))
 	titulo.add_theme_font_size_override("font_size", 13)
 	coluna.add_child(titulo)
 	var nome := Label.new()
-	nome.text = str(dados.get("nome", "CONQUISTA"))
+	nome.text = tr(str(dados.get("nome", "CONQUISTA")))
 	nome.add_theme_color_override("font_color", Color.WHITE)
 	nome.add_theme_font_size_override("font_size", 18)
 	coluna.add_child(nome)
@@ -680,9 +681,12 @@ func carregar_configuracoes() -> void:
 	var config_salva = dados.get("configuracoes", {})
 	if config_salva is Dictionary:
 		config = config_salva
+	var primeira_configuracao := config.is_empty()
 	for chave in CONFIG_PADRAO:
 		if not config.has(chave):
 			config[chave] = CONFIG_PADRAO[chave]
+	if primeira_configuracao or str(config.get("idioma", "")).is_empty():
+		config["idioma"] = _idioma_inicial_do_sistema()
 
 	mira_mouse = bool(config["mira_mouse"])
 	volume_master = float(config["volume_master"])
@@ -693,6 +697,8 @@ func carregar_configuracoes() -> void:
 	# padrão reconhecido pelo Godot, sem perder as demais configurações.
 	if idioma == "es_EN":
 		idioma = "en"
+	if idioma not in ["pt_BR", "en"]:
+		idioma = _idioma_inicial_do_sistema()
 	tela_cheia = bool(config["tela_cheia"])
 	vsync = bool(config["vsync"])
 	limite_fps = int(config["limite_fps"])
@@ -738,6 +744,7 @@ func obter_configuracoes() -> Dictionary:
 
 func restaurar_configuracoes_padrao() -> void:
 	var config := CONFIG_PADRAO.duplicate(true)
+	config["idioma"] = _idioma_inicial_do_sistema()
 	mira_mouse = bool(config["mira_mouse"])
 	volume_master = float(config["volume_master"])
 	volume_musica = float(config["volume_musica"])
@@ -754,6 +761,11 @@ func restaurar_configuracoes_padrao() -> void:
 	controle_avancado = bool(config["controle_avancado"])
 	mapeamentos_controles = _mapeamentos_padrao.duplicate(true)
 	salvar_configuracoes()
+
+
+func _idioma_inicial_do_sistema() -> String:
+	var local_sistema := OS.get_locale().replace("-", "_").to_lower()
+	return "pt_BR" if local_sistema.begins_with("pt") else "en"
 
 
 func apagar_save_completo() -> void:

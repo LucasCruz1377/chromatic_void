@@ -98,7 +98,7 @@ func _process(_delta: float) -> void:
 		get_tree().paused = false
 	if carregando_cena and is_instance_valid(texto_carregamento):
 		var quantidade_pontos := int(float(Time.get_ticks_msec()) / 320.0) % 4
-		texto_carregamento.text = "CARREGANDO" + ".".repeat(quantidade_pontos)
+		texto_carregamento.text = tr("CARREGANDO") + ".".repeat(quantidade_pontos)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -186,14 +186,14 @@ func _criar_interface_nickname_e_multiplayer() -> void:
 	coluna_nick.add_theme_constant_override("separation", 3)
 	margem_nick.add_child(coluna_nick)
 	var rotulo_nick := Label.new()
-	rotulo_nick.text = "NICKNAME DO PILOTO"
+	rotulo_nick.text = tr("NICKNAME DO PILOTO")
 	rotulo_nick.add_theme_font_size_override("font_size", 11)
 	rotulo_nick.add_theme_color_override("font_color", Color(0.45, 0.96, 0.82))
 	coluna_nick.add_child(rotulo_nick)
 	campo_nickname = LineEdit.new()
 	campo_nickname.name = "Nickname"
 	campo_nickname.text = Rede.nickname_local
-	campo_nickname.placeholder_text = "PILOTO"
+	campo_nickname.placeholder_text = tr("PILOTO")
 	campo_nickname.max_length = 16
 	campo_nickname.select_all_on_focus = true
 	_configurar_campo_texto_mobile(campo_nickname)
@@ -283,14 +283,14 @@ func _limpar_fluxo() -> void:
 
 func _adicionar_titulo_fluxo(titulo: String, subtitulo: String = "") -> void:
 	var rotulo := Label.new()
-	rotulo.text = titulo
+	rotulo.text = tr(titulo)
 	rotulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rotulo.add_theme_font_size_override("font_size", 28)
 	rotulo.add_theme_color_override("font_color", Color(0.52, 0.95, 1.0))
 	conteudo_fluxo.add_child(rotulo)
 	if not subtitulo.is_empty():
 		var detalhe := Label.new()
-		detalhe.text = subtitulo
+		detalhe.text = tr(subtitulo)
 		detalhe.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		detalhe.add_theme_font_size_override("font_size", 12)
@@ -308,7 +308,7 @@ func _adicionar_botao_fluxo(
 	var botao := Button.new()
 	botao.custom_minimum_size = tamanho_minimo
 	botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	botao.text = texto
+	botao.text = tr(texto)
 	botao.add_theme_font_size_override("font_size", 18)
 	var borda := Color(0.34, 1.0, 0.72) if destaque else Color(0.32, 0.68, 1.0)
 	botao.add_theme_stylebox_override("normal", _estilo_conquistas(Color(0.03, 0.06, 0.14), borda, 9, 2))
@@ -401,7 +401,7 @@ func _criar_area_lobbies_lan() -> void:
 	coluna.add_theme_constant_override("separation", 7)
 	margem.add_child(coluna)
 	var titulo := Label.new()
-	titulo.text = "LOBBIES DISPONÍVEIS NESTA REDE"
+	titulo.text = tr("LOBBIES DISPONÍVEIS NESTA REDE")
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 13)
 	titulo.add_theme_color_override("font_color", Color(0.45, 1.0, 0.76))
@@ -428,7 +428,7 @@ func _atualizar_lista_lobbies_lan(lobbies: Array) -> void:
 		filho.queue_free()
 	if lobbies.is_empty():
 		mensagem_lobbies_lan = Label.new()
-		mensagem_lobbies_lan.text = "PROCURANDO LOBBIES DISPONÍVEIS NO WI-FI..."
+		mensagem_lobbies_lan.text = tr("PROCURANDO LOBBIES DISPONÍVEIS NO WI-FI...")
 		mensagem_lobbies_lan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		mensagem_lobbies_lan.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		mensagem_lobbies_lan.custom_minimum_size.y = 116.0
@@ -450,12 +450,12 @@ func _atualizar_lista_lobbies_lan(lobbies: Array) -> void:
 		informacoes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		linha.add_child(informacoes)
 		var criador := Label.new()
-		criador.text = "HOST: %s" % nick
+		criador.text = tr("HOST: %s") % nick
 		criador.add_theme_font_size_override("font_size", 15)
 		criador.add_theme_color_override("font_color", Color(0.56, 1.0, 0.78))
 		informacoes.add_child(criador)
 		var endereco := Label.new()
-		endereco.text = "%s:%d  •  %d/%d JOGADORES" % [
+		endereco.text = tr("%s:%d  •  %d/%d JOGADORES") % [
 			ip,
 			int(dados.get("porta", Rede.PORTA)),
 			int(dados.get("jogadores", 1)),
@@ -494,7 +494,7 @@ func _conectar_lobby_lan(ip: String) -> void:
 func _mostrar_entrada_ip() -> void:
 	_abrir_fluxo(&"ip")
 	_limpar_fluxo()
-	_adicionar_titulo_fluxo("ENTRAR NO LOBBY", "Digite o IPv4 informado pelo host. Porta UDP %d." % Rede.PORTA)
+	_adicionar_titulo_fluxo("ENTRAR NO LOBBY", tr("Digite o IPv4 informado pelo host. Porta UDP %d.") % Rede.PORTA)
 	campo_ip = LineEdit.new()
 	campo_ip.name = "EnderecoIP"
 	campo_ip.custom_minimum_size = Vector2(330.0, 46.0)
@@ -520,19 +520,19 @@ func _mostrar_entrada_ip() -> void:
 func _mostrar_lobby() -> void:
 	_abrir_fluxo(&"lobby")
 	_limpar_fluxo()
-	_adicionar_titulo_fluxo("LOBBY", "HOST UDP %d • %d/%d JOGADORES" % [Rede.PORTA, Rede.jogadores.size(), Rede.MAX_JOGADORES])
+	_adicionar_titulo_fluxo("LOBBY", tr("HOST UDP %d • %d/%d JOGADORES") % [Rede.PORTA, Rede.jogadores.size(), Rede.MAX_JOGADORES])
 	var ids: Array = Rede.jogadores.keys()
 	ids.sort()
 	for id in ids:
 		var jogador := Label.new()
-		jogador.text = "◆  %s%s" % [str(Rede.jogadores[id]), "  [HOST]" if int(id) == 1 else ""]
+		jogador.text = "◆  %s%s" % [str(Rede.jogadores[id]), tr("  [HOST]") if int(id) == 1 else ""]
 		jogador.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		jogador.add_theme_font_size_override("font_size", 18)
 		jogador.add_theme_color_override("font_color", Color(0.56, 1.0, 0.78))
 		conteudo_fluxo.add_child(jogador)
 	if Rede.jogadores.size() < Rede.MAX_JOGADORES:
 		var espera := Label.new()
-		espera.text = "AGUARDANDO OUTRO PILOTO..."
+		espera.text = tr("AGUARDANDO OUTRO PILOTO...")
 		espera.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		espera.add_theme_color_override("font_color", Color(0.68, 0.72, 0.92))
 		conteudo_fluxo.add_child(espera)
@@ -540,13 +540,13 @@ func _mostrar_lobby() -> void:
 		var enderecos := Rede.obter_enderecos_host()
 		if not enderecos.is_empty():
 			var instrucao := Label.new()
-			instrucao.text = "SE O LOBBY NÃO APARECER, TOQUE NO IP PARA COPIAR:"
+			instrucao.text = tr("SE O LOBBY NÃO APARECER, TOQUE NO IP PARA COPIAR:")
 			instrucao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			instrucao.add_theme_font_size_override("font_size", 11)
 			instrucao.add_theme_color_override("font_color", Color(0.60, 0.72, 0.92))
 			conteudo_fluxo.add_child(instrucao)
 			for endereco in enderecos.slice(0, 4):
-				_adicionar_botao_fluxo("COPIAR IP  %s" % endereco, _copiar_ip_host.bind(endereco))
+				_adicionar_botao_fluxo(tr("COPIAR IP  %s") % endereco, _copiar_ip_host.bind(endereco))
 	_adicionar_status_rede()
 	if Rede.hospedando:
 		var iniciar := _adicionar_botao_fluxo("INICIAR PARTIDA", _on_iniciar_lobby_pressed, true)
@@ -556,7 +556,7 @@ func _mostrar_lobby() -> void:
 
 func _copiar_ip_host(endereco: String) -> void:
 	DisplayServer.clipboard_set(endereco)
-	mensagem_rede = "IP %s COPIADO" % endereco
+	mensagem_rede = tr("IP %s COPIADO") % endereco
 	mensagem_rede_erro = false
 	_mostrar_lobby()
 
@@ -742,7 +742,7 @@ func _criar_tela_carregamento() -> void:
 	coluna.add_child(simbolo)
 
 	texto_carregamento = Label.new()
-	texto_carregamento.text = "CARREGANDO"
+	texto_carregamento.text = tr("CARREGANDO")
 	texto_carregamento.custom_minimum_size = Vector2(230.0, 28.0)
 	texto_carregamento.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	texto_carregamento.add_theme_font_size_override("font_size", 18)
@@ -790,7 +790,7 @@ func _criar_menu_conquistas() -> void:
 	coluna.add_child(cabecalho)
 
 	var titulo := Label.new()
-	titulo.text = "✦  CONQUISTAS"
+	titulo.text = tr("✦  CONQUISTAS")
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	titulo.add_theme_font_size_override("font_size", 26)
 	titulo.add_theme_color_override("font_color", Color(0.84, 0.68, 1.0))
@@ -798,7 +798,7 @@ func _criar_menu_conquistas() -> void:
 
 	botao_fechar_conquistas = Button.new()
 	botao_fechar_conquistas.custom_minimum_size = Vector2(108, 38)
-	botao_fechar_conquistas.text = "FECHAR"
+	botao_fechar_conquistas.text = tr("FECHAR")
 	botao_fechar_conquistas.pressed.connect(_fechar_menu_conquistas)
 	botao_fechar_conquistas.add_theme_stylebox_override(
 		"normal", _estilo_conquistas(Color(0.05, 0.07, 0.15), Color(0.36, 0.5, 0.78), 9, 1)
@@ -842,7 +842,7 @@ func _atualizar_lista_conquistas() -> void:
 		if Global.modo_desenvolvedor
 		else Global.conquistas_desbloqueadas.size()
 	)
-	resumo_conquistas.text = "%d DE %d DESBLOQUEADAS" % [liberadas, Global.CONQUISTAS.size()]
+	resumo_conquistas.text = tr("%d DE %d DESBLOQUEADAS") % [liberadas, Global.CONQUISTAS.size()]
 	for id in Global.CONQUISTAS:
 		var dados: Dictionary = Global.CONQUISTAS[id]
 		var progresso := Global.progresso_conquista(id)
@@ -872,9 +872,9 @@ func _atualizar_lista_conquistas() -> void:
 		linha.add_child(textos)
 		var nome := Label.new()
 		nome.text = (
-			("✓  " + str(dados.get("nome", id)))
+			("✓  " + tr(str(dados.get("nome", id))))
 			if liberada
-			else ("?  CONQUISTA SECRETA" if secreta else "◇  " + str(dados.get("nome", id)))
+			else (tr("?  CONQUISTA SECRETA") if secreta else "◇  " + tr(str(dados.get("nome", id))))
 		)
 		nome.add_theme_font_size_override("font_size", 15)
 		nome.add_theme_color_override(
@@ -883,9 +883,9 @@ func _atualizar_lista_conquistas() -> void:
 		textos.add_child(nome)
 		var descricao := Label.new()
 		descricao.text = (
-			str(dados.get("descricao", ""))
+			tr(str(dados.get("descricao", "")))
 			if liberada or not secreta
-			else "Continue explorando o ciclo cromático para revelar esta conquista."
+			else tr("Continue explorando o ciclo cromático para revelar esta conquista.")
 		)
 		descricao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		descricao.add_theme_font_size_override("font_size", 11)
@@ -896,9 +896,9 @@ func _atualizar_lista_conquistas() -> void:
 		status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		status.text = (
-			"LIBERADA"
+			tr("LIBERADA")
 			if liberada
-			else ("OCULTA" if secreta else "%d / %d" % [int(progresso["atual"]), int(progresso["meta"])])
+			else (tr("OCULTA") if secreta else "%d / %d" % [int(progresso["atual"]), int(progresso["meta"])])
 		)
 		status.add_theme_font_size_override("font_size", 12)
 		status.add_theme_color_override(

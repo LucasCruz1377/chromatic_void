@@ -311,6 +311,7 @@ func _desenhar_vinculo(
 ) -> void:
 	if not is_instance_valid(alvo):
 		return
+	texto = tr(texto)
 	var fim := alvo.global_position - global_position
 	draw_line(Vector2.ZERO, fim, Color(cor_vinculo, 0.22), 8.0, true)
 	draw_line(Vector2.ZERO, fim, Color(cor_vinculo, 0.88), 2.5, true)

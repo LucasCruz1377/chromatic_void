@@ -214,13 +214,13 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 41
-text = "VOCÊ MORREU"
+text = "T_GAMEOVER"
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="Tentar de novo" parent="GUI/caixa gameover" unique_id=2034343078 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
-text = "Tentar novamente"
+text = "B_TRYAGAIN"
 
 [node name="tryagain" parent="GUI/caixa gameover/Tentar de novo" unique_id=767019499 instance=ExtResource("10_bd36c")]
 scale_amount = Vector2(1.1, 1.1)

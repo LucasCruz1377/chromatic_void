@@ -48,7 +48,7 @@ func configurar(
 	coluna.add_child(topo)
 
 	var categoria := Label.new()
-	categoria.text = str(dados.get("categoria", "MOD"))
+	categoria.text = tr(str(dados.get("categoria", "MOD")))
 	categoria.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	categoria.clip_text = true
 	categoria.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -58,7 +58,7 @@ func configurar(
 	topo.add_child(categoria)
 
 	var raridade := Label.new()
-	raridade.text = str(dados.get("raridade", "COMUM"))
+	raridade.text = tr(str(dados.get("raridade", "COMUM")))
 	raridade.custom_minimum_size = Vector2(72, 18)
 	raridade.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	raridade.clip_text = true
@@ -81,7 +81,7 @@ func configurar(
 	coluna.add_child(icone)
 
 	var nome := Label.new()
-	nome.text = str(dados.get("nome", id))
+	nome.text = tr(str(dados.get("nome", id)))
 	nome.custom_minimum_size = Vector2(0, 42)
 	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -95,7 +95,7 @@ func configurar(
 
 	var nivel := Label.new()
 	var max_nivel := int(dados.get("max_nivel", 1))
-	nivel.text = "NÍVEL %d  →  %d/%d" % [nivel_atual, nivel_atual + 1, max_nivel]
+	nivel.text = tr("NÍVEL %d  →  %d/%d") % [nivel_atual, nivel_atual + 1, max_nivel]
 	nivel.custom_minimum_size = Vector2(0, 18)
 	nivel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nivel.add_theme_font_size_override("font_size", 11)
@@ -115,7 +115,7 @@ func configurar(
 	coluna.add_child(papel)
 
 	var descricao := Label.new()
-	descricao.text = str(dados.get("descricao", ""))
+	descricao.text = tr(str(dados.get("descricao", "")))
 	descricao.custom_minimum_size = Vector2(0, 50)
 	descricao.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	descricao.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -129,7 +129,7 @@ func configurar(
 	coluna.add_child(descricao)
 
 	var requisitos := Label.new()
-	requisitos.text = texto_requisitos
+	requisitos.text = tr(texto_requisitos)
 	requisitos.custom_minimum_size = Vector2(0, 30)
 	requisitos.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	requisitos.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -193,23 +193,23 @@ func obter_papel(dados: Dictionary) -> String:
 	var tags: Array = dados.get("tags", [])
 	if &"passivo" in tags:
 		if &"movimento" in tags:
-			return "PASSIVO DE PILOTAGEM"
+			return tr("PASSIVO DE PILOTAGEM")
 		if &"casco" in tags:
-			return "PASSIVO DE SOBREVIVÊNCIA"
-		return "PASSIVO DA NAVE"
+			return tr("PASSIVO DE SOBREVIVÊNCIA")
+		return tr("PASSIVO DA NAVE")
 	if &"multitiro" in tags:
-		return "COBERTURA E CONTROLE"
+		return tr("COBERTURA E CONTROLE")
 	if &"pesado" in tags:
-		return "IMPACTO CONCENTRADO"
+		return tr("IMPACTO CONCENTRADO")
 	if &"fragmentacao" in tags:
-		return "LIMPEZA DE GRUPOS"
+		return tr("LIMPEZA DE GRUPOS")
 	if &"homing" in tags:
-		return "PRECISÃO GUIADA"
+		return tr("PRECISÃO GUIADA")
 	if &"ricochete" in tags:
-		return "POSICIONAMENTO"
+		return tr("POSICIONAMENTO")
 	if &"habilidade" in tags:
-		return "SINERGIA DE HABILIDADE"
-	return "MÓDULO DA NAVE"
+		return tr("SINERGIA DE HABILIDADE")
+	return tr("MÓDULO DA NAVE")
 
 
 func criar_poligonos_decorativos() -> void:

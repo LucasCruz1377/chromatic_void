@@ -12,8 +12,8 @@ var tipo_upgrade
 
 func configurar_carta(tipo,nome_chave,descricao_chave, icone_text):
 	tipo_upgrade = tipo
-	nome.text = nome_chave
-	descricao.text = descricao_chave
+	nome.text = tr(str(nome_chave))
+	descricao.text = tr(str(descricao_chave))
 	icone.texture = load(icone_text)
 
 

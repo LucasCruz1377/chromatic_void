@@ -211,6 +211,7 @@ func iniciar_tutorial(player: Player) -> void:
 
 
 func falar(texto: String) -> void:
+	texto = tr(texto)
 	geracao_fala += 1
 	var fala_atual: int = geracao_fala
 	if tween_texto and tween_texto.is_valid():

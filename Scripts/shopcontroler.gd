@@ -132,9 +132,9 @@ func _atualizar_dica_controles() -> void:
 	_adicionar_icone_dica(anterior)
 	_adicionar_texto_dica("/")
 	_adicionar_icone_dica(proxima)
-	_adicionar_texto_dica(" troca abas  •  ")
+	_adicionar_texto_dica("TROCA ABAS  •")
 	_adicionar_icone_dica(aceitar)
-	_adicionar_texto_dica(" compra/equipa  •  analógico direito rola")
+	_adicionar_texto_dica("COMPRA/EQUIPA  •  ANALÓGICO DIREITO ROLA")
 
 
 func _adicionar_icone_dica(textura: Texture2D) -> void:
@@ -150,7 +150,7 @@ func _adicionar_icone_dica(textura: Texture2D) -> void:
 
 func _adicionar_texto_dica(texto: String) -> void:
 	var rotulo := Label.new()
-	rotulo.text = texto
+	rotulo.text = " " + tr(texto) + " "
 	rotulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	rotulo.add_theme_color_override("font_color", Color(0.40, 0.50, 0.68))
 	aplicar_fonte(rotulo, 9)
@@ -387,7 +387,7 @@ func construir_interface() -> void:
 	coluna.add_child(mensagem)
 
 	if Global.modo_desenvolvedor:
-		mensagem.text = "MODO DESENVOLVEDOR • CATÁLOGO LIBERADO • + adiciona moeda de teste"
+		mensagem.text = tr("MODO DESENVOLVEDOR • CATÁLOGO LIBERADO • + adiciona moeda de teste")
 
 
 func construir_cabecalho(pai: VBoxContainer) -> void:
@@ -398,7 +398,7 @@ func construir_cabecalho(pai: VBoxContainer) -> void:
 
 	botao_voltar = Button.new()
 	botao_voltar.custom_minimum_size = Vector2(142, 46)
-	botao_voltar.text = "<  VOLTAR"
+	botao_voltar.text = tr("<  VOLTAR")
 	botao_voltar.focus_mode = Control.FOCUS_ALL
 	botao_voltar.clip_text = true
 	estilizar_botao(botao_voltar, Color(0.03, 0.05, 0.11), Color(0.28, 0.45, 0.78))
@@ -412,14 +412,14 @@ func construir_cabecalho(pai: VBoxContainer) -> void:
 	cabecalho_loja.add_child(titulo_box)
 
 	var titulo := Label.new()
-	titulo.text = "LOJA"
+	titulo.text = tr("LOJA")
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_color_override("font_color", Color(0.76, 0.38, 1.0))
 	aplicar_fonte(titulo, 34)
 	titulo_box.add_child(titulo)
 
 	var subtitulo := Label.new()
-	subtitulo.text = "TERMINAL CROMÁTICO"
+	subtitulo.text = tr("TERMINAL CROMÁTICO")
 	subtitulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitulo.add_theme_color_override("font_color", Color(0.28, 0.86, 1.0))
 	aplicar_fonte(subtitulo, 10)
@@ -454,7 +454,7 @@ func construir_cabecalho(pai: VBoxContainer) -> void:
 	botao_adicionar.text = "+"
 	botao_adicionar.disabled = not Global.modo_desenvolvedor
 	botao_adicionar.visible = Global.modo_desenvolvedor
-	botao_adicionar.tooltip_text = "DEV: adicionar 1.000 cristais"
+	botao_adicionar.tooltip_text = tr("DEV: adicionar 1.000 cristais")
 	estilizar_botao(
 		botao_adicionar,
 		Color(0.06, 0.06, 0.14),
@@ -491,7 +491,7 @@ func construir_categorias(pai: VBoxContainer) -> void:
 		var botao := Button.new()
 		botao.custom_minimum_size = Vector2(112, 42)
 		botao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		botao.text = CATEGORIAS[indice]
+		botao.text = tr(CATEGORIAS[indice])
 		botao.clip_text = true
 		botao.focus_mode = Control.FOCUS_ALL
 		botao.set_meta("cor_categoria", cores[indice])
@@ -632,7 +632,7 @@ func construir_conteudo(pai: VBoxContainer) -> void:
 	linha_icone.add_child(detalhe_contexto)
 
 	botao_site = Button.new()
-	botao_site.text = "VISITAR MONTHLY COLORS"
+	botao_site.text = tr("VISITAR MONTHLY COLORS")
 	botao_site.custom_minimum_size = Vector2(0, 28)
 	botao_site.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	botao_site.pressed.connect(_on_site_monthly_pressed)
@@ -962,19 +962,19 @@ func atualizar_detalhes() -> void:
 	reconstruir_stats(dados["stats"], cor)
 
 	if caminho == caminho_equipado:
-		botao_acao.text = "PADRÃO" if caminho == HABILIDADE_INICIAL else "DESEQUIPAR"
+		botao_acao.text = tr("PADRÃO") if caminho == HABILIDADE_INICIAL else tr("DESEQUIPAR")
 		botao_acao.disabled = caminho == HABILIDADE_INICIAL
 	elif _habilidade_liberada(caminho, StringName(dados.get("id", &""))):
-		botao_acao.text = "EQUIPAR"
+		botao_acao.text = tr("EQUIPAR")
 		botao_acao.disabled = false
 	elif not conquista_id.is_empty():
-		botao_acao.text = "BLOQUEADA POR CONQUISTA"
+		botao_acao.text = tr("BLOQUEADA POR CONQUISTA")
 		botao_acao.disabled = true
 	elif Global.pode_gastar_cristais(preco):
-		botao_acao.text = "COMPRAR"
+		botao_acao.text = tr("COMPRAR")
 		botao_acao.disabled = false
 	else:
-		botao_acao.text = "SALDO INSUFICIENTE"
+		botao_acao.text = tr("SALDO INSUFICIENTE")
 		botao_acao.disabled = true
 	if is_instance_valid(rolagem_detalhes):
 		rolagem_detalhes.scroll_vertical = 0
@@ -1059,7 +1059,7 @@ func criar_cartao_generico(indice: int, item: Dictionary) -> void:
 	var estado := Label.new()
 	var id := StringName(item["id"])
 	estado.text = (
-		"EM BREVE"
+		tr("EM BREVE")
 		if bool(item.get("em_breve", false))
 		else _texto_estado_item_generico(item)
 	)
@@ -1131,48 +1131,48 @@ func atualizar_detalhes_genericos() -> void:
 	detalhe_descricao.text = tr(str(item["descricao"]))
 	if categoria_atual == 1:
 		var crit := preload("res://Scripts/Criticos.gd").valores(id)
-		detalhe_descricao.text += "\n\nCrítico: %d%% de chance • %d%% do dano." % [roundi(crit.x * 100.0), roundi(crit.y * 100.0)]
+		detalhe_descricao.text += "\n\n" + tr("Crítico: %d%% de chance • %d%% do dano.") % [roundi(crit.x * 100.0), roundi(crit.y * 100.0)]
 	detalhe_recarga.text = tr(
 		"PERSONALIZAÇÃO VISUAL • SEM BÔNUS DE ATRIBUTOS"
 		if categoria_atual == 4
 		else "EQUIPAMENTO ÚNICO • 1 POR CATEGORIA"
 	)
 	if em_breve:
-		detalhe_preco.text = "EM BREVE"
+		detalhe_preco.text = tr("EM BREVE")
 	elif not requisito_compra_atendido(item):
-		detalhe_preco.text = "CONQUISTA SECRETA"
+		detalhe_preco.text = tr("CONQUISTA SECRETA")
 	else:
 		detalhe_preco.text = _texto_preco_ou_conquista(int(item["preco"]), conquista)
 	detalhe_stats.visible = categoria_atual != 4
 	reconstruir_stats(item["stats"], cor)
 	var equipado := _item_generico_equipado(item)
 	if not _personalizacao_compativel(item):
-		botao_acao.text = "EXCLUSIVO DO MODELO"
+		botao_acao.text = tr("EXCLUSIVO DO MODELO")
 		botao_acao.disabled = true
 	elif em_breve:
-		botao_acao.text = "EM BREVE"
+		botao_acao.text = tr("EM BREVE")
 		botao_acao.disabled = true
 	elif id == equipado:
 		var item_padrao := (
 			categoria_atual == 4
 			and id == _personalizacao_padrao(StringName(item.get("grupo_personalizacao", &"")))
 		)
-		botao_acao.text = "PADRÃO" if item_padrao else ("USAR PADRÃO" if categoria_atual == 4 else "DESEQUIPAR")
+		botao_acao.text = tr("PADRÃO") if item_padrao else (tr("USAR PADRÃO") if categoria_atual == 4 else tr("DESEQUIPAR"))
 		botao_acao.disabled = item_padrao
 	elif _item_generico_liberado(id):
-		botao_acao.text = "EQUIPAR"
+		botao_acao.text = tr("EQUIPAR")
 		botao_acao.disabled = false
 	elif not requisito_compra_atendido(item):
-		botao_acao.text = "BLOQUEADO • CONQUISTA SECRETA"
+		botao_acao.text = tr("BLOQUEADO • CONQUISTA SECRETA")
 		botao_acao.disabled = true
 	elif not conquista.is_empty():
-		botao_acao.text = "BLOQUEADO POR CONQUISTA"
+		botao_acao.text = tr("BLOQUEADO POR CONQUISTA")
 		botao_acao.disabled = true
 	elif Global.pode_gastar_cristais(int(item["preco"])):
-		botao_acao.text = "COMPRAR"
+		botao_acao.text = tr("COMPRAR")
 		botao_acao.disabled = false
 	else:
-		botao_acao.text = "SALDO INSUFICIENTE"
+		botao_acao.text = tr("SALDO INSUFICIENTE")
 		botao_acao.disabled = true
 	if is_instance_valid(rolagem_detalhes):
 		rolagem_detalhes.scroll_vertical = 0
@@ -1204,10 +1204,10 @@ func _on_acao_pressed() -> void:
 	var conquista := StringName(dados.get("conquista", &""))
 	if caminho == caminho_equipado:
 		if caminho == HABILIDADE_INICIAL:
-			mensagem.text = "ESSA É A HABILIDADE PADRÃO"
+			mensagem.text = tr("ESSA É A HABILIDADE PADRÃO")
 			return
 		caminho_equipado = HABILIDADE_INICIAL
-		mensagem.text = "HABILIDADE DESEQUIPADA • RETROCESSO RESTAURADO"
+		mensagem.text = tr("HABILIDADE DESEQUIPADA • RETROCESSO RESTAURADO")
 		salvar_estado()
 		reconstruir_grade_habilidades()
 		atualizar_detalhes()
@@ -1219,13 +1219,13 @@ func _on_acao_pressed() -> void:
 			mensagem.text = _descricao_conquista(conquista)
 			return
 		if not Global.gastar_cristais(preco):
-			mensagem.text = "CRISTAIS INSUFICIENTES"
+			mensagem.text = tr("CRISTAIS INSUFICIENTES")
 			Global.vibrar_controle(0.10, 0.35, 0.14)
 			return
 		desbloqueadas.append(caminho)
-		mensagem.text = "%s DESBLOQUEADA" % habilidade.Nome.to_upper()
+		mensagem.text = tr("%s DESBLOQUEADA") % tr(habilidade.Nome).to_upper()
 	elif Global.modo_desenvolvedor and caminho not in desbloqueadas:
-		mensagem.text = "EQUIPADA PELO MODO DESENVOLVEDOR"
+		mensagem.text = tr("EQUIPADA PELO MODO DESENVOLVEDOR")
 
 	caminho_equipado = caminho
 	salvar_estado()
@@ -1241,7 +1241,7 @@ func _on_acao_item_generico() -> void:
 		return
 	var item: Dictionary = itens[indice_selecionado]
 	if bool(item.get("em_breve", false)):
-		mensagem.text = "ESSA PERSONALIZAÇÃO CHEGARÁ EM BREVE"
+		mensagem.text = tr("ESSA PERSONALIZAÇÃO CHEGARÁ EM BREVE")
 		return
 	if categoria_atual == 4:
 		_on_acao_personalizacao(item)
@@ -1251,7 +1251,7 @@ func _on_acao_item_generico() -> void:
 	var chave := str(categoria_atual)
 	if StringName(equipamentos_loja.get(chave, &"")) == id:
 		equipamentos_loja[chave] = &""
-		mensagem.text = "%s DESEQUIPADO • EQUIPAMENTO PADRÃO RESTAURADO" % str(item["nome"])
+		mensagem.text = tr("%s DESEQUIPADO • EQUIPAMENTO PADRÃO RESTAURADO") % tr(str(item["nome"]))
 		salvar_estado()
 		reconstruir_grade_generica()
 		atualizar_detalhes_genericos()
@@ -1262,11 +1262,11 @@ func _on_acao_item_generico() -> void:
 			mensagem.text = _descricao_conquista(conquista)
 			return
 		if not Global.gastar_cristais(int(item["preco"])):
-			mensagem.text = "CRISTAIS INSUFICIENTES"
+			mensagem.text = tr("CRISTAIS INSUFICIENTES")
 			Global.vibrar_controle(0.10, 0.35, 0.14)
 			return
 		itens_desbloqueados.append(id)
-		mensagem.text = "%s DESBLOQUEADO" % str(item["nome"])
+		mensagem.text = tr("%s DESBLOQUEADO") % tr(str(item["nome"]))
 	equipamentos_loja[chave] = id
 	salvar_estado()
 	Global.vibrar_controle(0.18, 0.32, 0.12)
@@ -1281,10 +1281,10 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 	if grupo not in [&"modelo", &"cor", &"rastro"]:
 		return
 	if not _personalizacao_compativel(item):
-		mensagem.text = "EQUIPE O MODELO CORRESPONDENTE PARA USAR ESTE RASTRO"
+		mensagem.text = tr("EQUIPE O MODELO CORRESPONDENTE PARA USAR ESTE RASTRO")
 		return
 	if not requisito_compra_atendido(item):
-		mensagem.text = "CONQUISTA SECRETA AINDA NÃO DESBLOQUEADA"
+		mensagem.text = tr("CONQUISTA SECRETA AINDA NÃO DESBLOQUEADA")
 		return
 	if StringName(personalizacao_nave.get(str(grupo), &"")) == id:
 		var padrao := _personalizacao_padrao(grupo)
@@ -1294,7 +1294,7 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 		if grupo == &"modelo":
 			personalizacao_nave["rastro"] = &"c20_rastro_padrao"
 		equipamentos_loja["4"] = personalizacao_nave["modelo"]
-		mensagem.text = "VISUAL PADRÃO RESTAURADO"
+		mensagem.text = tr("VISUAL PADRÃO RESTAURADO")
 		salvar_estado()
 		reconstruir_grade_generica()
 		atualizar_detalhes_genericos()
@@ -1303,11 +1303,11 @@ func _on_acao_personalizacao(item: Dictionary) -> void:
 	if not _item_generico_liberado(id) and not Global.modo_desenvolvedor:
 		var preco := int(item["preco"])
 		if not Global.gastar_cristais(preco):
-			mensagem.text = "CRISTAIS INSUFICIENTES"
+			mensagem.text = tr("CRISTAIS INSUFICIENTES")
 			Global.vibrar_controle(0.10, 0.35, 0.14)
 			return
 		itens_desbloqueados.append(id)
-		mensagem.text = "%s DESBLOQUEADO" % str(item["nome"])
+		mensagem.text = tr("%s DESBLOQUEADO") % tr(str(item["nome"]))
 	personalizacao_nave[str(grupo)] = id
 	if grupo == &"modelo":
 		equipamentos_loja["4"] = id
@@ -1395,9 +1395,9 @@ func texto_estado_cartao(
 	if _habilidade_liberada(caminho, id):
 		return tr("LIBERADA")
 	if Global.modo_desenvolvedor:
-		return "DEV LIBERADA"
+		return tr("DEV LIBERADA")
 	if not conquista.is_empty():
-		return "★ CONQUISTA"
+		return tr("★ CONQUISTA")
 	return tr("GRÁTIS") if preco == 0 else "◆  " + formatar_numero(preco)
 
 
@@ -1410,9 +1410,9 @@ func _texto_estado_item_generico(item: Dictionary) -> String:
 	if _item_generico_liberado(id):
 		return tr("LIBERADO")
 	if not requisito_compra_atendido(item):
-		return "★ CONQUISTA SECRETA"
+		return tr("★ CONQUISTA SECRETA")
 	if not conquista.is_empty():
-		return "★ CONQUISTA"
+		return tr("★ CONQUISTA")
 	return "◆  " + formatar_numero(preco)
 
 
@@ -1438,14 +1438,14 @@ func _texto_preco_ou_conquista(preco: int, conquista: StringName) -> String:
 	if conquista.is_empty():
 		return tr("GRÁTIS") if preco == 0 else formatar_numero(preco)
 	if Global.conquista_liberada(conquista):
-		return "RECOMPENSA OBTIDA"
+		return tr("RECOMPENSA OBTIDA")
 	var progresso := Global.progresso_conquista(conquista)
-	return "CONQUISTA • %d/%d" % [int(progresso["atual"]), int(progresso["meta"])]
+	return tr("CONQUISTA • %d/%d") % [int(progresso["atual"]), int(progresso["meta"])]
 
 
 func _descricao_conquista(id: StringName) -> String:
 	var dados: Dictionary = Global.CONQUISTAS.get(id, {})
-	return "CONQUISTA: " + str(dados.get("descricao", "Continue jogando para desbloquear."))
+	return tr("CONQUISTA: %s") % tr(str(dados.get("descricao", "Continue jogando para desbloquear.")))
 
 
 func atualizar_saldo() -> void:
@@ -1465,7 +1465,7 @@ func _on_adicionar_cristais_pressed() -> void:
 	if not Global.modo_desenvolvedor:
 		return
 	Global.adicionar_cristais(1000, true)
-	mensagem.text = "+1.000 CRISTAIS DE TESTE"
+	mensagem.text = tr("+1.000 CRISTAIS DE TESTE")
 
 
 func _focar_primeiro_item() -> void:

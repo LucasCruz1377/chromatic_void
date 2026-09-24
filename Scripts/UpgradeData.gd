@@ -704,25 +704,25 @@ static func rotas_ativas(
 
 static func nome_slot(slot: StringName) -> String:
 	match slot:
-		SLOT_ESTILO_TIRO: return "ESTILO DE TIRO"
-		SLOT_SUPERMOD: return "SUPERMOD"
-		SLOT_DETONADOR_MINA: return "DETONADOR DA MINA"
+		SLOT_ESTILO_TIRO: return _tr("ESTILO DE TIRO")
+		SLOT_SUPERMOD: return _tr("SUPERMOD")
+		SLOT_DETONADOR_MINA: return _tr("DETONADOR DA MINA")
 		_: return str(slot).to_upper()
 
 
 static func nome_rota(rota: StringName) -> String:
 	match rota:
-		&"multitiro": return "PRISMA"
-		&"gravitacional": return "PREDADOR"
-		&"ricochete": return "RICOCHETE"
-		&"impacto_pesado": return "IMPACTO PESADO"
-		&"fragmentacao": return "ESTILHAÇOS"
-		&"tempestade_prismatica": return "TEMPESTADE"
-		&"singularidade": return "SINGULARIDADE"
-		&"reator_sincronizado": return "REATOR"
-		&"proximidade": return "PROXIMIDADE"
-		&"remoto": return "COMANDO REMOTO"
-		&"": return "LIVRE"
+		&"multitiro": return _tr("PRISMA")
+		&"gravitacional": return _tr("PREDADOR")
+		&"ricochete": return _tr("RICOCHETE")
+		&"impacto_pesado": return _tr("IMPACTO PESADO")
+		&"fragmentacao": return _tr("ESTILHAÇOS")
+		&"tempestade_prismatica": return _tr("TEMPESTADE")
+		&"singularidade": return _tr("SINGULARIDADE")
+		&"reator_sincronizado": return _tr("REATOR")
+		&"proximidade": return _tr("PROXIMIDADE")
+		&"remoto": return _tr("COMANDO REMOTO")
+		&"": return _tr("LIVRE")
 		_: return str(rota).replace("_", " ").to_upper()
 
 
@@ -737,11 +737,11 @@ static func resumo_rotas(
 			var dados := obter(id, habilidade)
 			if StringName(dados.get("arma_exclusiva", &"")) == arma:
 				melhorias_arma += int(niveis[id])
-		return "%s   •   %d MELHORIA(S) PRÓPRIA(S)" % [
-			nome_arma(arma), melhorias_arma
+		return _tr("%s   •   %d MELHORIA(S) PRÓPRIA(S)") % [
+			_tr(nome_arma(arma)), melhorias_arma
 		]
 	var rotas := rotas_ativas(niveis, habilidade)
-	return "ESTILO DE TIRO: %s   •   SUPERMOD: %s" % [
+	return _tr("ESTILO DE TIRO: %s   •   SUPERMOD: %s") % [
 		nome_rota(rotas[SLOT_ESTILO_TIRO]),
 		nome_rota(rotas[SLOT_SUPERMOD]),
 	]
@@ -794,29 +794,33 @@ static func texto_requisitos(
 	var rota: StringName = dados.get("rota_estrutural", &"")
 	var texto_rota := ""
 	if slot != &"" and rota != &"":
-		texto_rota = "ROTA: %s • %s" % [nome_slot(slot), nome_rota(rota)]
+		texto_rota = _tr("ROTA: %s • %s") % [nome_slot(slot), nome_rota(rota)]
 
 	if requisitos.is_empty():
 		if not StringName(dados.get("arma_exclusiva", &"")).is_empty():
-			return "EXCLUSIVO DA ARMA EQUIPADA"
+			return _tr("EXCLUSIVO DA ARMA EQUIPADA")
 		if &"habilidade_especifica" in dados.get("tags", []):
-			return "EXCLUSIVO DA HABILIDADE EQUIPADA"
+			return _tr("EXCLUSIVO DA HABILIDADE EQUIPADA")
 		if not texto_rota.is_empty():
 			return texto_rota
-		return "SEM PRÉ-REQUISITOS"
+		return _tr("SEM PRÉ-REQUISITOS")
 
 	var partes: Array[String] = []
 	for requisito in requisitos:
 		var nome := str(obter(requisito, habilidade).get("nome", requisito))
 		partes.append("%s %d/%d" % [
-			nome,
+			_tr(nome),
 			nivel(requisito, niveis),
 			int(requisitos[requisito])
 		])
-	var texto_requisito := "REQUER: " + "  •  ".join(partes)
+	var texto_requisito := _tr("REQUER: %s") % "  •  ".join(partes)
 	if texto_rota.is_empty():
 		return texto_requisito
 	return texto_rota + "\n" + texto_requisito
+
+
+static func _tr(texto: String) -> String:
+	return str(TranslationServer.translate(texto))
 
 
 static func sortear(

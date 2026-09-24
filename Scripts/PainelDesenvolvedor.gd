@@ -60,14 +60,14 @@ func construir_interface() -> void:
 	margem.add_child(coluna)
 
 	var titulo := Label.new()
-	titulo.text = "LABORATÓRIO DE TESTES"
+	titulo.text = tr("LABORATÓRIO DE TESTES")
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 24)
 	titulo.add_theme_color_override("font_color", COR_DESTAQUE)
 	coluna.add_child(titulo)
 
 	var descricao := Label.new()
-	descricao.text = "Somente modo desenvolvedor • F10 ou L3+R3 • ESC volta ao jogo"
+	descricao.text = tr("Somente modo desenvolvedor • F10 ou L3+R3 • ESC volta ao jogo")
 	descricao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	descricao.add_theme_font_size_override("font_size", 11)
 	descricao.add_theme_color_override("font_color", Color(0.55, 0.65, 0.82))
@@ -116,7 +116,7 @@ func construir_interface() -> void:
 
 func adicionar_secao(pai: VBoxContainer, texto: String) -> void:
 	var rotulo := Label.new()
-	rotulo.text = texto
+	rotulo.text = tr(texto)
 	rotulo.add_theme_font_size_override("font_size", 12)
 	rotulo.add_theme_color_override("font_color", Color(1.0, 0.76, 0.28))
 	pai.add_child(rotulo)
@@ -125,7 +125,7 @@ func adicionar_secao(pai: VBoxContainer, texto: String) -> void:
 func adicionar_botao(pai: Control, texto: String, acao: Callable) -> Button:
 	var botao := Button.new()
 	botao.custom_minimum_size = Vector2(156.0, 42.0)
-	botao.text = texto
+	botao.text = tr(texto)
 	botao.focus_mode = Control.FOCUS_ALL
 	botao.add_theme_font_size_override("font_size", 11)
 	botao.add_theme_stylebox_override("normal", criar_estilo_botao(false))
@@ -251,9 +251,9 @@ func atualizar_status(mensagem := "") -> void:
 		return
 	var invulneravel := "ON" if player.invulneravel_desenvolvedor else "OFF"
 	var spawns_pausados := bool(batalha.call("spawns_teste_estao_pausados"))
-	var spawns := "PAUSADOS" if spawns_pausados else "ATIVOS"
-	status.text = "%s  •  LVL %d  •  PONTOS %d  •  INVULN %s  •  SPAWNS %s" % [
-		mensagem,
+	var spawns := tr("PAUSADOS") if spawns_pausados else tr("ATIVOS")
+	status.text = tr("%s  •  LVL %d  •  PONTOS %d  •  INVULN %s  •  SPAWNS %s") % [
+		tr(mensagem),
 		player.nivel_atual,
 		player.pontos_upgrade_pendentes,
 		invulneravel,

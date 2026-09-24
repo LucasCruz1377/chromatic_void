@@ -56,6 +56,7 @@ jobs:
         run: |
           python3 Tests/validar_referencias.py
           python3 Tests/validar_portabilidade_ios.py
+          python3 Tests/validar_localizacao.py
 
       - name: Verificar sistema de atualização
         run: |
@@ -156,5 +157,3 @@ jobs:
           presets_to_export: ${{ matrix.preset }}
           archive_output: true
           cache: true
-
-     

@@ -59,7 +59,7 @@ func conceder_recompensa() -> void:
 		elif jogador.has_method("ganhar_xp"):
 			jogador.call("ganhar_xp", xp_jogador)
 	mostrar_recompensa(
-		"EQUIPE: +%d VIDA  •  +%d XP" % [roundi(maior_cura), roundi(xp_calculado)],
+		tr("EQUIPE: +%d VIDA  •  +%d XP") % [roundi(maior_cura), roundi(xp_calculado)],
 		Color(0.82, 0.86, 0.95, 1.0)
 	)
 
@@ -85,7 +85,7 @@ func calcular_xp(alvo: Node = player) -> float:
 
 func mostrar_recompensa(texto: String, cor: Color) -> void:
 	var aviso := Label.new()
-	aviso.text = texto
+	aviso.text = tr(texto)
 	aviso.global_position = global_position - Vector2(24.0, 28.0)
 	aviso.z_index = 20
 	aviso.add_theme_color_override("font_color", cor)

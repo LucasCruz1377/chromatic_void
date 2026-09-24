@@ -83,7 +83,7 @@ func criar_lobby(nickname: String) -> Error:
 	var erro := peer_enet.create_server(PORTA, MAX_JOGADORES - 1)
 	if erro != OK:
 		peer_enet = null
-		status_alterado.emit("Não foi possível criar a sala na porta UDP %d." % PORTA, true)
+		status_alterado.emit(tr("Não foi possível criar a sala na porta UDP %d.") % PORTA, true)
 		return erro
 	multiplayer.multiplayer_peer = peer_enet
 	hospedando = true
@@ -95,7 +95,7 @@ func criar_lobby(nickname: String) -> Error:
 	_iniciar_anuncio_lan()
 	var ips := obter_enderecos_host()
 	status_alterado.emit(
-		"Sala criada • IP %s • porta UDP %d" % [ips[0] if not ips.is_empty() else "indisponível", PORTA],
+		tr("Sala criada • IP %s • porta UDP %d") % [ips[0] if not ips.is_empty() else tr("indisponível"), PORTA],
 		false
 	)
 	return OK
@@ -106,7 +106,7 @@ func entrar_lobby(endereco: String, nickname: String) -> Error:
 	definir_nickname(nickname)
 	var host := endereco.strip_edges()
 	if host.is_empty():
-		status_alterado.emit("Digite o IP do host.", true)
+		status_alterado.emit(tr("Digite o IP do host."), true)
 		return ERR_INVALID_PARAMETER
 	_encerrar_descoberta_lan()
 	GerenciadorDeSave.salvar({"ultimo_ip_host": host})
@@ -114,7 +114,7 @@ func entrar_lobby(endereco: String, nickname: String) -> Error:
 	var erro := peer_enet.create_client(host, PORTA)
 	if erro != OK:
 		peer_enet = null
-		status_alterado.emit("Não foi possível iniciar a conexão com %s." % host, true)
+		status_alterado.emit(tr("Não foi possível iniciar a conexão com %s.") % host, true)
 		return erro
 	multiplayer.multiplayer_peer = peer_enet
 	hospedando = false
@@ -122,7 +122,7 @@ func entrar_lobby(endereco: String, nickname: String) -> Error:
 	modo_multiplayer = true
 	jogadores.clear()
 	lobby_alterado.emit(jogadores.duplicate())
-	status_alterado.emit("Conectando a %s:%d..." % [host, PORTA], false)
+	status_alterado.emit(tr("Conectando a %s:%d...") % [host, PORTA], false)
 	return OK
 
 
@@ -162,7 +162,7 @@ func iniciar_busca_lan() -> Error:
 	var erro := receptor_lan.bind(PORTA_DESCOBERTA, "*")
 	if erro != OK:
 		receptor_lan = null
-		status_alterado.emit("Busca automática indisponível; ainda é possível digitar o IP.", true)
+		status_alterado.emit(tr("Busca automática indisponível; ainda é possível digitar o IP."), true)
 		return erro
 	lobbies_lan.clear()
 	lobbies_lan_alterados.emit([])
@@ -304,7 +304,7 @@ func pode_iniciar_partida() -> bool:
 
 func solicitar_inicio_partida() -> bool:
 	if not pode_iniciar_partida():
-		status_alterado.emit("Aguardando pelo menos dois jogadores na sala.", true)
+		status_alterado.emit(tr("Aguardando pelo menos dois jogadores na sala."), true)
 		return false
 	_iniciar_partida_remota.rpc()
 	return true
@@ -344,7 +344,7 @@ func _enviar_lista_jogadores() -> void:
 
 func _on_peer_conectado(_id: int) -> void:
 	if hospedando:
-		status_alterado.emit("Piloto conectado. Recebendo nickname...", false)
+		status_alterado.emit(tr("Piloto conectado. Recebendo nickname..."), false)
 
 
 func _on_peer_desconectado(id: int) -> void:
@@ -352,22 +352,22 @@ func _on_peer_desconectado(id: int) -> void:
 		jogadores.erase(id)
 	if hospedando:
 		_enviar_lista_jogadores()
-	status_alterado.emit("Um jogador saiu da sala.", true)
+	status_alterado.emit(tr("Um jogador saiu da sala."), true)
 	lobby_alterado.emit(jogadores.duplicate())
 	jogador_desconectado.emit(id)
 
 
 func _on_conectado_ao_servidor() -> void:
-	status_alterado.emit("Conectado ao lobby.", false)
+	status_alterado.emit(tr("Conectado ao lobby."), false)
 	_registrar_nickname_remoto.rpc_id(1, nickname_local)
 
 
 func _on_falha_conexao() -> void:
-	status_alterado.emit("Falha ao conectar. Confira o IP e a porta UDP %d." % PORTA, true)
+	status_alterado.emit(tr("Falha ao conectar. Confira o IP e a porta UDP %d.") % PORTA, true)
 	encerrar_lobby()
 
 
 func _on_servidor_desconectado() -> void:
-	status_alterado.emit("O host encerrou a sala.", true)
-	desconexao_detectada.emit("CONEXÃO PERDIDA: o host encerrou a partida.", true)
+	status_alterado.emit(tr("O host encerrou a sala."), true)
+	desconexao_detectada.emit(tr("CONEXÃO PERDIDA: o host encerrou a partida."), true)
 	encerrar_lobby()
