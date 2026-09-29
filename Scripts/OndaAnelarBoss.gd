@@ -37,7 +37,7 @@ static func criar(cena: Node, dados: Dictionary) -> OndaAnelarBoss:
 	onda.z_index = 4
 	onda.add_to_group("perigo_boss_dinamico")
 	cena.add_child(onda)
-	if Rede.modo_multiplayer and multiplayer.is_server():
+	if Rede.modo_multiplayer and cena.get_multiplayer().is_server():
 		var dono_rede: Variant = dados.get("dono")
 		if not is_instance_valid(dono_rede):
 			var bosses := cena.get_tree().get_nodes_in_group("boss")
