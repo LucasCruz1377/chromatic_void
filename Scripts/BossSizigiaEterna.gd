@@ -298,9 +298,18 @@ func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
 
 func anunciar_ataque(texto: String) -> void:
 	subtitulo_alterado.emit(texto)
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		_receber_aviso_ataque.rpc(texto)
 	if multiplayer.has_multiplayer_peer():
 		_reproduzir_impacto_ataque.rpc()
 	_reproduzir_impacto_ataque()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_aviso_ataque(texto: String) -> void:
+	if multiplayer.is_server():
+		return
+	subtitulo_alterado.emit(texto)
 
 
 @rpc("authority", "call_remote", "reliable")
