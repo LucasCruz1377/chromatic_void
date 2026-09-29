@@ -198,6 +198,8 @@ func esta_no_corredor(posicao: Vector2) -> bool:
 
 
 func aplicar_dano_player() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if is_instance_valid(player) and player.has_method("tomar_dano"):
 		player.tomar_dano(dano)
 

@@ -97,3 +97,13 @@ func disparar_pulso() -> void:
 		projetil.configurar(Vector2.from_angle(angulo), Dano * 0.45, 185.0, 0)
 		get_tree().current_scene.add_child(projetil, true)
 		projetil.aplicar_glow()
+		replicar_projetil_inimigo_rede(
+			projetil,
+			projetil.position,
+			Vector2.from_angle(angulo),
+			Dano * 0.45,
+			185.0,
+			0,
+			COR_PROJETIL_TANQUE,
+			projetil.scale
+		)

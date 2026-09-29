@@ -70,6 +70,14 @@ static func criar(cena: Node, dados: Dictionary) -> FaixaEnergiaBoss:
 	faixa.add_to_group("perigo_boss_dinamico")
 	cena.add_child(faixa)
 	faixa._atualizar_geometria(0.0)
+	if Rede.modo_multiplayer and cena.get_multiplayer().is_server():
+		var dono_rede: Variant = dados.get("dono")
+		if not is_instance_valid(dono_rede):
+			var bosses := cena.get_tree().get_nodes_in_group("boss")
+			if not bosses.is_empty():
+				dono_rede = bosses[0]
+		if is_instance_valid(dono_rede) and dono_rede.has_method("replicar_efeito_boss_rede"):
+			dono_rede.call("replicar_efeito_boss_rede", &"faixa", dados)
 	return faixa
 
 func _process(delta: float) -> void:
@@ -138,6 +146,8 @@ func _posicao_formacao(indice: int, alternativa: Vector2) -> Vector2:
 	return alternativa
 
 func _aplicar_perigo() -> void:
+	if bool(get_meta("apenas_visual_rede", false)):
+		return
 	if recarga_dano > 0.0:
 		return
 	var jogador := get_tree().get_first_node_in_group("player") as Node2D

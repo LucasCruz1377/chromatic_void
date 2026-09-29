@@ -221,6 +221,15 @@ func disparar_anel_espinhos() -> void:
 			235.0 + fase * 30.0,
 			0
 		)
+		replicar_projetil_inimigo_rede(
+			espinho,
+			espinho.global_position,
+			direcao,
+			Dano * 0.42,
+			235.0 + fase * 30.0,
+			0,
+			Color(1.0, 0.34, 0.55)
+		)
 
 
 func iniciar_petalas_bumerangue() -> void:
@@ -358,11 +367,53 @@ func criar_vinhas() -> void:
 	vinhas_pivot.rotation = aviso_vinhas.rotation
 	for indice in 4:
 		var vinha := VINHA.instantiate() as VinhaEspinhosa
+		vinha.name = "VinhaRede%d" % indice
 		vinhas_pivot.add_child(vinha)
 		vinha.rotation = float(indice) * PI * 0.5
 		vinha.configurar(COMPRIMENTO_VINHA, Dano * 0.58)
 		vinha.iniciar_crescimento(0.70)
 		vinhas_ativas.append(vinha)
+		if Rede.modo_multiplayer and multiplayer.is_server():
+			_replicar_vinhas_boss.rpc()
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_petala_boss(
+	posicao: Vector2,
+	direcao: Vector2,
+	dano: float,
+	velocidade: float,
+	velocidade_retorno: float,
+	indice: int
+) -> void:
+	if multiplayer.is_server():
+		return
+	var petala := PETALA_BUMERANGUE.instantiate() as PetalaBumerangue
+	petala.name = "PetalaRede%d" % indice
+	get_tree().current_scene.add_child(petala, true)
+	petala.configurar(posicao, direcao, dano, velocidade, velocidade_retorno, indice, self)
+	petala.set_meta("apenas_visual_rede", true)
+	petala.collision_layer = 0
+	petala.collision_mask = 0
+	petala.monitoring = false
+	petala.monitorable = false
+
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_vinhas_boss() -> void:
+	if multiplayer.is_server():
+		return
+	if not vinhas_ativas.is_empty():
+		return
+	vinhas_ativas.clear()
+	for indice in 4:
+		var vinha := VINHA.instantiate() as VinhaEspinhosa
+		vinha.name = "VinhaRede%d" % indice
+		vinhas_pivot.add_child(vinha)
+		vinha.rotation = float(indice) * PI * 0.5
+		vinha.configurar(COMPRIMENTO_VINHA, Dano * 0.58)
+		vinha.iniciar_crescimento(0.70)
+		vinhas_ativas.append(vinha)
+
 
 
 func crescer_vinhas(delta: float) -> void:

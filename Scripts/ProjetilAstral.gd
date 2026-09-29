@@ -116,6 +116,8 @@ func criar_rastro() -> void:
 
 
 func _on_body_entered(alvo: Node) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if not alvo.is_in_group("player"):
 		return
 	if alvo.has_method("tomar_dano"):

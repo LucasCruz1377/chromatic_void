@@ -201,6 +201,8 @@ func disparar_tampinhas() -> void:
 		projetil.tempo_vida = 7.0
 		projetil.configurar(direcao, Dano * 0.7, 410.0, 4)
 		get_tree().current_scene.add_child(projetil, true)
+		if Rede.modo_multiplayer and multiplayer.is_server():
+			_replicar_projetil_pet0.rpc(projetil.position, direcao, projetil.scale, projetil.modulate, Dano * 0.7, 410.0, 4)
 
 	iniciar_recuperacao(0.55)
 
@@ -234,6 +236,8 @@ func liberar_pressao() -> void:
 		projetil.modulate = Color(0.3, 1.0, 0.65, 1.0)
 		projetil.configurar(Vector2.from_angle(angulo), Dano * 0.42, 220.0, 0)
 		get_tree().current_scene.add_child(projetil, true)
+		if Rede.modo_multiplayer and multiplayer.is_server():
+			_replicar_projetil_pet0.rpc(projetil.position, Vector2.from_angle(angulo), projetil.scale, projetil.modulate, Dano * 0.42, 220.0, 0)
 
 
 func invocar_microplasticos() -> void:
@@ -246,6 +250,8 @@ func invocar_microplasticos() -> void:
 			TAU * float(indice) / float(maxi(quantidade_minions, 1))
 		) * 70.0
 		get_tree().current_scene.add_child(minion, true)
+		if Rede.modo_multiplayer and multiplayer.is_server():
+			_replicar_minion_pet0.rpc(minion.position)
 
 	var fragmentos_existentes := get_tree().get_nodes_in_group("residuo_pet0").size()
 	var quantidade_fragmentos := mini(2, max_fragmentos - fragmentos_existentes)
@@ -263,6 +269,58 @@ func criar_fragmento(deslocamento: Vector2) -> void:
 	get_tree().current_scene.add_child(fragmento)
 	fragmento.global_position = global_position + deslocamento
 	fragmento.dono_boss = self
+	if Rede.modo_multiplayer and multiplayer.is_server():
+		_replicar_fragmento_pet0.rpc(deslocamento)
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_projetil_pet0(
+	posicao: Vector2,
+	direcao: Vector2,
+	escala: Vector2,
+	cor: Color,
+	dano: float,
+	velocidade: float,
+	rebotes: int
+) -> void:
+	if multiplayer.is_server():
+		return
+	var projetil := PROJETIL.instantiate() as ProjetilInimigo
+	projetil.position = posicao
+	projetil.scale = escala
+	projetil.modulate = cor
+	projetil.configurar(direcao, dano, velocidade, rebotes)
+	projetil.set_meta("apenas_visual_rede", true)
+	projetil.collision_layer = 0
+	projetil.collision_mask = 0
+	projetil.monitoring = false
+	projetil.monitorable = false
+	get_tree().current_scene.add_child(projetil, true)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_minion_pet0(posicao: Vector2) -> void:
+	if multiplayer.is_server():
+		return
+	var minion := MINION.instantiate() as InimigoBase
+	minion.position = posicao
+	minion.set_meta("apenas_visual_rede", true)
+	minion.set_physics_process(false)
+	get_tree().current_scene.add_child(minion, true)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_fragmento_pet0(deslocamento: Vector2) -> void:
+	if multiplayer.is_server():
+		return
+	var fragmento := FRAGMENTO.instantiate() as FragmentoReciclavel
+	if not fragmento:
+		return
+	get_tree().current_scene.add_child(fragmento, true)
+	fragmento.global_position = global_position + deslocamento
+	fragmento.dono_boss = self
+	fragmento.set_meta("apenas_visual_rede", true)
+	fragmento.set_physics_process(false)
+
 
 
 func iniciar_recuperacao(duracao: float) -> void:

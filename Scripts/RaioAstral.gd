@@ -111,6 +111,8 @@ func iniciar_desaparecimento() -> void:
 
 
 func verificar_acerto() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if atingiu or not is_instance_valid(player):
 		return
 	var relativo := player.global_position - global_position
