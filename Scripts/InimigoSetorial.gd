@@ -208,6 +208,9 @@ func _disparar(dir:Vector2,vel:float,dano_tiro:float)->void:
 	if forma: forma.color=cor_setor
 	p.configurar(dir,dano_tiro,vel,0)
 	cena.add_child(p, true)
+	replicar_projetil_inimigo_rede(
+		p, p.position, dir, dano_tiro, vel, 0, cor_setor
+	)
 
 func tomarDano(valor:float)->void:
 	if estilo==Estilo.SATELITE_BERCO and not drones_liberados: _soltar_drones()
