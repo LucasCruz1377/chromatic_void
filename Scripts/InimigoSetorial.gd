@@ -230,6 +230,19 @@ func _soltar_drones()->void:
 		d.VidaMaxima*=0.5
 		d.ValorXP=0.25
 		batalha.add_child(d, true)
+		if Rede.modo_multiplayer and multiplayer.is_server():
+			_replicar_drone_setorial.rpc(d.position)
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_drone_setorial(posicao: Vector2) -> void:
+	if multiplayer.is_server():
+		return
+	var cena := load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
+	var drone := cena.instantiate() as InimigoBase
+	drone.position = posicao
+	drone.set_meta("apenas_visual_rede", true)
+	drone.set_physics_process(false)
+	get_tree().current_scene.add_child(drone, true)
 
 func morrer()->void:
 	_limpar_escudo()
