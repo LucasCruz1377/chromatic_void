@@ -267,6 +267,11 @@ func _ready() -> void:
 				and boss.has_method("_aplicar_snapshot_visual_boss"),
 			"%s não possui sincronização visual de animações" % caminho_boss
 		)
+		var snapshot_visual: Dictionary = boss.call("_capturar_snapshot_visual_boss", 41)
+		verificar(
+			int(snapshot_visual.get("sequencia", -1)) == 41,
+			"%s não inclui sequência nos snapshots visuais" % caminho_boss
+		)
 		verificar(
 			float(boss.call("obter_vida_maxima_atual")) >= vida_anterior * 1.75,
 			"%s não recebeu 175%% da vida anterior" % caminho_boss
