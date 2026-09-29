@@ -829,10 +829,8 @@ func _replicar_projetil_inimigo_rpc(
 	projetil.set_meta("apenas_visual_rede", true)
 	projetil.collision_layer = 0
 	projetil.collision_mask = 0
-	if "monitoring" in projetil:
-		projetil.monitoring = false
-	if "monitorable" in projetil:
-		projetil.monitorable = false
+	projetil.monitoring = false
+	projetil.monitorable = false
 	get_tree().current_scene.add_child(projetil, true)
 
 
