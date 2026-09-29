@@ -787,6 +787,55 @@ func calcular_intervalo_ataque(valor_base: float) -> float:
 	return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)
 
 
+func replicar_projetil_inimigo_rede(
+	projetil: Node,
+	posicao: Vector2,
+	direcao: Vector2,
+	dano: float,
+	velocidade: float,
+	rebotes: int,
+	cor: Color = Color.WHITE,
+	escala: Vector2 = Vector2.ONE
+) -> void:
+	if (
+		not Rede.modo_multiplayer
+		or not multiplayer.is_server()
+		or not is_instance_valid(projetil)
+	):
+		return
+	_replicar_projetil_inimigo_rpc.rpc(
+		posicao, direcao, dano, velocidade, rebotes, cor, escala
+	)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_projetil_inimigo_rpc(
+	posicao: Vector2,
+	direcao: Vector2,
+	dano: float,
+	velocidade: float,
+	rebotes: int,
+	cor: Color,
+	escala: Vector2
+) -> void:
+	if multiplayer.is_server():
+		return
+	var cena := preload("res://Entities/ProjetilInimigo.tscn")
+	var projetil := cena.instantiate()
+	projetil.position = posicao
+	projetil.scale = escala
+	projetil.modulate = cor
+	projetil.configurar(direcao, dano, velocidade, rebotes)
+	projetil.set_meta("apenas_visual_rede", true)
+	projetil.collision_layer = 0
+	projetil.collision_mask = 0
+	if "monitoring" in projetil:
+		projetil.monitoring = false
+	if "monitorable" in projetil:
+		projetil.monitorable = false
+	get_tree().current_scene.add_child(projetil, true)
+
+
 func _obter_cena_combate() -> Node:
 	# Testes, transições e MultiplayerSpawner podem manter a batalha abaixo da
 	# current_scene. Subir pela árvore garante que o evento saia do nó que tem
