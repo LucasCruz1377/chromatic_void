@@ -59,6 +59,8 @@ var tempo_pulso_abaixo_zero := 0.0
 var nevasca_ao_quebrar := false
 var abaixo_zero_ativo := false
 var tempo_snapshot_visual_rede := 0.0
+var sequencia_snapshot_visual_rede := 0
+var ultima_sequencia_snapshot_visual_rede := -1
 
 const INTERVALO_SNAPSHOT_BOSS_REDE := 0.08
 const ESTADOS_BOSS_REDE: Array[StringName] = [
@@ -173,10 +175,11 @@ func _process(delta: float) -> void:
 	if tempo_snapshot_visual_rede > 0.0:
 		return
 	tempo_snapshot_visual_rede = INTERVALO_SNAPSHOT_BOSS_REDE
-	_aplicar_snapshot_visual_boss.rpc(_capturar_snapshot_visual_boss())
+	sequencia_snapshot_visual_rede += 1
+	_aplicar_snapshot_visual_boss.rpc(_capturar_snapshot_visual_boss(sequencia_snapshot_visual_rede))
 
 
-func _capturar_snapshot_visual_boss() -> Dictionary:
+func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 	var estados: Dictionary = {}
 	for propriedade in ESTADOS_BOSS_REDE:
 		if _possui_propriedade_rede(propriedade):
@@ -212,13 +215,18 @@ func _capturar_snapshot_visual_boss() -> Dictionary:
 				"posicao": reprodutor.current_animation_position,
 				"tocando": reprodutor.is_playing(),
 			})
-	return {"estados": estados, "visuais": visuais, "animacoes": animacoes}
+	return {"sequencia": sequencia, "estados": estados, "visuais": visuais, "animacoes": animacoes}
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 0)
+@rpc("authority", "call_remote", "reliable", 0)
 func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
+	var sequencia := int(snapshot.get("sequencia", 0))
+	if sequencia > 0 and sequencia <= ultima_sequencia_snapshot_visual_rede:
+		return
+	if sequencia > 0:
+		ultima_sequencia_snapshot_visual_rede = sequencia
 	var estados: Dictionary = snapshot.get("estados", {})
 	for propriedade in estados:
 		var nome := StringName(propriedade)
