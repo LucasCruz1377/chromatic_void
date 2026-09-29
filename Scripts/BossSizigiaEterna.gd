@@ -231,12 +231,29 @@ func escolher_ataque() -> void:
 		ataques_desde_raio_solar = mini(ataques_desde_raio_solar + 1, 3)
 	var frenesi := fase_atual == Fase.ECLIPSE and Vida <= obter_vida_maxima_atual() * 0.25
 	tempo_ataque = (1.65 if frenesi else 2.05) + randf_range(0.18, 0.52)
+	var semente_ataque := randi()
+	seed(semente_ataque)
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		_replicar_ataque_sizigia.rpc(fase_atual, escolha, frenesi, semente_ataque)
+	_executar_ataque_escolhido(escolha, frenesi)
+
+
+func _executar_ataque_escolhido(escolha: int, frenesi: bool) -> void:
 	if fase_atual == Fase.LUA:
 		executar_ataque_lua(escolha)
 	elif fase_atual == Fase.SOL:
 		executar_ataque_sol(escolha)
 	else:
 		executar_ataque_eclipse(escolha, frenesi)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _replicar_ataque_sizigia(fase_rede: int, escolha: int, frenesi: bool, semente_ataque: int) -> void:
+	if multiplayer.is_server() or morto or estado == Estado.TRANSICAO:
+		return
+	fase_atual = fase_rede
+	seed(semente_ataque)
+	_executar_ataque_escolhido(escolha, frenesi)
 
 
 func executar_ataque_lua(indice: int) -> void:
