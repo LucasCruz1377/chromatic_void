@@ -18,6 +18,7 @@ var direcao: Vector2 = Vector2.RIGHT
 var rebotes: int = 0
 # Prazo de segurança local para cópias que perderam o despawn do host.
 var prazo_visual_rede: float = 0.0
+var prazo_visual_iniciado := false
 
 
 func _ready() -> void:
@@ -96,7 +97,8 @@ func configurar(
 
 func _physics_process(delta: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
-		if prazo_visual_rede <= 0.0:
+		if not prazo_visual_iniciado:
+			prazo_visual_iniciado = true
 			prazo_visual_rede = maxf(tempo_vida, 0.5) + 2.0
 		prazo_visual_rede -= delta
 		if prazo_visual_rede <= 0.0:
