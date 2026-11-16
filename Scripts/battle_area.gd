@@ -213,9 +213,10 @@ func _atualizar_reconciliacao_residuos(delta: float) -> void:
 	tempo_reconciliacao_residuos = INTERVALO_RECONCILIACAO_RESIDUOS
 	sequencia_reconciliacao_residuos += 1
 	var ativos: PackedStringArray = []
-	for node in get_tree().get_nodes_in_group("residuo_pet0"):
-		if is_instance_valid(node) and not node.is_queued_for_deletion() and node.get_parent() == self:
-			ativos.append(String(node.name))
+	for grupo in [&"residuo_pet0", &"minion_pet0"]:
+		for node in get_tree().get_nodes_in_group(grupo):
+			if is_instance_valid(node) and not node.is_queued_for_deletion() and node.get_parent() == self:
+				ativos.append(String(grupo) + ":" + String(node.name))
 	_reconciliar_residuos_pet0.rpc(sequencia_reconciliacao_residuos, ativos)
 
 
@@ -224,19 +225,20 @@ func _reconciliar_residuos_pet0(sequencia: int, ativos: PackedStringArray) -> vo
 	if multiplayer.is_server() or sequencia <= ultima_sequencia_residuos:
 		return
 	ultima_sequencia_residuos = sequencia
-	for node in get_tree().get_nodes_in_group("residuo_pet0"):
-		if not is_instance_valid(node) or node.is_queued_for_deletion() or node.get_parent() != self:
-			continue
-		var nome := String(node.name)
-		if ativos.has(nome):
-			ausencias_residuos.erase(nome)
-			continue
-		# Duas confirmações evitam apagar um spawn ainda em trânsito.
-		var faltas := int(ausencias_residuos.get(nome, 0)) + 1
-		ausencias_residuos[nome] = faltas
-		if faltas >= 2:
-			node.queue_free()
-			ausencias_residuos.erase(nome)
+	for grupo in [&"residuo_pet0", &"minion_pet0"]:
+		for node in get_tree().get_nodes_in_group(grupo):
+			if not is_instance_valid(node) or node.is_queued_for_deletion() or node.get_parent() != self:
+				continue
+			var chave := String(grupo) + ":" + String(node.name)
+			if ativos.has(chave):
+				ausencias_residuos.erase(chave)
+				continue
+			# Duas confirmações evitam apagar um spawn ainda em trânsito.
+			var faltas := int(ausencias_residuos.get(chave, 0)) + 1
+			ausencias_residuos[chave] = faltas
+			if faltas >= 2:
+				node.queue_free()
+				ausencias_residuos.erase(chave)
 
 
 func _exit_tree() -> void:
