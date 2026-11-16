@@ -76,6 +76,8 @@ func obter_velocidade_maxima() -> float:
 
 func movimento_livre(delta: float) -> void:
 	if not is_instance_valid(player):
+		# Sem alvo vivo, desacelera; o host retomara o ataque quando houver jogador.
+		velocity = velocity.move_toward(Vector2.ZERO, 150.0 * delta)
 		return
 
 	var ate_player := global_position.direction_to(player.global_position)
@@ -293,6 +295,9 @@ func recuperar(delta: float) -> void:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		super.tomarDano(valor)
+		return
 	if morto:
 		return
 
@@ -304,6 +309,8 @@ func tomarDano(valor: float) -> void:
 
 
 func atualizar_fase() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var porcentagem := Vida / obter_vida_maxima_atual()
 	var nova_fase := 1
 
@@ -347,6 +354,8 @@ func registrar_reciclagem(quantidade: int) -> void:
 
 
 func remover_rotulo() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	rotulo_removido = true
 	rotulo.visible = false
 	multiplicador_dano_recebido = 1.25
@@ -356,6 +365,8 @@ func remover_rotulo() -> void:
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or not alvo.has_method("tomar_dano"):
 		return
 
@@ -367,6 +378,8 @@ func ao_colidir_com_player(alvo: Node) -> void:
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto:
 		return
 	if Vida > 0.0:
