@@ -104,20 +104,9 @@ func _physics_process(delta: float) -> void:
 		if prazo_visual_rede <= 0.0:
 			queue_free()
 			return
-		# Predição visual entre snapshots; não processa bordas, vida ou colisão.
-		# No primeiro quadro de um spawn remoto, a direção configurada pode chegar
-		# depois do nó. A rotação inicial mantém o tiro em movimento nesse intervalo.
-		var direcao_visual := direcao
-		if direcao_visual.is_zero_approx():
-			direcao_visual = Vector2.RIGHT.rotated(rotation)
-		global_position += direcao_visual.normalized() * velocidade * delta
-		rotation = direcao_visual.angle()
-		if usa_wrap:
-			var area_visual := Global.obter_retangulo_area_visivel()
-			global_position.x = wrapf(global_position.x, area_visual.position.x, area_visual.end.x)
-			global_position.y = wrapf(global_position.y, area_visual.position.y, area_visual.end.y)
-		# A simulacao de bordas, rebotes e destruicao e exclusiva do host.
-		# O MultiplayerSpawner remove a copia ao receber o despawn autoritativo.
+		# Modo de consistencia: apenas o host calcula trajetoria.
+		# A posicao sincronizada substitui a predicao local, evitando divergencias.
+		# A tolerancia acima continua removendo copias que perderam o despawn.
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
