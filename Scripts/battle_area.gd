@@ -204,7 +204,7 @@ func _ready() -> void:
 
 
 
-func _process(delta: float) -> void:
+func _atualizar_reconciliacao_residuos(delta: float) -> void:
 	if not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
 	tempo_reconciliacao_residuos -= delta
@@ -835,6 +835,7 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	_atualizar_reconciliacao_residuos(delta)
 	_processar_combo(delta)
 	if Rede.modo_multiplayer:
 		_processar_posicoes_rede(delta)
