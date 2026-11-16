@@ -140,12 +140,21 @@ var cristais_coop_aplicados := 0
 var area_coop_recebida := false
 var tempo_reenvio_viewport := 0.0
 var area_visual_coop := Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
+# Reconciliação periódica dos resíduos do Pet-0: elimina cópias órfãs.
+const INTERVALO_RECONCILIACAO_RESIDUOS := 1.0
+var tempo_reconciliacao_residuos := 0.0
+var sequencia_reconciliacao_residuos := 0
+var ultima_sequencia_residuos := -1
+var ausencias_residuos: Dictionary = {}
+
 
 
 func _ready() -> void:
 	get_tree().paused = false
 	Global.limpar_area_multiplayer()
 	_configurar_spawners_multiplayer()
+	if Rede.modo_multiplayer:
+		set_process(true)
 	_configurar_jogadores_multiplayer()
 	_configurar_area_coop()
 	Global.definir_cursor_interface(false)
@@ -192,6 +201,42 @@ func _ready() -> void:
 
 	if testar_boss_ao_iniciar:
 		proximo_nivel_boss = 1
+
+
+
+func _process(delta: float) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	tempo_reconciliacao_residuos -= delta
+	if tempo_reconciliacao_residuos > 0.0:
+		return
+	tempo_reconciliacao_residuos = INTERVALO_RECONCILIACAO_RESIDUOS
+	sequencia_reconciliacao_residuos += 1
+	var ativos: PackedStringArray = []
+	for node in get_tree().get_nodes_in_group("residuo_pet0"):
+		if is_instance_valid(node) and not node.is_queued_for_deletion() and node.get_parent() == self:
+			ativos.append(String(node.name))
+	_reconciliar_residuos_pet0.rpc(sequencia_reconciliacao_residuos, ativos)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _reconciliar_residuos_pet0(sequencia: int, ativos: PackedStringArray) -> void:
+	if multiplayer.is_server() or sequencia <= ultima_sequencia_residuos:
+		return
+	ultima_sequencia_residuos = sequencia
+	for node in get_tree().get_nodes_in_group("residuo_pet0"):
+		if not is_instance_valid(node) or node.is_queued_for_deletion() or node.get_parent() != self:
+			continue
+		var nome := String(node.name)
+		if ativos.has(nome):
+			ausencias_residuos.erase(nome)
+			continue
+		# Duas confirmações evitam apagar um spawn ainda em trânsito.
+		var faltas := int(ausencias_residuos.get(nome, 0)) + 1
+		ausencias_residuos[nome] = faltas
+		if faltas >= 2:
+			node.queue_free()
+			ausencias_residuos.erase(nome)
 
 
 func _exit_tree() -> void:
