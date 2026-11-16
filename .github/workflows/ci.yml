@@ -67,6 +67,7 @@ jobs:
         run: |
           python3 Tests/validar_monthly_catalogo.py
           python3 Tests/validar_polimento_loja_dano.py
+          python3 Tests/validar_refatoracao_player.py
 
       - name: Importar projeto em modo headless
         shell: bash
