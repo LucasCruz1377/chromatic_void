@@ -23,6 +23,8 @@ func configurar(alvo_batalha: Node2D, alvo_player: Player) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 95
 	construir_interface()
+	var diagnostico := preload("res://Scripts/DiagnosticoDesempenho.gd").new()
+	add_child(diagnostico)
 
 
 func construir_interface() -> void:
