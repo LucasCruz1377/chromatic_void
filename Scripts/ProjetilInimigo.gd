@@ -40,18 +40,23 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:position"),
 		NodePath(".:rotation"),
 		NodePath(".:direcao"),
+		NodePath(".:rebotes"),
 	]
 	var propriedades_configuracao: Array[NodePath] = [
 		NodePath(".:velocidade"),
 		NodePath(".:usa_wrap"),
 		NodePath(".:rebotes_max"),
+		NodePath(".:tempo_vida"),
+		NodePath(".:scale"),
+		NodePath(".:modulate"),
 	]
-	# Direção, velocidade e posição já chegam no pacote de spawn. Depois disso,
-	# o movimento é determinístico nos peers e não ocupa banda a cada quadro.
+	# O host define a configuracao inicial e corrige a trajetoria durante
+	# a vida do projetil. Isso evita divergencia de ricochetes sob latencia.
 	for caminho in propriedades_movimento + propriedades_configuracao:
 		configuracao.add_property(caminho)
 		configuracao.property_set_spawn(caminho, true)
-		configuracao.property_set_sync(caminho, false)
+		configuracao.property_set_sync(caminho, caminho in propriedades_movimento)
+	sincronizador.replication_interval = 0.10
 	sincronizador.replication_config = configuracao
 	add_child(sincronizador)
 
@@ -101,15 +106,8 @@ func _physics_process(delta: float) -> void:
 			var area_visual := Global.obter_retangulo_area_visivel()
 			global_position.x = wrapf(global_position.x, area_visual.position.x, area_visual.end.x)
 			global_position.y = wrapf(global_position.y, area_visual.position.y, area_visual.end.y)
-		else:
-			# Tiros comuns somem na borda. Apenas ataques com rebotes
-			# configurados (ex.: Pet-0) refletem tambem no cliente.
-			if rebotes_max > 0:
-				_processar_bordas_visual()
-			else:
-				var area_visual := Global.obter_retangulo_area_visivel()
-				if not area_visual.has_point(global_position):
-					queue_free()
+		# A simulacao de bordas, rebotes e destruicao e exclusiva do host.
+		# O MultiplayerSpawner remove a copia ao receber o despawn autoritativo.
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
