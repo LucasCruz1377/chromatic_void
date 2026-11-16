@@ -4,6 +4,7 @@ class_name Player
 
 const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
 const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
+const RegrasProjetil = preload("res://Scripts/RegrasProjetil.gd")
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 const CatalogoMonthly = preload("res://Scripts/MonthlyCatalog.gd")
@@ -605,10 +606,14 @@ func aplicar_personalizacao_nave() -> void:
 		var material_particulas_o := particulas_rastro_modelo_o.material as ShaderMaterial
 		if is_instance_valid(material_particulas_o):
 			material_particulas_o.set_shader_parameter("cor_estrela", cor_nave)
+	# Cada instancia usa material proprio: evita vazamento de cores entre peers.
+	# Nao duplicar novamente a cada atualizacao de personalizacao.
 	var material_particulas := particles.process_material as ParticleProcessMaterial
 	if is_instance_valid(material_particulas):
-		material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
-		particles.process_material = material_particulas
+		if not particles.has_meta("material_rastro_individual"):
+			material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
+			particles.process_material = material_particulas
+			particles.set_meta("material_rastro_individual", true)
 		material_particulas.color = cor_nave
 	_configurar_rastro_exclusivo(cor_nave)
 
@@ -1821,30 +1826,7 @@ func disparar_arma_monthly() -> void:
 
 
 func calcular_padrao_multitiro(indice: int, quantidade: int) -> Vector2:
-	if quantidade <= 1:
-		return Vector2.ZERO
-	var centro := float(indice) - float(quantidade - 1) * 0.5
-	var separacao_lateral := 14.0 if quantidade == 2 else 9.0
-	var deslocamento_lateral := centro * separacao_lateral
-	var deslocamento_angular := 0.0
-
-	# O tiro duplo viaja em paralelo. O tridente abre pouco e o leque só passa
-	# a cobrir uma área grande quando existem quatro ou mais projéteis.
-	if quantidade == 3:
-		deslocamento_angular = deg_to_rad(centro * 7.0)
-	elif quantidade >= 4:
-		var progresso := float(indice) / float(quantidade - 1)
-		deslocamento_angular = lerpf(
-			-deg_to_rad(dispersao_graus) * 0.5,
-			deg_to_rad(dispersao_graus) * 0.5,
-			progresso
-		)
-
-	if formacao_convergente:
-		# As linhas partem separadas e se encontram aproximadamente 300 px à
-		# frente. É uma mudança de geometria, não um bônus escondido de dano.
-		deslocamento_angular = atan2(-deslocamento_lateral, 300.0)
-	return Vector2(deslocamento_angular, deslocamento_lateral)
+	return RegrasProjetil.padrao_multitiro(indice, quantidade, dispersao_graus, formacao_convergente)
 
 
 func criar_projetil(
@@ -1883,17 +1865,16 @@ func criar_projetil(
 	)
 	var bonus_movimento := 1.0 + bonus_vetor_ofensivo * velocidade_relativa
 	var bonus_chassi := 1.18 if modulo_nave == &"n10_chassi_equinocio" and fase_equinocio_solar else 1.0
-	var dano_final := (
-		dano
-		* multiplicador_dano_projetil
-		* multiplicador_dano_forma
-		* multiplicador_dano_mira
-		* multiplicador_dano_habilidade
-		* bonus_overdrive
-		* bonus_movimento
-		* multiplicador_dano_extra
-		* bonus_chassi
-	)
+	var dano_final := RegrasProjetil.multiplicar_dano(dano, [
+		multiplicador_dano_projetil,
+		multiplicador_dano_forma,
+		multiplicador_dano_mira,
+		multiplicador_dano_habilidade,
+		bonus_overdrive,
+		bonus_movimento,
+		multiplicador_dano_extra,
+		bonus_chassi,
+	])
 
 	if not eh_nova:
 		var critico := preload("res://Scripts/Criticos.gd").valores(arma_monthly, niveis_upgrades)
