@@ -401,15 +401,16 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	projetil.set("eh_fragmento", bool(dados.get("fragmento", false)))
 	projetil.set("eh_critico", bool(dados.get("critico", false)))
 	projetil.set("dono_player", _obter_jogador_rede(int(dados.get("peer_id", 0))))
+	var cor := Color(dados.get("cor", Color.WHITE))
 	if bool(dados.get("fragmento", false)):
+		# A cor deve vir do disparo original, nao de uma constante local.
 		var visual_fragmento := projetil.get_node_or_null("Polygon2D") as Polygon2D
 		var luz_fragmento := projetil.get_node_or_null("PointLight2D") as PointLight2D
 		if is_instance_valid(visual_fragmento):
-			visual_fragmento.color = Color(0.92, 0.20, 1.0, 1.0)
+			visual_fragmento.color = cor
 		if is_instance_valid(luz_fragmento):
-			luz_fragmento.color = Color(0.95, 0.30, 1.0, 1.0)
+			luz_fragmento.color = cor
 	var estilo := StringName(str(dados.get("estilo", "")))
-	var cor := Color(dados.get("cor", Color.WHITE))
 	var config_variant: Variant = dados.get("config", {})
 	var config: Dictionary = config_variant if config_variant is Dictionary else {}
 	if not estilo.is_empty() and projetil.has_method("configurar_estilo_monthly"):
