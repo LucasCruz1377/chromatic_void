@@ -270,7 +270,7 @@ func _atualizar_efeitos_visuais_rede() -> void:
 	# A velocidade funciona como redundância visual caso a mudança booleana do
 	# rastro chegue depois do primeiro snapshot.
 	var emitindo_rastro := (
-		(rastro_ativo_rede or velocity.length_squared() > 64.0)
+		rastro_ativo_rede
 		and visible
 	)
 	if is_instance_valid(particles):
@@ -1355,7 +1355,7 @@ func atualizar_movimento(delta: float) -> void:
 		else:
 			direcao_simplificada = _obter_analogico_esquerdo()
 			intensidade_re = _obter_intensidade_l2()
-	var acelerando := false
+	var propulsao_acionada := false
 
 	if usando_controle_simplificado:
 		if not giroblock and direcao_simplificada.length_squared() > 0.0:
@@ -1369,10 +1369,11 @@ func atualizar_movimento(delta: float) -> void:
 			# automática do analógico esquerdo.
 			if intensidade_re > 0.0:
 				brake(delta, fator_movimento * intensidade_re)
+				propulsao_acionada = true
 			elif direcao_simplificada.length_squared() > 0.0:
 				var intensidade := clampf(direcao_simplificada.length(), 0.0, 1.0)
 				acelerar(delta, fator_movimento * intensidade)
-				acelerando = true
+				propulsao_acionada = true
 	elif not giroblock:
 		var direcao_mira_controle := Input.get_vector(
 			"mirar_esquerda",
@@ -1404,11 +1405,12 @@ func atualizar_movimento(delta: float) -> void:
 	if not usando_controle_simplificado and not ctrlblock:
 		if Input.is_action_pressed("acelerar"):
 			acelerar(delta, fator_movimento)
-			acelerando = true
+			propulsao_acionada = true
 		if Input.is_action_pressed("freio"):
 			brake(delta, fator_movimento)
+			propulsao_acionada = true
 
-	var emitindo_rastro := acelerando or UsandoHabilidade or velocity.length_squared() > 64.0
+	var emitindo_rastro := propulsao_acionada
 	rastro_ativo_rede = emitindo_rastro
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
