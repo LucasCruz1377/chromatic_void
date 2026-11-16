@@ -233,6 +233,7 @@ func _configurar_spawners_multiplayer() -> void:
 	for caminho in [
 		"res://Entities/AsteroideBonus.tscn",
 		"res://Entities/ProjetilInimigo.tscn",
+		"res://Entities/FragmentoReciclavel.tscn",
 		"res://Entities/EspinhoPrimaveril.tscn",
 		"res://Entities/PetalaBumerangue.tscn",
 		"res://Entities/VinhaEspinhosa.tscn",
