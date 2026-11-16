@@ -19,9 +19,13 @@ assert 'preload("res://Scripts/DiagnosticoDesempenho.gd").new()' in panel
 assert "Performance.get_monitor(Performance.OBJECT_COUNT)" in diagnostics
 assert "KEY_F3" in diagnostics
 projectile = (ROOT / "Scripts/ProjetilInimigo.gd").read_text(encoding="utf-8")
-assert "if rebotes_max > 0:" in projectile
-assert "_processar_bordas_visual()" in projectile
-assert "queue_free()" in projectile
+assert "configuracao.property_set_sync(caminho, caminho in propriedades_movimento)" in projectile
+assert "NodePath(\".:modulate\")" in projectile
+assert "NodePath(\".:rebotes_max\")" in projectile
+assert "O MultiplayerSpawner remove a copia" in projectile
+boss = (ROOT / "Scripts/BossPet0.gd").read_text(encoding="utf-8")
+assert "_replicar_projetil_pet0.rpc(" not in boss
+assert "func _replicar_projetil_pet0(" not in boss
 assert "var emitindo_rastro := propulsao_acionada" in player
 assert "var propulsao_acionada := false" in player
 assert "velocity.length_squared() > 64.0" not in player
