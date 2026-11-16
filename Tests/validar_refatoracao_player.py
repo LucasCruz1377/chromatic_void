@@ -23,6 +23,9 @@ assert "configuracao.property_set_sync(caminho, caminho in propriedades_moviment
 assert "NodePath(\".:modulate\")" in projectile
 assert "NodePath(\".:rebotes_max\")" in projectile
 assert "O MultiplayerSpawner remove a copia" in projectile
+assert "var prazo_visual_iniciado := false" in projectile
+assert "prazo_visual_rede -= delta" in projectile
+assert "if not prazo_visual_iniciado:" in projectile
 boss = (ROOT / "Scripts/BossPet0.gd").read_text(encoding="utf-8")
 assert "_replicar_projetil_pet0.rpc(" not in boss
 assert "func _replicar_projetil_pet0(" not in boss
