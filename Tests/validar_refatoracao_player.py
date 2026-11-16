@@ -29,6 +29,11 @@ assert "if not prazo_visual_iniciado:" in projectile
 boss = (ROOT / "Scripts/BossPet0.gd").read_text(encoding="utf-8")
 assert "_replicar_projetil_pet0.rpc(" not in boss
 assert "func _replicar_projetil_pet0(" not in boss
+assert "_replicar_minion_pet0.rpc(" not in boss
+assert "func _replicar_minion_pet0(" not in boss
+for metodo in ("escolher_ataque", "disparar_tampinhas", "liberar_pressao", "invocar_microplasticos", "criar_fragmento", "registrar_reciclagem"):
+    trecho = boss.split("func " + metodo + "(", 1)[1].split("\n", 4)
+    assert "if Rede.modo_multiplayer and not multiplayer.is_server():" in "\n".join(trecho), metodo
 assert "_replicar_fragmento_pet0.rpc(" not in boss
 assert "func _replicar_fragmento_pet0(" not in boss
 assert "fragmento.global_position = global_position + deslocamento" in boss
