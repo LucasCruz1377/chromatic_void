@@ -160,10 +160,8 @@ func _configurar_sincronizador_multiplayer() -> void:
 
 func _process(delta: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
-		# O cliente não executa IA, dano nem colisões. Apenas prolonga visualmente
-		# a última velocidade conhecida até o próximo snapshot do host.
-		if not morto and visible:
-			global_position += velocity * delta
+		# Consistencia acima de fluidez: somente snapshots autoritativos
+		# alteram a posicao remota. Nao extrapolar velocidades antigas.
 		return
 	if (
 		not Rede.modo_multiplayer
