@@ -4,15 +4,23 @@ class_name FragmentoReciclavel
 
 var dono_boss: Node
 var direcao_deriva := Vector2.RIGHT
+# Limite de seguranca: fragmentos nao devem persistir indefinidamente.
+@export var vida_util_maxima: float = 22.0
+var tempo_restante: float = 22.0
 
 
 func _ready() -> void:
 	super._ready()
+	tempo_restante = vida_util_maxima
 	direcao_deriva = Vector2.from_angle(randf_range(0.0, TAU))
 	velocity = direcao_deriva * Velocidade
 
 
 func Mover(delta: float) -> void:
+	tempo_restante -= delta
+	if tempo_restante <= 0.0:
+		queue_free()
+		return
 	rotation += delta * 2.4
 	velocity = velocity.move_toward(direcao_deriva * Velocidade, 30.0 * delta)
 
