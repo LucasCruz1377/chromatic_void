@@ -102,7 +102,14 @@ func _physics_process(delta: float) -> void:
 			global_position.x = wrapf(global_position.x, area_visual.position.x, area_visual.end.x)
 			global_position.y = wrapf(global_position.y, area_visual.position.y, area_visual.end.y)
 		else:
-			_processar_bordas_visual()
+			# Tiros comuns somem na borda. Apenas ataques com rebotes
+			# configurados (ex.: Pet-0) refletem tambem no cliente.
+			if rebotes_max > 0:
+				_processar_bordas_visual()
+			else:
+				var area_visual := Global.obter_retangulo_area_visivel()
+				if not area_visual.has_point(global_position):
+					queue_free()
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
