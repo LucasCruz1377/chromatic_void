@@ -16,6 +16,8 @@ const BRILHO_PROJETEIS_PADRAO := 1.45
 
 var direcao: Vector2 = Vector2.RIGHT
 var rebotes: int = 0
+# Prazo de segurança local para cópias que perderam o despawn do host.
+var prazo_visual_rede: float = 0.0
 
 
 func _ready() -> void:
@@ -94,6 +96,12 @@ func configurar(
 
 func _physics_process(delta: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
+		if prazo_visual_rede <= 0.0:
+			prazo_visual_rede = maxf(tempo_vida, 0.5) + 2.0
+		prazo_visual_rede -= delta
+		if prazo_visual_rede <= 0.0:
+			queue_free()
+			return
 		# Predição visual entre snapshots; não processa bordas, vida ou colisão.
 		# No primeiro quadro de um spawn remoto, a direção configurada pode chegar
 		# depois do nó. A rotação inicial mantém o tiro em movimento nesse intervalo.
