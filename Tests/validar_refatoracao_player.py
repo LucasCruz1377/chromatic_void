@@ -26,6 +26,12 @@ assert "O MultiplayerSpawner remove a copia" in projectile
 boss = (ROOT / "Scripts/BossPet0.gd").read_text(encoding="utf-8")
 assert "_replicar_projetil_pet0.rpc(" not in boss
 assert "func _replicar_projetil_pet0(" not in boss
+assert "_replicar_fragmento_pet0.rpc(" not in boss
+assert "func _replicar_fragmento_pet0(" not in boss
+assert "fragmento.global_position = global_position + deslocamento" in boss
+assert "get_tree().current_scene.add_child(fragmento, true)" in boss
+arena = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
+assert '"res://Entities/FragmentoReciclavel.tscn"' in arena
 assert "var emitindo_rastro := propulsao_acionada" in player
 assert "var propulsao_acionada := false" in player
 assert "velocity.length_squared() > 64.0" not in player
