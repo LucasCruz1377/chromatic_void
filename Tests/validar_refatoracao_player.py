@@ -18,4 +18,11 @@ assert 'material_particulas.color = cor_nave' in player
 assert 'preload("res://Scripts/DiagnosticoDesempenho.gd").new()' in panel
 assert "Performance.get_monitor(Performance.OBJECT_COUNT)" in diagnostics
 assert "KEY_F3" in diagnostics
-print("TESTE OK: contratos de projeteis, cores e diagnostico preservados")
+projectile = (ROOT / "Scripts/ProjetilInimigo.gd").read_text(encoding="utf-8")
+assert "if rebotes_max > 0:" in projectile
+assert "_processar_bordas_visual()" in projectile
+assert "queue_free()" in projectile
+assert "var emitindo_rastro := propulsao_acionada" in player
+assert "var propulsao_acionada := false" in player
+assert "velocity.length_squared() > 64.0" not in player
+print("TESTE OK: contratos de projeteis, cores, propulsao e diagnostico preservados")
