@@ -99,6 +99,8 @@ func movimento_livre(delta: float) -> void:
 
 
 func escolher_ataque() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var ataques: Array[StringName] = [&"rolamento", &"tampinha"]
 
 	if fase >= 2:
@@ -185,6 +187,8 @@ func rolar(delta: float) -> void:
 
 
 func disparar_tampinhas() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if not is_instance_valid(player):
 		return
 
@@ -225,6 +229,8 @@ func pressionar(delta: float) -> void:
 
 
 func liberar_pressao() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var quantidade := 10 + fase * 2
 	for indice in quantidade:
 		var angulo := TAU * float(indice) / float(quantidade)
@@ -237,6 +243,8 @@ func liberar_pressao() -> void:
 
 
 func invocar_microplasticos() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var minions_existentes := get_tree().get_nodes_in_group("minion_pet0").size()
 	var quantidade_minions := mini(2 + fase - 2, max_minions - minions_existentes)
 
@@ -246,8 +254,6 @@ func invocar_microplasticos() -> void:
 			TAU * float(indice) / float(maxi(quantidade_minions, 1))
 		) * 70.0
 		get_tree().current_scene.add_child(minion, true)
-		if Rede.modo_multiplayer and multiplayer.is_server():
-			_replicar_minion_pet0.rpc(minion.position)
 
 	var fragmentos_existentes := get_tree().get_nodes_in_group("residuo_pet0").size()
 	var quantidade_fragmentos := mini(2, max_fragmentos - fragmentos_existentes)
@@ -259,6 +265,8 @@ func invocar_microplasticos() -> void:
 
 
 func criar_fragmento(deslocamento: Vector2) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var fragmento := FRAGMENTO.instantiate() as FragmentoReciclavel
 	if not fragmento:
 		return
@@ -267,17 +275,6 @@ func criar_fragmento(deslocamento: Vector2) -> void:
 	fragmento.global_position = global_position + deslocamento
 	fragmento.dono_boss = self
 	get_tree().current_scene.add_child(fragmento, true)
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_minion_pet0(posicao: Vector2) -> void:
-	if multiplayer.is_server():
-		return
-	var minion := MINION.instantiate() as InimigoBase
-	minion.position = posicao
-	minion.set_meta("apenas_visual_rede", true)
-	minion.set_physics_process(false)
-	get_tree().current_scene.add_child(minion, true)
-
 
 func iniciar_recuperacao(duracao: float) -> void:
 	estado = Estado.RECUPERANDO
@@ -337,6 +334,8 @@ func atualizar_fase() -> void:
 
 
 func registrar_reciclagem(quantidade: int) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or rotulo_removido:
 		return
 
