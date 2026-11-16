@@ -34,12 +34,12 @@ func _ready() -> void:
 
 	var fonte_projetil := FileAccess.get_file_as_string("res://Scripts/ProjetilInimigo.gd")
 	checar(
-		"configuracao.property_set_sync(caminho, false)" in fonte_projetil,
-		"projéteis ainda enviam posição continuamente"
+		"configuracao.property_set_sync(caminho, caminho in propriedades_movimento)" in fonte_projetil,
+		"projéteis não recebem correções autoritativas de movimento"
 	)
 	checar(
-		"_processar_bordas_visual()" in fonte_projetil,
-		"predição visual não trata as bordas"
+		"O MultiplayerSpawner remove a copia" in fonte_projetil,
+		"despawn dos projéteis não é controlado pelo host"
 	)
 
 	var fonte_setorial := FileAccess.get_file_as_string("res://Scripts/InimigoSetorial.gd")
