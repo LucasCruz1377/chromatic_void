@@ -262,11 +262,11 @@ func criar_fragmento(deslocamento: Vector2) -> void:
 	var fragmento := FRAGMENTO.instantiate() as FragmentoReciclavel
 	if not fragmento:
 		return
-	get_tree().current_scene.add_child(fragmento)
+	# A posicao precisa estar definida antes do spawn de rede.
+	# O MultiplayerSpawner replica a entidade e seu despawn pelo host.
 	fragmento.global_position = global_position + deslocamento
 	fragmento.dono_boss = self
-	if Rede.modo_multiplayer and multiplayer.is_server():
-		_replicar_fragmento_pet0.rpc(deslocamento)
+	get_tree().current_scene.add_child(fragmento, true)
 
 @rpc("authority", "call_remote", "reliable")
 func _replicar_minion_pet0(posicao: Vector2) -> void:
@@ -277,21 +277,6 @@ func _replicar_minion_pet0(posicao: Vector2) -> void:
 	minion.set_meta("apenas_visual_rede", true)
 	minion.set_physics_process(false)
 	get_tree().current_scene.add_child(minion, true)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_fragmento_pet0(deslocamento: Vector2) -> void:
-	if multiplayer.is_server():
-		return
-	var fragmento := FRAGMENTO.instantiate() as FragmentoReciclavel
-	if not fragmento:
-		return
-	get_tree().current_scene.add_child(fragmento, true)
-	fragmento.global_position = global_position + deslocamento
-	fragmento.dono_boss = self
-	fragmento.set_meta("apenas_visual_rede", true)
-	fragmento.set_physics_process(false)
-
 
 
 func iniciar_recuperacao(duracao: float) -> void:
