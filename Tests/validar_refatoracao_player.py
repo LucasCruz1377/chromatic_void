@@ -46,6 +46,10 @@ assert "fragmento.global_position = global_position + deslocamento" in boss
 assert "get_tree().current_scene.add_child(fragmento, true)" in boss
 arena = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
 assert '"res://Entities/FragmentoReciclavel.tscn"' in arena
+assert '"res://Entities/InimigoMinion.tscn"' in arena
+assert "global_position += direcao_visual.normalized() * velocidade * delta" not in projectile
+inimigo_base = (ROOT / "Scripts/InimigoBase.gd").read_text(encoding="utf-8")
+assert "global_position += velocity * delta" not in inimigo_base
 assert 'for grupo in [&"residuo_pet0", &"minion_pet0"]:' in arena
 assert "var emitindo_rastro := propulsao_acionada" in player
 assert "var propulsao_acionada := false" in player
