@@ -409,8 +409,9 @@ func criar_projetil(
 	var forma := projetil.get_node_or_null("Visual") as Polygon2D
 	if is_instance_valid(forma):
 		forma.color = cor_projetil
-	get_tree().current_scene.add_child(projetil, true)
 	projetil.aplicar_glow()
+	# Evita registrar Area2D durante o processamento de contato.
+	get_tree().current_scene.add_child.call_deferred(projetil, true)
 	return projetil
 
 

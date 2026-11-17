@@ -83,8 +83,11 @@ func criar_lobby(nickname: String) -> Error:
 	peer_enet = ENetMultiplayerPeer.new()
 	var erro := peer_enet.create_server(PORTA, MAX_JOGADORES - 1)
 	if erro != OK:
+		peer_enet.close()
 		peer_enet = null
-		status_alterado.emit(tr("Não foi possível criar a sala na porta UDP %d.") % PORTA, true)
+		var motivo := tr("Verifique se outra instancia do jogo ja esta hospedando ou se a porta UDP esta ocupada.")
+		status_alterado.emit(tr("Nao foi possivel abrir lobby UDP %d (erro %d). %s") % [PORTA, erro, motivo], true)
+		push_warning("ENet create_server falhou na porta UDP %d: %s" % [PORTA, error_string(erro)])
 		return erro
 	multiplayer.multiplayer_peer = peer_enet
 	hospedando = true

@@ -276,7 +276,9 @@ func criar_fragmento(deslocamento: Vector2) -> void:
 	# O MultiplayerSpawner replica a entidade e seu despawn pelo host.
 	fragmento.global_position = global_position + deslocamento
 	fragmento.dono_boss = self
-	get_tree().current_scene.add_child(fragmento, true)
+	# O dano pode chegar dentro de body_entered; inserir CollisionObject
+	# durante o flush do servidor de fisica provoca erros de shape.
+	get_tree().current_scene.add_child.call_deferred(fragmento, true)
 
 func iniciar_recuperacao(duracao: float) -> void:
 	estado = Estado.RECUPERANDO
