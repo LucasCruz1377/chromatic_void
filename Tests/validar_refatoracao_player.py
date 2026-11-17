@@ -81,3 +81,12 @@ for marcador in (
     'shader_material.set_shader_parameter(',
 ):
     assert marcador in base_visual, marcador
+
+# Boss Flor: lancamento de petalas visivel no cliente e dano validado pelo host.
+flor = (ROOT / "Scripts/BossCaosPrimaveril.gd").read_text(encoding="utf-8")
+assert "_replicar_petala_boss.rpc(" in flor
+assert 'petala.retornou.connect(_on_petala_retornou)' in flor
+assert 'petala.monitoring = false' in flor
+assert 'petala.monitorable = false' in flor
+assert 'func tomarDano(valor: float) -> void:\\n\\tif Rede.modo_multiplayer and not multiplayer.is_server():' in flor
+assert '_solicitar_dano_ao_host.rpc_id(1,' in flor
