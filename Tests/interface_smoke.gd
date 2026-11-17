@@ -100,15 +100,10 @@ func _ready() -> void:
 	var foco_upgrade := get_viewport().gui_get_focus_owner()
 	verificar(foco_upgrade is Button, "os cards de melhoria não receberam foco do controle")
 	if menu_upgrades.container_cards.get_child_count() > 0:
-		var card := menu_upgrades.container_cards.get_child(0) as PanelContainer
-		var estilo_card := card.get_theme_stylebox("panel") as StyleBoxFlat
+		var card := menu_upgrades.container_cards.get_child(0) as UpgradeCardNova
 		verificar(
-			is_instance_valid(estilo_card)
-			and estilo_card.corner_radius_top_left >= 20
-			and estilo_card.corner_radius_top_right >= 20
-			and estilo_card.corner_radius_bottom_left >= 20
-			and estilo_card.corner_radius_bottom_right >= 20,
-			"os cards de melhoria não mantiveram as quatro bordas arredondadas"
+			is_instance_valid(card) and card.vertices_hexagono(card.size).size() == 6,
+			"as melhorias nao foram exibidas como hexagonos"
 		)
 	verificar(
 		is_instance_valid(menu_upgrades.botao_rerrolar)
