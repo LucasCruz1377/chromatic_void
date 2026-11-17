@@ -314,6 +314,10 @@ func solicitar_inicio_partida() -> bool:
 
 @rpc("authority", "call_local", "reliable")
 func _iniciar_partida_remota() -> void:
+	if get_tree().current_scene and get_tree().current_scene.scene_file_path == "res://Rooms/Battle_area.tscn":
+		partida_em_andamento = true
+		em_lobby = false
+		return
 	partida_em_andamento = true
 	modo_multiplayer = true
 	em_lobby = false
@@ -328,6 +332,8 @@ func _registrar_nickname_remoto(nickname: String) -> void:
 		return
 	var id := multiplayer.get_remote_sender_id()
 	if id <= 1 or jogadores.size() >= MAX_JOGADORES and not jogadores.has(id):
+		return
+	if not multiplayer.get_peers().has(id):
 		return
 	jogadores[id] = sanitizar_nickname(nickname)
 	_enviar_lista_jogadores()

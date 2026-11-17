@@ -825,6 +825,14 @@ func _on_visible_on_screen_notifier_3d_screen_exited() -> void:
 
 
 func _aplicar_dano_critico(alvo: Node2D, valor: float) -> void:
+	if not is_instance_valid(alvo):
+		return
+	if Rede.modo_multiplayer and not multiplayer.is_server() and not id_disparo_rede.is_empty():
+		var arena := _obter_batalha_rede()
+		if is_instance_valid(arena) and arena.has_method("enviar_impacto_projetil_rede"):
+			arena.call("enviar_impacto_projetil_rede", id_disparo_rede, alvo, valor, global_position)
+			return
 	alvo.set_meta("impacto_critico", eh_critico)
 	alvo.tomarDano(valor)
-	if is_instance_valid(alvo): alvo.remove_meta("impacto_critico")
+	if is_instance_valid(alvo):
+		alvo.remove_meta("impacto_critico")

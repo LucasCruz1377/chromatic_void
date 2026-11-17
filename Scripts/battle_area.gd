@@ -130,11 +130,24 @@ var aguardando_renascimento_local := false
 var tempo_renascimento_local := 0.0
 var preservar_conexao_ao_sair := false
 var disparos_visuais_rede: Dictionary = {}
+var impactos_projetil_rede: Dictionary = {}
+var ultimo_numero_disparo_peer: Dictionary = {}
 var tempo_combo_restante := 0.0
 var combo_observado := 0
 var tamanhos_viewport_rede: Dictionary = {}
 var limite_arena_coop: LimiteArenaCoop
 var tempo_posicoes_rede := 0.0
+var sequencia_movimento_local := 0
+var ultima_sequencia_movimento_peer: Dictionary = {}
+var ultimo_movimento_peer_ms: Dictionary = {}
+var sequencia_mundo_rede := 0
+var ultima_sequencia_mundo_rede := -1
+var disparos_autorizados_rede: Dictionary = {}
+var entrada_estado_confirmada := false
+const JANELA_IMPACTO_REDE_MS := 1500
+const DISTANCIA_TOLERANCIA_IMPACTO := 175.0
+const VELOCIDADE_MAXIMA_REDE := 1250.0
+const FOLGA_MOVIMENTO_REDE := 140.0
 var cristais_coop_acumulados := 0
 var cristais_coop_aplicados := 0
 var area_coop_recebida := false
@@ -365,7 +378,10 @@ func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> v
 	if not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
-	if id <= 1 or is_instance_valid(_obter_jogador_rede(id)):
+	if id <= 1 or not Rede.jogadores.has(id):
+		return
+	if is_instance_valid(_obter_jogador_rede(id)):
+		_enviar_estado_de_entrada_rede(id)
 		return
 	_configurar_player_host.rpc_id(
 		id,
@@ -397,6 +413,13 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 			"xp": piloto.xp_atual,
 			"xp_necessario": piloto.xp_necessario,
 			"melhorias_pendentes": piloto.pontos_upgrade_pendentes,
+			"vida": piloto.vida,
+			"vida_maxima": piloto.VIDA_MAXIMA,
+			"vivo": piloto.vivo,
+			"posicao": piloto.global_position,
+			"rotacao": piloto.rotation,
+			"rerolls": piloto.rerolls_upgrades_restantes,
+			"escudo": piloto.escudo_habilidade,
 		}
 	_receber_estado_de_entrada_rede.rpc_id(id, {
 		"pilotos": pilotos,
@@ -404,6 +427,10 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 		"combo": Global.Combo,
 		"pontos": Global.Pontos,
 		"cristais": cristais_coop_acumulados,
+		"boss_id": str(boss_atual_id),
+		"proximo_nivel_boss": proximo_nivel_boss,
+		"setores_concluidos": setores_concluidos.duplicate(),
+		"game_over": game_over,
 	})
 
 
@@ -412,6 +439,13 @@ func _receber_estado_de_entrada_rede(dados: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
 	setor_atual = StringName(str(dados.get("setor", setor_atual)))
+	boss_atual_id = StringName(str(dados.get("boss_id", boss_atual_id)))
+	proximo_nivel_boss = maxi(1, int(dados.get("proximo_nivel_boss", proximo_nivel_boss)))
+	var concluidos_rede: Array[StringName] = []
+	for valor in Array(dados.get("setores_concluidos", [])):
+		concluidos_rede.append(StringName(str(valor)))
+	setores_concluidos = concluidos_rede
+	game_over = bool(dados.get("game_over", false))
 	_receber_combo_rede(
 		int(dados.get("combo", 0)), 0.0, int(dados.get("pontos", 0))
 	)
@@ -428,6 +462,12 @@ func _aplicar_estados_entrada_pendentes() -> void:
 			continue
 		var dados: Dictionary = estados_entrada_pendentes[chave]
 		if identificador == Rede.peer_local():
+			piloto.global_position = Vector2(dados.get("posicao", piloto.global_position))
+			piloto.rotation = float(dados.get("rotacao", piloto.rotation))
+			piloto.vida = clampf(float(dados.get("vida", piloto.vida)), 0.0, maxf(float(dados.get("vida_maxima", piloto.VIDA_MAXIMA)), 1.0))
+			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
+			piloto.escudo_habilidade = maxf(0.0, float(dados.get("escudo", piloto.escudo_habilidade)))
+			piloto.rerolls_upgrades_restantes = maxi(0, int(dados.get("rerolls", piloto.rerolls_upgrades_restantes)))
 			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
 			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
 			piloto.xp_necessario = maxi(1, int(dados.get("xp_necessario", 10)))
@@ -437,7 +477,28 @@ func _aplicar_estados_entrada_pendentes() -> void:
 			piloto.pontos_upgrade_alterados.emit(piloto.pontos_upgrade_pendentes)
 		else:
 			piloto.aplicar_estado_loadout_rede(Dictionary(dados.get("configuracao", {})))
+			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
+			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
+			piloto.vida = maxf(0.0, float(dados.get("vida", piloto.vida)))
+			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
 		estados_entrada_pendentes.erase(chave)
+	if estados_entrada_pendentes.is_empty() and not entrada_estado_confirmada:
+		entrada_estado_confirmada = true
+		if Rede.esta_conectado() and not multiplayer.is_server():
+			_confirmar_entrada_partida.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_entrada_partida() -> void:
+	if not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if id <= 1 or not Rede.jogadores.has(id):
+		return
+	if not is_instance_valid(_obter_jogador_rede(id)):
+		return
+	# Reenvia o quadro completo apos o spawn; pacotes de entrada sao idempotentes.
+	_enviar_estado_de_entrada_rede(id)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -485,6 +546,10 @@ func _encaminhar_disparo_visual(dados: Dictionary) -> void:
 	var identificador := str(dados.get("id_disparo", ""))
 	if not identificador.begins_with("%d:" % remetente):
 		return
+	var numero_disparo := str(dados.get("id_disparo", "")).get_slice(":", 1).to_int()
+	if numero_disparo <= int(ultimo_numero_disparo_peer.get(remetente, 0)):
+		return
+	ultimo_numero_disparo_peer[remetente] = numero_disparo
 	dados["peer_id"] = remetente
 	_criar_disparo_visual_rede(dados)
 	_enviar_disparo_visual_para_outros(dados, remetente)
@@ -522,6 +587,14 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	projetil.monitorable = false
 	add_child(projetil, true)
 	disparos_visuais_rede[id_disparo] = projetil
+	if multiplayer.is_server():
+		disparos_autorizados_rede[id_disparo] = {
+			"peer_id": int(dados.get("peer_id", 0)),
+			"origem": projetil.global_position,
+			"criado_ms": Time.get_ticks_msec(),
+			"velocidade": clampf(float(dados.get("velocidade", 1000.0)), 0.0, 2400.0),
+			"critico": bool(dados.get("critico", false)),
+		}
 	projetil.tree_exiting.connect(_remover_referencia_disparo.bind(id_disparo))
 	projetil.global_position = Vector2(dados.get("posicao", Vector2.ZERO))
 	projetil.global_rotation = float(dados.get("rotacao", 0.0))
@@ -636,6 +709,8 @@ func _receber_fim_disparo(dados: Dictionary) -> void:
 
 
 func _finalizar_disparo_visual(id_disparo: String) -> void:
+	if disparos_autorizados_rede.has(id_disparo):
+		disparos_autorizados_rede[id_disparo]["expirado_ms"] = Time.get_ticks_msec()
 	var candidato: Variant = disparos_visuais_rede.get(id_disparo)
 	disparos_visuais_rede.erase(id_disparo)
 	if is_instance_valid(candidato) and candidato is Node:
@@ -653,6 +728,65 @@ func _obter_disparo_visual(id_disparo: String) -> Node2D:
 
 func _remover_referencia_disparo(id_disparo: String) -> void:
 	disparos_visuais_rede.erase(id_disparo)
+
+
+func enviar_impacto_projetil_rede(id_disparo: String, inimigo: Node2D, dano: float, posicao: Vector2) -> void:
+	if not Rede.esta_conectado() or multiplayer.is_server():
+		return
+	if id_disparo.is_empty() or not is_instance_valid(inimigo) or not is_ancestor_of(inimigo):
+		return
+	_solicitar_impacto_projetil_rede.rpc_id(
+		1, id_disparo, get_path_to(inimigo), dano, posicao
+	)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_impacto_projetil_rede(
+	id_disparo: String, caminho_inimigo: NodePath, dano: float, posicao_impacto: Vector2
+) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	if not id_disparo.begins_with("%d:" % remetente):
+		return
+	if is_nan(dano) or is_inf(dano) or dano <= 0.0 or dano > 1500.0:
+		return
+	if not posicao_impacto.is_finite() or not disparos_autorizados_rede.has(id_disparo):
+		return
+	var disparo: Dictionary = disparos_autorizados_rede[id_disparo]
+	if int(disparo.get("peer_id", 0)) != remetente:
+		return
+	var agora := Time.get_ticks_msec()
+	var criado := int(disparo.get("criado_ms", 0))
+	if criado <= 0 or agora - criado > 5000:
+		return
+	if int(disparo.get("expirado_ms", 0)) > 0 and agora - int(disparo.get("expirado_ms", 0)) > 300:
+		return
+	var inimigo := get_node_or_null(caminho_inimigo) as InimigoBase
+	if not is_instance_valid(inimigo) or inimigo.morto or inimigo.is_queued_for_deletion():
+		return
+	var piloto := _obter_jogador_rede(remetente)
+	if not is_instance_valid(piloto) or not piloto.vivo:
+		return
+	var trajeto_max := float(disparo.get("velocidade", 1000.0)) * (
+		float(agora - criado) / 1000.0 + 0.2
+	) + DISTANCIA_TOLERANCIA_IMPACTO
+	if posicao_impacto.distance_to(Vector2(disparo.get("origem", Vector2.ZERO))) > trajeto_max:
+		return
+	if inimigo.global_position.distance_to(posicao_impacto) > DISTANCIA_TOLERANCIA_IMPACTO:
+		return
+	var chave := "%s:%s" % [id_disparo, str(caminho_inimigo)]
+	var ultimo := int(impactos_projetil_rede.get(chave, 0))
+	if ultimo > 0 and agora - ultimo < 120:
+		return
+	impactos_projetil_rede[chave] = agora
+	# Dano e critico sao aplicados no host; habilidades continuam com RPC proprio.
+	inimigo.set_meta("impacto_critico", bool(disparo.get("critico", false)))
+	inimigo.tomarDano(dano)
+	if is_instance_valid(inimigo):
+		inimigo.remove_meta("impacto_critico")
 
 
 func _obter_jogador_rede(id: int) -> Player:
@@ -743,6 +877,10 @@ func _encaminhar_loadout(dados: Dictionary) -> void:
 		return
 	var configuracao_recebida := Dictionary(dados.get("configuracao", {}))
 	configuracao_recebida["upgrades"] = player_autor.niveis_upgrades.duplicate(true)
+	# O cliente nao pode reescrever os atributos de progressao do servidor.
+	configuracao_recebida["arma"] = str(player_autor.arma_monthly)
+	configuracao_recebida["modulo"] = str(player_autor.modulo_nave)
+	configuracao_recebida["mutacao"] = str(player_autor.mutacao_habilidade)
 	dados["configuracao"] = configuracao_recebida
 	_aplicar_loadout_rede(dados)
 	_enviar_loadout_para_outros(dados, remetente)
@@ -900,6 +1038,12 @@ func _configurar_camera_local() -> void:
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
+	ultima_sequencia_movimento_peer.erase(id)
+	ultimo_movimento_peer_ms.erase(id)
+	ultimo_numero_disparo_peer.erase(id)
+	for identificador in disparos_autorizados_rede.keys():
+		if int(Dictionary(disparos_autorizados_rede[identificador]).get("peer_id", 0)) == id:
+			disparos_autorizados_rede.erase(identificador)
 	for chave in disparos_visuais_rede.keys():
 		if str(chave).begins_with("%d:" % id):
 			_finalizar_disparo_visual(str(chave))
@@ -933,6 +1077,8 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	if Rede.modo_multiplayer and multiplayer.is_server():
+		_limpar_registros_rede()
 	_atualizar_reconciliacao_residuos(delta)
 	_processar_combo(delta)
 	if Rede.modo_multiplayer:
@@ -976,6 +1122,17 @@ func _process(delta: float) -> void:
 		timer = calcular_tempo_spawn()
 
 
+func _limpar_registros_rede() -> void:
+	var agora := Time.get_ticks_msec()
+	for identificador in disparos_autorizados_rede.keys():
+		var disparo: Dictionary = disparos_autorizados_rede[identificador]
+		if agora - int(disparo.get("criado_ms", 0)) > 6000:
+			disparos_autorizados_rede.erase(identificador)
+	for chave in impactos_projetil_rede.keys():
+		if agora - int(impactos_projetil_rede[chave]) > JANELA_IMPACTO_REDE_MS:
+			impactos_projetil_rede.erase(chave)
+
+
 func _processar_posicoes_rede(delta: float) -> void:
 	if not Rede.esta_conectado():
 		return
@@ -988,28 +1145,63 @@ func _processar_posicoes_rede(delta: float) -> void:
 		return
 	var jogador_local := _obter_jogador_rede(Rede.peer_local()) as Player
 	if is_instance_valid(jogador_local):
+		sequencia_movimento_local += 1
 		_receber_posicao_player.rpc_id(
 			1, jogador_local.global_position, jogador_local.rotation,
-			jogador_local.velocity
+			jogador_local.velocity, sequencia_movimento_local
 		)
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 0)
 func _receber_posicao_player(
-	posicao: Vector2, rotacao: float, velocidade: Vector2
+	posicao: Vector2, rotacao: float, velocidade: Vector2, sequencia: int
 ) -> void:
-	if not multiplayer.is_server():
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
-	var jogador_remoto := _obter_jogador_rede(remetente) as Player
-	if not is_instance_valid(jogador_remoto):
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
+	if sequencia <= int(ultima_sequencia_movimento_peer.get(remetente, 0)):
+		return
+	if not posicao.is_finite() or not velocidade.is_finite():
+		return
+	if is_nan(rotacao) or is_inf(rotacao):
+		return
+	var jogador_remoto := _obter_jogador_rede(remetente) as Player
+	if not is_instance_valid(jogador_remoto) or not jogador_remoto.vivo:
+		return
+	var area := Global.obter_retangulo_area_visivel()
+	if area.size.x <= 0.0 or area.size.y <= 0.0:
+		return
+	if velocidade.length() > VELOCIDADE_MAXIMA_REDE:
+		return
+	var agora := Time.get_ticks_msec()
+	var anterior := int(ultimo_movimento_peer_ms.get(remetente, 0))
+	var delta_segundos := clampf(float(agora - anterior) / 1000.0, 0.0, 0.5)
+	var salto := posicao.distance_to(jogador_remoto.global_position)
+	# O wrap de Asteroids permite cruzar as extremidades da arena.
+	var dx := absf(posicao.x - jogador_remoto.global_position.x)
+	var dy := absf(posicao.y - jogador_remoto.global_position.y)
+	dx = minf(dx, absf(area.size.x - dx))
+	dy = minf(dy, absf(area.size.y - dy))
+	var deslocamento_wrap := Vector2(dx, dy).length()
+	if anterior > 0 and minf(salto, deslocamento_wrap) > (
+		FOLGA_MOVIMENTO_REDE + VELOCIDADE_MAXIMA_REDE * delta_segundos
+	):
+		return
+	if posicao.x < area.position.x - 30.0 or posicao.x > area.end.x + 30.0:
+		return
+	if posicao.y < area.position.y - 30.0 or posicao.y > area.end.y + 30.0:
+		return
+	ultima_sequencia_movimento_peer[remetente] = sequencia
+	ultimo_movimento_peer_ms[remetente] = agora
 	jogador_remoto.global_position = posicao
-	jogador_remoto.rotation = rotacao
+	jogador_remoto.rotation = wrapf(rotacao, -PI, PI)
 	jogador_remoto.velocity = velocidade
 
 
 func _capturar_posicoes_mundo() -> Dictionary:
+	sequencia_mundo_rede += 1
 	var posicoes_players: Dictionary = {}
 	for candidato in get_tree().get_nodes_in_group("player"):
 		if candidato is Player and is_instance_valid(candidato):
@@ -1033,6 +1225,7 @@ func _capturar_posicoes_mundo() -> Dictionary:
 				"velocidade": velocidade_inimigo,
 			})
 	return {
+		"sequencia": sequencia_mundo_rede,
 		"players": posicoes_players,
 		"inimigos": posicoes_inimigos,
 		"cristais_coop": cristais_coop_acumulados,
@@ -1043,6 +1236,10 @@ func _capturar_posicoes_mundo() -> Dictionary:
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
+	var numero := int(snapshot.get("sequencia", 0))
+	if numero <= ultima_sequencia_mundo_rede:
+		return
+	ultima_sequencia_mundo_rede = numero
 	_aplicar_total_cristais_coop(int(snapshot.get("cristais_coop", 0)))
 	var posicoes_players: Dictionary = snapshot.get("players", {})
 	for peer_variant in posicoes_players:

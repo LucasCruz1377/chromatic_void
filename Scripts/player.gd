@@ -2348,15 +2348,27 @@ func conceder_xp_rede(valor: float) -> void:
 		if multiplayer.is_server() and peer_id_dono > 1 and Rede.jogadores.has(peer_id_dono):
 			# O host mantem a progressao oficial dos pilotos remotos.
 			ganhar_xp(recompensa)
-			_receber_xp_autoritativo.rpc_id(peer_id_dono, recompensa)
+			_receber_xp_autoritativo.rpc_id(
+				peer_id_dono, recompensa, nivel_atual, xp_atual,
+				xp_necessario, pontos_upgrade_pendentes
+			)
 		return
 	ganhar_xp(recompensa)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _receber_xp_autoritativo(valor: float) -> void:
-	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
-		ganhar_xp(clampf(valor, 0.0, 10000.0))
+func _receber_xp_autoritativo(
+	valor: float, nivel_servidor: int, xp_servidor: float,
+	proximo_xp_servidor: int, melhorias_servidor: int
+) -> void:
+	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
+		return
+	ganhar_xp(clampf(valor, 0.0, 10000.0))
+	nivel_atual = maxi(nivel_servidor, 1)
+	xp_necessario = maxi(proximo_xp_servidor, 1)
+	xp_atual = clampf(xp_servidor, 0.0, float(xp_necessario))
+	pontos_upgrade_pendentes = maxi(melhorias_servidor, 0)
+	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 
 
 func subir_de_nivel() -> void:
@@ -2382,9 +2394,15 @@ func calcular_xp_proximo_nivel(nivel: int) -> int:
 
 
 var compra_upgrade_pendente_rede := false
+var compra_upgrade_enviada_ms := 0
+const TIMEOUT_COMPRA_REDE_MS := 5000
 
 
 func comprar_upgrade(id: StringName) -> bool:
+	if compra_upgrade_pendente_rede and compra_upgrade_enviada_ms > 0:
+		if Time.get_ticks_msec() - compra_upgrade_enviada_ms > TIMEOUT_COMPRA_REDE_MS:
+			compra_upgrade_pendente_rede = false
+			compra_upgrade_enviada_ms = 0
 	if compra_upgrade_pendente_rede or pontos_upgrade_pendentes <= 0:
 		return false
 	if not DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada, arma_monthly):
@@ -2393,6 +2411,7 @@ func comprar_upgrade(id: StringName) -> bool:
 		if not is_multiplayer_authority() or not Rede.esta_conectado():
 			return false
 		compra_upgrade_pendente_rede = true
+		compra_upgrade_enviada_ms = Time.get_ticks_msec()
 		_solicitar_compra_upgrade_rede.rpc_id(1, id)
 		return true
 	_aplicar_compra_upgrade_local(id)
@@ -2435,6 +2454,7 @@ func _confirmar_compra_upgrade_rede(id: StringName, permitido: bool) -> void:
 	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
 		return
 	compra_upgrade_pendente_rede = false
+	compra_upgrade_enviada_ms = 0
 	if permitido and pontos_upgrade_pendentes > 0:
 		_aplicar_compra_upgrade_local(id)
 	var menu := get_node_or_null("../GUI/TelaUpgrades")
