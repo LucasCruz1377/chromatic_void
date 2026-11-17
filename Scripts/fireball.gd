@@ -52,6 +52,7 @@ var bumerangue_graca_retorno := 0.0
 var bumerangue_alvos_ida: Dictionary = {}
 var bumerangue_alvos_retorno: Dictionary = {}
 var id_disparo_rede := ""
+var numero_impacto_rede := 0
 var somente_visual_rede := false
 var intervalo_estado_rede := 0.05
 var posicao_estado_rede := Vector2.ZERO
@@ -830,7 +831,11 @@ func _aplicar_dano_critico(alvo: Node2D, valor: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server() and not id_disparo_rede.is_empty():
 		var arena := _obter_batalha_rede()
 		if is_instance_valid(arena) and arena.has_method("enviar_impacto_projetil_rede"):
-			arena.call("enviar_impacto_projetil_rede", id_disparo_rede, alvo, valor, global_position)
+			numero_impacto_rede += 1
+			arena.call(
+				"enviar_impacto_projetil_rede", id_disparo_rede, alvo,
+				valor, global_position, numero_impacto_rede
+			)
 			return
 	alvo.set_meta("impacto_critico", eh_critico)
 	alvo.tomarDano(valor)

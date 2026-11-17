@@ -130,8 +130,14 @@ var aguardando_renascimento_local := false
 var tempo_renascimento_local := 0.0
 var preservar_conexao_ao_sair := false
 var disparos_visuais_rede: Dictionary = {}
+# A fila preserva os impactos recebidos enquanto o spawn do tiro ainda
+# nao chegou ao host. Nunca somamos dano sem validar o alvo existente.
 var impactos_projetil_rede: Dictionary = {}
+var fila_impactos_rede: Array[Dictionary] = []
+var chaves_impactos_pendentes: Dictionary = {}
 var ultimo_numero_disparo_peer: Dictionary = {}
+const LIMITE_FILA_IMPACTOS_REDE := 384
+const PRAZO_FILA_IMPACTOS_MS := 2200
 var tempo_combo_restante := 0.0
 var combo_observado := 0
 var tamanhos_viewport_rede: Dictionary = {}
@@ -552,6 +558,7 @@ func _encaminhar_disparo_visual(dados: Dictionary) -> void:
 	ultimo_numero_disparo_peer[remetente] = numero_disparo
 	dados["peer_id"] = remetente
 	_criar_disparo_visual_rede(dados)
+	_processar_fila_impactos_rede()
 	_enviar_disparo_visual_para_outros(dados, remetente)
 
 
@@ -590,10 +597,11 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	if multiplayer.is_server():
 		disparos_autorizados_rede[id_disparo] = {
 			"peer_id": int(dados.get("peer_id", 0)),
-			"origem": projetil.global_position,
+			"origem": Vector2(dados.get("posicao", Vector2.ZERO)),
 			"criado_ms": Time.get_ticks_msec(),
 			"velocidade": clampf(float(dados.get("velocidade", 1000.0)), 0.0, 2400.0),
 			"critico": bool(dados.get("critico", false)),
+			"tempo_vida": clampf(float(dados.get("tempo_vida", 5.0)), 0.05, 15.0),
 		}
 	projetil.tree_exiting.connect(_remover_referencia_disparo.bind(id_disparo))
 	projetil.global_position = Vector2(dados.get("posicao", Vector2.ZERO))
@@ -730,19 +738,27 @@ func _remover_referencia_disparo(id_disparo: String) -> void:
 	disparos_visuais_rede.erase(id_disparo)
 
 
-func enviar_impacto_projetil_rede(id_disparo: String, inimigo: Node2D, dano: float, posicao: Vector2) -> void:
+func enviar_impacto_projetil_rede(
+	id_disparo: String, inimigo: Node2D, dano: float,
+	posicao: Vector2, numero_impacto: int
+) -> void:
 	if not Rede.esta_conectado() or multiplayer.is_server():
 		return
-	if id_disparo.is_empty() or not is_instance_valid(inimigo) or not is_ancestor_of(inimigo):
+	if id_disparo.is_empty() or numero_impacto <= 0:
+		return
+	if not is_instance_valid(inimigo) or not is_ancestor_of(inimigo):
+		return
+	if not posicao.is_finite():
 		return
 	_solicitar_impacto_projetil_rede.rpc_id(
-		1, id_disparo, get_path_to(inimigo), dano, posicao
+		1, id_disparo, get_path_to(inimigo), dano, posicao, numero_impacto
 	)
 
 
 @rpc("any_peer", "call_remote", "reliable")
 func _solicitar_impacto_projetil_rede(
-	id_disparo: String, caminho_inimigo: NodePath, dano: float, posicao_impacto: Vector2
+	id_disparo: String, caminho_inimigo: NodePath,
+	dano: float, posicao_impacto: Vector2, numero_impacto: int
 ) -> void:
 	if not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
@@ -751,40 +767,97 @@ func _solicitar_impacto_projetil_rede(
 		return
 	if not id_disparo.begins_with("%d:" % remetente):
 		return
+	if numero_impacto <= 0 or numero_impacto > 100000:
+		return
 	if is_nan(dano) or is_inf(dano) or dano <= 0.0 or dano > 1500.0:
 		return
-	if not posicao_impacto.is_finite() or not disparos_autorizados_rede.has(id_disparo):
+	if not posicao_impacto.is_finite():
 		return
-	var disparo: Dictionary = disparos_autorizados_rede[id_disparo]
-	if int(disparo.get("peer_id", 0)) != remetente:
+	var chave := "%s#%d" % [id_disparo, numero_impacto]
+	if impactos_projetil_rede.has(chave) or chaves_impactos_pendentes.has(chave):
+		return
+	if fila_impactos_rede.size() >= LIMITE_FILA_IMPACTOS_REDE:
+		return
+	chaves_impactos_pendentes[chave] = true
+	fila_impactos_rede.append({
+		"chave": chave,
+		"peer_id": remetente,
+		"id_disparo": id_disparo,
+		"caminho": caminho_inimigo,
+		"dano": dano,
+		"posicao": posicao_impacto,
+		"recebido_ms": Time.get_ticks_msec(),
+	})
+	_processar_fila_impactos_rede()
+
+
+func _processar_fila_impactos_rede() -> void:
+	if not multiplayer.is_server() or fila_impactos_rede.is_empty():
 		return
 	var agora := Time.get_ticks_msec()
+	var bloqueados: Dictionary = {}
+	var restantes: Array[Dictionary] = []
+	for entrada in fila_impactos_rede:
+		var peer_id := int(entrada.get("peer_id", 0))
+		var chave := str(entrada.get("chave", ""))
+		var recebido := int(entrada.get("recebido_ms", agora))
+		if agora - recebido > PRAZO_FILA_IMPACTOS_MS or not Rede.jogadores.has(peer_id):
+			chaves_impactos_pendentes.erase(chave)
+			continue
+		# Os impactos do mesmo piloto sao processados na ordem recebida.
+		# Outros pilotos nao sao bloqueados por um disparo atrasado.
+		if bloqueados.has(peer_id):
+			restantes.append(entrada)
+			continue
+		var id_disparo := str(entrada.get("id_disparo", ""))
+		if not disparos_autorizados_rede.has(id_disparo):
+			bloqueados[peer_id] = true
+			restantes.append(entrada)
+			continue
+		_aplicar_impacto_aguardando_rede(entrada, agora)
+		chaves_impactos_pendentes.erase(chave)
+	fila_impactos_rede = restantes
+
+
+func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
+	var chave := str(entrada.get("chave", ""))
+	if impactos_projetil_rede.has(chave):
+		return
+	var id_disparo := str(entrada.get("id_disparo", ""))
+	var peer_id := int(entrada.get("peer_id", 0))
+	var disparo: Dictionary = disparos_autorizados_rede.get(id_disparo, {})
+	if disparo.is_empty() or int(disparo.get("peer_id", 0)) != peer_id:
+		return
 	var criado := int(disparo.get("criado_ms", 0))
-	if criado <= 0 or agora - criado > 5000:
+	if criado <= 0:
 		return
-	if int(disparo.get("expirado_ms", 0)) > 0 and agora - int(disparo.get("expirado_ms", 0)) > 300:
+	var duracao_ms := roundi(float(disparo.get("tempo_vida", 5.0)) * 1000.0)
+	if agora - criado > duracao_ms + PRAZO_FILA_IMPACTOS_MS:
 		return
-	var inimigo := get_node_or_null(caminho_inimigo) as InimigoBase
+	var expirado := int(disparo.get("expirado_ms", 0))
+	if expirado > 0 and int(entrada.get("recebido_ms", agora)) > expirado + 600:
+		return
+	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as InimigoBase
 	if not is_instance_valid(inimigo) or inimigo.morto or inimigo.is_queued_for_deletion():
 		return
-	var piloto := _obter_jogador_rede(remetente)
-	if not is_instance_valid(piloto) or not piloto.vivo:
+	var posicao := Vector2(entrada.get("posicao", Vector2.ZERO))
+	var origem := Vector2(disparo.get("origem", Vector2.ZERO))
+	var velocidade := float(disparo.get("velocidade", 1000.0))
+	var tempo_percorrido := maxf(
+		float(int(entrada.get("recebido_ms", agora)) - criado) / 1000.0, 0.0
+	)
+	var distancia_maxima := velocidade * (tempo_percorrido + 0.35) + DISTANCIA_TOLERANCIA_IMPACTO
+	if origem.distance_to(posicao) > distancia_maxima:
 		return
-	var trajeto_max := float(disparo.get("velocidade", 1000.0)) * (
-		float(agora - criado) / 1000.0 + 0.2
-	) + DISTANCIA_TOLERANCIA_IMPACTO
-	if posicao_impacto.distance_to(Vector2(disparo.get("origem", Vector2.ZERO))) > trajeto_max:
+	if inimigo.global_position.distance_to(posicao) > DISTANCIA_TOLERANCIA_IMPACTO:
 		return
-	if inimigo.global_position.distance_to(posicao_impacto) > DISTANCIA_TOLERANCIA_IMPACTO:
+	var piloto := _obter_jogador_rede(peer_id)
+	if not is_instance_valid(piloto):
 		return
-	var chave := "%s:%s" % [id_disparo, str(caminho_inimigo)]
-	var ultimo := int(impactos_projetil_rede.get(chave, 0))
-	if ultimo > 0 and agora - ultimo < 120:
-		return
+	# Registra antes de aplicar: dano letal pode destruir o proprio alvo.
 	impactos_projetil_rede[chave] = agora
-	# Dano e critico sao aplicados no host; habilidades continuam com RPC proprio.
 	inimigo.set_meta("impacto_critico", bool(disparo.get("critico", false)))
-	inimigo.tomarDano(dano)
+	inimigo.tomarDano(float(entrada.get("dano", 0.0)))
 	if is_instance_valid(inimigo):
 		inimigo.remove_meta("impacto_critico")
 
@@ -1041,6 +1114,13 @@ func _on_jogador_rede_desconectado(id: int) -> void:
 	ultima_sequencia_movimento_peer.erase(id)
 	ultimo_movimento_peer_ms.erase(id)
 	ultimo_numero_disparo_peer.erase(id)
+	var restantes: Array[Dictionary] = []
+	for entrada in fila_impactos_rede:
+		if int(entrada.get("peer_id", 0)) == id:
+			chaves_impactos_pendentes.erase(str(entrada.get("chave", "")))
+		else:
+			restantes.append(entrada)
+	fila_impactos_rede = restantes
 	for identificador in disparos_autorizados_rede.keys():
 		if int(Dictionary(disparos_autorizados_rede[identificador]).get("peer_id", 0)) == id:
 			disparos_autorizados_rede.erase(identificador)
@@ -1078,6 +1158,7 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 
 func _process(delta: float) -> void:
 	if Rede.modo_multiplayer and multiplayer.is_server():
+		_processar_fila_impactos_rede()
 		_limpar_registros_rede()
 	_atualizar_reconciliacao_residuos(delta)
 	_processar_combo(delta)
@@ -1129,7 +1210,7 @@ func _limpar_registros_rede() -> void:
 		if agora - int(disparo.get("criado_ms", 0)) > 6000:
 			disparos_autorizados_rede.erase(identificador)
 	for chave in impactos_projetil_rede.keys():
-		if agora - int(impactos_projetil_rede[chave]) > JANELA_IMPACTO_REDE_MS:
+		if agora - int(impactos_projetil_rede[chave]) > 20000:
 			impactos_projetil_rede.erase(chave)
 
 
