@@ -70,3 +70,14 @@ for marcador in (
     '&"rotulo_removido"',
 ):
     assert marcador in base_visual, marcador
+
+# Os chefes usam tanto animacoes por codigo quanto AnimatedSprite2D e shaders.
+for marcador in (
+    'dados["sprite_animacao"] = sprite.animation',
+    'dados["sprite_frame"] = sprite.frame',
+    'dados["sprite_progresso"] = sprite.frame_progress',
+    'sprite.set_frame_and_progress(',
+    'shader_material.shader.get_shader_uniform_list()',
+    'shader_material.set_shader_parameter(',
+):
+    assert marcador in base_visual, marcador
