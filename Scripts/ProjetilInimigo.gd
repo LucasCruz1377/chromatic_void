@@ -14,6 +14,16 @@ const BRILHO_PROJETEIS_PADRAO := 1.45
 @export var rebotes_max: int = 0
 @export var usa_wrap: bool = false
 
+# Cor opcional de projeteis coloridos: enviada na criacao pelo MultiplayerSpawner.
+# Alpha zero significa manter a cor configurada na cena original.
+@export var cor_visual_rede: Color = Color.TRANSPARENT:
+	set(valor):
+		cor_visual_rede = valor
+		if valor.a > 0.0:
+			var forma := get_node_or_null("Visual") as Polygon2D
+			if is_instance_valid(forma):
+				forma.color = valor
+
 var direcao: Vector2 = Vector2.RIGHT
 var rebotes: int = 0
 # Prazo de segurança local para cópias que perderam o despawn do host.
@@ -23,6 +33,10 @@ var prazo_visual_iniciado := false
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	if cor_visual_rede.a > 0.0:
+		var forma := get_node_or_null("Visual") as Polygon2D
+		if is_instance_valid(forma):
+			forma.color = cor_visual_rede
 	aplicar_glow()
 	_configurar_sincronizador_multiplayer()
 	if Rede.modo_multiplayer and not multiplayer.is_server():
@@ -52,6 +66,7 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:tempo_vida"),
 		NodePath(".:scale"),
 		NodePath(".:modulate"),
+		NodePath(".:cor_visual_rede"),
 	]
 	# O host define a configuracao inicial e corrige a trajetoria durante
 	# a vida do projetil. Isso evita divergencia de ricochetes sob latencia.
