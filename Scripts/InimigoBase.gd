@@ -66,6 +66,7 @@ const INTERVALO_SNAPSHOT_BOSS_REDE := 0.08
 const ESTADOS_BOSS_REDE: Array[StringName] = [
 	&"fase", &"fase_atual", &"estado", &"tempo_estado", &"ataque_pendente",
 	&"angulo_visual", &"progresso_fusao", &"tempo_animacao_visual",
+	&"reciclagem_atual", &"rotulo_removido", &"direcao_investida",
 ]
 
 @onready var player = get_tree().get_first_node_in_group("player")
@@ -198,6 +199,10 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 			dados["position"] = node_2d.position
 			dados["rotation"] = node_2d.rotation
 			dados["scale"] = node_2d.scale
+		if item is Polygon2D:
+			dados["color"] = (item as Polygon2D).color
+		if item is Line2D:
+			dados["default_color"] = (item as Line2D).default_color
 		if item is GPUParticles2D:
 			dados["emitting"] = (item as GPUParticles2D).emitting
 		if item is Line2D:
@@ -243,6 +248,10 @@ func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
 			node_2d.position = dados.get("position", node_2d.position)
 			node_2d.rotation = float(dados.get("rotation", node_2d.rotation))
 			node_2d.scale = dados.get("scale", node_2d.scale)
+		if item is Polygon2D and dados.has("color"):
+			(item as Polygon2D).color = dados["color"]
+		if item is Line2D and dados.has("default_color"):
+			(item as Line2D).default_color = dados["default_color"]
 		if item is GPUParticles2D and dados.has("emitting"):
 			(item as GPUParticles2D).emitting = bool(dados["emitting"])
 		if item is Line2D and dados.has("points"):
@@ -255,8 +264,11 @@ func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
 		if not is_instance_valid(reprodutor):
 			continue
 		var animacao := StringName(dados.get("animacao", &""))
-		if bool(dados.get("tocando", false)) and reprodutor.current_animation != animacao:
-			reprodutor.play(animacao)
+		if bool(dados.get("tocando", false)):
+			if reprodutor.current_animation != animacao or not reprodutor.is_playing():
+				reprodutor.play(animacao)
+		elif reprodutor.is_playing():
+			reprodutor.pause()
 		var posicao := float(dados.get("posicao", 0.0))
 		if absf(reprodutor.current_animation_position - posicao) > 0.16:
 			reprodutor.seek(posicao, true)
