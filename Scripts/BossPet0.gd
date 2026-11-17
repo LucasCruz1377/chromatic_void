@@ -1,4 +1,4 @@
-extends InimigoBase
+extends BossBase
 class_name BossPet0
 
 
