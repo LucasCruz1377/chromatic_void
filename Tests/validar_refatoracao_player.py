@@ -22,7 +22,7 @@ projectile = (ROOT / "Scripts/ProjetilInimigo.gd").read_text(encoding="utf-8")
 assert "configuracao.property_set_sync(caminho, caminho in propriedades_movimento)" in projectile
 assert "NodePath(\".:modulate\")" in projectile
 assert "NodePath(\".:rebotes_max\")" in projectile
-assert "O MultiplayerSpawner remove a copia" in projectile
+assert "# A tolerancia acima continua removendo copias que perderam o despawn." in projectile
 assert "var prazo_visual_iniciado := false" in projectile
 assert "prazo_visual_rede -= delta" in projectile
 assert "if not prazo_visual_iniciado:" in projectile
@@ -47,7 +47,7 @@ assert "get_tree().current_scene.add_child(fragmento, true)" in boss
 arena = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
 assert '"res://Entities/FragmentoReciclavel.tscn"' in arena
 assert '"res://Entities/InimigoMinion.tscn"' in arena
-assert '@rpc("authority", "call_remote", "reliable", 3)\\nfunc _publicar_posicoes_mundo' in arena
+assert '@rpc("authority", "call_remote", "reliable", 3)\nfunc _publicar_posicoes_mundo' in arena
 assert "global_position += direcao_visual.normalized() * velocidade * delta" not in projectile
 inimigo_base = (ROOT / "Scripts/InimigoBase.gd").read_text(encoding="utf-8")
 assert "global_position += velocity * delta" not in inimigo_base
