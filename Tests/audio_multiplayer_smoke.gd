@@ -38,7 +38,9 @@ func _ready() -> void:
 		"projéteis não recebem correções autoritativas de movimento"
 	)
 	checar(
-		"O MultiplayerSpawner remove a copia" in fonte_projetil,
+		"if Rede.modo_multiplayer and not multiplayer.is_server():" in fonte_projetil and
+		"tempo_vida -= delta" in fonte_projetil and
+		"queue_free()" in fonte_projetil,
 		"despawn dos projéteis não é controlado pelo host"
 	)
 
