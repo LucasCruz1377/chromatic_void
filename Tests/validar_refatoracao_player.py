@@ -56,3 +56,17 @@ assert "var emitindo_rastro := propulsao_acionada" in player
 assert "var propulsao_acionada := false" in player
 assert "velocity.length_squared() > 64.0" not in player
 print("TESTE OK: contratos de projeteis, cores, propulsao e diagnostico preservados")
+
+# Contrato visual de chefes: cor real de Polygon2D e Line2D,
+# animacoes pausadas e estado da defesa do Pet-0 replicados.
+base_visual = (ROOT / "Scripts/InimigoBase.gd").read_text(encoding="utf-8")
+for marcador in (
+    'dados["color"] = (item as Polygon2D).color',
+    '(item as Polygon2D).color = dados["color"]',
+    'dados["default_color"] = (item as Line2D).default_color',
+    '(item as Line2D).default_color = dados["default_color"]',
+    'reprodutor.pause()',
+    '&"reciclagem_atual"',
+    '&"rotulo_removido"',
+):
+    assert marcador in base_visual, marcador
