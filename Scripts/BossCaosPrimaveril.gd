@@ -383,6 +383,9 @@ func _replicar_petala_boss(
 ) -> void:
 	if multiplayer.is_server():
 		return
+	var sprite := petalas.get_node_or_null("Petala%d" % indice) as Sprite2D
+	if is_instance_valid(sprite):
+		sprite.visible = false
 	var petala := PETALA_BUMERANGUE.instantiate() as PetalaBumerangue
 	petala.name = "PetalaRede%d_%d" % [indice, Time.get_ticks_usec()]
 	get_tree().current_scene.add_child(petala, true)

@@ -24,6 +24,7 @@ var jogadores: Dictionary = {}
 var hospedando := false
 var em_lobby := false
 var modo_multiplayer := false
+var partida_em_andamento := false
 var peer_enet: ENetMultiplayerPeer
 var configuracao_teste: Dictionary = {}
 var emissor_lan: PacketPeerUDP
@@ -136,6 +137,7 @@ func encerrar_lobby() -> void:
 	hospedando = false
 	em_lobby = false
 	modo_multiplayer = false
+	partida_em_andamento = false
 	jogadores.clear()
 	lobby_alterado.emit({})
 	conexao_alterada.emit(false)
@@ -312,6 +314,7 @@ func solicitar_inicio_partida() -> bool:
 
 @rpc("authority", "call_local", "reliable")
 func _iniciar_partida_remota() -> void:
+	partida_em_andamento = true
 	modo_multiplayer = true
 	em_lobby = false
 	Global.primeira_vez_jogando = false
@@ -328,6 +331,9 @@ func _registrar_nickname_remoto(nickname: String) -> void:
 		return
 	jogadores[id] = sanitizar_nickname(nickname)
 	_enviar_lista_jogadores()
+	if partida_em_andamento:
+		# O cliente entra diretamente na arena e solicita o estado presente.
+		_iniciar_partida_remota.rpc_id(id)
 
 
 @rpc("authority", "call_local", "reliable")

@@ -2343,11 +2343,14 @@ func ganhar_xp(valor: float) -> void:
 
 
 func conceder_xp_rede(valor: float) -> void:
+	var recompensa := clampf(valor, 0.0, 10000.0)
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
-		if multiplayer.is_server() and peer_id_dono > 1:
-			_receber_xp_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+		if multiplayer.is_server() and peer_id_dono > 1 and Rede.jogadores.has(peer_id_dono):
+			# O host mantem a progressao oficial dos pilotos remotos.
+			ganhar_xp(recompensa)
+			_receber_xp_autoritativo.rpc_id(peer_id_dono, recompensa)
 		return
-	ganhar_xp(valor)
+	ganhar_xp(recompensa)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -2378,12 +2381,25 @@ func calcular_xp_proximo_nivel(nivel: int) -> int:
 	return 23 + niveis_apos_dez * 5 + int(niveis_apos_dez * niveis_apos_dez / 5.0)
 
 
+var compra_upgrade_pendente_rede := false
+
+
 func comprar_upgrade(id: StringName) -> bool:
-	if pontos_upgrade_pendentes <= 0:
+	if compra_upgrade_pendente_rede or pontos_upgrade_pendentes <= 0:
 		return false
 	if not DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada, arma_monthly):
 		return false
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		if not is_multiplayer_authority() or not Rede.esta_conectado():
+			return false
+		compra_upgrade_pendente_rede = true
+		_solicitar_compra_upgrade_rede.rpc_id(1, id)
+		return true
+	_aplicar_compra_upgrade_local(id)
+	return true
 
+
+func _aplicar_compra_upgrade_local(id: StringName) -> void:
 	var novo_nivel := DadosUpgrades.nivel(id, niveis_upgrades) + 1
 	niveis_upgrades[id] = novo_nivel
 	pontos_upgrade_pendentes -= 1
@@ -2391,7 +2407,37 @@ func comprar_upgrade(id: StringName) -> bool:
 	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	upgrade_adquirido.emit(id, novo_nivel)
 	_sincronizar_loadout_rede()
-	return true
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_compra_upgrade_rede(id: StringName) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or remetente != peer_id_dono or not Rede.jogadores.has(remetente):
+		return
+	# As habilidades exclusivas usam o Resource equipado, nunca um ID arbitrario.
+	if HabilidadeEquipada == null and habilidade_rede_path.begins_with("res://Habilidades/"):
+		HabilidadeEquipada = load(habilidade_rede_path) as Habilidade
+	var permitido := (
+		pontos_upgrade_pendentes > 0
+		and DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada, arma_monthly)
+	)
+	if permitido:
+		_aplicar_compra_upgrade_local(id)
+	_confirmar_compra_upgrade_rede.rpc_id(remetente, id, permitido)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _confirmar_compra_upgrade_rede(id: StringName, permitido: bool) -> void:
+	if not is_multiplayer_authority():
+		return
+	compra_upgrade_pendente_rede = false
+	if permitido and pontos_upgrade_pendentes > 0:
+		_aplicar_compra_upgrade_local(id)
+	var menu := get_node_or_null("../GUI/TelaUpgrades")
+	if is_instance_valid(menu) and menu.has_method("ao_upgrade_confirmado_rede"):
+		menu.call("ao_upgrade_confirmado_rede")
 
 
 func gastar_reroll_upgrade() -> bool:

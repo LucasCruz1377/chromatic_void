@@ -216,7 +216,12 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 				for uniforme in shader_material.shader.get_shader_uniform_list():
 					var nome: StringName = uniforme.get("name", &"")
 					if not nome.is_empty():
-						parametros[nome] = shader_material.get_shader_parameter(nome)
+						var valor: Variant = shader_material.get_shader_parameter(nome)
+						if typeof(valor) in [
+							TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_VECTOR2,
+							TYPE_VECTOR3, TYPE_VECTOR4, TYPE_COLOR
+						]:
+							parametros[nome] = valor
 			dados["shader_parametros"] = parametros
 		if item is GPUParticles2D:
 			dados["emitting"] = (item as GPUParticles2D).emitting
@@ -236,7 +241,7 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 	return {"sequencia": sequencia, "estados": estados, "visuais": visuais, "animacoes": animacoes}
 
 
-@rpc("authority", "call_remote", "reliable", 0)
+@rpc("authority", "call_remote", "unreliable_ordered", 0)
 func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
@@ -549,14 +554,39 @@ func tomarDano(valor: float) -> void:
 		morrer()
 
 
+# Limite por piloto evita RPCs falsos com dano arbitrario e spam de impactos.
+var janela_dano_pilotos: Dictionary = {}
+
+
 @rpc("any_peer", "call_remote", "reliable")
 func _solicitar_dano_ao_host(valor: float) -> void:
-	if not multiplayer.is_server():
+	if not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
-	tomarDano(clampf(valor, 0.0, 10000.0))
+	if is_nan(valor) or is_inf(valor) or valor <= 0.0 or valor > 1500.0:
+		return
+	var piloto: Player
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if candidato is Player and candidato.peer_id_dono == remetente:
+			piloto = candidato as Player
+			break
+	if not is_instance_valid(piloto) or not piloto.vivo:
+		return
+	# Abrange tiros longos e habilidades de area, sem aceitar hits de outra arena.
+	if piloto.global_position.distance_squared_to(global_position) > 2400.0 * 2400.0:
+		return
+	var agora := Time.get_ticks_msec()
+	var registro: Dictionary = janela_dano_pilotos.get(remetente, {})
+	if agora - int(registro.get("inicio", 0)) >= 1000:
+		registro = {"inicio": agora, "acumulado": 0.0}
+	var acumulado := float(registro.get("acumulado", 0.0))
+	if acumulado + valor > 5000.0:
+		return
+	registro["acumulado"] = acumulado + valor
+	janela_dano_pilotos[remetente] = registro
+	tomarDano(valor)
 
 
 func receber_eco_laco(valor: float) -> void:
@@ -845,6 +875,12 @@ func replicar_projetil_inimigo_rede(
 		or not multiplayer.is_server()
 		or not is_instance_valid(projetil)
 	):
+		return
+	if projetil is ProjetilInimigo and projetil.get_parent() == get_tree().current_scene:
+		# A arena ja replica essas cenas com MultiplayerSpawner.
+		# Nao enviar uma segunda copia por RPC.
+		(projetil as ProjetilInimigo).cor_visual_rede = cor
+		projetil.scale = escala
 		return
 	_replicar_projetil_inimigo_rpc.rpc(
 		posicao, direcao, dano, velocidade, rebotes, cor, escala

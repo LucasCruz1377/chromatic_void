@@ -73,7 +73,12 @@ func _configurar_sincronizador_multiplayer() -> void:
 	for caminho in propriedades_movimento + propriedades_configuracao:
 		configuracao.add_property(caminho)
 		configuracao.property_set_spawn(caminho, true)
-		configuracao.property_set_sync(caminho, caminho in propriedades_movimento)
+		configuracao.property_set_sync(
+			caminho,
+			caminho in propriedades_movimento
+			or caminho == NodePath(".:cor_visual_rede")
+			or caminho == NodePath(".:scale")
+		)
 	sincronizador.replication_interval = 0.10
 	sincronizador.replication_config = configuracao
 	add_child(sincronizador)
@@ -162,6 +167,8 @@ func processar_bordas() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if body.is_in_group("player") and body.has_method("tomar_dano"):
 		body.tomar_dano(dano)
 		queue_free()

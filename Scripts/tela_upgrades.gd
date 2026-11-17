@@ -559,11 +559,25 @@ func limpar_cards() -> void:
 
 func _on_upgrade_escolhido(id: StringName) -> void:
 	if not player.comprar_upgrade(id):
-		mostrar_opcoes()
+		if not player.compra_upgrade_pendente_rede:
+			mostrar_opcoes()
+		return
+	if player.compra_upgrade_pendente_rede:
 		return
 
 	Global.vibrar_controle(0.18, 0.35, 0.12)
 
+	if player.pontos_upgrade_pendentes > 0:
+		atualizar_cabecalho()
+		mostrar_opcoes()
+	else:
+		fechar_menu()
+
+
+# O servidor decide a compra antes da interface sortear outra carta.
+func ao_upgrade_confirmado_rede() -> void:
+	if not menu_aberto or not is_instance_valid(player):
+		return
 	if player.pontos_upgrade_pendentes > 0:
 		atualizar_cabecalho()
 		mostrar_opcoes()

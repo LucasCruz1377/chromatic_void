@@ -146,6 +146,7 @@ var tempo_reconciliacao_residuos := 0.0
 var sequencia_reconciliacao_residuos := 0
 var ultima_sequencia_residuos := -1
 var ausencias_residuos: Dictionary = {}
+var estados_entrada_pendentes: Dictionary = {}
 
 
 
@@ -359,6 +360,64 @@ func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> v
 	}) as Player
 	if is_instance_valid(novo):
 		jogadores_rede[id] = novo
+	_enviar_estado_de_entrada_rede(id)
+
+
+func _enviar_estado_de_entrada_rede(id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var pilotos: Dictionary = {}
+	for chave in jogadores_rede:
+		var piloto := _obter_jogador_rede(int(chave))
+		if not is_instance_valid(piloto):
+			continue
+		pilotos[int(chave)] = {
+			"configuracao": piloto.obter_estado_loadout_rede(),
+			"nivel": piloto.nivel_atual,
+			"xp": piloto.xp_atual,
+			"xp_necessario": piloto.xp_necessario,
+			"melhorias_pendentes": piloto.pontos_upgrade_pendentes,
+		}
+	_receber_estado_de_entrada_rede.rpc_id(id, {
+		"pilotos": pilotos,
+		"setor": str(setor_atual),
+		"combo": Global.Combo,
+		"pontos": Global.Pontos,
+		"cristais": cristais_coop_acumulados,
+	})
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_estado_de_entrada_rede(dados: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	setor_atual = StringName(str(dados.get("setor", setor_atual)))
+	_receber_combo_rede(
+		int(dados.get("combo", 0)), 0.0, int(dados.get("pontos", 0))
+	)
+	_aplicar_total_cristais_coop(int(dados.get("cristais", 0)))
+	estados_entrada_pendentes = Dictionary(dados.get("pilotos", {})).duplicate(true)
+	_aplicar_estados_entrada_pendentes()
+
+
+func _aplicar_estados_entrada_pendentes() -> void:
+	for chave in estados_entrada_pendentes.keys():
+		var identificador := int(chave)
+		var piloto := _obter_jogador_rede(identificador)
+		if not is_instance_valid(piloto):
+			continue
+		var dados: Dictionary = estados_entrada_pendentes[chave]
+		if identificador == Rede.peer_local():
+			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
+			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
+			piloto.xp_necessario = maxi(1, int(dados.get("xp_necessario", 10)))
+			piloto.pontos_upgrade_pendentes = maxi(
+				0, int(dados.get("melhorias_pendentes", 0))
+			)
+			piloto.pontos_upgrade_alterados.emit(piloto.pontos_upgrade_pendentes)
+		else:
+			piloto.aplicar_estado_loadout_rede(Dictionary(dados.get("configuracao", {})))
+		estados_entrada_pendentes.erase(chave)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -402,6 +461,9 @@ func _encaminhar_disparo_visual(dados: Dictionary) -> void:
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	var identificador := str(dados.get("id_disparo", ""))
+	if not identificador.begins_with("%d:" % remetente):
 		return
 	dados["peer_id"] = remetente
 	_criar_disparo_visual_rede(dados)
@@ -483,6 +545,8 @@ func _encaminhar_estado_disparo(dados: Dictionary) -> void:
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
+	if not str(dados.get("id_disparo", "")).begins_with("%d:" % remetente):
+		return
 	dados["peer_id"] = remetente
 	_aplicar_estado_disparo_visual(dados)
 	_enviar_estado_disparo_para_outros(dados, remetente)
@@ -532,6 +596,8 @@ func _encaminhar_fim_disparo(dados: Dictionary) -> void:
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	if not str(dados.get("id_disparo", "")).begins_with("%d:" % remetente):
 		return
 	_finalizar_disparo_visual(str(dados.get("id_disparo", "")))
 	_enviar_fim_disparo_para_outros(dados, remetente)
@@ -652,6 +718,12 @@ func _encaminhar_loadout(dados: Dictionary) -> void:
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
 	dados["peer_id"] = remetente
+	var player_autor := _obter_jogador_rede(remetente)
+	if not is_instance_valid(player_autor):
+		return
+	var configuracao_recebida := Dictionary(dados.get("configuracao", {}))
+	configuracao_recebida["upgrades"] = player_autor.niveis_upgrades.duplicate(true)
+	dados["configuracao"] = configuracao_recebida
 	_aplicar_loadout_rede(dados)
 	_enviar_loadout_para_outros(dados, remetente)
 
@@ -808,6 +880,10 @@ func _configurar_camera_local() -> void:
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
+	for chave in disparos_visuais_rede.keys():
+		if str(chave).begins_with("%d:" % id):
+			_finalizar_disparo_visual(str(chave))
+	estados_entrada_pendentes.erase(id)
 	if multiplayer.is_server():
 		renascimentos_pendentes.erase(id)
 	if multiplayer.is_server() and tamanhos_viewport_rede.has(id):
@@ -840,6 +916,8 @@ func _process(delta: float) -> void:
 	_atualizar_reconciliacao_residuos(delta)
 	_processar_combo(delta)
 	if Rede.modo_multiplayer:
+		if not estados_entrada_pendentes.is_empty():
+			_aplicar_estados_entrada_pendentes()
 		_processar_posicoes_rede(delta)
 		_processar_sincronizacao_area_coop(delta)
 		_atualizar_hud_boss_cliente()
@@ -941,7 +1019,7 @@ func _capturar_posicoes_mundo() -> Dictionary:
 	}
 
 
-@rpc("authority", "call_remote", "reliable", 3)
+@rpc("authority", "call_remote", "unreliable_ordered", 3)
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
