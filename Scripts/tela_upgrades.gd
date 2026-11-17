@@ -25,6 +25,7 @@ var dica_menu: HBoxContainer
 var botao_fechar: Button
 var botao_rerrolar: Button
 var opcoes_atuais: Array[StringName] = []
+var numero_oferta_seed := 0
 var menu_aberto := false
 var time_scale_anterior := 1.0
 var mouse_mode_anterior := Input.MOUSE_MODE_HIDDEN
@@ -458,12 +459,20 @@ func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 		return
 
 	limpar_cards()
+	var gerador: RandomNumberGenerator = null
+	if Rede.seed_partida > 0:
+		numero_oferta_seed += 1
+		var id_jogador := player.peer_id_dono if Rede.modo_multiplayer else 1
+		gerador = SeedDaPartida.criar_rng(
+			Rede.seed_partida, 303, numero_oferta_seed, id_jogador
+		)
 	opcoes_atuais = DadosUpgrades.sortear(
 		player.niveis_upgrades,
 		qtd_cartas,
 		player.HabilidadeEquipada,
 		evitar,
-		player.arma_monthly
+		player.arma_monthly,
+		gerador
 	)
 	for id in opcoes_atuais:
 		var dados := DadosUpgrades.obter(id, player.HabilidadeEquipada)
