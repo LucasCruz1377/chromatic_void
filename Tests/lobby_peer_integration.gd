@@ -50,6 +50,11 @@ func _ready() -> void:
 	if not is_instance_valid(local):
 		_falhar("não encontrou a nave controlada pelo peer local")
 		return
+	for piloto in get_tree().get_nodes_in_group("player"):
+		var barra := piloto.get_node("NicknameRede/BarraVidaRede") as ProgressBar
+		if not barra.size.is_equal_approx(Vector2(86.0, 3.0)):
+			_falhar("barra multiplayer perdeu a dimensao de 86 x 3 pixels: %s" % barra.size)
+			return
 	if not _personalizacoes_distintas_corretas():
 		_falhar("modelo, cor, habilidade ou nickname colorido não preservou o loadout individual")
 		return

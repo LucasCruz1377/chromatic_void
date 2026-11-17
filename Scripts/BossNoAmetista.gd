@@ -345,6 +345,8 @@ func _draw() -> void:
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if Vida > 0.0:
 		return
 	var cena := _obter_cena()

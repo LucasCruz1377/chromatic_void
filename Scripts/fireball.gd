@@ -330,7 +330,7 @@ func _processar_movimento_monthly(delta: float) -> bool:
 				if is_instance_valid(alvo):
 					global_position = alvo.global_position - transform.x * 36.0
 				visible = true
-				monitoring = true
+				monitoring = not somente_visual_rede
 				_criar_feedback_monthly(0.75)
 			global_position += transform.x * velocidade * delta
 			_criar_rastro_monthly()
@@ -421,12 +421,16 @@ func _iniciar_retorno_bumerangue() -> void:
 
 
 func _atingir_alvos_sobrepostos_bumerangue() -> void:
+	if somente_visual_rede or not monitoring or not is_inside_tree() or is_queued_for_deletion():
+		return
 	for corpo in get_overlapping_bodies():
 		if corpo is Node2D:
 			_atingir_com_bumerangue(corpo as Node2D)
 
 
 func _atingir_com_bumerangue(body: Node2D) -> void:
+	if somente_visual_rede:
+		return
 	if not is_instance_valid(body) or not body.has_method("tomarDano"):
 		return
 	var id_alvo := body.get_instance_id()
@@ -826,6 +830,8 @@ func _on_visible_on_screen_notifier_3d_screen_exited() -> void:
 
 
 func _aplicar_dano_critico(alvo: Node2D, valor: float) -> void:
+	if somente_visual_rede:
+		return
 	if not is_instance_valid(alvo):
 		return
 	if Rede.modo_multiplayer and not multiplayer.is_server() and not id_disparo_rede.is_empty():

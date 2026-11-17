@@ -343,7 +343,6 @@ func _criar_nickname_rede() -> void:
 	barra_vida_rede = ProgressBar.new()
 	barra_vida_rede.name = "BarraVidaRede"
 	barra_vida_rede.position = Vector2(-43.0, -19.0)
-	barra_vida_rede.size = Vector2(86.0, 1.0)
 	barra_vida_rede.custom_minimum_size = Vector2(86.0, 3.0)
 	barra_vida_rede.max_value = VIDA_MAXIMA
 	barra_vida_rede.value = vida
@@ -358,6 +357,9 @@ func _criar_nickname_rede() -> void:
 	barra_vida_rede.add_theme_stylebox_override("background", fundo_vida)
 	barra_vida_rede.add_theme_stylebox_override("fill", estilo_vida_rede)
 	suporte_nickname_rede.add_child(barra_vida_rede)
+	# O minimo inicial do tema com porcentagem ativa nao pode fixar a altura.
+	# Aplicar o tamanho depois de ocultar o texto e instalar os estilos.
+	barra_vida_rede.size = Vector2(86.0, 3.0)
 	_atualizar_nickname_rede()
 
 

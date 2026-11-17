@@ -607,6 +607,8 @@ func ao_colidir_com_player(alvo: Node) -> void:
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or Vida > 0.0:
 		return
 	set_meta("som_morte_personalizado", true)

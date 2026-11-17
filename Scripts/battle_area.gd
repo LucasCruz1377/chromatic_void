@@ -332,6 +332,13 @@ func _reconciliar_residuos_pet0(sequencia: int, ativos: PackedStringArray) -> vo
 				ausencias_residuos.erase(chave)
 
 
+func preparar_saida_multiplayer() -> void:
+	# Encerrar o peer enquanto as naves e sincronizadores ainda existem.
+	# Fechar somente em _exit_tree deixa pacotes chegarem a caminhos removidos.
+	if Rede.modo_multiplayer:
+		Rede.encerrar_lobby()
+
+
 func _exit_tree() -> void:
 	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
@@ -759,7 +766,9 @@ func _aplicar_estado_disparo_visual(dados: Dictionary) -> void:
 
 
 func finalizar_disparo_rede(id_disparo: String) -> void:
-	if id_disparo.is_empty() or not Rede.esta_conectado():
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
+	if id_disparo.is_empty():
 		return
 	var dados := {"id_disparo": id_disparo}
 	if multiplayer.is_server():
@@ -770,6 +779,8 @@ func finalizar_disparo_rede(id_disparo: String) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _encaminhar_fim_disparo(dados: Dictionary) -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
 	if not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
@@ -782,6 +793,8 @@ func _encaminhar_fim_disparo(dados: Dictionary) -> void:
 
 
 func _enviar_fim_disparo_para_outros(dados: Dictionary, remetente: int) -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
 	for chave in Rede.jogadores:
 		var id := int(chave)
 		if id != 1 and id != remetente:
@@ -790,6 +803,8 @@ func _enviar_fim_disparo_para_outros(dados: Dictionary, remetente: int) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _receber_fim_disparo(dados: Dictionary) -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
 	_finalizar_disparo_visual(str(dados.get("id_disparo", "")))
 
 
@@ -1188,6 +1203,8 @@ func _configurar_camera_local() -> void:
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
+	if not is_inside_tree() or multiplayer == null:
+		return
 	ultima_sequencia_movimento_peer.erase(id)
 	ultimo_movimento_peer_ms.erase(id)
 	ultimo_numero_disparo_peer.erase(id)
@@ -1216,7 +1233,9 @@ func _on_jogador_rede_desconectado(id: int) -> void:
 	var nome := "O OUTRO PILOTO"
 	if is_instance_valid(remoto):
 		nome = str((remoto as Node).get("nickname_rede"))
-		(remoto as Node).queue_free()
+		# O PlayerSpawner pertence ao host; clientes aguardam o despawn.
+		if multiplayer.is_server():
+			(remoto as Node).queue_free()
 	jogadores_rede.erase(id)
 	_mostrar_aviso_rede(tr("%s DESCONECTOU • A PARTIDA CONTINUA") % nome.to_upper(), false)
 
@@ -2727,6 +2746,7 @@ func _apresentar_vitoria(pontuacao_final: int) -> void:
 
 
 func _on_vitoria_menu() -> void:
+	preparar_saida_multiplayer()
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	Global.definir_cursor_interface(true)

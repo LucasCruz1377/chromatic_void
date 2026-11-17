@@ -50,3 +50,18 @@ Ambiente local: **Godot 4.6.3 oficial, Linux, headless**. A versão difere da 4.
 Alguns testes existentes ainda emitem avisos de ObjectDB/recursos em uso no encerramento do processo headless, embora concluam suas verificações. Não se afirma ausência de vazamentos com base nesses testes.
 
 Ainda exigem validação no equipamento real: renderização Vulkan/driver Radeon no Windows, comportamento do filesystem Windows sob bloqueio por outro programa e partidas em máquinas distintas com latência/perda de pacotes. O teste local de rede usa loopback; quatro jogadores foram cobertos no dimensionamento dos pacotes, não numa sessão de quatro processos.
+
+
+## Complemento: log do bumerangue e saida multiplayer
+
+O segundo anexo (`Texto colado(1).txt`) trouxe 831 consultas de sobreposicao com monitoramento desligado, tres despawns sem registro, dois deltas para sincronizador invalido e uma chamada de `is_server()` em MultiplayerAPI nula.
+
+- `fireball.gd`: bumerangues visuais nao consultam sobreposicoes nem aplicam dano; tiros reais preservam um acerto por alvo em cada fase, ida e volta. O tiro subterraneo visual tambem permanece sem monitoramento quando emerge.
+- `battle_area.gd`: callbacks de fim de disparo verificam arvore, exclusao pendente, API e conexao. O cliente deixa o despawn das naves desconectadas a cargo do host.
+- `gui.gd` e arena: retorno ao menu encerra o peer antes de remover a cena, evitando pacotes para sincronizadores ja removidos.
+- Os overrides de morte dos chefes tambem verificam autoridade antes de executar limpezas; a Flor nao pode remover espinhos replicados por uma chamada local de morte.
+- Barra de vida multiplayer: dimensao efetiva restaurada para **86 x 3 pixels**, aplicada depois de ocultar a porcentagem e instalar os estilos. Isso impede que o tamanho minimo inicial do tema mantenha a barra alta. Posicao e cores foram preservadas.
+
+Regressoes adicionadas: `log_multiplayer_smoke` testa repeticao da consulta, ausencia de dano na replica, dano real de ida/volta e callback em arena fora da arvore. `lifecycle_peer_integration` executa tres processos, remove um cliente enquanto os outros continuam e valida despawns de tres espinhos da Flor. Seu runner rejeita erros de replicacao mesmo quando a engine termina com codigo zero. A integracao existente de dois jogadores tambem verifica `ProgressBar.size == Vector2(86, 3)`.
+
+Validacao local: compilacao de 162 scripts; regressao do log; testes de estrutura, Flor, chefes e progressao; sete validadores Python; integracoes de dois e tres peers aprovadas. Persistem os avisos de recursos em uso no encerramento headless ja descritos acima. O ambiente local continua sendo Godot 4.6.3/Linux; a CI executa Godot 4.7.

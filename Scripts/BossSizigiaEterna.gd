@@ -839,6 +839,8 @@ func atualizar_colisao(raio: float) -> void:
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if Vida > 0.0:
 		return
 	set_meta("som_morte_personalizado", true)

@@ -93,11 +93,16 @@ jobs:
 
           for teste in "${testes[@]}"; do
             echo "Executando $teste"
+            log_teste="$(mktemp)"
             timeout 180s godot \
               --headless \
               --audio-driver Dummy \
               --path . \
-              "res://$teste"
+              "res://$teste" 2>&1 | tee "$log_teste"
+            if grep -Eq "SCRIPT ERROR:|ERROR: Can't find overlapping|ERROR: Ignoring delta|ERROR: Condition.*recv_nodes" "$log_teste"; then
+              echo "O teste emitiu erro de script, colisao ou replicacao."
+              exit 1
+            fi
           done
 
       - name: Validar partida host e cliente
@@ -121,6 +126,9 @@ jobs:
           cat "$pasta_logs/client.log"
           test "$status_host" -eq 0
           test "$status_client" -eq 0
+
+      - name: Validar saida de cliente com tres jogadores
+        run: python3 Tests/run_lifecycle_integration.py
 
   exportar:
     name: Exportar ${{ matrix.nome }}

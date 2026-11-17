@@ -232,9 +232,15 @@ func _on_despause_pressed() -> void:
 
 func _on_voltarmenu_2_pressed() -> void:
 	preparar_troca_de_cena()
+	var batalha := get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("preparar_saida_multiplayer"):
+		batalha.call("preparar_saida_multiplayer")
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
 
 
 func _on_voltarmenu_pressed() -> void:
 	preparar_troca_de_cena()
+	var batalha := get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("preparar_saida_multiplayer"):
+		batalha.call("preparar_saida_multiplayer")
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
