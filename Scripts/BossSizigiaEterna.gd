@@ -1,4 +1,4 @@
-extends BossBase
+extends "res://Scripts/BossBase.gd"
 class_name BossSizigiaEterna
 
 

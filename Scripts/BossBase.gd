@@ -1,4 +1,4 @@
-extends InimigoBase
+extends "res://Scripts/InimigoBase.gd"
 class_name BossBase
 
 ## Classe intermediaria comum aos chefes.

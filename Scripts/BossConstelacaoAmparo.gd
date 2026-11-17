@@ -1,4 +1,4 @@
-extends BossMensal
+extends "res://Scripts/BossMensal.gd"
 class_name BossConstelacaoAmparo
 
 const FaixaEnergia := preload("res://Scripts/FaixaEnergiaBoss.gd")
