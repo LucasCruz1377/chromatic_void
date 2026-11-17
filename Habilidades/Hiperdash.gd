@@ -95,9 +95,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/hiperdash.svg"
 	var cor := Color(0.12, 0.88, 1.0)
 	return {
-		&"hiperdash_impacto": criar_carta_upgrade("IMPACTO CINÉTICO", "+2 de dano ao atravessar inimigos.", icone, cor, Nome, 3, [&"dano"]),
-		&"hiperdash_distancia": criar_carta_upgrade("ROTA ESTENDIDA", "+0,08 s de duração e +8% de velocidade.", icone, cor, Nome, 3, [&"distancia"]),
-		&"hiperdash_recarga": criar_carta_upgrade("VETOR PRONTO", "Recarga 12% mais rápida.", icone, cor, Nome, 3, [&"cooldown"]),
+		&"hiperdash_impacto": criar_carta_upgrade("IMPACTO CINÉTICO", "Seu hiperdash causa mais dano ao atravessar inimigos.", icone, cor, Nome, 3, [&"dano"]),
+		&"hiperdash_distancia": criar_carta_upgrade("ROTA ESTENDIDA", "Seu hiperdash vai mais longe e mais rápido.", icone, cor, Nome, 3, [&"distancia"]),
+		&"hiperdash_recarga": criar_carta_upgrade("VETOR PRONTO", "Seu hiperdash recarrega mais rápido.", icone, cor, Nome, 3, [&"cooldown"]),
 	}
 
 

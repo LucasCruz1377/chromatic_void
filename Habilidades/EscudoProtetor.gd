@@ -19,9 +19,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/escudo_protetor.svg"
 	var cor := Color(0.72, 0.42, 1.0)
 	return {
-		&"escudo_resistencia": criar_carta_upgrade("BARREIRA REFORÇADA", "+15 de resistência do escudo.", icone, cor, Nome, 3, [&"defesa"]),
-		&"escudo_duracao": criar_carta_upgrade("PREVENÇÃO CONTÍNUA", "+1,2 segundo de duração.", icone, cor, Nome, 3, [&"duracao"]),
-		&"escudo_recarga": criar_carta_upgrade("RESPOSTA PREVENTIVA", "Recarga 12% mais rápida.", icone, cor, Nome, 3, [&"cooldown"]),
+		&"escudo_resistencia": criar_carta_upgrade("BARREIRA REFORÇADA", "Seu escudo absorve mais dano.", icone, cor, Nome, 3, [&"defesa"]),
+		&"escudo_duracao": criar_carta_upgrade("PREVENÇÃO CONTÍNUA", "Seu escudo protege por mais tempo.", icone, cor, Nome, 3, [&"duracao"]),
+		&"escudo_recarga": criar_carta_upgrade("RESPOSTA PREVENTIVA", "Seu escudo recarrega mais rápido.", icone, cor, Nome, 3, [&"cooldown"]),
 	}
 
 

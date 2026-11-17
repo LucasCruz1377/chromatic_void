@@ -15,7 +15,7 @@ func configurar(
 	id: StringName,
 	dados: Dictionary,
 	nivel_atual: int,
-	texto_requisitos: String
+	_texto_requisitos: String
 ) -> void:
 	upgrade_id = id
 	cor_destaque = Color(dados.get("cor", Color.WHITE))
@@ -47,19 +47,10 @@ func configurar(
 	topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coluna.add_child(topo)
 
-	var categoria := Label.new()
-	categoria.text = tr(str(dados.get("categoria", "MOD")))
-	categoria.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	categoria.clip_text = true
-	categoria.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	categoria.add_theme_font_size_override("font_size", 11)
-	categoria.add_theme_color_override("font_color", cor_destaque)
-	categoria.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	topo.add_child(categoria)
-
 	var raridade := Label.new()
 	raridade.text = tr(str(dados.get("raridade", "COMUM")))
 	raridade.custom_minimum_size = Vector2(72, 18)
+	raridade.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	raridade.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	raridade.clip_text = true
 	raridade.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -95,24 +86,13 @@ func configurar(
 
 	var nivel := Label.new()
 	var max_nivel := int(dados.get("max_nivel", 1))
-	nivel.text = tr("NÍVEL %d  →  %d/%d") % [nivel_atual, nivel_atual + 1, max_nivel]
+	nivel.text = "%d/%d" % [nivel_atual + 1, max_nivel]
 	nivel.custom_minimum_size = Vector2(0, 18)
 	nivel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nivel.add_theme_font_size_override("font_size", 11)
 	nivel.add_theme_color_override("font_color", cor_destaque)
 	nivel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coluna.add_child(nivel)
-
-	var papel := Label.new()
-	papel.text = "◆  " + obter_papel(dados)
-	papel.custom_minimum_size = Vector2(0, 20)
-	papel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	papel.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	papel.add_theme_font_size_override("font_size", 10)
-	papel.add_theme_color_override("font_color", cor_destaque.lightened(0.12))
-	papel.add_theme_stylebox_override("normal", criar_estilo_faixa())
-	papel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	coluna.add_child(papel)
 
 	var descricao := Label.new()
 	descricao.text = tr(str(dados.get("descricao", "")))
@@ -121,25 +101,12 @@ func configurar(
 	descricao.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	descricao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	descricao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	descricao.max_lines_visible = 5
+	descricao.max_lines_visible = 4
 	descricao.clip_text = true
 	descricao.add_theme_font_size_override("font_size", 13)
 	descricao.add_theme_color_override("font_color", Color(0.76, 0.8, 0.9))
 	descricao.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coluna.add_child(descricao)
-
-	var requisitos := Label.new()
-	requisitos.text = tr(texto_requisitos)
-	requisitos.custom_minimum_size = Vector2(0, 30)
-	requisitos.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	requisitos.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	requisitos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	requisitos.max_lines_visible = 2
-	requisitos.clip_text = true
-	requisitos.add_theme_font_size_override("font_size", 9)
-	requisitos.add_theme_color_override("font_color", Color(0.46, 0.55, 0.7))
-	requisitos.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	coluna.add_child(requisitos)
 
 	botao = Button.new()
 	botao.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -177,39 +144,6 @@ func criar_estilo_painel(destacado: bool) -> StyleBoxFlat:
 	estilo.shadow_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.22)
 	estilo.shadow_size = 8
 	return estilo
-
-
-func criar_estilo_faixa() -> StyleBoxFlat:
-	var estilo := StyleBoxFlat.new()
-	estilo.bg_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.09)
-	estilo.border_color = Color(cor_destaque.r, cor_destaque.g, cor_destaque.b, 0.28)
-	estilo.border_width_bottom = 1
-	estilo.border_width_top = 1
-	estilo.set_corner_radius_all(6)
-	return estilo
-
-
-func obter_papel(dados: Dictionary) -> String:
-	var tags: Array = dados.get("tags", [])
-	if &"passivo" in tags:
-		if &"movimento" in tags:
-			return tr("PASSIVO DE PILOTAGEM")
-		if &"casco" in tags:
-			return tr("PASSIVO DE SOBREVIVÊNCIA")
-		return tr("PASSIVO DA NAVE")
-	if &"multitiro" in tags:
-		return tr("COBERTURA E CONTROLE")
-	if &"pesado" in tags:
-		return tr("IMPACTO CONCENTRADO")
-	if &"fragmentacao" in tags:
-		return tr("LIMPEZA DE GRUPOS")
-	if &"homing" in tags:
-		return tr("PRECISÃO GUIADA")
-	if &"ricochete" in tags:
-		return tr("POSICIONAMENTO")
-	if &"habilidade" in tags:
-		return tr("SINERGIA DE HABILIDADE")
-	return tr("MÓDULO DA NAVE")
 
 
 func criar_poligonos_decorativos() -> void:

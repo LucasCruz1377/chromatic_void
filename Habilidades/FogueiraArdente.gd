@@ -25,9 +25,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/fogueira_ardente.svg"
 	var cor := Color(1.0, 0.58, 0.12)
 	return {
-		&"fogueira_dano": criar_carta_upgrade("BRASA VIVA", "+1 de dano por segundo.", icone, cor, Nome, 3, [&"dano"]),
-		&"fogueira_duracao": criar_carta_upgrade("FOGO ALIMENTADO", "+1,5 segundo de duração.", icone, cor, Nome, 3, [&"duracao"]),
-		&"fogueira_alcance": criar_carta_upgrade("RODA DA FOGUEIRA", "+18 de raio da zona ardente.", icone, cor, Nome, 3, [&"alcance"]),
+		&"fogueira_dano": criar_carta_upgrade("BRASA VIVA", "Sua fogueira causa mais dano.", icone, cor, Nome, 3, [&"dano"]),
+		&"fogueira_duracao": criar_carta_upgrade("FOGO ALIMENTADO", "Sua fogueira permanece acesa por mais tempo.", icone, cor, Nome, 3, [&"duracao"]),
+		&"fogueira_alcance": criar_carta_upgrade("RODA DA FOGUEIRA", "Sua fogueira cobre uma área maior.", icone, cor, Nome, 3, [&"alcance"]),
 	}
 
 

@@ -63,9 +63,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/aura_serenidade.svg"
 	var cor := Color(0.72, 0.94, 1.0)
 	return {
-		&"aura_regeneracao": criar_carta_upgrade("RESPIRAÇÃO SERENA", "+1,5 de regeneração por segundo.", icone, cor, Nome, 3, [&"cura"]),
-		&"aura_duracao": criar_carta_upgrade("PAUSA CONSCIENTE", "+1 segundo de duração.", icone, cor, Nome, 3, [&"duracao"]),
-		&"aura_resistencia": criar_carta_upgrade("MENTE PROTEGIDA", "Recebe mais 7% de redução de dano.", icone, cor, Nome, 3, [&"defesa"]),
+		&"aura_regeneracao": criar_carta_upgrade("RESPIRAÇÃO SERENA", "Sua aura recupera vida mais rápido.", icone, cor, Nome, 3, [&"cura"]),
+		&"aura_duracao": criar_carta_upgrade("PAUSA CONSCIENTE", "Sua aura permanece ativa por mais tempo.", icone, cor, Nome, 3, [&"duracao"]),
+		&"aura_resistencia": criar_carta_upgrade("MENTE PROTEGIDA", "Sua nave recebe menos dano durante a aura.", icone, cor, Nome, 3, [&"defesa"]),
 	}
 
 

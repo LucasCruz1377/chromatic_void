@@ -117,9 +117,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/transfusao.svg"
 	var cor := Color(1.0, 0.08, 0.24)
 	return {
-		&"transfusao_dano": criar_carta_upgrade("DRENAGEM PROFUNDA", "+6 de dano roubado do alvo.", icone, cor, Nome, 3, [&"dano"]),
-		&"transfusao_alcance": criar_carta_upgrade("VEIA CROMÁTICA", "+55 de alcance para escolher o inimigo.", icone, cor, Nome, 3, [&"alcance"]),
-		&"transfusao_eficiencia": criar_carta_upgrade("CICLO VITAL", "+12% do dano convertido em cura.", icone, cor, Nome, 3, [&"vida"]),
+		&"transfusao_dano": criar_carta_upgrade("DRENAGEM PROFUNDA", "Sua transfusão retira mais vida do inimigo.", icone, cor, Nome, 3, [&"dano"]),
+		&"transfusao_alcance": criar_carta_upgrade("VEIA CROMÁTICA", "Sua transfusão alcança inimigos mais distantes.", icone, cor, Nome, 3, [&"alcance"]),
+		&"transfusao_eficiencia": criar_carta_upgrade("CICLO VITAL", "Sua transfusão transforma mais dano em cura.", icone, cor, Nome, 3, [&"vida"]),
 	}
 
 

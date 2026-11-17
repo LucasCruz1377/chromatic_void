@@ -104,9 +104,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/frenesi_carnavalesco.svg"
 	var cor := Color(1.0, 0.25, 0.78)
 	return {
-		&"frenesi_potencia": criar_carta_upgrade("RITMO INTENSO", "+12% de ataque e +0,18 de dano dos rastros.", icone, cor, Nome, 3, [&"dano"]),
-		&"frenesi_duracao": criar_carta_upgrade("BLOCO SEM FIM", "+1 segundo de duração.", icone, cor, Nome, 3, [&"duracao"]),
-		&"frenesi_alcance": criar_carta_upgrade("PASSARELA NEON", "+8 de raio para os rastros de dano.", icone, cor, Nome, 3, [&"alcance"]),
+		&"frenesi_potencia": criar_carta_upgrade("RITMO INTENSO", "Seus ataques e rastros causam mais dano durante o frenesi.", icone, cor, Nome, 3, [&"dano"]),
+		&"frenesi_duracao": criar_carta_upgrade("BLOCO SEM FIM", "Seu frenesi dura mais tempo.", icone, cor, Nome, 3, [&"duracao"]),
+		&"frenesi_alcance": criar_carta_upgrade("PASSARELA NEON", "Seus rastros atingem uma área maior.", icone, cor, Nome, 3, [&"alcance"]),
 	}
 
 

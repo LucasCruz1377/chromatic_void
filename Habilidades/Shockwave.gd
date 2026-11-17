@@ -59,9 +59,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/onda_choque.svg"
 	var cor := Color(0.22, 0.82, 1.0)
 	return {
-		&"onda_dano": criar_carta_upgrade("PULSO DE POTÊNCIA", "+2 de dano da onda.", icone, cor, Nome, 3, [&"dano"]),
-		&"onda_alcance": criar_carta_upgrade("ANEL EXPANSIVO", "+30 de raio da onda.", icone, cor, Nome, 3, [&"alcance"]),
-		&"onda_impacto": criar_carta_upgrade("RESSONÂNCIA", "+0,2 s de atordoamento e +100 de empurrão.", icone, cor, Nome, 3, [&"controle"]),
+		&"onda_dano": criar_carta_upgrade("PULSO DE POTÊNCIA", "Sua onda de choque causa mais dano.", icone, cor, Nome, 3, [&"dano"]),
+		&"onda_alcance": criar_carta_upgrade("ANEL EXPANSIVO", "Sua onda de choque alcança mais longe.", icone, cor, Nome, 3, [&"alcance"]),
+		&"onda_impacto": criar_carta_upgrade("RESSONÂNCIA", "Sua onda atordoa por mais tempo e empurra com mais força.", icone, cor, Nome, 3, [&"controle"]),
 	}
 
 

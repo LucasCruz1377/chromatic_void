@@ -152,9 +152,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/retrocesso.svg"
 	var cor := Color(0.72, 0.28, 1.0)
 	return {
-		&"retrocesso_memoria": criar_carta_upgrade("MEMÓRIA AMPLIADA", "+30 estados registrados para voltar mais longe.", icone, cor, Nome, 3, [&"distancia"]),
-		&"retrocesso_cura": criar_carta_upgrade("SEGUNDA CHANCE", "+8 de cura ao concluir o retorno.", icone, cor, Nome, 3, [&"cura"]),
-		&"retrocesso_recarga": criar_carta_upgrade("ATALHO TEMPORAL", "Recarga 12% mais rápida.", icone, cor, Nome, 3, [&"cooldown"]),
+		&"retrocesso_memoria": criar_carta_upgrade("MEMÓRIA AMPLIADA", "Sua nave pode voltar mais longe no tempo.", icone, cor, Nome, 3, [&"distancia"]),
+		&"retrocesso_cura": criar_carta_upgrade("SEGUNDA CHANCE", "Voltar no tempo recupera mais vida.", icone, cor, Nome, 3, [&"cura"]),
+		&"retrocesso_recarga": criar_carta_upgrade("ATALHO TEMPORAL", "Seu retrocesso recarrega mais rápido.", icone, cor, Nome, 3, [&"cooldown"]),
 	}
 
 

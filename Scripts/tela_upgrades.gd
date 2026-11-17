@@ -19,8 +19,6 @@ var painel_responsivo: Control
 var container_cards: HBoxContainer
 var indicador: Button
 var texto_pontos: Label
-var texto_habilidade: Label
-var texto_rotas: Label
 var dica_menu: HBoxContainer
 var botao_fechar: Button
 var botao_rerrolar: Button
@@ -109,43 +107,10 @@ func construir_interface() -> void:
 	painel_responsivo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(painel_responsivo)
 
-	var faixa_topo := ColorRect.new()
-	faixa_topo.position = Vector2(0, 0)
-	faixa_topo.size = Vector2(960, 82)
-	faixa_topo.color = Color(0.025, 0.045, 0.095, 0.96)
-	faixa_topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(faixa_topo)
-
-	var titulo := Label.new()
-	titulo.position = Vector2(32, 12)
-	titulo.size = Vector2(400, 34)
-	titulo.text = tr("MATRIZ DE EVOLUÇÃO DA NAVE")
-	titulo.add_theme_font_size_override("font_size", 25)
-	titulo.add_theme_color_override("font_color", Color(0.58, 0.94, 1.0))
-	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(titulo)
-
-	texto_habilidade = Label.new()
-	texto_habilidade.position = Vector2(32, 43)
-	texto_habilidade.size = Vector2(520, 20)
-	texto_habilidade.add_theme_font_size_override("font_size", 11)
-	texto_habilidade.add_theme_color_override("font_color", Color(0.48, 0.58, 0.76))
-	texto_habilidade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(texto_habilidade)
-
-	texto_rotas = Label.new()
-	texto_rotas.position = Vector2(32, 64)
-	texto_rotas.size = Vector2(896, 16)
-	texto_rotas.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	texto_rotas.add_theme_font_size_override("font_size", 10)
-	texto_rotas.add_theme_color_override("font_color", Color(0.46, 0.75, 0.92))
-	texto_rotas.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(texto_rotas)
-
 	texto_pontos = Label.new()
-	texto_pontos.position = Vector2(590, 17)
+	texto_pontos.position = Vector2(70, 17)
 	texto_pontos.size = Vector2(220, 34)
-	texto_pontos.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	texto_pontos.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	texto_pontos.add_theme_font_size_override("font_size", 17)
 	texto_pontos.add_theme_color_override("font_color", Color(1.0, 0.8, 0.28))
 	texto_pontos.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -261,7 +226,7 @@ func _atualizar_dica_menu() -> void:
 		filho.queue_free()
 
 	var texto := Label.new()
-	texto.text = tr("Escolha um mod ou feche o menu para guardar os pontos. Abre/fecha:")
+	texto.text = tr("Fechar")
 	texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	texto.add_theme_font_size_override("font_size", 12)
 	texto.add_theme_color_override("font_color", Color(0.44, 0.54, 0.7))
@@ -437,19 +402,7 @@ func pode_manter_menu_aberto() -> bool:
 
 
 func atualizar_cabecalho() -> void:
-	texto_pontos.text = tr("PONTOS PENDENTES: %d") % player.pontos_upgrade_pendentes
-	var nome_habilidade := tr("NENHUMA")
-	if player.HabilidadeEquipada:
-		nome_habilidade = tr(player.HabilidadeEquipada.Nome)
-	texto_habilidade.text = (
-		tr("HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO") %
-		nome_habilidade.to_upper()
-	)
-	texto_rotas.text = tr("CONSTRUÇÃO ATUAL") + "   •   " + DadosUpgrades.resumo_rotas(
-		player.niveis_upgrades,
-		player.HabilidadeEquipada,
-		player.arma_monthly
-	)
+	texto_pontos.text = tr("PONTOS: %d") % player.pontos_upgrade_pendentes
 	_atualizar_botao_rerrolar()
 
 

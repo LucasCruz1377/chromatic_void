@@ -116,8 +116,8 @@ func _ready() -> void:
 		"o botão de reroll não ficou acessível pelo controle"
 	)
 	verificar(
-		not menu_upgrades.texto_rotas.text.is_empty(),
-		"o resumo das rotas estruturais não foi exibido"
+		not menu_upgrades.texto_pontos.text.is_empty(),
+		"a quantidade de pontos de melhoria não foi exibida"
 	)
 	var rerolls_antes: int = player.rerolls_upgrades_restantes
 	menu_upgrades._on_rerrolar_pressed()

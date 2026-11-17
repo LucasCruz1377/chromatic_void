@@ -48,22 +48,22 @@ func obter_upgrades_especificos() -> Dictionary:
 	match efeito_id:
 		&"ovo":
 			return {
-				&"ovo_cura": criar_carta_upgrade("GEMA RESTAURADORA", "+8 de cura no resultado restaurador.", icone, cor_efeito, Nome, 3, [&"cura"]),
-				&"ovo_drone_dano": criar_carta_upgrade("PINTINHO ARMADO", "+25% de dano do ajudante.", icone, cor_efeito, Nome, 3, [&"dano"]),
-				&"ovo_drone_duracao": criar_carta_upgrade("CASCA RESISTENTE", "+1,5 segundo de duração do ajudante.", icone, cor_efeito, Nome, 3, [&"duracao"]),
+				&"ovo_cura": criar_carta_upgrade("GEMA RESTAURADORA", "O resultado de cura recupera mais vida.", icone, cor_efeito, Nome, 3, [&"cura"]),
+				&"ovo_drone_dano": criar_carta_upgrade("PINTINHO ARMADO", "Seu ajudante causa mais dano.", icone, cor_efeito, Nome, 3, [&"dano"]),
+				&"ovo_drone_duracao": criar_carta_upgrade("CASCA RESISTENTE", "Seu ajudante permanece por mais tempo.", icone, cor_efeito, Nome, 3, [&"duracao"]),
 			}
 		&"florescimento":
 			return {
-				&"flor_velocidade": criar_carta_upgrade("VINHAS VORAZES", "Cria vinhas 18% mais rápido quando há alvos.", icone, cor_efeito, Nome, 3, [&"cadencia"]),
-				&"flor_sementes": criar_carta_upgrade("SEMENTES EXPLOSIVAS", "Flores destruídas espalham seis pétalas perfurantes.", icone, cor_efeito, Nome, 1, [&"projeteis"]),
-				&"flor_duracao": criar_carta_upgrade("PRIMAVERA LONGA", "+0,75 segundo infectando inimigos próximos.", icone, cor_efeito, Nome, 3, [&"duracao"]),
-				&"flor_raizes": criar_carta_upgrade("JARDIM PROFUNDO", "+1 raiz simultânea, até o limite de cinco.", icone, cor_efeito, Nome, 2, [&"quantidade"]),
+				&"flor_velocidade": criar_carta_upgrade("VINHAS VORAZES", "Suas flores criam vinhas mais rápido.", icone, cor_efeito, Nome, 3, [&"cadencia"]),
+				&"flor_sementes": criar_carta_upgrade("SEMENTES EXPLOSIVAS", "Flores destruídas espalham pétalas perfurantes.", icone, cor_efeito, Nome, 1, [&"projeteis"]),
+				&"flor_duracao": criar_carta_upgrade("PRIMAVERA LONGA", "Sua habilidade infecta inimigos por mais tempo.", icone, cor_efeito, Nome, 3, [&"duracao"]),
+				&"flor_raizes": criar_carta_upgrade("JARDIM PROFUNDO", "Mais raízes podem ficar ativas ao mesmo tempo.", icone, cor_efeito, Nome, 2, [&"quantidade"]),
 			}
 		&"tempestade":
 			return {
-				&"tempestade_dano": criar_carta_upgrade("FOLHAS CORTANTES", "+1,25 de dano por folha.", icone, cor_efeito, Nome, 3, [&"dano"]),
-				&"tempestade_duracao": criar_carta_upgrade("FRENTE VERDE", "+1 segundo de chuva diagonal.", icone, cor_efeito, Nome, 3, [&"duracao"]),
-				&"tempestade_perfuracao": criar_carta_upgrade("VENTO PENETRANTE", "Cada folha atravessa mais um inimigo.", icone, cor_efeito, Nome, 3, [&"penetracao"]),
+				&"tempestade_dano": criar_carta_upgrade("FOLHAS CORTANTES", "As folhas da sua tempestade causam mais dano.", icone, cor_efeito, Nome, 3, [&"dano"]),
+				&"tempestade_duracao": criar_carta_upgrade("FRENTE VERDE", "Sua tempestade dura mais tempo.", icone, cor_efeito, Nome, 3, [&"duracao"]),
+				&"tempestade_perfuracao": criar_carta_upgrade("VENTO PENETRANTE", "Suas folhas atravessam mais inimigos.", icone, cor_efeito, Nome, 3, [&"penetracao"]),
 			}
 	return {}
 

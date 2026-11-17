@@ -1065,3 +1065,102 @@ SINGULARIDADE SOLAR — O CAMPO PUXA E O RAIO TRAVA,SINGULARIDADE SOLAR — O CA
 PET-0,PET-0,PET-0
 Nao foi possivel abrir lobby UDP %d (erro %d). %s,Não foi possível abrir lobby UDP %d (erro %d). %s,Could not open UDP lobby %d (error %d). %s
 Verifique se outra instancia do jogo ja esta hospedando ou se a porta UDP esta ocupada.,Verifique se outra instância do jogo já está hospedando ou se a porta UDP está ocupada.,Check whether another game instance is already hosting or the UDP port is in use.
+Seus tiros causam mais dano.,Seus tiros causam mais dano.,Your shots deal more damage.
+Sua nave dispara mais rápido.,Sua nave dispara mais rápido.,Your ship fires faster.
+Sua nave ganha mais vida máxima.,Sua nave ganha mais vida máxima.,Your ship gains more maximum health.
+Sua nave acelera e se move mais rápido.,Sua nave acelera e se move mais rápido.,Your ship accelerates and moves faster.
+Dispara tiros paralelos mais fracos. Bloqueia outros estilos.,Dispara tiros paralelos mais fracos. Bloqueia outros estilos.,Fires weaker parallel shots. Locks other firing styles.
+"Adiciona um tiro central, mas reduz o dano de cada projétil.","Adiciona um tiro central, mas reduz o dano de cada projétil.","Adds a central shot, but reduces each projectile's damage."
+Dispara mais projéteis em um leque maior.,Dispara mais projéteis em um leque maior.,Fires more projectiles in a wider spread.
+"Seus tiros ficam maiores, mais fortes e mais lentos. Bloqueia outros estilos.","Seus tiros ficam maiores, mais fortes e mais lentos. Bloqueia outros estilos.","Your shots become larger, stronger and slower. Locks other styles."
+Seus tiros pesados atravessam mais inimigos.,Seus tiros pesados atravessam mais inimigos.,Your heavy shots pierce more enemies.
+Seus tiros se partem ao atingir inimigos. Bloqueia outros estilos.,Seus tiros se partem ao atingir inimigos. Bloqueia outros estilos.,Your shots split on impact. Locks other firing styles.
+"Seus tiros perseguem inimigos, mas perdem dano. Bloqueia outros estilos.","Seus tiros perseguem inimigos, mas perdem dano. Bloqueia outros estilos.",Your shots chase enemies but deal less damage. Locks other styles.
+Seus tiros rebatem nas bordas da arena. Bloqueia outros estilos.,Seus tiros rebatem nas bordas da arena. Bloqueia outros estilos.,Your shots bounce off the arena edges. Locks other firing styles.
+Seus tiros convergem à frente da nave.,Seus tiros convergem à frente da nave.,Your shots converge ahead of your ship.
+Seus tiros pesados explodem e atingem inimigos próximos.,Seus tiros pesados explodem e atingem inimigos próximos.,Your heavy shots explode and hit nearby enemies.
+Seus tiros ganham dano a cada ricochete.,Seus tiros ganham dano a cada ricochete.,Your shots gain damage with each bounce.
+Seus tiros perseguem melhor e causam mais dano.,Seus tiros perseguem melhor e causam mais dano.,Your shots track better and deal more damage.
+Seus fragmentos ficam mais fortes e seguem os inimigos.,Seus fragmentos ficam mais fortes e seguem os inimigos.,Your fragments become stronger and track enemies.
+Mover sua nave mais rápido aumenta o dano dos tiros.,Mover sua nave mais rápido aumenta o dano dos tiros.,Moving your ship faster increases shot damage.
+Sua nave regenera vida após ficar um tempo sem sofrer dano.,Sua nave regenera vida após ficar um tempo sem sofrer dano.,Your ship regenerates health after avoiding damage for a while.
+Seus tiros acertam golpes críticos com mais frequência.,Seus tiros acertam golpes críticos com mais frequência.,Your shots land critical hits more often.
+Seus acertos críticos causam mais dano.,Seus acertos críticos causam mais dano.,Your critical hits deal more damage.
+Sofrer dano faz sua nave disparar mais rápido por um tempo.,Sofrer dano faz sua nave disparar mais rápido por um tempo.,Taking damage briefly makes your ship fire faster.
+Sua habilidade recarrega mais rápido.,Sua habilidade recarrega mais rápido.,Your ability recharges faster.
+Usar sua habilidade aumenta o dano e a cadência por um tempo.,Usar sua habilidade aumenta o dano e a cadência por um tempo.,Using your ability briefly boosts damage and fire rate.
+Acertar inimigos ajuda a recarregar sua habilidade.,Acertar inimigos ajuda a recarregar sua habilidade.,Hitting enemies helps recharge your ability.
+Usar sua habilidade lança tiros ao redor da nave.,Usar sua habilidade lança tiros ao redor da nave.,Using your ability fires shots around your ship.
+Usar sua habilidade protege sua nave por um instante.,Usar sua habilidade protege sua nave por um instante.,Using your ability briefly makes your ship invulnerable.
+"Dispara mais tiros e mais rápido, com projéteis mais lentos.","Dispara mais tiros e mais rápido, com projéteis mais lentos.","Fires more shots faster, but projectiles travel slower."
+"Seus tiros ficam enormes, perfurantes e perseguem inimigos, mas ficam mais lentos.","Seus tiros ficam enormes, perfurantes e perseguem inimigos, mas ficam mais lentos.","Your shots become huge, piercing and chase enemies, but travel slower."
+"Amplia a nova e a sobrecarga da arma, mas sua habilidade recarrega mais devagar.","Amplia a nova e a sobrecarga da arma, mas sua habilidade recarrega mais devagar.","Boosts the nova and weapon overdrive, but your ability recharges slower."
+Lança mais pétalas por disparo.,Lança mais pétalas por disparo.,Fires more petals per shot.
+Concentra as pétalas e aumenta o dano de perto.,Concentra as pétalas e aumenta o dano de perto.,Tightens the petal spread and boosts close-range damage.
+Lança mais fogos ao redor do alvo.,Lança mais fogos ao redor do alvo.,Launches more fireworks around the target.
+Seus fogos explodem com mais força e alcance.,Seus fogos explodem com mais força e alcance.,Your fireworks explode with more power and reach.
+Seu canhão carrega mais rápido.,Seu canhão carrega mais rápido.,Your cannon charges faster.
+O tiro carregado fica mais forte e atravessa mais inimigos.,O tiro carregado fica mais forte e atravessa mais inimigos.,Your charged shot hits harder and pierces more enemies.
+Seus sinalizadores explodem mais cedo.,Seus sinalizadores explodem mais cedo.,Your flares explode sooner.
+Seus sinalizadores explodem quando inimigos se aproximam.,Seus sinalizadores explodem quando inimigos se aproximam.,Your flares explode when enemies approach.
+Seu próximo disparo detona os sinalizadores; o seguinte instala outro.,Seu próximo disparo detona os sinalizadores; o seguinte instala outro.,Your next shot detonates the flares; the following shot places another.
+Seu feixe dura mais e se recupera mais rápido da sobrecarga.,Seu feixe dura mais e se recupera mais rápido da sobrecarga.,Your beam lasts longer and recovers from overheating faster.
+Seu feixe atinge a potência máxima mais rápido.,Seu feixe atinge a potência máxima mais rápido.,Your beam reaches maximum power faster.
+Aumenta a potência máxima do seu feixe.,Aumenta a potência máxima do seu feixe.,Increases your beam's maximum power.
+"Seu feixe dispara sem parar, mas passa a causar dano ao seu casco.","Seu feixe dispara sem parar, mas passa a causar dano ao seu casco.","Your beam fires continuously, but starts damaging your hull."
+Lança mais arcos por disparo.,Lança mais arcos por disparo.,Launches more arcs per shot.
+"Seus arcos ficam mais fortes, voltam mais rápido e atravessam mais inimigos.","Seus arcos ficam mais fortes, voltam mais rápido e atravessam mais inimigos.","Your arcs hit harder, return faster and pierce more enemies."
+Lança mais raízes por caminhos diferentes.,Lança mais raízes por caminhos diferentes.,Launches more roots along different paths.
+Suas raízes emergem com explosões maiores e mais fortes.,Suas raízes emergem com explosões maiores e mais fortes.,"Your roots emerge with larger, stronger explosions."
+Lança mais brasas ao redor da mira.,Lança mais brasas ao redor da mira.,Launches more embers around your aim.
+Suas brasas explodem com mais força e queimam uma área maior.,Suas brasas explodem com mais força e queimam uma área maior.,Your embers explode harder and burn a larger area.
+Sua rajada lança mais projéteis.,Sua rajada lança mais projéteis.,Your burst fires more projectiles.
+Seus tiros ficam mais fortes e espalham mais sementes.,Seus tiros ficam mais fortes e espalham mais sementes.,Your shots hit harder and scatter more seeds.
+Seu disparo cobre uma área maior à frente da nave.,Seu disparo cobre uma área maior à frente da nave.,Your shots cover a wider area ahead of your ship.
+Seus tiros causam mais dano e deixam os inimigos lentos por mais tempo.,Seus tiros causam mais dano e deixam os inimigos lentos por mais tempo.,Your shots deal more damage and slow enemies for longer.
+Mais pétalas orbitam sua nave antes de atacar.,Mais pétalas orbitam sua nave antes de atacar.,More petals orbit your ship before attacking.
+Suas pétalas atacam mais cedo e com mais força.,Suas pétalas atacam mais cedo e com mais força.,Your petals attack sooner and hit harder.
+Quebrar inimigos congelados espalha gelo nos inimigos próximos.,Quebrar inimigos congelados espalha gelo nos inimigos próximos.,Shattering frozen enemies spreads ice to nearby enemies.
+O congelamento dura mais e espalha gelo continuamente.,O congelamento dura mais e espalha gelo continuamente.,Freezing lasts longer and continuously spreads ice.
+Sua habilidade recupera mais vida.,Sua habilidade recupera mais vida.,Your ability restores more health.
+Sua proteção dura mais tempo.,Sua proteção dura mais tempo.,Your protection lasts longer.
+Sua proteção reduz ainda mais o dano recebido.,Sua proteção reduz ainda mais o dano recebido.,Your protection further reduces incoming damage.
+Seu escudo absorve mais dano.,Seu escudo absorve mais dano.,Your shield absorbs more damage.
+Seu escudo protege por mais tempo.,Seu escudo protege por mais tempo.,Your shield protects you for longer.
+Seu escudo recarrega mais rápido.,Seu escudo recarrega mais rápido.,Your shield recharges faster.
+Seus ataques e rastros causam mais dano durante o frenesi.,Seus ataques e rastros causam mais dano durante o frenesi.,Your attacks and trails deal more damage during frenzy.
+Seu frenesi dura mais tempo.,Seu frenesi dura mais tempo.,Your frenzy lasts longer.
+Seus rastros atingem uma área maior.,Seus rastros atingem uma área maior.,Your trails hit a larger area.
+Seu hiperdash causa mais dano ao atravessar inimigos.,Seu hiperdash causa mais dano ao atravessar inimigos.,Your hyperdash deals more damage when passing through enemies.
+Seu hiperdash vai mais longe e mais rápido.,Seu hiperdash vai mais longe e mais rápido.,Your hyperdash travels farther and faster.
+Seu hiperdash recarrega mais rápido.,Seu hiperdash recarrega mais rápido.,Your hyperdash recharges faster.
+O resultado de cura recupera mais vida.,O resultado de cura recupera mais vida.,The healing outcome restores more health.
+Seu ajudante causa mais dano.,Seu ajudante causa mais dano.,Your helper deals more damage.
+Seu ajudante permanece por mais tempo.,Seu ajudante permanece por mais tempo.,Your helper stays for longer.
+Suas flores criam vinhas mais rápido.,Suas flores criam vinhas mais rápido.,Your flowers grow vines faster.
+Flores destruídas espalham pétalas perfurantes.,Flores destruídas espalham pétalas perfurantes.,Destroyed flowers scatter piercing petals.
+Sua habilidade infecta inimigos por mais tempo.,Sua habilidade infecta inimigos por mais tempo.,Your ability infects enemies for longer.
+Mais raízes podem ficar ativas ao mesmo tempo.,Mais raízes podem ficar ativas ao mesmo tempo.,More roots can stay active at once.
+As folhas da sua tempestade causam mais dano.,As folhas da sua tempestade causam mais dano.,Your storm's leaves deal more damage.
+Sua tempestade dura mais tempo.,Sua tempestade dura mais tempo.,Your storm lasts longer.
+Suas folhas atravessam mais inimigos.,Suas folhas atravessam mais inimigos.,Your leaves pierce more enemies.
+Sua onda de choque causa mais dano.,Sua onda de choque causa mais dano.,Your shockwave deals more damage.
+Sua onda de choque alcança mais longe.,Sua onda de choque alcança mais longe.,Your shockwave reaches farther.
+Sua onda atordoa por mais tempo e empurra com mais força.,Sua onda atordoa por mais tempo e empurra com mais força.,Your wave stuns for longer and pushes harder.
+Sua nave pode voltar mais longe no tempo.,Sua nave pode voltar mais longe no tempo.,Your ship can travel farther back in time.
+Voltar no tempo recupera mais vida.,Voltar no tempo recupera mais vida.,Going back in time restores more health.
+Seu retrocesso recarrega mais rápido.,Seu retrocesso recarrega mais rápido.,Your rewind recharges faster.
+Sua fogueira causa mais dano.,Sua fogueira causa mais dano.,Your bonfire deals more damage.
+Sua fogueira permanece acesa por mais tempo.,Sua fogueira permanece acesa por mais tempo.,Your bonfire burns for longer.
+Sua fogueira cobre uma área maior.,Sua fogueira cobre uma área maior.,Your bonfire covers a larger area.
+Sua aura recupera vida mais rápido.,Sua aura recupera vida mais rápido.,Your aura restores health faster.
+Sua aura permanece ativa por mais tempo.,Sua aura permanece ativa por mais tempo.,Your aura stays active for longer.
+Sua nave recebe menos dano durante a aura.,Sua nave recebe menos dano durante a aura.,Your ship takes less damage while the aura is active.
+Sua transfusão retira mais vida do inimigo.,Sua transfusão retira mais vida do inimigo.,Your transfusion drains more health from the enemy.
+Sua transfusão alcança inimigos mais distantes.,Sua transfusão alcança inimigos mais distantes.,Your transfusion reaches enemies farther away.
+Sua transfusão transforma mais dano em cura.,Sua transfusão transforma mais dano em cura.,Your transfusion converts more damage into healing.
+Seu foco permanece ativo por mais tempo.,Seu foco permanece ativo por mais tempo.,Your focus stays active for longer.
+Seu foco deixa o mundo ainda mais lento.,Seu foco deixa o mundo ainda mais lento.,Your focus slows the world down further.
+Seu foco recarrega mais rápido.,Seu foco recarrega mais rápido.,Your focus recharges faster.
+PONTOS: %d,PONTOS: %d,POINTS: %d
+Fechar,Fechar,Close
