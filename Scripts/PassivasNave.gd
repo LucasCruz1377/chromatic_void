@@ -85,7 +85,7 @@ func armazenar_cura(excedente: float) -> void:
 
 func posicao_estrela(indice: int) -> Vector2:
 	# Compensa a rotacao da nave: as estrelas orbitam sem girar com a mira.
-	var angulo := fase_orbita + TAU * float(indice) / 4.0 - jogador.global_rotation
+	var angulo: float = fase_orbita + TAU * float(indice) / 4.0 - jogador.global_rotation
 	return Vector2.from_angle(angulo) * RAIO_ORBITA
 
 
