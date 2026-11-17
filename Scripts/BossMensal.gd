@@ -355,43 +355,13 @@ func criar_projetil(
 	projetil.position = posicao
 	projetil.configurar(direcao, Dano * multiplicador_dano, velocidade_projetil, rebotes)
 	projetil.modulate = Color.WHITE
+	projetil.cor_visual_rede = cor_projetil
 	var forma := projetil.get_node_or_null("Visual") as Polygon2D
 	if is_instance_valid(forma):
 		forma.color = cor_projetil
 	get_tree().current_scene.add_child(projetil, true)
 	projetil.aplicar_glow()
-	if Rede.modo_multiplayer and multiplayer.is_server():
-		_replicar_projetil_boss.rpc(
-			posicao, direcao, velocidade_projetil, Dano * multiplicador_dano,
-			rebotes, cor_projetil
-		)
 	return projetil
-
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_projetil_boss(
-	posicao: Vector2,
-	direcao: Vector2,
-	velocidade_projetil: float,
-	dano_projetil: float,
-	rebotes: int,
-	cor_projetil: Color
-) -> void:
-	if multiplayer.is_server():
-		return
-	var projetil := PROJETIL.instantiate() as ProjetilInimigo
-	projetil.position = posicao
-	projetil.configurar(direcao, dano_projetil, velocidade_projetil, rebotes)
-	projetil.set_meta("apenas_visual_rede", true)
-	projetil.collision_layer = 0
-	projetil.collision_mask = 0
-	projetil.monitoring = false
-	projetil.monitorable = false
-	var forma := projetil.get_node_or_null("Visual") as Polygon2D
-	if is_instance_valid(forma):
-		forma.color = cor_projetil
-	get_tree().current_scene.add_child(projetil, true)
-	projetil.aplicar_glow()
 
 
 func tomarDano(valor: float) -> void:
