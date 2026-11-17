@@ -130,6 +130,9 @@ func obter_cor_fase() -> Color:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto or estado == Estado.TRANSICAO or valor <= 0.0:
 		return
 	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
