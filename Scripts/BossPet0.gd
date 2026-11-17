@@ -1,4 +1,4 @@
-extends InimigoBase
+extends "res://Scripts/ChefeBase.gd"
 class_name BossPet0
 
 

@@ -19,10 +19,11 @@ assert 'preload("res://Scripts/DiagnosticoDesempenho.gd").new()' in panel
 assert "Performance.get_monitor(Performance.OBJECT_COUNT)" in diagnostics
 assert "KEY_F3" in diagnostics
 projectile = (ROOT / "Scripts/ProjetilInimigo.gd").read_text(encoding="utf-8")
-assert "configuracao.property_set_sync(caminho, caminho in propriedades_movimento)" in projectile
+assert "configuracao.property_set_sync(" in projectile
+# As propriedades reais sao verificadas por audio_multiplayer_smoke.gd.
 assert "NodePath(\".:modulate\")" in projectile
 assert "NodePath(\".:rebotes_max\")" in projectile
-assert "# A tolerancia acima continua removendo copias que perderam o despawn." in projectile
+assert 'bool(get_meta("apenas_visual_rede", false))' in projectile
 assert "var prazo_visual_iniciado := false" in projectile
 assert "prazo_visual_rede -= delta" in projectile
 assert "if not prazo_visual_iniciado:" in projectile
@@ -43,11 +44,11 @@ assert "if tempo_restante <= 0.0:" in fragmento
 assert "_replicar_fragmento_pet0.rpc(" not in boss
 assert "func _replicar_fragmento_pet0(" not in boss
 assert "fragmento.global_position = global_position + deslocamento" in boss
-assert "get_tree().current_scene.add_child(fragmento, true)" in boss
+assert "get_tree().current_scene.add_child.call_deferred(fragmento, true)" in boss
 arena = (ROOT / "Scripts/battle_area.gd").read_text(encoding="utf-8")
 assert '"res://Entities/FragmentoReciclavel.tscn"' in arena
 assert '"res://Entities/InimigoMinion.tscn"' in arena
-assert '@rpc("authority", "call_remote", "reliable", 3)\nfunc _publicar_posicoes_mundo' in arena
+assert '@rpc("authority", "call_remote", "unreliable", 3)\nfunc _publicar_posicoes_mundo' in arena
 assert "global_position += direcao_visual.normalized() * velocidade * delta" not in projectile
 inimigo_base = (ROOT / "Scripts/InimigoBase.gd").read_text(encoding="utf-8")
 assert "global_position += velocity * delta" not in inimigo_base
@@ -59,7 +60,7 @@ print("TESTE OK: contratos de projeteis, cores, propulsao e diagnostico preserva
 
 # Contrato visual de chefes: cor real de Polygon2D e Line2D,
 # animacoes pausadas e estado da defesa do Pet-0 replicados.
-base_visual = (ROOT / "Scripts/InimigoBase.gd").read_text(encoding="utf-8")
+base_visual = (ROOT / "Scripts/ChefeBase.gd").read_text(encoding="utf-8")
 for marcador in (
     'dados["color"] = (item as Polygon2D).color',
     '(item as Polygon2D).color = dados["color"]',

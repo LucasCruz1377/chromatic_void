@@ -21,8 +21,9 @@ func salvar(dados_novos: Dictionary) -> void:
 		push_error("Serializacao do save invalida. Dados anteriores preservados.")
 		return
 
-	# Grava em separado. Nunca remove o arquivo principal durante a troca.
-	var temporario := FileAccess.open(CAMINHO_TEMPORARIO, FileAccess.WRITE)
+	# Duas instancias nao podem truncar o mesmo temporario.
+	var caminho_temporario := CAMINHO_TEMPORARIO + ".%d" % OS.get_process_id()
+	var temporario := FileAccess.open(caminho_temporario, FileAccess.WRITE)
 	if temporario == null:
 		push_error("Nao foi possivel abrir arquivo temporario do save: %s" % error_string(FileAccess.get_open_error()))
 		return
@@ -36,7 +37,7 @@ func salvar(dados_novos: Dictionary) -> void:
 
 	var origem := ProjectSettings.globalize_path(CAMINHO_SAVE)
 	var backup := ProjectSettings.globalize_path(CAMINHO_BACKUP)
-	var pendente := ProjectSettings.globalize_path(CAMINHO_TEMPORARIO)
+	var pendente := ProjectSettings.globalize_path(caminho_temporario)
 	var principal_anterior := _ler_dicionario(CAMINHO_SAVE)
 	# Backup somente do principal validado. Se estiver corrompido,
 	# nao sobrescreve o backup de uma partida anterior.
@@ -46,13 +47,16 @@ func salvar(dados_novos: Dictionary) -> void:
 			push_error("Falha ao criar backup: %s" % error_string(erro_backup))
 			return
 
-	# No Windows, rename_absolute falhava com arquivo existente/bloqueado.
-	# copy_absolute substitui o destino sem remover o principal antes.
-	var erro_copia := DirAccess.copy_absolute(pendente, origem)
-	if erro_copia != OK:
-		push_error("Falha ao gravar save principal: %s" % error_string(erro_copia))
-		if not principal_anterior.is_empty() and FileAccess.file_exists(CAMINHO_BACKUP):
-			DirAccess.copy_absolute(backup, origem)
+	# Valida o arquivo fechado antes de publicar. Rename faz a troca atomica;
+	# copiar sobre o principal permitiria ler um JSON parcialmente escrito.
+	if _ler_dicionario(caminho_temporario) != comprovacao.data:
+		push_error("Save temporario invalido; progresso anterior preservado.")
+		DirAccess.remove_absolute(pendente)
+		return
+	var erro_troca := DirAccess.rename_absolute(pendente, origem)
+	if erro_troca != OK:
+		push_error("Falha ao substituir save: %s. Progresso anterior preservado." % error_string(erro_troca))
+		DirAccess.remove_absolute(pendente)
 		return
 	_cache = dados.duplicate(true)
 
@@ -99,6 +103,6 @@ func _migrar_save(dados: Dictionary, versao: int) -> Dictionary:
 
 func deletar_save() -> void:
 	_cache.clear()
-	for caminho in [CAMINHO_SAVE, CAMINHO_BACKUP, CAMINHO_TEMPORARIO]:
+	for caminho in [CAMINHO_SAVE, CAMINHO_BACKUP, CAMINHO_TEMPORARIO, CAMINHO_TEMPORARIO + ".%d" % OS.get_process_id()]:
 		if FileAccess.file_exists(caminho):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))

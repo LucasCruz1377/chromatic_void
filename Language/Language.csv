@@ -1063,3 +1063,5 @@ MARÉ GRAVITACIONAL — PUXÃO PARA O CENTRO,MARÉ GRAVITACIONAL — PUXÃO PARA
 MARÉ GRAVITACIONAL — REPULSÃO PARA FORA,MARÉ GRAVITACIONAL — REPULSÃO PARA FORA,GRAVITATIONAL TIDE — PUSH OUTWARD
 SINGULARIDADE SOLAR — O CAMPO PUXA E O RAIO TRAVA,SINGULARIDADE SOLAR — O CAMPO PUXA E O RAIO TRAVA,SOLAR SINGULARITY — THE FIELD PULLS AND THE BEAM LOCKS
 PET-0,PET-0,PET-0
+Nao foi possivel abrir lobby UDP %d (erro %d). %s,Não foi possível abrir lobby UDP %d (erro %d). %s,Could not open UDP lobby %d (error %d). %s
+Verifique se outra instancia do jogo ja esta hospedando ou se a porta UDP esta ocupada.,Verifique se outra instância do jogo já está hospedando ou se a porta UDP está ocupada.,Check whether another game instance is already hosting or the UDP port is in use.

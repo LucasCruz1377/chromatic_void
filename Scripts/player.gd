@@ -345,7 +345,6 @@ func _criar_nickname_rede() -> void:
 	barra_vida_rede.position = Vector2(-43.0, -19.0)
 	barra_vida_rede.size = Vector2(86.0, 1.0)
 	barra_vida_rede.custom_minimum_size = Vector2(86.0, 3.0)
-	barra_vida_rede.custom_maximum_size = Vector2(86.0, 3.0)
 	barra_vida_rede.max_value = VIDA_MAXIMA
 	barra_vida_rede.value = vida
 	barra_vida_rede.show_percentage = false

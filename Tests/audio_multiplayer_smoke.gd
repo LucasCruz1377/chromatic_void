@@ -32,25 +32,28 @@ func _ready() -> void:
 		checar(controlador.has_method("_tocar_ametista_remoto"), "som da Ametista não configurado")
 		controlador.queue_free()
 
-	var fonte_projetil := FileAccess.get_file_as_string("res://Scripts/ProjetilInimigo.gd")
-	checar(
-		"configuracao.property_set_sync(caminho, caminho in propriedades_movimento)" in fonte_projetil,
-		"projéteis não recebem correções autoritativas de movimento"
+	Rede.modo_multiplayer = true
+	var projetil := (load("res://Entities/ProjetilInimigo.tscn") as PackedScene).instantiate() as ProjetilInimigo
+	add_child(projetil)
+	var sincronizador := projetil.get_node("MultiplayerSynchronizer") as MultiplayerSynchronizer
+	for propriedade in ["position", "rotation", "direcao", "rebotes"]:
+		var caminho := NodePath(".:" + propriedade)
+		checar(sincronizador.replication_config.property_get_sync(caminho), "projetil nao sincroniza " + propriedade)
+	Rede.modo_multiplayer = false
+	projetil.queue_free()
+	var canhao := (load("res://Entities/InimigoSementeCanhao.tscn") as PackedScene).instantiate() as InimigoSetorialBase
+	add_child(canhao)
+	var configuracao_spawn: Dictionary = {}
+	child_entered_tree.connect(func(filho: Node) -> void:
+		if filho is ProjetilInimigo:
+			configuracao_spawn["direcao"] = filho.direcao
+			configuracao_spawn["velocidade"] = filho.velocidade
+			configuracao_spawn["dano"] = filho.dano
 	)
-	checar(
-		"if Rede.modo_multiplayer and not multiplayer.is_server():" in fonte_projetil and
-		"tempo_vida -= delta" in fonte_projetil and
-		"queue_free()" in fonte_projetil,
-		"despawn dos projéteis não é controlado pelo host"
-	)
-
-	var fonte_setorial := FileAccess.get_file_as_string("res://Scripts/InimigoSementeCanhao.gd")
+	canhao._disparar(Vector2.DOWN, 271.0, 13.0)
+	checar(configuracao_spawn.get("direcao") == Vector2.DOWN and configuracao_spawn.get("velocidade") == 271.0 and configuracao_spawn.get("dano") == 13.0, "tiro setorial nasceu antes de ser configurado")
+	canhao.queue_free()
 	var fonte_drone := FileAccess.get_file_as_string("res://Scripts/InimigoSateliteBerco.gd")
-	checar(
-		fonte_setorial.find("p.configurar(dir,dano_tiro,vel,0)") <
-		fonte_setorial.find("cena.add_child(p, true)"),
-		"tiro setorial ainda nasce antes de ser configurado"
-	)
 	checar(
 		fonte_drone.find("drone.position = global_position") <
 		fonte_drone.find("batalha.add_child(drone, true)"),

@@ -66,7 +66,7 @@ func testar_contato_vinculos_e_pausa() -> void:
 	var alvo := AlvoContato.new()
 	add_child(alvo)
 	await get_tree().process_frame
-	var vida_antes := inimigo.Vida
+	var vida_antes: float = inimigo.Vida
 	inimigo.ao_colidir_com_player(alvo)
 	verificar(not inimigo.morto, "o inimigo novo morreu ao tocar o player")
 	verificar(is_equal_approx(inimigo.Vida, vida_antes), "o contato removeu vida do inimigo novo")

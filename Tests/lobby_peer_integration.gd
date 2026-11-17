@@ -18,6 +18,7 @@ func _ready() -> void:
 		print("TESTE IGNORADO: execute host e client em processos separados")
 		get_tree().quit(0)
 		return
+	GerenciadorDeSave.salvar({"tutorialconcluido": true})
 	Rede.configuracao_teste = _configuracao_teste_local()
 	if papel == "host":
 		if Rede.criar_lobby("HOST_TESTE") != OK:
@@ -146,11 +147,6 @@ func _ready() -> void:
 			{"tempo_vida": 0.08, "velocidade": 0.35}
 		)
 	await get_tree().create_timer(0.8).timeout
-	local.niveis_upgrades[&"dano_calibrado" if papel == "host" else &"cadencia"] = 1
-	local.call("_sincronizar_loadout_rede")
-	if not await _esperar_upgrades_loadout_remoto():
-		_falhar("upgrades individuais não foram publicados no loadout remoto")
-		return
 	var cristais_antes := Global.cristais
 	if papel == "host":
 		inimigo_teste.conceder_recompensa()
@@ -171,6 +167,13 @@ func _ready() -> void:
 		return
 	await get_tree().process_frame
 	menu.call("fechar_menu")
+	# Exercita a compra autorizada; editar o dicionario do cliente e rejeitado pelo host.
+	if not local.comprar_upgrade(&"dano_calibrado" if papel == "host" else &"cadencia"):
+		_falhar("compra individual nao iniciou")
+		return
+	if not await _esperar_upgrades_loadout_remoto():
+		_falhar("upgrade comprado nao foi publicado no loadout remoto")
+		return
 	local.vida = 20.0
 	local.invencibilidade = true
 	local.invencibilidade_cd = 12.0
@@ -208,6 +211,9 @@ func _ready() -> void:
 	if not await _esperar_renascimento_sincronizado(local):
 		_falhar("contagem terminou sem reviver e sincronizar o jogador morto")
 		return
+	if not await _testar_snapshots_chefes():
+		_falhar("quadros visuais dos chefes ou despawn autoritativo falharam")
+		return
 	print("TESTE OK: %s sincronizou posições, partículas, loadouts, XP, menu, morte e renascimento" % papel)
 	await get_tree().create_timer(0.5).timeout
 	Rede.encerrar_lobby()
@@ -224,7 +230,7 @@ func _esperar_jogadores_reais() -> bool:
 				validos = validos and jogador is Player
 				validos = validos and jogador.get_node_or_null("MultiplayerSynchronizer") != null
 				validos = validos and jogador.get_node_or_null("NicknameRede") != null
-			if validos:
+			if validos and (papel == "host" or batalha.entrada_estado_confirmada):
 				return true
 		await get_tree().create_timer(0.05).timeout
 		limite -= 0.05
@@ -543,3 +549,57 @@ func _falhar(mensagem: String) -> void:
 	push_error("LOBBY %s: %s" % [papel, mensagem])
 	Rede.encerrar_lobby()
 	get_tree().quit(1)
+
+
+var etapas_peer: Dictionary = {}
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_etapa_rede(etapa: String) -> void:
+	etapas_peer[etapa] = true
+
+func _barreira_rede(etapa: String) -> bool:
+	_confirmar_etapa_rede.rpc(etapa)
+	var limite := 8.0
+	while limite > 0.0:
+		if etapas_peer.has(etapa):
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+func _testar_snapshots_chefes() -> bool:
+	if papel == "host":
+		batalha.limpar_inimigos_sem_recompensa()
+	await get_tree().create_timer(0.3).timeout
+	for nome in ["BossPet0", "BossFlorEquinocio", "BossEclipseColheita", "BossConstelacaoAmparo", "BossNoAmetista"]:
+		if not await _barreira_rede(nome + "_inicio"):
+			return false
+		var boss: ChefeBase
+		if papel == "host":
+			boss = (load("res://Entities/%s.tscn" % nome) as PackedScene).instantiate() as ChefeBase
+			boss.name = "ChefeIntegracao"
+			batalha.add_child(boss, true)
+			boss.set_physics_process(false)
+			(boss.get_child(0) as Node2D).rotation = 0.73
+		var limite := 8.0
+		var recebeu := papel == "host"
+		while not recebeu and limite > 0.0:
+			boss = batalha.get_node_or_null("ChefeIntegracao") as ChefeBase
+			if is_instance_valid(boss) and boss.ultima_sequencia_snapshot_visual_rede > 0:
+				recebeu = is_equal_approx((boss.get_child(0) as Node2D).rotation, 0.73)
+			await get_tree().create_timer(0.05).timeout
+			limite -= 0.05
+		if not recebeu:
+			print("DIAGNOSTICO SNAPSHOT %s: %s" % [papel, nome])
+			return false
+		if not await _barreira_rede(nome + "_recebido"):
+			return false
+		if papel == "host":
+			boss.queue_free()
+		limite = 4.0
+		while is_instance_valid(batalha.get_node_or_null("ChefeIntegracao")) and limite > 0.0:
+			await get_tree().create_timer(0.05).timeout
+			limite -= 0.05
+		if is_instance_valid(batalha.get_node_or_null("ChefeIntegracao")):
+			return false
+	return true

@@ -17,7 +17,7 @@ func _ready() -> void:
 			"GDScript",
 			ResourceLoader.CACHE_MODE_REPLACE
 		)
-		if recurso == null or not recurso is GDScript:
+		if recurso == null or not recurso is GDScript or not (recurso as GDScript).can_instantiate():
 			falhas.append(caminho)
 
 	if not falhas.is_empty():

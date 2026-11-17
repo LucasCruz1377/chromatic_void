@@ -363,22 +363,23 @@ func _configurar_jogadores_multiplayer() -> void:
 
 
 # O relay evita chamadas RPC diretamente a nodes dinamicos ja removidos.
-func replicar_snapshot_visual_boss(boss: InimigoBase, snapshot: Dictionary) -> void:
+func replicar_snapshot_visual_boss(boss: ChefeBase, snapshot: Dictionary) -> void:
 	if not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
 	if not is_instance_valid(boss) or boss.is_queued_for_deletion() or boss.get_parent() != self:
 		return
-	_receber_snapshot_visual_boss.rpc(get_path_to(boss), snapshot)
+	for pacote in boss.dividir_snapshot_visual(snapshot):
+		_receber_snapshot_visual_boss.rpc(get_path_to(boss), pacote)
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 4)
+@rpc("authority", "call_remote", "unreliable", 4)
 func _receber_snapshot_visual_boss(caminho: NodePath, snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
-	var boss := get_node_or_null(caminho) as InimigoBase
+	var boss := get_node_or_null(caminho) as ChefeBase
 	if not is_instance_valid(boss) or boss.is_queued_for_deletion():
 		return
-	boss._aplicar_snapshot_visual_boss(snapshot)
+	boss.receber_parte_snapshot_visual(snapshot)
 
 
 # Os satelites e as amarras existem como dados usados por _draw().
@@ -533,7 +534,7 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _receber_estado_de_entrada_rede(dados: Dictionary) -> void:
-	if multiplayer.is_server():
+	if multiplayer.is_server() or entrada_estado_confirmada:
 		return
 	setor_atual = StringName(str(dados.get("setor", setor_atual)))
 	boss_atual_id = StringName(str(dados.get("boss_id", boss_atual_id)))
@@ -581,21 +582,6 @@ func _aplicar_estados_entrada_pendentes() -> void:
 		estados_entrada_pendentes.erase(chave)
 	if estados_entrada_pendentes.is_empty() and not entrada_estado_confirmada:
 		entrada_estado_confirmada = true
-		if Rede.esta_conectado() and not multiplayer.is_server():
-			_confirmar_entrada_partida.rpc_id(1)
-
-
-@rpc("any_peer", "call_remote", "reliable")
-func _confirmar_entrada_partida() -> void:
-	if not multiplayer.is_server():
-		return
-	var id := multiplayer.get_remote_sender_id()
-	if id <= 1 or not Rede.jogadores.has(id):
-		return
-	if not is_instance_valid(_obter_jogador_rede(id)):
-		return
-	# Reenvia o quadro completo apos o spawn; pacotes de entrada sao idempotentes.
-	_enviar_estado_de_entrada_rede(id)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -1314,7 +1300,8 @@ func _processar_posicoes_rede(delta: float) -> void:
 		return
 	tempo_posicoes_rede = INTERVALO_POSICOES_REDE
 	if multiplayer.is_server():
-		_publicar_posicoes_mundo.rpc(_capturar_posicoes_mundo())
+		for pacote in _dividir_posicoes_mundo(_capturar_posicoes_mundo()):
+			_publicar_posicoes_mundo.rpc(pacote)
 		return
 	var jogador_local := _obter_jogador_rede(Rede.peer_local()) as Player
 	if is_instance_valid(jogador_local):
@@ -1405,12 +1392,26 @@ func _capturar_posicoes_mundo() -> Dictionary:
 	}
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 3)
+func _dividir_posicoes_mundo(snapshot: Dictionary) -> Array[Dictionary]:
+	var partes: Array[Dictionary] = []
+	var pacote := snapshot.duplicate(true)
+	pacote["inimigos"] = []
+	for estado in snapshot["inimigos"]:
+		pacote["inimigos"].append(estado)
+		if var_to_bytes(pacote).size() > 1000:
+			pacote["inimigos"].pop_back()
+			partes.append(pacote)
+			pacote = {"sequencia": snapshot["sequencia"], "players": {}, "cristais_coop": snapshot["cristais_coop"], "inimigos": [estado]}
+	partes.append(pacote)
+	return partes
+
+
+@rpc("authority", "call_remote", "unreliable", 3)
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
 	var numero := int(snapshot.get("sequencia", 0))
-	if numero <= ultima_sequencia_mundo_rede:
+	if numero < ultima_sequencia_mundo_rede:
 		return
 	ultima_sequencia_mundo_rede = numero
 	_aplicar_total_cristais_coop(int(snapshot.get("cristais_coop", 0)))
@@ -2097,6 +2098,8 @@ func _mostrar_intro_boss(id: StringName) -> void:
 
 
 func limpar_inimigos_sem_recompensa() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	for inimigo in get_tree().get_nodes_in_group("inimigo"):
 		if is_instance_valid(inimigo):
 			inimigo.queue_free()

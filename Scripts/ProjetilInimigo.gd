@@ -47,7 +47,7 @@ func _ready() -> void:
 
 
 func _configurar_sincronizador_multiplayer() -> void:
-	if not Rede.modo_multiplayer or has_node("MultiplayerSynchronizer"):
+	if not Rede.modo_multiplayer or bool(get_meta("apenas_visual_rede", false)) or has_node("MultiplayerSynchronizer"):
 		return
 	var sincronizador := MultiplayerSynchronizer.new()
 	sincronizador.name = "MultiplayerSynchronizer"
@@ -126,9 +126,11 @@ func _physics_process(delta: float) -> void:
 			# do MultiplayerSpawner sao removidas exclusivamente pelo host.
 			queue_free()
 			return
-		# Modo de consistencia: apenas o host calcula trajetoria.
+		if bool(get_meta("apenas_visual_rede", false)):
+			global_position += direcao * velocidade * delta
+		# As entidades do spawner recebem a trajetoria autoritativa.
 		# A posicao sincronizada substitui a predicao local, evitando divergencias.
-		# A tolerancia acima continua removendo copias que perderam o despawn.
+		# Somente as replicas manuais expiram localmente.
 		return
 	tempo_vida -= delta
 	if tempo_vida <= 0.0:
