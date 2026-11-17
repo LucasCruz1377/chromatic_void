@@ -287,6 +287,11 @@ func lancar_petala(indice: int) -> void:
 		indice,
 		self
 	)
+	if Rede.modo_multiplayer and multiplayer.is_server():
+		_replicar_petala_boss.rpc(
+			petala.global_position, direcao, Dano * 0.54,
+			315.0 + fase * 25.0, 400.0 + fase * 35.0, indice
+		)
 	petala.retornou.connect(_on_petala_retornou)
 	petalas_lancadas.append(petala)
 	petalas_em_voo += 1
@@ -388,7 +393,7 @@ func _replicar_petala_boss(
 	if multiplayer.is_server():
 		return
 	var petala := PETALA_BUMERANGUE.instantiate() as PetalaBumerangue
-	petala.name = "PetalaRede%d" % indice
+	petala.name = "PetalaRede%d_%d" % [indice, Time.get_ticks_usec()]
 	get_tree().current_scene.add_child(petala, true)
 	petala.configurar(posicao, direcao, dano, velocidade, velocidade_retorno, indice, self)
 	petala.set_meta("apenas_visual_rede", true)
@@ -396,6 +401,7 @@ func _replicar_petala_boss(
 	petala.collision_mask = 0
 	petala.monitoring = false
 	petala.monitorable = false
+	petala.retornou.connect(_on_petala_retornou)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -548,6 +554,9 @@ func ativar_escudo(ativar: bool) -> void:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto or valor <= 0.0:
 		return
 	if escudo_ativo:
