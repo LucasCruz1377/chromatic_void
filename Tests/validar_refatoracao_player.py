@@ -90,3 +90,8 @@ assert 'petala.monitoring = false' in flor
 assert 'petala.monitorable = false' in flor
 assert 'func tomarDano(valor: float) -> void:\\n\\tif Rede.modo_multiplayer and not multiplayer.is_server():' in flor
 assert '_solicitar_dano_ao_host.rpc_id(1,' in flor
+
+# Flor: petalas sao enviadas exclusivamente pelo RPC; espinhos exclusivamente pelo spawner.
+assert '"res://Entities/PetalaBumerangue.tscn"' not in arena
+assert '"res://Entities/EspinhoPrimaveril.tscn"' in arena
+assert "replicar_projetil_inimigo_rede(" not in flor
