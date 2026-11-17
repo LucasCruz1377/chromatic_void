@@ -203,6 +203,21 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 			dados["color"] = (item as Polygon2D).color
 		if item is Line2D:
 			dados["default_color"] = (item as Line2D).default_color
+		if item is AnimatedSprite2D:
+			var sprite := item as AnimatedSprite2D
+			dados["sprite_animacao"] = sprite.animation
+			dados["sprite_frame"] = sprite.frame
+			dados["sprite_progresso"] = sprite.frame_progress
+			dados["sprite_tocando"] = sprite.is_playing()
+		if item.material is ShaderMaterial:
+			var shader_material := item.material as ShaderMaterial
+			var parametros: Dictionary = {}
+			if shader_material.shader:
+				for uniforme in shader_material.shader.get_shader_uniform_list():
+					var nome: StringName = uniforme.get("name", &"")
+					if not nome.is_empty():
+						parametros[nome] = shader_material.get_shader_parameter(nome)
+			dados["shader_parametros"] = parametros
 		if item is GPUParticles2D:
 			dados["emitting"] = (item as GPUParticles2D).emitting
 		if item is Line2D:
@@ -252,6 +267,24 @@ func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
 			(item as Polygon2D).color = dados["color"]
 		if item is Line2D and dados.has("default_color"):
 			(item as Line2D).default_color = dados["default_color"]
+		if item is AnimatedSprite2D and dados.has("sprite_animacao"):
+			var sprite := item as AnimatedSprite2D
+			var nome_animacao: StringName = dados["sprite_animacao"]
+			if sprite.sprite_frames and sprite.sprite_frames.has_animation(nome_animacao):
+				if sprite.animation != nome_animacao:
+					sprite.animation = nome_animacao
+				var total_quadros := sprite.sprite_frames.get_frame_count(nome_animacao)
+				var quadro := clampi(int(dados.get("sprite_frame", 0)), 0, maxi(total_quadros - 1, 0))
+				sprite.set_frame_and_progress(quadro, float(dados.get("sprite_progresso", 0.0)))
+				if bool(dados.get("sprite_tocando", false)):
+					if not sprite.is_playing():
+						sprite.play()
+				elif sprite.is_playing():
+					sprite.pause()
+		if item.material is ShaderMaterial and dados.has("shader_parametros"):
+			var shader_material := item.material as ShaderMaterial
+			for parametro in Dictionary(dados["shader_parametros"]):
+				shader_material.set_shader_parameter(parametro, dados["shader_parametros"][parametro])
 		if item is GPUParticles2D and dados.has("emitting"):
 			(item as GPUParticles2D).emitting = bool(dados["emitting"])
 		if item is Line2D and dados.has("points"):
