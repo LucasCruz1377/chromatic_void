@@ -13,7 +13,7 @@ class JogadorTeste extends CharacterBody2D:
 	func _ready() -> void:
 		add_to_group("player")
 
-	func tomar_dano(valor: float) -> void:
+	func tomar_dano(valor: float, _origem_dano := Vector2.INF) -> void:
 		dano_recebido += valor
 		vida = maxf(vida - valor, 0.0)
 
