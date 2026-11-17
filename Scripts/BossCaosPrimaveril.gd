@@ -221,15 +221,6 @@ func disparar_anel_espinhos() -> void:
 			235.0 + fase * 30.0,
 			0
 		)
-		replicar_projetil_inimigo_rede(
-			espinho,
-			espinho.global_position,
-			direcao,
-			Dano * 0.42,
-			235.0 + fase * 30.0,
-			0,
-			Color(1.0, 0.34, 0.55)
-		)
 
 
 func iniciar_petalas_bumerangue() -> void:
