@@ -31,6 +31,7 @@ var indice_b := -1
 var acompanha_origem := false
 var tempo := 0.0
 var recarga_dano := 0.0
+var recargas_por_jogador: Dictionary = {}
 var ponto_a := Vector2.ZERO
 var ponto_b := Vector2.ZERO
 var _sentido_deslocamento := 1.0
@@ -82,7 +83,6 @@ static func criar(cena: Node, dados: Dictionary) -> FaixaEnergiaBoss:
 
 func _process(delta: float) -> void:
 	tempo += delta
-	recarga_dano = maxf(0.0, recarga_dano - delta)
 	_atualizar_geometria(delta)
 	var local := tempo - atraso
 	if local >= tempo_aviso and local <= tempo_aviso + tempo_ativo:
@@ -146,17 +146,28 @@ func _posicao_formacao(indice: int, alternativa: Vector2) -> Vector2:
 	return alternativa
 
 func _aplicar_perigo() -> void:
+	# A colisao e decidida somente pelo host. Os efeitos recebidos pelos
+	# clientes sao visuais, enquanto o host verifica TODOS os pilotos.
 	if bool(get_meta("apenas_visual_rede", false)):
 		return
-	if recarga_dano > 0.0:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
 		return
-	var jogador := get_tree().get_first_node_in_group("player") as Node2D
-	if not is_instance_valid(jogador):
-		return
-	if _distancia_segmento(jogador.global_position, ponto_a, ponto_b) <= largura * 0.58 + 13.0:
+	var agora := Time.get_ticks_msec()
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(candidato) or not candidato is Node2D:
+			continue
+		if candidato.is_queued_for_deletion() or candidato.get("vivo") == false:
+			continue
+		var jogador := candidato as Node2D
+		if _distancia_segmento(jogador.global_position, ponto_a, ponto_b) > largura * 0.58 + 13.0:
+			continue
+		var identidade := jogador.get_instance_id()
+		if agora < int(recargas_por_jogador.get(identidade, 0)):
+			continue
 		if jogador.has_method("tomar_dano"):
-			jogador.call("tomar_dano", dano)
-		recarga_dano = 0.34
+			# O Player encaminha o dano ao cliente proprietario.
+			jogador.call("tomar_dano", float(dano))
+			recargas_por_jogador[identidade] = agora + 340
 
 func _distancia_segmento(ponto: Vector2, inicio: Vector2, fim: Vector2) -> float:
 	var segmento := fim - inicio

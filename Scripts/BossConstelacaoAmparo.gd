@@ -221,11 +221,17 @@ func _comprimir(delta: float) -> void:
 	raio_seguro = lerpf(inicial, 112.0, ease(progresso, 1.65))
 	raio_orbita_alvo = maxf(126.0, raio_seguro + 24.0)
 	var centro_arena := Global.obter_centro_area_visivel()
-	if is_instance_valid(player):
-		var pulso_atual := int(tempo_abraco * 4.0)
-		var pulso_anterior := int(tempo_anterior * 4.0)
-		if player.global_position.distance_to(centro_arena) > raio_seguro and pulso_atual != pulso_anterior:
-			player.tomar_dano(Dano * 0.23)
+	var pulso_atual := int(tempo_abraco * 4.0)
+	var pulso_anterior := int(tempo_anterior * 4.0)
+	if pulso_atual != pulso_anterior:
+		for candidato in get_tree().get_nodes_in_group("player"):
+			if not is_instance_valid(candidato) or not candidato is Node2D:
+				continue
+			if candidato.is_queued_for_deletion() or candidato.get("vivo") == false:
+				continue
+			if (candidato as Node2D).global_position.distance_to(centro_arena) > raio_seguro:
+				if candidato.has_method("tomar_dano"):
+					candidato.call("tomar_dano", Dano * 0.23)
 	if tempo_abraco > 0.0:
 		return
 	abraco = false
