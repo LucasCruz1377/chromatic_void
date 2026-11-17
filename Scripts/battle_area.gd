@@ -1828,9 +1828,9 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 	for existente in get_tree().get_nodes_in_group("inimigo"):
 		if not (existente is InimigoBase) or existente.is_queued_for_deletion():
 			continue
-		if not (existente is InimigoSetorial) or not is_ancestor_of(existente):
+		if not existente.is_in_group("inimigo_setorial") or not is_ancestor_of(existente):
 			continue
-		var tipo_existente := int((existente as InimigoSetorial).estilo)
+		var tipo_existente := int(existente.get_meta("tipo_setorial", -1))
 		contagem[tipo_existente] = int(contagem.get(tipo_existente, 0)) + 1
 	var elegiveis: Array[Array] = []
 	var peso_total := 0.0
@@ -1843,10 +1843,10 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 			&"satelite_berco", &"no_flutuante", &"satelite_coroa"
 		] else 4
 		var cena_inimigo := INIMIGOS[identificador] as PackedScene
-		var preview := cena_inimigo.instantiate() as InimigoSetorial
+		var preview := cena_inimigo.instantiate() as InimigoBase
 		if not is_instance_valid(preview):
 			continue
-		var tipo := int(preview.estilo)
+		var tipo := int(preview.get("estilo"))
 		preview.free()
 		if int(contagem.get(tipo, 0)) >= limite_especie:
 			continue

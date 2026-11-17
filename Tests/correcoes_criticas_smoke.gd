@@ -61,7 +61,7 @@ func testar_perfil_mobile_e_particulas() -> void:
 
 func testar_contato_vinculos_e_pausa() -> void:
 	var cena := load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
-	var inimigo := cena.instantiate() as InimigoSetorial
+	var inimigo: Variant = cena.instantiate()
 	add_child(inimigo)
 	var alvo := AlvoContato.new()
 	add_child(alvo)
@@ -71,7 +71,7 @@ func testar_contato_vinculos_e_pausa() -> void:
 	verificar(not inimigo.morto, "o inimigo novo morreu ao tocar o player")
 	verificar(is_equal_approx(inimigo.Vida, vida_antes), "o contato removeu vida do inimigo novo")
 
-	var aliado := cena.instantiate() as InimigoSetorial
+	var aliado: Variant = cena.instantiate()
 	add_child(aliado)
 	await get_tree().process_frame
 	inimigo.protegido = aliado

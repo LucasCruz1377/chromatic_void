@@ -44,15 +44,16 @@ func _ready() -> void:
 		"despawn dos projéteis não é controlado pelo host"
 	)
 
-	var fonte_setorial := FileAccess.get_file_as_string("res://Scripts/InimigoSetorial.gd")
+	var fonte_setorial := FileAccess.get_file_as_string("res://Scripts/InimigoSementeCanhao.gd")
+	var fonte_drone := FileAccess.get_file_as_string("res://Scripts/InimigoSateliteBerco.gd")
 	checar(
 		fonte_setorial.find("p.configurar(dir,dano_tiro,vel,0)") <
 		fonte_setorial.find("cena.add_child(p, true)"),
 		"tiro setorial ainda nasce antes de ser configurado"
 	)
 	checar(
-		fonte_setorial.find("d.position=global_position") <
-		fonte_setorial.find("batalha.add_child(d, true)"),
+		fonte_drone.find("drone.position = global_position") <
+		fonte_drone.find("batalha.add_child(drone, true)"),
 		"drones do Satélite Berço ainda nascem sem posição inicial"
 	)
 
