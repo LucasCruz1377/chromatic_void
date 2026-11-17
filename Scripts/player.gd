@@ -2428,9 +2428,11 @@ func _solicitar_compra_upgrade_rede(id: StringName) -> void:
 	_confirmar_compra_upgrade_rede.rpc_id(remetente, id, permitido)
 
 
-@rpc("authority", "call_remote", "reliable")
+# O host envia a confirmacao, embora o proprio Player tenha autoridade do cliente.
+# A regra de origem abaixo evita que outros clientes confirmem compras.
+@rpc("any_peer", "call_remote", "reliable")
 func _confirmar_compra_upgrade_rede(id: StringName, permitido: bool) -> void:
-	if not is_multiplayer_authority():
+	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
 		return
 	compra_upgrade_pendente_rede = false
 	if permitido and pontos_upgrade_pendentes > 0:

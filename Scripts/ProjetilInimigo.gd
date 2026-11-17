@@ -121,7 +121,9 @@ func _physics_process(delta: float) -> void:
 			prazo_visual_iniciado = true
 			prazo_visual_rede = maxf(tempo_vida, 0.5) + 2.0
 		prazo_visual_rede -= delta
-		if prazo_visual_rede <= 0.0:
+		if prazo_visual_rede <= 0.0 and bool(get_meta("apenas_visual_rede", false)):
+			# Apenas replicas manuais podem expirar localmente; as entidades
+			# do MultiplayerSpawner sao removidas exclusivamente pelo host.
 			queue_free()
 			return
 		# Modo de consistencia: apenas o host calcula trajetoria.

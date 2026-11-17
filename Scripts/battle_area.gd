@@ -238,7 +238,8 @@ func _reconciliar_residuos_pet0(sequencia: int, ativos: PackedStringArray) -> vo
 			var faltas := int(ausencias_residuos.get(chave, 0)) + 1
 			ausencias_residuos[chave] = faltas
 			if faltas >= 2:
-				node.queue_free()
+				# Nao apagar entidades criadas pelo MultiplayerSpawner no cliente:
+				# somente o host pode emitir o despawn correspondente.
 				ausencias_residuos.erase(chave)
 
 
@@ -270,6 +271,25 @@ func _configurar_jogadores_multiplayer() -> void:
 	else:
 		_enviar_solicitacao_entrada()
 	call_deferred("_vincular_jogador_local")
+
+
+# O relay evita chamadas RPC diretamente a nodes dinamicos ja removidos.
+func replicar_snapshot_visual_boss(boss: InimigoBase, snapshot: Dictionary) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion() or boss.get_parent() != self:
+		return
+	_receber_snapshot_visual_boss.rpc(get_path_to(boss), snapshot)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered", 4)
+func _receber_snapshot_visual_boss(caminho: NodePath, snapshot: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	var boss := get_node_or_null(caminho) as InimigoBase
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion():
+		return
+	boss._aplicar_snapshot_visual_boss(snapshot)
 
 
 func _configurar_spawners_multiplayer() -> void:

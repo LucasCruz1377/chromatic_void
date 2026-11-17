@@ -175,7 +175,14 @@ func _process(delta: float) -> void:
 		return
 	tempo_snapshot_visual_rede = INTERVALO_SNAPSHOT_BOSS_REDE
 	sequencia_snapshot_visual_rede += 1
-	_aplicar_snapshot_visual_boss.rpc(_capturar_snapshot_visual_boss(sequencia_snapshot_visual_rede))
+	# O RPC sai da arena (que permanece na arvore), nao do boss que pode ter
+	# sido destruido ou ainda nao ter sido replicado no cliente.
+	var arena := get_tree().current_scene
+	if is_instance_valid(arena) and arena.has_method("replicar_snapshot_visual_boss"):
+		arena.call(
+			"replicar_snapshot_visual_boss",
+			self, _capturar_snapshot_visual_boss(sequencia_snapshot_visual_rede)
+		)
 
 
 func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
