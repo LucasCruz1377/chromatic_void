@@ -2,7 +2,6 @@ extends Node2D
 
 
 const DadosSetores = preload("res://Scripts/SectorData.gd")
-const SeedDaPartida = preload("res://Scripts/SeedPartida.gd")
 const PainelDesenvolvedorCena = preload("res://Scripts/PainelDesenvolvedor.gd")
 const ControlesMobileCena = preload("res://Scripts/ControlesMobile.gd")
 const JOGADOR_CENA := preload("res://Entities/player.tscn")
@@ -90,29 +89,6 @@ const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var world_spawner: MultiplayerSpawner = $WorldSpawner
 
-var rng_spawns := RandomNumberGenerator.new()
-var rng_eventos := RandomNumberGenerator.new()
-var rotulo_seed: Label
-
-func _inicializar_seed_partida() -> void:
-	if Rede.seed_partida <= 0:
-		# Partidas solo iniciadas diretamente pelo editor tambem recebem seed.
-		Rede.preparar_nova_seed()
-	rng_spawns = SeedDaPartida.criar_rng(Rede.seed_partida, 101)
-	rng_eventos = SeedDaPartida.criar_rng(Rede.seed_partida, 202)
-	if not is_instance_valid(rotulo_seed):
-		rotulo_seed = Label.new()
-		rotulo_seed.name = "SeedPartida"
-		rotulo_seed.text = "SEED %09d" % Rede.seed_partida
-		rotulo_seed.add_theme_font_size_override("font_size", 12)
-		rotulo_seed.add_theme_color_override("font_color", Color(0.65, 0.85, 1.0))
-		rotulo_seed.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		$GUI.add_child(rotulo_seed)
-		rotulo_seed.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		rotulo_seed.position = Vector2(-178.0, 8.0)
-		rotulo_seed.size = Vector2(170.0, 24.0)
-
-
 var pontos: float = 0.0
 var timer: float = TIMER_MAX
 var tutorial_ativo: bool = false
@@ -175,7 +151,6 @@ var ausencias_residuos: Dictionary = {}
 
 func _ready() -> void:
 	get_tree().paused = false
-	_inicializar_seed_partida()
 	Global.limpar_area_multiplayer()
 	_configurar_spawners_multiplayer()
 	if Rede.modo_multiplayer:
@@ -188,7 +163,7 @@ func _ready() -> void:
 	pontos = 0.0
 	timer = TIMER_MAX
 	game_over = false
-	tempo_asteroide = rng_eventos.randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
+	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
 	caixa_gameover.visible = false
 	_criar_aviso_rede()
 	escala_fundo_original = fundo_original.scale
@@ -1256,12 +1231,11 @@ func solicitar_reinicio_multiplayer() -> void:
 	if not multiplayer.is_server():
 		_mostrar_aviso_rede(tr("APENAS O HOST PODE REINICIAR A PARTIDA"), false)
 		return
-	_reiniciar_partida_rede.rpc(Rede.preparar_nova_seed())
+	_reiniciar_partida_rede.rpc()
 
 
 @rpc("authority", "call_local", "reliable")
-func _reiniciar_partida_rede(numero_seed: int) -> void:
-	Rede.seed_partida = SeedDaPartida.validar(numero_seed)
+func _reiniciar_partida_rede() -> void:
 	preservar_conexao_ao_sair = true
 	get_tree().paused = false
 	Engine.time_scale = 1.0
@@ -1341,7 +1315,7 @@ func spawnar_enemy() -> void:
 
 	var cena_escolhida := escolher_tipo_inimigo(player.nivel_atual)
 	var inimigo := cena_escolhida.instantiate() as Node2D
-	var spawner := spawners[rng_spawns.randi_range(0, spawners.size() - 1)] as Node2D
+	var spawner := spawners.pick_random() as Node2D
 	if not is_instance_valid(inimigo) or not is_instance_valid(spawner):
 		if is_instance_valid(inimigo):
 			inimigo.queue_free()
@@ -1396,7 +1370,7 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 		if nivel >= 8:
 			opcoes_originais.append(INIMIGOS[&"atirador"])
 			opcoes_originais.append(INIMIGOS[&"investida"])
-		return opcoes_originais[rng_spawns.randi_range(0, opcoes_originais.size() - 1)]
+		return opcoes_originais.pick_random()
 
 	var composicao: Array = DadosSetores.obter(setor_atual).get("inimigos", [])
 	if composicao.is_empty():
@@ -1404,7 +1378,7 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 	var peso_total := 0.0
 	for entrada in composicao:
 		peso_total += float(entrada[1])
-	var alvo := rng_spawns.randf() * peso_total
+	var alvo := randf() * peso_total
 	for entrada in composicao:
 		alvo -= float(entrada[1])
 		if alvo <= 0.0:
@@ -1424,7 +1398,7 @@ func processar_asteroides(delta: float) -> void:
 	if tempo_asteroide > 0.0:
 		return
 	tempo_asteroide = randf_range(intervalo_asteroide_min, intervalo_asteroide_max)
-	if max_asteroides <= 0 or rng_eventos.randf() > chance_asteroide:
+	if max_asteroides <= 0 or randf() > chance_asteroide:
 		return
 	if get_tree().get_nodes_in_group("asteroide_bonus").size() < max_asteroides:
 		spawnar_asteroide_bonus()
@@ -1444,8 +1418,8 @@ func spawnar_asteroide_bonus() -> void:
 	asteroide.global_position = spawner.global_position
 	if asteroide.has_method("configurar_movimento"):
 		var destino := Global.obter_centro_area_visivel() + Vector2(
-			rng_eventos.randf_range(-180.0, 180.0),
-			rng_eventos.randf_range(-110.0, 110.0)
+			randf_range(-180.0, 180.0),
+			randf_range(-110.0, 110.0)
 		)
 		asteroide.configurar_movimento(destino)
 
