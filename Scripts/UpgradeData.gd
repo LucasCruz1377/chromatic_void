@@ -6,22 +6,6 @@ class_name UpgradeData
 # Mantém as cartas específicas presentes sem dominar todas as ofertas.
 const CHANCE_UPGRADE_HABILIDADE_ESPECIFICA := 0.42
 
-# RNG temporario durante um sorteio sincrono; nao modifica sorteios de efeitos.
-static var _rng_oferta: RandomNumberGenerator
-
-static func _randf_oferta() -> float:
-	return _rng_oferta.randf() if _rng_oferta != null else randf()
-
-static func _embaralhar_oferta(lista: Array[StringName]) -> void:
-	if _rng_oferta == null:
-		lista.shuffle()
-		return
-	for indice in range(lista.size() - 1, 0, -1):
-		var outro := _rng_oferta.randi_range(0, indice)
-		var temporario := lista[indice]
-		lista[indice] = lista[outro]
-		lista[outro] = temporario
-
 const TIPO_BASICA: StringName = &"basica"
 const TIPO_ESTRUTURAL: StringName = &"estrutural"
 const TIPO_SINERGIA: StringName = &"sinergia"
@@ -844,11 +828,8 @@ static func sortear(
 	quantidade := 3,
 	habilidade: Habilidade = null,
 	evitar: Array[StringName] = [],
-	arma: StringName = &"",
-	rng: RandomNumberGenerator = null
+	arma: StringName = &""
 ) -> Array[StringName]:
-	var anterior := _rng_oferta
-	_rng_oferta = rng
 	var candidatos: Array[StringName] = []
 	for id in DADOS:
 		if disponivel(id, niveis, habilidade, arma):
@@ -891,7 +872,7 @@ static func sortear(
 	# Depois do sorteio, todas as demais específicas saem dos candidatos.
 	if (
 		not especificos.is_empty()
-		and _randf_oferta() <= CHANCE_UPGRADE_HABILIDADE_ESPECIFICA
+		and randf() <= CHANCE_UPGRADE_HABILIDADE_ESPECIFICA
 	):
 		resultado.append(_sortear_ponderado(especificos, niveis, habilidade))
 	for id in especificos:
@@ -929,8 +910,7 @@ static func sortear(
 	if resultado.is_empty() and not especificos.is_empty():
 		resultado.append(_sortear_ponderado(especificos, niveis, habilidade))
 
-	_embaralhar_oferta(resultado)
-	_rng_oferta = anterior
+	resultado.shuffle()
 	return resultado
 
 
@@ -1076,7 +1056,7 @@ static func _sortear_ponderado(
 	for id in candidatos:
 		peso_total += _peso_com_sinergia(id, niveis, habilidade)
 
-	var alvo := _randf_oferta() * maxf(peso_total, 0.01)
+	var alvo := randf() * maxf(peso_total, 0.01)
 	var acumulado := 0.0
 	for id in candidatos:
 		acumulado += _peso_com_sinergia(id, niveis, habilidade)
