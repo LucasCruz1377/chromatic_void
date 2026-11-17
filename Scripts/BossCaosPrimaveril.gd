@@ -603,7 +603,7 @@ func configurar_aviso_vinhas() -> void:
 
 func ao_colidir_com_player(alvo: Node) -> void:
 	if alvo.has_method("tomar_dano"):
-		alvo.tomar_dano(Dano * 0.42)
+		alvo.tomar_dano(Dano * 0.42, global_position)
 
 
 func morrer() -> void:

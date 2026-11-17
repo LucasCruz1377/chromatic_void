@@ -373,7 +373,7 @@ func ao_colidir_com_player(alvo: Node) -> void:
 		return
 
 	var dano_contato := Dano if estado == Estado.ROLANDO else Dano * 0.45
-	alvo.tomar_dano(dano_contato)
+	alvo.tomar_dano(dano_contato, global_position)
 
 	if estado == Estado.ROLANDO:
 		iniciar_recuperacao(0.9)

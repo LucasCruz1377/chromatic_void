@@ -41,8 +41,8 @@ func _ready() -> void:
 
 	var ambiente := (load("res://FX/Shader.tscn") as PackedScene).instantiate() as WorldEnvironment
 	verificar(ambiente.environment.glow_enabled, "o glow global está desligado")
-	verificar(is_equal_approx(ambiente.environment.glow_intensity, 1.0), "a intensidade-base do neon difere da 0.7.1")
-	verificar(is_equal_approx(ambiente.environment.glow_bloom, 0.12), "o bloom-base difere da 0.7.1")
+	verificar(is_equal_approx(ambiente.environment.glow_intensity, 0.4), "a intensidade-base ultrapassa o limite de neon")
+	verificar(is_equal_approx(ambiente.environment.glow_bloom, 0.1), "o bloom-base ultrapassa o limite")
 	ambiente.free()
 
 	verificar(

@@ -182,14 +182,13 @@ var folhas_tempestade_ativas := false
 var tempo_eco_fantasma := 0.0
 var historico_disparos: Array[Dictionary] = []
 var sementes_vermelhas := 0
-var reserva_celulas := 0.0
+var estrelas_solidarias := Vector4.ZERO
+var direcao_propulsao := 0
+var passivas_nave: Node2D
 var progresso_luz_vital := 0.0
 var ponto_seguro_ativo := false
 var ponto_seguro := Vector2.ZERO
 var tempo_motor_maia := 0.0
-var tempo_scanner := 0.0
-var tempo_reflexo := 0.0
-var intervalo_quase_colisao := 0.0
 var satelites_restantes := 3
 var fase_equinocio_solar := false
 
@@ -218,6 +217,9 @@ func _ready() -> void:
 	criar_visuais_modelos_exclusivos()
 	aplicar_personalizacao_nave()
 	_criar_nickname_rede()
+	passivas_nave = preload("res://Scripts/PassivasNave.gd").new()
+	passivas_nave.name = "PassivasNave"
+	add_child(passivas_nave)
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		set_physics_process(false)
 		return
@@ -306,6 +308,8 @@ func aplicar_configuracao_visual_rede() -> void:
 func _aplicar_campos_configuracao_rede() -> void:
 	arma_monthly = StringName(str(configuracao_visual_rede.get("arma", "")))
 	modulo_nave = StringName(str(configuracao_visual_rede.get("modulo", "")))
+	if not modulo_nave.is_empty() and CatalogoMonthly.encontrar(modulo_nave).is_empty():
+		modulo_nave = &""
 	mutacao_habilidade = StringName(str(configuracao_visual_rede.get("mutacao", "")))
 	modelo_visual_nave = StringName(str(configuracao_visual_rede.get("modelo", "c01_modelo_padrao")))
 	cor_visual_nave = StringName(str(configuracao_visual_rede.get("cor", "c10_verde_original")))
@@ -1237,7 +1241,6 @@ func _coletar_experiencia_proxima() -> void:
 
 func atualizar_equipamentos_monthly(delta: float) -> void:
 	janela_parry = maxf(janela_parry - delta, 0.0)
-	tempo_reflexo = maxf(tempo_reflexo - delta, 0.0)
 	calor_feixe = maxf(calor_feixe - delta * 0.34, 0.0)
 	if tempo_poder_monthly > 0.0:
 		tempo_poder_monthly = maxf(tempo_poder_monthly - delta, 0.0)
@@ -1256,16 +1259,6 @@ func atualizar_equipamentos_monthly(delta: float) -> void:
 			tempo_motor_maia = minf(tempo_motor_maia + delta, 12.0)
 		else:
 			tempo_motor_maia = maxf(tempo_motor_maia - delta * 2.0, 0.0)
-	if modulo_nave == &"n06_scanner_preventivo":
-		tempo_scanner -= delta
-		if tempo_scanner <= 0.0:
-			tempo_scanner = 0.18
-			_atualizar_scanner()
-	if modulo_nave == &"n01_reflexos_rapidos":
-		intervalo_quase_colisao -= delta
-		if intervalo_quase_colisao <= 0.0:
-			intervalo_quase_colisao = 0.09
-			_verificar_quase_colisao()
 	if ponto_seguro_ativo and global_position.distance_to(ponto_seguro) <= 42.0:
 		ponto_seguro_ativo = false
 		ativar_escudo(20.0, 5.0, Color(1.0, 0.82, 0.24))
@@ -1285,28 +1278,6 @@ func _explodir_eco_fantasma(posicao: Vector2, cor: Color) -> void:
 		return
 	_atingir_area(posicao, 42.0, 2.2, 45.0, 0.1)
 	EfeitoCombateCena.criar(get_tree().current_scene, posicao, EfeitoCombate.Tipo.MORTE, cor, 0.56)
-
-
-func _atualizar_scanner() -> void:
-	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
-		if not is_instance_valid(node) or not (node is CanvasItem) or not (node is Node2D):
-			continue
-		var distancia := global_position.distance_to((node as Node2D).global_position)
-		(node as CanvasItem).modulate = Color(1.3, 0.55, 0.25, 1.0) if distancia < 210.0 else Color.WHITE
-
-
-func _verificar_quase_colisao() -> void:
-	if tempo_reflexo > 0.0:
-		return
-	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
-		if not is_instance_valid(node) or not (node is Node2D):
-			continue
-		var distancia := global_position.distance_to((node as Node2D).global_position)
-		if distancia > 34.0 and distancia < 72.0:
-			tempo_reflexo = 1.1
-			rotation += PI * 0.38
-			_criar_feedback_monthly(global_position, Color(1.0, 0.9, 0.35), 0.55, 1.0)
-			break
 
 
 func disparar_nova_de_ativacao() -> void:
@@ -1341,8 +1312,6 @@ func atualizar_movimento(delta: float) -> void:
 	var delta_rotacao := delta / maxf(Engine.time_scale, 0.01) if foco_movimento_tempo_real else delta
 	if modulo_nave == &"n08_motor_maia":
 		fator_movimento *= 1.0 + minf(tempo_motor_maia / 12.0, 1.0) * 0.22
-	if tempo_reflexo > 0.0:
-		fator_movimento *= 1.18
 	var usando_toque: bool = Global.controle_toque_ativo
 	var usando_controle_simplificado: bool = usando_toque or (
 		not Global.controle_avancado
@@ -1411,6 +1380,17 @@ func atualizar_movimento(delta: float) -> void:
 			brake(delta, fator_movimento)
 			propulsao_acionada = true
 
+	var frente_acionada := false
+	var re_acionada := false
+	if not ctrlblock:
+		if usando_controle_simplificado:
+			re_acionada = intensidade_re > 0.0
+			frente_acionada = not re_acionada and direcao_simplificada.length_squared() > 0.0
+		else:
+			frente_acionada = Input.is_action_pressed("acelerar")
+			re_acionada = Input.is_action_pressed("freio")
+	passivas_nave.atualizar_propulsao(frente_acionada, re_acionada, delta)
+	fator_movimento *= passivas_nave.multiplicador_arrancada()
 	var emitindo_rastro := propulsao_acionada
 	rastro_ativo_rede = emitindo_rastro
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
@@ -2044,10 +2024,10 @@ func _receber_impulso_de_perigo_rede(impulso: Vector2) -> void:
 		velocity += impulso
 
 
-func tomar_dano(valor: float) -> void:
+func tomar_dano(valor: float, origem_dano := Vector2.INF) -> void:
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		if multiplayer.is_server() and peer_id_dono > 1:
-			_receber_dano_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+			_receber_dano_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0), origem_dano)
 		return
 	if (
 		invencibilidade
@@ -2069,16 +2049,7 @@ func tomar_dano(valor: float) -> void:
 		satelites_restantes -= 1
 		dano_restante *= 0.35
 		_criar_feedback_monthly(global_position, Color(1.0, 0.82, 0.28), 0.7, 2.0)
-	if modulo_nave == &"n05_reserva_solidaria" and reserva_celulas > 0.0:
-		var reserva_usada := minf(reserva_celulas, dano_restante)
-		reserva_celulas -= reserva_usada
-		dano_restante -= reserva_usada
-	if modulo_nave == &"n04_armadura_aco" and velocity.dot(transform.x) > 40.0:
-		dano_restante *= 0.7
-	if modulo_nave == &"n07_propulsor_janus":
-		var impulso_frontal := velocity.dot(transform.x)
-		if absf(impulso_frontal) > 80.0:
-			dano_restante *= 0.78
+	dano_restante *= passivas_nave.multiplicador_protecao(origem_dano)
 	if escudo_habilidade > 0.0:
 		var absorvido := minf(escudo_habilidade, dano_restante)
 		escudo_habilidade -= absorvido
@@ -2122,9 +2093,9 @@ func tomar_dano(valor: float) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _receber_dano_autoritativo(valor: float) -> void:
+func _receber_dano_autoritativo(valor: float, origem_dano := Vector2.INF) -> void:
 	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
-		tomar_dano(clampf(valor, 0.0, 10000.0))
+		tomar_dano(clampf(valor, 0.0, 10000.0), origem_dano)
 
 
 func reproduzir_feedback_dano(dano_recebido: float) -> void:
@@ -2157,7 +2128,7 @@ func curar(valor: float) -> void:
 	var excedente := maxf(vida + cura_total - VIDA_MAXIMA, 0.0)
 	vida = minf(vida + cura_total, VIDA_MAXIMA)
 	if modulo_nave == &"n05_reserva_solidaria" and excedente > 0.0:
-		reserva_celulas = minf(reserva_celulas + excedente, 35.0)
+		passivas_nave.armazenar_cura(excedente)
 
 
 func conceder_cura_rede(valor: float) -> void:
@@ -2772,4 +2743,4 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 
 	var dano_contato = body.get("Dano")
 	if dano_contato != null:
-		tomar_dano(float(dano_contato))
+		tomar_dano(float(dano_contato), body.global_position)

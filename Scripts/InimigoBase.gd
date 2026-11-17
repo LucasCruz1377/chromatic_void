@@ -574,7 +574,7 @@ func ao_colidir_com_player(alvo: Node) -> void:
 		return
 
 	if alvo.has_method("tomar_dano"):
-		alvo.tomar_dano(Dano)
+		alvo.tomar_dano(Dano, global_position)
 
 	if morre_ao_colidir_player:
 		morrer()

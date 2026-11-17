@@ -204,7 +204,7 @@ func atualizar_contato(delta: float) -> void:
 	if global_position.distance_to(player.global_position) <= raio_contato:
 		tempo_contato = 0.85
 		if player.has_method("tomar_dano"):
-			player.tomar_dano(Dano * 0.64)
+			player.tomar_dano(Dano * 0.64, global_position)
 		if fase_atual >= Fase.SOL and player.has_method("aplicar_queimadura"):
 			player.aplicar_queimadura(Dano * 0.24, 2.7)
 

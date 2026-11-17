@@ -445,7 +445,7 @@ func ao_colidir_com_player(alvo: Node) -> void:
 	if not alvo.has_method("tomar_dano"):
 		return
 	var multiplicador := 1.0 if estado == Estado.INVESTINDO else 0.42
-	alvo.tomar_dano(Dano * multiplicador)
+	alvo.tomar_dano(Dano * multiplicador, global_position)
 	if estado == Estado.INVESTINDO:
 		iniciar_recuperacao(0.8)
 

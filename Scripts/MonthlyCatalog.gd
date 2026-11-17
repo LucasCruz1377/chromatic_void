@@ -49,9 +49,7 @@ const FONTES_SITE: Dictionary = {
 	&"n01_reflexos_rapidos": "Maio Amarelo • prevenção de acidentes",
 	&"n02_luz_vital": "Agosto Dourado • proteção à vida",
 	&"n03_rede_apoio": "Setembro Amarelo • rede de apoio",
-	&"n04_armadura_aco": "Agosto Lilás • proteção",
 	&"n05_reserva_solidaria": "Junho Vermelho • solidariedade",
-	&"n06_scanner_preventivo": "Outubro Rosa • prevenção",
 	&"n07_propulsor_janus": "Janeiro • origem do nome e Janus",
 	&"n08_motor_maia": "Maio • origem do nome e Maia",
 	&"n09_familia_satelites": "Maio • Dia da Família",
@@ -124,12 +122,10 @@ static func armas() -> Array[Dictionary]:
 
 static func naves() -> Array[Dictionary]:
 	return [
-	_item(&"n01_reflexos_rapidos", "REFLEXOS RÁPIDOS", "Quase-colisões carregam uma curva evasiva instantânea.", 0, Color("ffe567"), "MAI • AMARELO", [2, 4, 5], &"constelacao_10"),
+	_item(&"n01_reflexos_rapidos", "REFLEXOS RÁPIDOS", "Pressione acelerar duas vezes para dar uma pequena arrancada.", 0, Color("ffe567"), "MAI • AMARELO", [2, 4, 5], &"constelacao_10"),
 	_item(&"n02_luz_vital", "LUZ VITAL", "Experiência enche um halo que cura e concede escudo.", 3000, Color("ffd95d"), "AGO • DOURADO", [3, 5, 3]),
 	_item(&"n03_rede_apoio", "REDE DE APOIO", "Após sofrer dano, alcançar um ponto seguro concede proteção.", 3200, Color("f4d34e"), "SET • CUIDADO", [2, 5, 4]),
-	_item(&"n04_armadura_aco", "ARMADURA DE AÇO", "Placas frontais reduzem dano quando você encara o perigo.", 0, Color("d89bff"), "AGO • LILÁS", [1, 5, 2], &"boss_ruptura"),
-	_item(&"n05_reserva_solidaria", "RESERVA SOLIDÁRIA", "Cura excedente vira células orbitais consumidas ao receber dano.", 0, Color("54f2a6"), "JUN • SOLIDARIEDADE", [2, 5, 3], &"boss_pet0"),
-	_item(&"n06_scanner_preventivo", "SCANNER PREVENTIVO", "Destaca projéteis que seguem rota de colisão com a nave.", 2800, Color("53e8ff"), "OUT • ROSA", [1, 4, 5]),
+	_item(&"n05_reserva_solidaria", "ESTRELAS SOLIDÁRIAS", "Cura excedente alimenta quatro estrelas que atingem inimigos próximos.", 0, Color("54f2a6"), "JUN • SOLIDARIEDADE", [2, 5, 3], &"boss_pet0"),
 	_item(&"n07_propulsor_janus", "PROPULSOR DE DUAS FACES", "Acelerar protege a frente; dar ré protege a traseira.", 3700, Color("f6d374"), "JAN • JANUS", [3, 4, 4]),
 	_item(&"n08_motor_maia", "MOTOR DO CRESCIMENTO", "Viajar sem colidir evolui o motor em três estágios.", 4100, Color("76f187"), "MAI • MAIA", [3, 5, 4]),
 	_item(&"n09_familia_satelites", "FAMÍLIA DE SATÉLITES", "Satélites ligados absorvem impactos e mudam de formação.", 0, Color("ffd45d"), "MAI • FAMÍLIA", [3, 5, 2], &"boss_sentinela"),

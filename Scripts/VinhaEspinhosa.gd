@@ -163,5 +163,5 @@ func _on_body_entered(body: Node2D) -> void:
 		or body in atingidos
 	):
 		return
-	body.tomar_dano(dano)
+	body.tomar_dano(dano, global_position)
 	atingidos[body] = 0.65

@@ -106,7 +106,7 @@ func emitir_rastro(delta: float, direcao_movimento: Vector2) -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("tomar_dano"):
-		body.tomar_dano(dano)
+		body.tomar_dano(dano, global_position)
 
 
 func cancelar() -> void:

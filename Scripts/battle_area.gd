@@ -525,6 +525,8 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 			"rotacao": piloto.rotation,
 			"rerolls": piloto.rerolls_upgrades_restantes,
 			"escudo": piloto.escudo_habilidade,
+			"estrelas": piloto.estrelas_solidarias,
+			"propulsao": piloto.direcao_propulsao,
 		}
 	_receber_estado_de_entrada_rede.rpc_id(id, {
 		"pilotos": pilotos,
@@ -586,6 +588,8 @@ func _aplicar_estados_entrada_pendentes() -> void:
 			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
 			piloto.vida = maxf(0.0, float(dados.get("vida", piloto.vida)))
 			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
+		piloto.estrelas_solidarias = dados.get("estrelas", Vector4.ZERO)
+		piloto.direcao_propulsao = clampi(int(dados.get("propulsao", 0)), -1, 1)
 		estados_entrada_pendentes.erase(chave)
 	if estados_entrada_pendentes.is_empty() and not entrada_estado_confirmada:
 		entrada_estado_confirmada = true

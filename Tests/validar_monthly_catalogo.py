@@ -13,12 +13,12 @@ GLOBAL = (ROOT / "Scripts/Global.gd").read_text(encoding="utf-8")
 PLAYER = (ROOT / "Scripts/player.gd").read_text(encoding="utf-8")
 
 ids = re.findall(r'_item\(&"([pan u]\d\d_[^"]+)"'.replace(" ", ""), CATALOGO)
-esperados = {"p": 14, "a": 12, "n": 10, "u": 13}
+esperados = {"p": 14, "a": 12, "n": 8, "u": 13}
 for prefixo, total in esperados.items():
     encontrados = [item for item in ids if item.startswith(prefixo)]
     assert len(encontrados) == total, (prefixo, len(encontrados), total)
 
-assert len(ids) == 49, f"Esperados 49 itens após adicionar Dobro de Experiência; encontrados {len(ids)}"
+assert len(ids) == 47, f"Esperados 47 itens após adicionar Dobro de Experiência; encontrados {len(ids)}"
 assert 'p09_recomeco' not in ids, "Recomeço voltou ao catálogo ativo"
 assert len(set(ids)) == len(ids), "Há IDs duplicados no catálogo"
 assert '"icone": "res://Habilidades/Icones/monthly/%s.svg" % String(id)' in CATALOGO
@@ -126,6 +126,6 @@ for indice in range(1, 16):
         assert f"Icones/monthly/p{indice:02d}_" in texto, f"{recurso.name} não aponta para seu ícone"
 
 for item in [i for i in ids if i.startswith(("a", "n", "u"))]:
-    assert item in PLAYER, f"Item não conectado à jogabilidade: {item}"
+    assert item in PLAYER or item in (ROOT / "Scripts/PassivasNave.gd").read_text(encoding="utf-8"), f"Item não conectado à jogabilidade: {item}"
 
-print("Catálogo verificado: 49 equipamentos, Dobro de Experiência e 12 luas preservadas.")
+print("Catálogo verificado: 47 equipamentos, Dobro de Experiência e 12 luas preservadas.")

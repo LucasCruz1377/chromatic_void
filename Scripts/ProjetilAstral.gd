@@ -121,7 +121,7 @@ func _on_body_entered(alvo: Node) -> void:
 	if not alvo.is_in_group("player"):
 		return
 	if alvo.has_method("tomar_dano"):
-		alvo.tomar_dano(dano)
+		alvo.tomar_dano(dano, global_position)
 	if queimadura_total > 0.0 and alvo.has_method("aplicar_queimadura"):
 		alvo.aplicar_queimadura(queimadura_total, duracao_queimadura)
 	queue_free()

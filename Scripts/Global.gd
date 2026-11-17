@@ -16,8 +16,8 @@ const CONFIG_PADRAO := {
 	"tela_cheia": true,
 	"vsync": true,
 	"limite_fps": 60,
-	"neon": 1.0,
-	"bloom": 0.12,
+	"neon": 0.4,
+	"bloom": 0.1,
 	"tremor_tela": 1.0,
 	"zona_morta_controle": 0.22,
 	"vibracao": true,
@@ -62,8 +62,15 @@ var idioma := "en"
 var tela_cheia := true
 var vsync := true
 var limite_fps := 60
-var neon := 1.0
-var bloom := 0.12
+const NEON_MAXIMO := 0.4
+# O indicador historico usa valor * 200: 0.1 corresponde a 20% de bloom.
+const BLOOM_MAXIMO := 0.1
+var neon: float = NEON_MAXIMO:
+	set(valor):
+		neon = clampf(valor, 0.0, NEON_MAXIMO) if is_finite(valor) else NEON_MAXIMO
+var bloom: float = BLOOM_MAXIMO:
+	set(valor):
+		bloom = clampf(valor, 0.0, BLOOM_MAXIMO) if is_finite(valor) else BLOOM_MAXIMO
 var tremor_tela := 1.0
 var zona_morta_controle := 0.22
 var vibracao := true
@@ -135,7 +142,7 @@ const CONQUISTAS: Dictionary = {
 		"nome": "NÓ DESATADO",
 		"descricao": "Derrote o Nó de Ametista.",
 		"tipo": &"boss", "alvo": &"no_ametista", "meta": 1,
-		"recompensas": [&"p06_rosa_espinhosa", &"n04_armadura_aco"]
+		"recompensas": [&"p06_rosa_espinhosa"]
 	},
 	&"boss_sizigia": {
 		"nome": "LUZ APÓS O ECLIPSE",
@@ -356,6 +363,13 @@ func _ready() -> void:
 func carregar_economia() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
 	cristais = maxi(int(dados.get("cristais", CRISTAIS_INICIAIS)), 0)
+	var equipamentos: Variant = dados.get("equipamentos_loja", {})
+	if equipamentos is Dictionary and not str(equipamentos.get("2", "")).is_empty():
+		var catalogo = preload("res://Scripts/MonthlyCatalog.gd")
+		var passiva: Dictionary = catalogo.encontrar(StringName(str(equipamentos["2"])))
+		if passiva.is_empty():
+			equipamentos["2"] = ""
+			GerenciadorDeSave.salvar({"equipamentos_loja": equipamentos})
 
 
 func carregar_conquistas() -> void:
@@ -702,8 +716,8 @@ func carregar_configuracoes() -> void:
 	tela_cheia = bool(config["tela_cheia"])
 	vsync = bool(config["vsync"])
 	limite_fps = int(config["limite_fps"])
-	neon = clampf(float(config["neon"]), 0.0, 2.0)
-	bloom = clampf(float(config["bloom"]), 0.0, 0.5)
+	neon = clampf(float(config["neon"]), 0.0, NEON_MAXIMO)
+	bloom = clampf(float(config["bloom"]), 0.0, BLOOM_MAXIMO)
 	tremor_tela = clampf(float(config["tremor_tela"]), 0.0, 1.0)
 	zona_morta_controle = clampf(float(config["zona_morta_controle"]), 0.05, 0.6)
 	vibracao = bool(config["vibracao"])
@@ -860,7 +874,6 @@ func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
 		ambiente.glow_hdr_scale = 0.35
 	elif renderizador == &"mobile":
 		ambiente.glow_hdr_threshold = 0.9
-		ambiente.glow_intensity = neon * 1.5
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:

@@ -121,7 +121,7 @@ func verificar_acerto() -> void:
 	if ao_longo >= 0.0 and ao_longo <= comprimento and perpendicular <= largura * 0.5:
 		atingiu = true
 		if player.has_method("tomar_dano"):
-			player.tomar_dano(dano)
+			player.tomar_dano(dano, global_position)
 		if queimadura_total > 0.0 and player.has_method("aplicar_queimadura"):
 			player.aplicar_queimadura(queimadura_total, duracao_queimadura)
 
