@@ -9,6 +9,8 @@ signal desconexao_detectada(mensagem: String, host_perdido: bool)
 signal lobbies_lan_alterados(lobbies: Array)
 
 
+const SeedDaPartida = preload("res://Scripts/SeedPartida.gd")
+
 const PORTA := 24567
 const MAX_JOGADORES := 4
 const MIN_JOGADORES_PARTIDA := 2
@@ -17,6 +19,19 @@ const PORTA_DESCOBERTA := 24568
 const ASSINATURA_DESCOBERTA := "CHROMATIC_VOID_LAN_V1"
 const INTERVALO_ANUNCIO_LAN := 0.75
 const EXPIRACAO_LOBBY_LAN := 3.0
+
+
+# O host escolhe a seed; o RPC de inicio a distribui para todos.
+var seed_partida: int = 0
+var seed_personalizada: int = 0
+
+func definir_seed_personalizada(numero: int) -> void:
+	seed_personalizada = SeedDaPartida.validar(numero) if numero > 0 else 0
+
+
+func preparar_nova_seed() -> int:
+	seed_partida = seed_personalizada if seed_personalizada > 0 else SeedDaPartida.gerar()
+	return seed_partida
 
 
 var nickname_local := NICK_PADRAO
@@ -74,11 +89,13 @@ func _carregar_nickname() -> void:
 func iniciar_solo() -> void:
 	encerrar_lobby()
 	modo_multiplayer = false
+	preparar_nova_seed()
 
 
 func criar_lobby(nickname: String) -> Error:
 	encerrar_lobby()
 	definir_nickname(nickname)
+	preparar_nova_seed()
 	peer_enet = ENetMultiplayerPeer.new()
 	var erro := peer_enet.create_server(PORTA, MAX_JOGADORES - 1)
 	if erro != OK:
@@ -306,12 +323,13 @@ func solicitar_inicio_partida() -> bool:
 	if not pode_iniciar_partida():
 		status_alterado.emit(tr("Aguardando pelo menos dois jogadores na sala."), true)
 		return false
-	_iniciar_partida_remota.rpc()
+	_iniciar_partida_remota.rpc(seed_partida if seed_partida > 0 else preparar_nova_seed())
 	return true
 
 
 @rpc("authority", "call_local", "reliable")
-func _iniciar_partida_remota() -> void:
+func _iniciar_partida_remota(numero_seed: int) -> void:
+	seed_partida = SeedDaPartida.validar(numero_seed)
 	modo_multiplayer = true
 	em_lobby = false
 	Global.primeira_vez_jogando = false
