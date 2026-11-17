@@ -84,7 +84,11 @@ func _aplicar_perigo() -> void:
 			jogador.call("tomar_dano", float(dano))
 		if intensidade_impulso != 0.0 and jogador is CharacterBody2D:
 			var direcao := centro.direction_to(jogador.global_position)
-			(jogador as CharacterBody2D).velocity += direcao * intensidade_impulso
+			var impulso := direcao * intensidade_impulso
+			if jogador.has_method("aplicar_impulso_de_perigo_rede"):
+				jogador.call("aplicar_impulso_de_perigo_rede", impulso)
+			else:
+				(jogador as CharacterBody2D).velocity += impulso
 		recargas_por_jogador[identidade] = agora + 420
 
 func _draw() -> void:

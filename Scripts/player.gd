@@ -2021,6 +2021,28 @@ func registrar_acerto_projetil() -> void:
 		)
 
 
+func aplicar_impulso_de_perigo_rede(impulso: Vector2) -> void:
+	if not impulso.is_finite() or impulso.length_squared() > 250000.0:
+		return
+	if not Rede.modo_multiplayer:
+		velocity += impulso
+		return
+	if not multiplayer.is_server():
+		return
+	if peer_id_dono <= 1:
+		velocity += impulso
+	elif Rede.jogadores.has(peer_id_dono):
+		_receber_impulso_de_perigo_rede.rpc_id(peer_id_dono, impulso)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_impulso_de_perigo_rede(impulso: Vector2) -> void:
+	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
+		return
+	if impulso.is_finite() and impulso.length_squared() <= 250000.0:
+		velocity += impulso
+
+
 func tomar_dano(valor: float) -> void:
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		if multiplayer.is_server() and peer_id_dono > 1:
