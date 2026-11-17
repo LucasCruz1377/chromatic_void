@@ -245,7 +245,13 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 				"posicao": reprodutor.current_animation_position,
 				"tocando": reprodutor.is_playing(),
 			})
-	return {"sequencia": sequencia, "estados": estados, "visuais": visuais, "animacoes": animacoes}
+	var pacote := {"sequencia": sequencia, "estados": estados, "visuais": visuais, "animacoes": animacoes}
+	# Evita que RPC unreliable_ordered ultrapasse o MTU de ~1392 bytes.
+	# Defesas do Amparo/Ametista ja possuem RPC confiavel separado.
+	if JSON.stringify(pacote).to_utf8_buffer().size() > 950:
+		pacote["visuais"] = []
+		pacote["animacoes"] = []
+	return pacote
 
 
 @rpc("authority", "call_remote", "unreliable_ordered", 0)
@@ -917,6 +923,7 @@ func _replicar_projetil_inimigo_rpc(
 	projetil.collision_mask = 0
 	projetil.monitoring = false
 	projetil.monitorable = false
+	projetil.name = "ReplicaVisualLocal_%d_%d" % [Time.get_ticks_usec(), randi()]
 	get_tree().current_scene.add_child(projetil, true)
 
 

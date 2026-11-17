@@ -2,199 +2,81 @@ extends Node
 
 const CAMINHO_SAVE := "user://save.json"
 const CAMINHO_BACKUP := "user://save_backup.json"
-
+const CAMINHO_TEMPORARIO := "user://save_pending.json"
 const VERSAO_ATUAL_SAVE := 1
 
-
-# ============================================================
-# SALVAR
-# ============================================================
-
+# Salva primeiro em arquivo temporario e so substitui o principal
+# quando o JSON novo puder ser lido integralmente.
 func salvar(dados_novos: Dictionary) -> void:
 	var dados := carregar()
-
-	# Atualiza somente as informações recebidas.
-	#
-	# Exemplo:
-	#
-	# salvar({
-	#     "tutorialconcluido": true
-	# })
-	#
-	# Isso não apaga outras informações existentes.
-
 	for chave in dados_novos:
 		dados[chave] = dados_novos[chave]
-
-	# Garante que o save tenha uma versão.
 	dados["_save_version"] = VERSAO_ATUAL_SAVE
-
-	# Cria backup do save atual antes de sobrescrever.
-	_criar_backup()
-
-	var arquivo := FileAccess.open(
-		CAMINHO_SAVE,
-		FileAccess.WRITE
-	)
-
+	var arquivo := FileAccess.open(CAMINHO_TEMPORARIO, FileAccess.WRITE)
 	if arquivo == null:
-		push_error("Não foi possível abrir o save para salvar.")
+		push_error("Nao foi possivel abrir save temporario.")
 		return
-
 	arquivo.store_string(JSON.stringify(dados))
 	arquivo.flush()
 	arquivo.close()
+	if _ler_dicionario(CAMINHO_TEMPORARIO).is_empty():
+		push_error("Save temporario invalido; progresso anterior preservado.")
+		return
+	var origem := ProjectSettings.globalize_path(CAMINHO_SAVE)
+	var destino := ProjectSettings.globalize_path(CAMINHO_BACKUP)
+	var temporario := ProjectSettings.globalize_path(CAMINHO_TEMPORARIO)
+	if not _ler_dicionario(CAMINHO_SAVE).is_empty():
+		if DirAccess.copy_absolute(origem, destino) != OK:
+			push_error("Nao foi possivel gerar backup do save.")
+			return
+	if FileAccess.file_exists(CAMINHO_SAVE):
+		if DirAccess.remove_absolute(origem) != OK:
+			push_error("Nao foi possivel substituir o save.")
+			return
+	if DirAccess.rename_absolute(temporario, origem) != OK:
+		push_error("Falha ao finalizar save; restaurando backup.")
+		if FileAccess.file_exists(CAMINHO_BACKUP):
+			DirAccess.copy_absolute(destino, origem)
 
 
-# ============================================================
-# CARREGAR
-# ============================================================
-
-func carregar() -> Dictionary:
-	if not FileAccess.file_exists(CAMINHO_SAVE):
-		return {
-			"_save_version": VERSAO_ATUAL_SAVE
-		}
-
-	var arquivo := FileAccess.open(
-		CAMINHO_SAVE,
-		FileAccess.READ
-	)
-
+func _ler_dicionario(caminho: String) -> Dictionary:
+	if not FileAccess.file_exists(caminho):
+		return {}
+	var arquivo := FileAccess.open(caminho, FileAccess.READ)
 	if arquivo == null:
-		push_error("Não foi possível abrir o save.")
-		return _carregar_backup()
-
+		return {}
 	var texto := arquivo.get_as_text()
 	arquivo.close()
-
-	var dados = JSON.parse_string(texto)
-
-	if not (dados is Dictionary):
-		push_error("O save principal está corrompido. Tentando backup.")
-		return _carregar_backup()
-
-	# Verifica a versão do save.
-	var versao_save := int(
-		dados.get("_save_version", 1)
-	)
-
-	dados = _migrar_save(
-		dados,
-		versao_save
-	)
-
-	return dados
+	if texto.is_empty():
+		return {}
+	var parser := JSON.new()
+	if parser.parse(texto) != OK:
+		return {}
+	if not parser.data is Dictionary:
+		return {}
+	return parser.data
 
 
-# ============================================================
-# BACKUP
-# ============================================================
-
-func _criar_backup() -> void:
-	if not FileAccess.file_exists(CAMINHO_SAVE):
-		return
-
-	var arquivo_original := FileAccess.open(
-		CAMINHO_SAVE,
-		FileAccess.READ
-	)
-
-	if arquivo_original == null:
-		return
-
-	var conteudo := arquivo_original.get_as_text()
-	arquivo_original.close()
-
-	var backup := FileAccess.open(
-		CAMINHO_BACKUP,
-		FileAccess.WRITE
-	)
-
-	if backup == null:
-		push_error("Não foi possível criar backup do save.")
-		return
-
-	backup.store_string(conteudo)
-	backup.flush()
-	backup.close()
+func carregar() -> Dictionary:
+	var dados := _ler_dicionario(CAMINHO_SAVE)
+	if dados.is_empty():
+		dados = _carregar_backup()
+	if dados.is_empty():
+		dados = {"_save_version": VERSAO_ATUAL_SAVE}
+	return _migrar_save(dados, int(dados.get("_save_version", 1)))
 
 
 func _carregar_backup() -> Dictionary:
-	if not FileAccess.file_exists(CAMINHO_BACKUP):
-		return {
-			"_save_version": VERSAO_ATUAL_SAVE
-		}
-
-	var arquivo := FileAccess.open(
-		CAMINHO_BACKUP,
-		FileAccess.READ
-	)
-
-	if arquivo == null:
-		return {
-			"_save_version": VERSAO_ATUAL_SAVE
-		}
-
-	var texto := arquivo.get_as_text()
-	arquivo.close()
-
-	var dados = JSON.parse_string(texto)
-
-	if dados is Dictionary:
-		push_warning("Save principal inválido. Backup restaurado.")
-		return dados
-
-	push_error("O backup também está corrompido.")
-
-	return {
-		"_save_version": VERSAO_ATUAL_SAVE
-	}
+	return _ler_dicionario(CAMINHO_BACKUP)
 
 
-# ============================================================
-# MIGRAÇÃO DE SAVE
-# ============================================================
-
-func _migrar_save(
-	dados: Dictionary,
-	versao: int
-) -> Dictionary:
-
-	# Atualmente estamos na versão 1.
-	#
-	# No futuro poderemos fazer:
-	#
-	# if versao < 2:
-	#     ...
-	#
-	# if versao < 3:
-	#     ...
-	#
-	# Isso permite que jogadores antigos continuem
-	# usando seus saves depois das atualizações.
-
+func _migrar_save(dados: Dictionary, versao: int) -> Dictionary:
 	if versao < VERSAO_ATUAL_SAVE:
 		dados["_save_version"] = VERSAO_ATUAL_SAVE
-
 	return dados
 
 
-# ============================================================
-# DELETAR
-# ============================================================
-
 func deletar_save() -> void:
-	if FileAccess.file_exists(CAMINHO_SAVE):
-		DirAccess.remove_absolute(
-			ProjectSettings.globalize_path(
-				CAMINHO_SAVE
-			)
-		)
-
-	if FileAccess.file_exists(CAMINHO_BACKUP):
-		DirAccess.remove_absolute(
-			ProjectSettings.globalize_path(
-				CAMINHO_BACKUP
-			)
-		)
+	for caminho in [CAMINHO_SAVE, CAMINHO_BACKUP, CAMINHO_TEMPORARIO]:
+		if FileAccess.file_exists(caminho):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))
