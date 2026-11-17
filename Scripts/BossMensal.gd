@@ -395,6 +395,9 @@ func _replicar_projetil_boss(
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto:
 		return
 	super.tomarDano(valor)
