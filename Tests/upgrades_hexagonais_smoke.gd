@@ -13,7 +13,6 @@ func verificar(condicao: bool, mensagem: String) -> void:
 
 
 func _ready() -> void:
-	GerenciadorDeSave.salvar({"tutorialconcluido": true})
 	for argumento in OS.get_cmdline_user_args():
 		if argumento.begins_with("--hex-preview="):
 			Global.idioma = "pt_BR"
@@ -25,8 +24,13 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	batalha.set("tutorial_ativo", false)
+	var astro := batalha.get_node_or_null("GUI/Astro")
+	if is_instance_valid(astro):
+		astro.set_process_input(false)
+		astro.hide()
 	batalha.set("spawns_pausados_desenvolvedor", true)
 	jogador = batalha.get_node("Player") as Player
+	jogador.DesbloquearControle()
 	jogador.vida = jogador.VIDA_MAXIMA
 	jogador.vivo = true
 	jogador.UsandoHabilidade = false
