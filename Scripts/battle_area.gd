@@ -942,7 +942,7 @@ func _capturar_posicoes_mundo() -> Dictionary:
 	}
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 0)
+@rpc("authority", "call_remote", "reliable", 3)
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
