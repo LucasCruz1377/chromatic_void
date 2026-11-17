@@ -213,36 +213,38 @@ func _disparar(dir:Vector2,vel:float,dano_tiro:float)->void:
 	)
 
 func tomarDano(valor:float)->void:
+	# Os clientes detectam impacto, mas apenas o host pode executar
+	# consequencias do ataque, alterar defesas ou criar drones.
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		super.tomarDano(valor)
+		return
+	if morto or valor <= 0.0:
+		return
 	if estilo==Estilo.SATELITE_BERCO and not drones_liberados: _soltar_drones()
 	if estilo==Estilo.PRISMA_AMPARO and is_instance_valid(player): multiplicador_dano_recebido=0.22 if global_position.direction_to(player.global_position).dot(direcao)>0.25 else 1.35
 	super.tomarDano(valor)
 
 func _soltar_drones()->void:
-	drones_liberados=true; var cena:=load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
+	if drones_liberados or (Rede.modo_multiplayer and not multiplayer.is_server()):
+		return
+	drones_liberados = true
+	var cena := load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
 	var batalha := get_tree().current_scene
-	if not is_instance_valid(batalha) or batalha.is_queued_for_deletion(): return
-	for lado in [-1.0,1.0]:
+	if not is_instance_valid(batalha) or batalha.is_queued_for_deletion() or not cena:
+		return
+	for lado in [-1.0, 1.0]:
 		if batalha.has_method("contar_inimigos_regulares"):
 			if int(batalha.call("contar_inimigos_regulares")) >= 10:
 				break
-		var d:=cena.instantiate() as InimigoBase
-		d.position=global_position+Vector2(30*lado,10)
-		d.VidaMaxima*=0.5
-		d.ValorXP=0.25
-		batalha.add_child(d, true)
-		if Rede.modo_multiplayer and multiplayer.is_server():
-			_replicar_drone_setorial.rpc(d.position)
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_drone_setorial(posicao: Vector2) -> void:
-	if multiplayer.is_server():
-		return
-	var cena := load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
-	var drone := cena.instantiate() as InimigoBase
-	drone.position = posicao
-	drone.set_meta("apenas_visual_rede", true)
-	drone.set_physics_process(false)
-	get_tree().current_scene.add_child(drone, true)
+		var drone := cena.instantiate() as InimigoBase
+		if not is_instance_valid(drone):
+			continue
+		# Somente o host cria o drone na arena. O MultiplayerSpawner
+		# replica a MESMA entidade, inclusive sua remocao.
+		drone.position = global_position + Vector2(30.0 * lado, 10.0)
+		drone.VidaMaxima *= 0.5
+		drone.ValorXP = 0.25
+		batalha.add_child(drone, true)
 
 func morrer()->void:
 	_limpar_escudo()

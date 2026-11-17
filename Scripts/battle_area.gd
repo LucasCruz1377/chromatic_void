@@ -166,6 +166,15 @@ var sequencia_reconciliacao_residuos := 0
 var ultima_sequencia_residuos := -1
 var ausencias_residuos: Dictionary = {}
 var estados_entrada_pendentes: Dictionary = {}
+# Estado autoritativo dos inimigos regulares. Nao remove no cliente os
+# nodes do MultiplayerSpawner (isso causaria ERR_UNAUTHORIZED no despawn).
+const INTERVALO_RECONCILIACAO_INIMIGOS := 1.5
+const AUSENCIAS_PARA_DESATIVAR_INIMIGO := 3
+var tempo_reconciliacao_inimigos := 0.0
+var sequencia_reconciliacao_inimigos := 0
+var ultima_sequencia_reconciliacao_inimigos := -1
+var ausencias_inimigos_rede: Dictionary = {}
+var inimigos_suspensos_rede: Dictionary = {}
 
 
 
@@ -222,6 +231,67 @@ func _ready() -> void:
 	if testar_boss_ao_iniciar:
 		proximo_nivel_boss = 1
 
+
+
+func _atualizar_reconciliacao_inimigos(delta: float) -> void:
+	if not Rede.esta_conectado() or not multiplayer.is_server():
+		return
+	tempo_reconciliacao_inimigos -= delta
+	if tempo_reconciliacao_inimigos > 0.0:
+		return
+	tempo_reconciliacao_inimigos = INTERVALO_RECONCILIACAO_INIMIGOS
+	sequencia_reconciliacao_inimigos += 1
+	var existentes: PackedStringArray = []
+	for candidato in get_tree().get_nodes_in_group("inimigo"):
+		if not is_instance_valid(candidato) or candidato.is_queued_for_deletion():
+			continue
+		if not is_ancestor_of(candidato) or candidato.is_in_group("boss"):
+			continue
+		if candidato is InimigoBase:
+			existentes.append(str(get_path_to(candidato)))
+	_reconciliar_inimigos_regulares.rpc(sequencia_reconciliacao_inimigos, existentes)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _reconciliar_inimigos_regulares(sequencia: int, existentes: PackedStringArray) -> void:
+	if multiplayer.is_server() or sequencia <= ultima_sequencia_reconciliacao_inimigos:
+		return
+	ultima_sequencia_reconciliacao_inimigos = sequencia
+	for candidato in get_tree().get_nodes_in_group("inimigo"):
+		if not (candidato is InimigoBase) or not is_instance_valid(candidato):
+			continue
+		if candidato.is_queued_for_deletion() or candidato.is_in_group("boss"):
+			continue
+		if not is_ancestor_of(candidato):
+			continue
+		var caminho := str(get_path_to(candidato))
+		if existentes.has(caminho):
+			ausencias_inimigos_rede.erase(caminho)
+			if inimigos_suspensos_rede.has(caminho):
+				# Um snapshot posterior pode provar que o objeto nao e orfao.
+				candidato.collision_layer = int(inimigos_suspensos_rede[caminho].get("layer", 0))
+				candidato.collision_mask = int(inimigos_suspensos_rede[caminho].get("mask", 0))
+				candidato.visible = bool(inimigos_suspensos_rede[caminho].get("visible", true))
+				inimigos_suspensos_rede.erase(caminho)
+			continue
+		var ausencias := int(ausencias_inimigos_rede.get(caminho, 0)) + 1
+		ausencias_inimigos_rede[caminho] = ausencias
+		if ausencias < AUSENCIAS_PARA_DESATIVAR_INIMIGO or inimigos_suspensos_rede.has(caminho):
+			continue
+		# Fantasmas perdem renderizacao e colisao, sem competir com a
+		# remocao autoritativa do MultiplayerSpawner.
+		inimigos_suspensos_rede[caminho] = {
+			"layer": candidato.collision_layer,
+			"mask": candidato.collision_mask,
+			"visible": candidato.visible,
+		}
+		candidato.visible = false
+		candidato.collision_layer = 0
+		candidato.collision_mask = 0
+	for caminho in ausencias_inimigos_rede.keys():
+		if not is_instance_valid(get_node_or_null(NodePath(str(caminho)))):
+			ausencias_inimigos_rede.erase(caminho)
+			inimigos_suspensos_rede.erase(caminho)
 
 
 func _atualizar_reconciliacao_residuos(delta: float) -> void:
@@ -1157,6 +1227,7 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	_atualizar_reconciliacao_inimigos(delta)
 	if Rede.modo_multiplayer and multiplayer.is_server():
 		_processar_fila_impactos_rede()
 		_limpar_registros_rede()
@@ -1751,15 +1822,47 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 	var composicao: Array = DadosSetores.obter(setor_atual).get("inimigos", [])
 	if composicao.is_empty():
 		return INIMIGOS[&"seguidor"]
+	# Evita acumular unidades de suporte que nao atacam diretamente.
+	# Cada especie tem um limite proprio, sem mudar o tamanho total da onda.
+	var contagem: Dictionary = {}
+	for existente in get_tree().get_nodes_in_group("inimigo"):
+		if not (existente is InimigoBase) or existente.is_queued_for_deletion():
+			continue
+		if not (existente is InimigoSetorial) or not is_ancestor_of(existente):
+			continue
+		var tipo_existente := int((existente as InimigoSetorial).estilo)
+		contagem[tipo_existente] = int(contagem.get(tipo_existente, 0)) + 1
+	var elegiveis: Array[Array] = []
 	var peso_total := 0.0
 	for entrada in composicao:
-		peso_total += float(entrada[1])
+		var identificador := StringName(entrada[0])
+		if not INIMIGOS.has(identificador):
+			continue
+		var limite_especie := 2 if identificador in [
+			&"centelha_guia", &"elo_dourado", &"prisma_amparo",
+			&"satelite_berco", &"no_flutuante", &"satelite_coroa"
+		] else 4
+		var cena_inimigo := INIMIGOS[identificador] as PackedScene
+		var preview := cena_inimigo.instantiate() as InimigoSetorial
+		if not is_instance_valid(preview):
+			continue
+		var tipo := int(preview.estilo)
+		preview.free()
+		if int(contagem.get(tipo, 0)) >= limite_especie:
+			continue
+		var peso := maxf(float(entrada[1]), 0.0)
+		if peso <= 0.0:
+			continue
+		elegiveis.append([cena_inimigo, peso])
+		peso_total += peso
+	if elegiveis.is_empty() or peso_total <= 0.0:
+		return INIMIGOS[&"seguidor"]
 	var alvo := randf() * peso_total
-	for entrada in composicao:
+	for entrada in elegiveis:
 		alvo -= float(entrada[1])
 		if alvo <= 0.0:
-			return INIMIGOS.get(StringName(entrada[0]), INIMIGOS[&"seguidor"])
-	return INIMIGOS[&"seguidor"]
+			return entrada[0] as PackedScene
+	return elegiveis.back()[0] as PackedScene
 
 
 func calcular_limite_inimigos() -> int:
