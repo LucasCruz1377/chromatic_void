@@ -16,6 +16,39 @@ var poderes_executados := 0
 var reacoes_executadas := 0
 
 
+func _capturar_estado_defesas_rede() -> Dictionary:
+	return {
+		"tipo": "ametista",
+		"amarras": amarras.duplicate(),
+		"alvo": alvo_amarra,
+		"rompidas": rompidas,
+		"giro": giro,
+		"contracao": contracao,
+		"pulso": pulso_reacao,
+		"espiral": espiral_ativa,
+		"fase": fase,
+		"angulo_visual": angulo_visual,
+	}
+
+
+func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
+	if str(dados.get("tipo", "")) != "ametista":
+		return
+	var vidas := Array(dados.get("amarras", []))
+	if vidas.size() != amarras.size():
+		return
+	for indice in range(amarras.size()):
+		amarras[indice] = maxf(0.0, float(vidas[indice]))
+	alvo_amarra = clampi(int(dados.get("alvo", alvo_amarra)), -1, 3)
+	rompidas = clampi(int(dados.get("rompidas", rompidas)), 0, 4)
+	giro = float(dados.get("giro", giro))
+	contracao = maxf(0.0, float(dados.get("contracao", contracao)))
+	pulso_reacao = maxf(0.0, float(dados.get("pulso", pulso_reacao)))
+	espiral_ativa = maxf(0.0, float(dados.get("espiral", espiral_ativa)))
+	fase = maxi(1, int(dados.get("fase", fase)))
+	angulo_visual = float(dados.get("angulo_visual", angulo_visual))
+
+
 func _ready() -> void:
 	super._ready()
 	multiplicador_dano_recebido = 0.28
@@ -207,6 +240,7 @@ func tomarDano(valor: float) -> void:
 			_reagir_amarra_rompida(indice)
 			alvo_amarra = _proxima(indice + 1)
 		queue_redraw()
+		_enviar_estado_defesas_rede()
 		return
 	super.tomarDano(valor)
 

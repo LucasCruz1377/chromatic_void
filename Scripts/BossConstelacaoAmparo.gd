@@ -25,6 +25,44 @@ var reacoes_executadas := 0
 var pulso_reacao := 0.0
 
 
+func _capturar_estado_defesas_rede() -> Dictionary:
+	return {
+		"tipo": "amparo",
+		"satelites": satelites.duplicate(),
+		"angulos": angulos.duplicate(),
+		"alvo": alvo_satelite,
+		"exposto": exposto,
+		"abraco": abraco,
+		"formacao": int(formacao),
+		"raio_orbita": raio_orbita,
+		"raio_seguro": raio_seguro,
+		"pulso": pulso_reacao,
+		"fase": fase,
+		"angulo_visual": angulo_visual,
+	}
+
+
+func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
+	if str(dados.get("tipo", "")) != "amparo":
+		return
+	var vidas := Array(dados.get("satelites", []))
+	var orientacoes := Array(dados.get("angulos", []))
+	if vidas.size() != satelites.size() or orientacoes.size() != angulos.size():
+		return
+	for indice in range(satelites.size()):
+		satelites[indice] = maxf(0.0, float(vidas[indice]))
+		angulos[indice] = float(orientacoes[indice])
+	alvo_satelite = clampi(int(dados.get("alvo", alvo_satelite)), 0, 2)
+	exposto = bool(dados.get("exposto", exposto))
+	abraco = bool(dados.get("abraco", abraco))
+	formacao = clampi(int(dados.get("formacao", formacao)), 0, Formacao.ABRACO) as Formacao
+	raio_orbita = maxf(0.0, float(dados.get("raio_orbita", raio_orbita)))
+	raio_seguro = maxf(0.0, float(dados.get("raio_seguro", raio_seguro)))
+	pulso_reacao = maxf(0.0, float(dados.get("pulso", pulso_reacao)))
+	fase = maxi(1, int(dados.get("fase", fase)))
+	angulo_visual = float(dados.get("angulo_visual", angulo_visual))
+
+
 func _ready() -> void:
 	super._ready()
 	multiplicador_dano_recebido = 0.0
@@ -277,6 +315,7 @@ func tomarDano(valor: float) -> void:
 			formacao = Formacao.RESGATE
 			raio_orbita_alvo = 126.0
 		queue_redraw()
+		_enviar_estado_defesas_rede()
 		return
 	super.tomarDano(valor)
 
@@ -345,6 +384,7 @@ func _reformar() -> void:
 	for indice in range(3):
 		satelites[indice] = 28.0 + fase * 7.0
 	alvo_satelite = _proximo(alvo_satelite)
+	_enviar_estado_defesas_rede()
 
 
 func _obter_cena() -> Node:

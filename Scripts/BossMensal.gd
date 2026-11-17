@@ -42,6 +42,12 @@ var angulo_visual := 0.0
 var indice_dificuldade := 1
 var linha_aviso: Line2D
 var tempo_ate_redesenho := 0.0
+# Estados compactos das defesas: nao trafegam junto dos snapshots visuais
+# grandes, que podem exceder o MTU e se perder.
+var tempo_estado_defesas_rede := 0.0
+var sequencia_estado_defesas_rede := 0
+var ultima_sequencia_defesas_recebida := -1
+const INTERVALO_DEFESAS_REDE := 0.35
 
 
 func _ready() -> void:
@@ -55,6 +61,50 @@ func _ready() -> void:
 	add_child(linha_aviso)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	fase_alterada.emit(fase)
+	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
+		return
+	tempo_estado_defesas_rede -= delta
+	if tempo_estado_defesas_rede <= 0.0:
+		_enviar_estado_defesas_rede()
+
+
+func _capturar_estado_defesas_rede() -> Dictionary:
+	# Os dois bosses de defesa implementam o proprio formato.
+	return {}
+
+
+func _aplicar_estado_defesas_rede(_dados: Dictionary) -> void:
+	pass
+
+
+func _enviar_estado_defesas_rede() -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
+		return
+	var estado_defesas := _capturar_estado_defesas_rede()
+	if estado_defesas.is_empty():
+		return
+	var arena := get_parent()
+	if not is_instance_valid(arena) or not arena.has_method("replicar_estado_defesas_boss"):
+		return
+	tempo_estado_defesas_rede = INTERVALO_DEFESAS_REDE
+	sequencia_estado_defesas_rede += 1
+	estado_defesas["sequencia"] = sequencia_estado_defesas_rede
+	arena.call("replicar_estado_defesas_boss", self, estado_defesas)
+
+
+func receber_estado_defesas_rede(dados: Dictionary) -> void:
+	if not Rede.modo_multiplayer or multiplayer.is_server():
+		return
+	var sequencia := int(dados.get("sequencia", 0))
+	if sequencia <= ultima_sequencia_defesas_recebida:
+		return
+	ultima_sequencia_defesas_recebida = sequencia
+	_aplicar_estado_defesas_rede(dados)
 	queue_redraw()
 
 

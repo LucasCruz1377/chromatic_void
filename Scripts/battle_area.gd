@@ -381,6 +381,27 @@ func _receber_snapshot_visual_boss(caminho: NodePath, snapshot: Dictionary) -> v
 	boss._aplicar_snapshot_visual_boss(snapshot)
 
 
+# Os satelites e as amarras existem como dados usados por _draw().
+# Esse pacote e pequeno e confiavel; a replicacao de CanvasItem nao
+# transmite arrays internos dos bosses.
+func replicar_estado_defesas_boss(boss: BossMensal, dados: Dictionary) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion() or boss.get_parent() != self:
+		return
+	_receber_estado_defesas_boss.rpc(get_path_to(boss), dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_estado_defesas_boss(caminho: NodePath, dados: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	var boss := get_node_or_null(caminho) as BossMensal
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion():
+		return
+	boss.receber_estado_defesas_rede(dados)
+
+
 func _configurar_spawners_multiplayer() -> void:
 	player_spawner.spawn_function = _instanciar_jogador_rede
 	for cena in INIMIGOS.values():
