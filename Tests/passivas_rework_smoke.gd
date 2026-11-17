@@ -147,6 +147,7 @@ func _ready() -> void:
 	jogador.set_multiplayer_authority(1)
 	var sync := jogador.get_node("MultiplayerSynchronizer") as MultiplayerSynchronizer
 	verificar(sync.replication_config.has_property(NodePath(".:estrelas_solidarias")), "cargas nao entram na replicacao")
+	verificar(sync.replication_config.has_property(NodePath(".:fase_estrelas_solidarias")), "fase orbital nao entra na replicacao")
 	verificar(sync.replication_config.has_property(NodePath(".:direcao_propulsao")), "lado de protecao nao entra na replicacao")
 	jogador.vivo = false
 	passivas._process(0.01)

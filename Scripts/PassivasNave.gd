@@ -16,7 +16,6 @@ var frente_anterior := false
 var janela_toque := 0.0
 var recarga := 0.0
 var tempo_arrancada := 0.0
-var fase_orbita := 0.0
 var intervalo_acerto := 0.0
 
 
@@ -85,7 +84,7 @@ func armazenar_cura(excedente: float) -> void:
 
 func posicao_estrela(indice: int) -> Vector2:
 	# Compensa a rotacao da nave: as estrelas orbitam sem girar com a mira.
-	var angulo: float = fase_orbita + TAU * float(indice) / 4.0 - jogador.global_rotation
+	var angulo: float = float(jogador.fase_estrelas_solidarias) + TAU * float(indice) / 4.0 - jogador.global_rotation
 	return Vector2.from_angle(angulo) * RAIO_ORBITA
 
 
@@ -98,7 +97,7 @@ func _process(delta: float) -> void:
 			jogador.estrelas_solidarias = Vector4.ZERO
 		queue_redraw()
 		return
-	fase_orbita = fmod(fase_orbita + delta * 1.5, TAU)
+	jogador.fase_estrelas_solidarias = fmod(float(jogador.fase_estrelas_solidarias) + delta * 1.5, TAU)
 	intervalo_acerto -= delta
 	if tem_autoridade() and intervalo_acerto <= 0.0:
 		intervalo_acerto = 0.05

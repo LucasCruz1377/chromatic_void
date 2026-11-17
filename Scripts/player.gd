@@ -183,6 +183,7 @@ var tempo_eco_fantasma := 0.0
 var historico_disparos: Array[Dictionary] = []
 var sementes_vermelhas := 0
 var estrelas_solidarias := Vector4.ZERO
+var fase_estrelas_solidarias := 0.0
 var direcao_propulsao := 0
 var passivas_nave: Node2D
 var progresso_luz_vital := 0.0
