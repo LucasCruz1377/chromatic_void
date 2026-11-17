@@ -283,7 +283,6 @@ func _configurar_spawners_multiplayer() -> void:
 		"res://Entities/FragmentoReciclavel.tscn",
 		"res://Entities/InimigoMinion.tscn",
 		"res://Entities/EspinhoPrimaveril.tscn",
-		"res://Entities/PetalaBumerangue.tscn",
 		"res://Entities/VinhaEspinhosa.tscn",
 	]:
 		if ResourceLoader.exists(caminho):
