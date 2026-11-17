@@ -1,11 +1,8 @@
-extends "res://Scripts/BossMensal.gd"
+extends BossMensal
 class_name BossNoAmetista
 
 const FaixaEnergia := preload("res://Scripts/FaixaEnergiaBoss.gd")
 const OndaAnelar := preload("res://Scripts/OndaAnelarBoss.gd")
-const TEXTURA_CRISTAL := preload("res://Assets/GeometriaOriginal/Bosses/AmetistaCristal.svg")
-
-var sprite_cristal: Sprite2D
 
 var amarras: Array[float] = [38.0, 38.0, 38.0, 38.0]
 var alvo_amarra := 0
@@ -50,30 +47,15 @@ func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
 	espiral_ativa = maxf(0.0, float(dados.get("espiral", espiral_ativa)))
 	fase = maxi(1, int(dados.get("fase", fase)))
 	angulo_visual = float(dados.get("angulo_visual", angulo_visual))
-	_atualizar_sprite_cristal()
 
 
 func _ready() -> void:
 	super._ready()
-	sprite_cristal = Sprite2D.new()
-	sprite_cristal.name = "CristalPreRenderizado"
-	sprite_cristal.texture = TEXTURA_CRISTAL
-	sprite_cristal.show_behind_parent = true
-	add_child(sprite_cristal)
-	_atualizar_sprite_cristal()
 	multiplicador_dano_recebido = 0.28
 	tempo_ataque = 0.78
 
 
-func _atualizar_sprite_cristal() -> void:
-	if not is_instance_valid(sprite_cristal):
-		return
-	sprite_cristal.scale = Vector2.ONE * (1.0 + pulso_reacao * 0.32)
-	sprite_cristal.modulate = cor_secundaria.lerp(Color.WHITE, contracao * 0.58)
-
-
 func Mover(delta: float) -> void:
-	_atualizar_sprite_cristal()
 	contracao = maxf(0.0, contracao - delta * 1.7)
 	pulso_reacao = maxf(0.0, pulso_reacao - delta * 2.4)
 	espiral_ativa = maxf(0.0, espiral_ativa - delta)
@@ -334,7 +316,7 @@ func _draw() -> void:
 		Vector2(0.0, 31.0) * brilho,
 		Vector2(-19.0, 0.0) * brilho,
 	])
-	# O preenchimento do cristal agora e uma textura; seu contorno continua dinamico.
+	draw_colored_polygon(cristal, cor_secundaria.lerp(Color.WHITE, contracao * 0.58))
 	draw_polyline(PackedVector2Array([cristal[0], cristal[1], cristal[2], cristal[3], cristal[0]]), Color.WHITE, 2.0)
 
 	for indice in range(4):

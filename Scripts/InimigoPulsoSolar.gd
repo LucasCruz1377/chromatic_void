@@ -1,8 +1,6 @@
 # PulsoSolar: comportamento especifico, derivado diretamente de InimigoBase.
 extends InimigoBase
 
-const GEOMETRIA_IMPORTADA := preload("res://Assets/GeometriaOriginal/Inimigos/PulsoSolar.svg")
-
 const Perigo := preload("res://Scripts/PerigoSetorial.gd")
 
 enum Estilo { ESTILHACO, GUARDA, ECO, BROTO, ORBITAL, CENTELHA_GUIA, ELO_DOURADO, PRISMA_AMPARO, SATELITE_BERCO, PULSO_SOLAR, FITA_VIOLETA, NO_FLUTUANTE, ECO_AMETISTA, LAMINA_IRIS, CASULO_PRISMATICO, BROTO_PRIMAVERIL, SEMENTE_CANHAO, POLEN_ERRANTE, CIPO_ESPIRAL, FRUTO_EXPLOSIVO, FRAGMENTO_LUNAR, CENTELHA_SOLAR, METEORO_JOVEM, ECO_GRAVITACIONAL, SATELITE_COROA }
@@ -22,8 +20,6 @@ var parceiro: InimigoBase
 var trilha := Vector2.ZERO
 var tempo_trilha := 0.0
 
-var sprite_geometria: Sprite2D
-
 func _ready() -> void:
 	# As espécies setoriais atacam por padrões próprios e sobrevivem ao contato.
 	# Antes elas herdavam o comportamento descartável dos inimigos clássicos.
@@ -32,11 +28,6 @@ func _ready() -> void:
 	set_meta("tipo_setorial", int(estilo))
 	visual = self; trilha = global_position
 	super._ready()
-	sprite_geometria = Sprite2D.new()
-	sprite_geometria.name = "FormaPreRenderizada"
-	sprite_geometria.texture = GEOMETRIA_IMPORTADA
-	sprite_geometria.show_behind_parent = true
-	add_child(sprite_geometria)
 	intervalo_acao = calcular_intervalo_ataque(intervalo_acao)
 	recarga = randf_range(0.4, intervalo_acao)
 	queue_redraw()
@@ -98,8 +89,10 @@ func morrer()->void:
 	super.morrer()
 
 func _draw()->void:
-	# A silhueta fixa agora e uma imagem importada. O nucleo e os avisos
-	# permanecem dinamicos, com o mesmo desenho procedural.
+	var c:=cor_setor.lightened(0.1)
+	draw_circle(Vector2.ZERO,12,c)
+	for i in 8:
+		draw_line(Vector2.from_angle(i*TAU/8)*16,Vector2.from_angle(i*TAU/8)*24,c,3)
 	# Núcleo e partículas de carga preservam a silhueta de cada espécie.
 	draw_circle(Vector2.ZERO, 4.0, Color(0.03, 0.04, 0.10))
 	draw_circle(direcao * 2.0, 1.8, Color.WHITE)

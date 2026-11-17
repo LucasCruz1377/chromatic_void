@@ -1,13 +1,10 @@
-extends "res://Scripts/BossMensal.gd"
+extends BossMensal
 class_name BossConstelacaoAmparo
 
 const FaixaEnergia := preload("res://Scripts/FaixaEnergiaBoss.gd")
 const OndaAnelar := preload("res://Scripts/OndaAnelarBoss.gd")
-const TEXTURA_NUCLEO := preload("res://Assets/GeometriaOriginal/Bosses/AmparoNucleo.svg")
 
 enum Formacao { ORBITA, ESCUDO, RESGATE, ABRACO }
-
-var sprite_nucleo: Sprite2D
 
 var satelites: Array[float] = [46.0, 46.0, 46.0]
 var angulos: Array[float] = [0.0, TAU / 3.0, TAU * 2.0 / 3.0]
@@ -64,32 +61,15 @@ func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
 	pulso_reacao = maxf(0.0, float(dados.get("pulso", pulso_reacao)))
 	fase = maxi(1, int(dados.get("fase", fase)))
 	angulo_visual = float(dados.get("angulo_visual", angulo_visual))
-	_atualizar_sprite_nucleo()
 
 
 func _ready() -> void:
 	super._ready()
-	sprite_nucleo = Sprite2D.new()
-	sprite_nucleo.name = "NucleoPreRenderizado"
-	sprite_nucleo.texture = TEXTURA_NUCLEO
-	sprite_nucleo.show_behind_parent = true
-	add_child(sprite_nucleo)
-	_atualizar_sprite_nucleo()
 	multiplicador_dano_recebido = 0.0
 	tempo_ataque = 0.85
 
 
-func _atualizar_sprite_nucleo() -> void:
-	if not is_instance_valid(sprite_nucleo):
-		return
-	var brilho := 1.0 + sin(Time.get_ticks_msec() * 0.009) * 0.08
-	sprite_nucleo.rotation = angulo_visual
-	sprite_nucleo.scale = Vector2.ONE * brilho
-	sprite_nucleo.modulate = cor_principal if exposto else Color(0.16, 0.09, 0.015)
-
-
 func Mover(delta: float) -> void:
-	_atualizar_sprite_nucleo()
 	pulso_reacao = maxf(0.0, pulso_reacao - delta * 2.2)
 	raio_orbita = move_toward(raio_orbita, raio_orbita_alvo, delta * 115.0)
 	_atualizar_orbita(delta)
@@ -414,6 +394,11 @@ func _obter_cena() -> Node:
 
 
 func _draw() -> void:
+	var brilho := 1.0 + sin(Time.get_ticks_msec() * 0.009) * 0.08
+	var nucleo := PackedVector2Array()
+	for indice in range(6):
+		nucleo.append(Vector2.from_angle(angulo_visual + indice * TAU / 6.0) * 32.0 * brilho)
+	draw_colored_polygon(nucleo, cor_principal if exposto else Color(0.16, 0.09, 0.015))
 	draw_circle(Vector2.ZERO, 19.0 + pulso_reacao * 9.0, Color(cor_secundaria, 0.58))
 	draw_circle(Vector2.ZERO, 10.0, Color.WHITE if exposto else cor_secundaria)
 
