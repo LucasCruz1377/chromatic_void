@@ -210,15 +210,15 @@ text = "T_NEON_INTENSITY"
 [node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Neon"]
 layout_mode = 2
 size_flags_horizontal = 3
-max_value = 0.4
+max_value = 1.5
 step = 0.01
-value = 0.4
+value = 1.0
 focus_mode = 2
 
 [node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Neon"]
 custom_minimum_size = Vector2(56, 0)
 layout_mode = 2
-text = "40%"
+text = "100%"
 horizontal_alignment = 2
 
 [node name="Bloom" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo"]
@@ -233,15 +233,15 @@ text = "T_BLOOM_INTENSITY"
 [node name="Controle" type="HSlider" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Bloom"]
 layout_mode = 2
 size_flags_horizontal = 3
-max_value = 0.1
-step = 0.005
-value = 0.1
+max_value = 1.5
+step = 0.01
+value = 1.0
 focus_mode = 2
 
 [node name="Valor" type="Label" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo/Bloom"]
 custom_minimum_size = Vector2(56, 0)
 layout_mode = 2
-text = "20%"
+text = "100%"
 horizontal_alignment = 2
 
 [node name="Tremor" type="HBoxContainer" parent="Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo"]

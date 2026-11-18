@@ -62,13 +62,14 @@ var idioma := "en"
 var tela_cheia := true
 var vsync := true
 var limite_fps := 60
-const NEON_MAXIMO := 0.4
-# O indicador historico usa valor * 200: 0.1 corresponde a 20% de bloom.
-const BLOOM_MAXIMO := 0.1
-var neon: float = NEON_MAXIMO:
+const NEON_BASE := 0.4
+const NEON_MAXIMO := NEON_BASE * 1.5
+const BLOOM_BASE := 0.1
+const BLOOM_MAXIMO := BLOOM_BASE * 1.5
+var neon: float = NEON_BASE:
 	set(valor):
 		neon = clampf(valor, 0.0, NEON_MAXIMO) if is_finite(valor) else NEON_MAXIMO
-var bloom: float = BLOOM_MAXIMO:
+var bloom: float = BLOOM_BASE:
 	set(valor):
 		bloom = clampf(valor, 0.0, BLOOM_MAXIMO) if is_finite(valor) else BLOOM_MAXIMO
 var tremor_tela := 1.0

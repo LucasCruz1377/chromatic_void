@@ -21,6 +21,8 @@ func executar(player) -> void:
 	var destino := (player as Node2D).global_position
 	var vida_antes := ler_vida(alvo)
 	criar_fluxo_vital(player, origem, destino)
+	if alvo is InimigoBase:
+		alvo.registrar_ataque_lunar(player)
 	alvo.call("tomarDano", dano_dreno)
 
 	var vida_depois := ler_vida(alvo)

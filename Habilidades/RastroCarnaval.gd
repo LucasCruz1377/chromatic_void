@@ -2,6 +2,7 @@ extends Node2D
 class_name RastroCarnaval
 
 
+var piloto: Player
 var raio := 30.0
 var dano := 0.5
 var cor := Color(1.0, 0.25, 0.82, 0.75)
@@ -37,6 +38,8 @@ func aplicar_dano() -> void:
 		if global_position.distance_to(inimigo.global_position) > raio:
 			continue
 		if inimigo.has_method("tomarDano"):
+			if inimigo is InimigoBase:
+				inimigo.registrar_ataque_lunar(piloto)
 			inimigo.tomarDano(dano)
 
 

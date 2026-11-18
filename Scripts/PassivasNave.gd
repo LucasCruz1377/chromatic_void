@@ -88,7 +88,18 @@ func posicao_estrela(indice: int) -> Vector2:
 	return Vector2.from_angle(angulo) * RAIO_ORBITA
 
 
+var tempo_aura := 0.0
+
 func _process(delta: float) -> void:
+	if is_instance_valid(jogador) and jogador.vivo and jogador.mutacao_habilidade == &"u12_noite_congelada" and (not Rede.modo_multiplayer or multiplayer.is_server()):
+		tempo_aura += delta
+		if tempo_aura >= 2.0:
+			tempo_aura -= 2.0
+			for inimigo in get_tree().get_nodes_in_group("inimigo"):
+				if inimigo is InimigoBase and not inimigo.morto and global_position.distance_squared_to(inimigo.global_position) <= 180.0 * 180.0:
+					inimigo.aplicar_camada_gelo(1)
+	else:
+		tempo_aura = 0.0
 	if not is_instance_valid(jogador):
 		return
 	visible = jogador.visible and jogador.vivo
@@ -123,6 +134,8 @@ func atingir_inimigos() -> void:
 				continue
 			# Cada carga causa exatamente um impacto e so reaparece com nova cura.
 			jogador.estrelas_solidarias[indice] = 0.0
+			if alvo is InimigoBase:
+				alvo.registrar_ataque_lunar(jogador)
 			alvo.tomarDano(carga)
 			break
 

@@ -63,6 +63,7 @@ func atualizar(player, delta: float) -> void:
 
 func criar_rastro(player) -> void:
 	var rastro := RASTRO.new() as RastroCarnaval
+	rastro.piloto = player
 	rastro.configurar(
 		player.global_position,
 		dano_rastro * player.dano,

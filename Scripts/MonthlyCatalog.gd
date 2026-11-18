@@ -134,18 +134,18 @@ static func naves() -> Array[Dictionary]:
 
 static func upgrades() -> Array[Dictionary]:
 	return [
-	_item(&"u01_alcateia_lunar", "ALCATEIA LUNAR", "A habilidade cria duas cópias menores em direções laterais.", 0, Color("dcecff"), "JAN • LUA DO LOBO", [4, 3, 3], &"boss_sizigia"),
-	_item(&"u02_cobertura_neve", "COBERTURA DE NEVE", "A habilidade deixa uma área que desacelera inimigos.", 0, Color("c9efff"), "FEV • LUA DA NEVE", [2, 5, 3], &"bosses_1"),
+	_item(&"u01_alcateia_lunar", "ALCATEIA LUNAR", "Ao usar o especial, dispara três projéteis por segundo durante três segundos. Eles seguem pilotos e causam metade do dano crítico da arma.", 0, Color("dcecff"), "JAN • LUA DO LOBO", [4, 3, 3], &"boss_sizigia"),
+	_item(&"u02_cobertura_neve", "COBERTURA DE NEVE", "Ao usar o especial, aplica uma camada de gelo a todos os inimigos vivos.", 0, Color("c9efff"), "FEV • LUA DA NEVE", [2, 5, 3], &"bosses_1"),
 	_item(&"u03_retorno_subterraneo", "RETORNO SUBTERRÂNEO", "A habilidade se repete sob o inimigo mais próximo após um atraso.", 0, Color("a7e887"), "MAR • LUA DO VERME", [4, 3, 2], &"constelacao_50"),
 	_item(&"u04_floracao_rosa", "FLORAÇÃO ROSA", "A habilidade termina lançando uma coroa radial de pétalas.", 0, Color("ff89bd"), "ABR • LUA ROSA", [4, 3, 3], &"boss_florescimento"),
-	_item(&"u05_jardim_crescente", "JARDIM CRESCENTE", "Inimigos atingidos recebem flores que desabrocham no fim.", 0, Color("ff79b2"), "MAI • LUA DAS FLORES", [4, 4, 2], &"boss_florescimento"),
+	_item(&"u05_jardim_crescente", "JARDIM CRESCENTE", "O sexto acerto infecta o inimigo. A flor se espalha por contato e causa 20% da vida máxima após cinco segundos.", 0, Color("ff79b2"), "MAI • LUA DAS FLORES", [4, 4, 2], &"boss_florescimento"),
 	_item(&"u06_sementes_vermelhas", "SEMENTES VERMELHAS", "Acertos guardam sementes que fortalecem a próxima ativação.", 0, Color("ff4f66"), "JUN • LUA DE MORANGO", [5, 4, 2], &"bosses_3"),
 	_item(&"u07_galhos_lunares", "GALHOS LUNARES", "A direção principal se ramifica em dois ângulos secundários.", 0, Color("c48c5f"), "JUL • LUA DOS CERVOS", [4, 3, 3], &"constelacao_250"),
 	_item(&"u08_corrente_esturjao", "CORRENTE DO ESTURJÃO", "Projéteis da habilidade ondulam e atravessam um alvo extra.", 0, Color("5ac7ff"), "AGO • LUA DO ESTURJÃO", [5, 3, 2], &"boss_sizigia"),
 	_item(&"u09_colheita_cromatica", "COLHEITA CROMÁTICA", "A ativação puxa experiência e a converte em projéteis orbitais.", 0, Color("ffc35c"), "SET • LUA DA COLHEITA", [3, 5, 3], &"constelacao_250"),
-	_item(&"u10_marca_cacador", "MARCA DO CAÇADOR", "A habilidade procura o inimigo mais resistente e concentra fogo nele.", 0, Color("ff9852"), "OUT • LUA DO CAÇADOR", [5, 2, 3], &"boss_sizigia"),
+	_item(&"u10_marca_cacador", "MARCA DO CAÇADOR", "Inimigos atingidos recebem 20% mais dano de qualquer fonte.", 0, Color("ff9852"), "OUT • LUA DO CAÇADOR", [5, 2, 3], &"boss_sizigia"),
 	_item(&"u11_barragem_castor", "BARRAGEM DO CASTOR", "Ergue uma barreira temporária no lado oposto ao movimento.", 0, Color("d99c63"), "NOV • LUA DO CASTOR", [2, 5, 2], &"constelacao_1000"),
-	_item(&"u12_noite_congelada", "NOITE CONGELADA", "Projéteis inimigos alcançados pela habilidade congelam e se desfazem.", 0, Color("8fc7ff"), "DEZ • LUA FRIA", [3, 5, 2], &"boss_sizigia"),
+	_item(&"u12_noite_congelada", "NOITE CONGELADA", "A cada dois segundos, aplica uma camada de gelo aos inimigos em um raio de 180 px.", 0, Color("8fc7ff"), "DEZ • LUA FRIA", [3, 5, 2], &"boss_sizigia"),
 	_item(&"u13_dupla_experiencia", "DOBRO DE EXPERIÊNCIA", "Enquanto equipado, dobra toda experiência recebida durante a partida.", 30000, Color("7dffbc"), "UPGRADE • EXPERIÊNCIA", [3, 5, 4], &"", "A progressão cromática transforma cada vitória em aprendizado acelerado."),
 	]
 

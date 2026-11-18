@@ -24,6 +24,8 @@ func executar(player) -> void:
 		if direcao.is_zero_approx():
 			direcao = Vector2.RIGHT.rotated(randf() * TAU)
 		if inimigo.has_method("tomarDano"):
+			if inimigo is InimigoBase:
+				inimigo.registrar_ataque_lunar(player)
 			inimigo.tomarDano(dano)
 		if inimigo.has_method("aplicar_atordoamento"):
 			inimigo.aplicar_atordoamento(duracao_atordoamento)

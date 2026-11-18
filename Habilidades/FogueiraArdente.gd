@@ -12,6 +12,7 @@ const FOGUEIRA := preload("res://Habilidades/FogueiraZona.gd")
 
 func executar(player) -> void:
 	var fogueira := FOGUEIRA.new() as FogueiraZona
+	fogueira.piloto = player
 	fogueira.configurar(
 		player.global_position,
 		duracao,

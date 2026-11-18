@@ -955,6 +955,8 @@ func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
 	# Registra antes de aplicar: dano letal pode destruir o proprio alvo.
 	impactos_projetil_rede[chave] = agora
 	inimigo.set_meta("impacto_critico", bool(disparo.get("critico", false)))
+	if inimigo is InimigoBase:
+		inimigo.registrar_ataque_lunar(piloto)
 	inimigo.tomarDano(float(entrada.get("dano", 0.0)))
 	if is_instance_valid(inimigo):
 		inimigo.remove_meta("impacto_critico")

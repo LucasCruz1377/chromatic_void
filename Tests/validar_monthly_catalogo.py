@@ -126,6 +126,6 @@ for indice in range(1, 16):
         assert f"Icones/monthly/p{indice:02d}_" in texto, f"{recurso.name} não aponta para seu ícone"
 
 for item in [i for i in ids if i.startswith(("a", "n", "u"))]:
-    assert item in PLAYER or item in (ROOT / "Scripts/PassivasNave.gd").read_text(encoding="utf-8"), f"Item não conectado à jogabilidade: {item}"
+    assert item in (ROOT / "Scripts/InimigoBase.gd").read_text(encoding="utf-8") or item in PLAYER or item in (ROOT / "Scripts/PassivasNave.gd").read_text(encoding="utf-8"), f"Item não conectado à jogabilidade: {item}"
 
 print("Catálogo verificado: 47 equipamentos, Dobro de Experiência e 12 luas preservadas.")

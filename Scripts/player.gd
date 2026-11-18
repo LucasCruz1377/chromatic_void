@@ -1018,18 +1018,15 @@ func aplicar_mutacao_habilidade() -> void:
 		return
 	match mutacao_habilidade:
 		&"u01_alcateia_lunar":
-			criar_projetil(rotation - 0.32, 0.58, true, null, 0.0, &"moon", Color(0.78, 0.88, 1.0))
-			criar_projetil(rotation + 0.32, 0.58, true, null, 0.0, &"moon", Color(0.78, 0.88, 1.0))
+			_disparar_alcateia()
 		&"u02_cobertura_neve":
-			_atingir_area(global_position, 150.0, 1.0, 0.0, 1.8)
-			_criar_feedback_monthly(global_position, Color(0.72, 0.92, 1.0), 1.2, 0.0)
+			for inimigo in get_tree().get_nodes_in_group("inimigo"):
+				if inimigo is InimigoBase and not inimigo.morto:
+					inimigo.aplicar_camada_gelo(1)
 		&"u03_retorno_subterraneo":
 			_mutacao_atrasada(&"worm")
 		&"u04_floracao_rosa":
 			_disparar_radial(10, 0.38, &"petal", Color(1.0, 0.48, 0.7))
-		&"u05_jardim_crescente":
-			_atingir_area(global_position, 180.0, 4.5, 60.0, 0.65)
-			_criar_feedback_monthly(global_position, Color(1.0, 0.42, 0.68), 1.45, 3.0)
 		&"u06_sementes_vermelhas":
 			var bonus := 1.0 + float(sementes_vermelhas) * 0.12
 			_disparar_radial(6 + sementes_vermelhas, 0.38 * bonus, &"seed", Color(1.0, 0.25, 0.36))
@@ -1042,16 +1039,18 @@ func aplicar_mutacao_habilidade() -> void:
 		&"u09_colheita_cromatica":
 			_coletar_experiencia_proxima()
 			_disparar_radial(6, 0.4, &"harvest", Color(1.0, 0.7, 0.26))
-		&"u10_marca_cacador":
-			var alvos := _inimigos_mais_fortes(1)
-			if not alvos.is_empty():
-				for angulo in [-0.12, 0.0, 0.12]:
-					criar_projetil(rotation + angulo, 0.55, true, alvos[0], 0.0, &"hunter", Color(1.0, 0.55, 0.25), {"homing": 4.0})
 		&"u11_barragem_castor":
 			ativar_escudo(22.0, 5.0, Color(0.78, 0.53, 0.3))
-		&"u12_noite_congelada":
-			_limpar_projeteis_inimigos(global_position, 190.0, true)
-			_criar_feedback_monthly(global_position, Color(0.5, 0.78, 1.0), 1.35, 2.0)
+
+
+func _disparar_alcateia() -> void:
+	var critico := preload("res://Scripts/Criticos.gd").valores(arma_monthly, niveis_upgrades)
+	for indice in 9:
+		if not is_inside_tree() or not vivo:
+			return
+		criar_projetil(randf() * TAU, critico.y * 0.5, true, null, 0.0, &"alcateia", Color("dcecff"), {"homing": 4.0})
+		if indice < 8:
+			await get_tree().create_timer(1.0 / 3.0, false).timeout
 
 
 func _criar_feedback_monthly(posicao: Vector2, cor: Color, intensidade: float, tremor: float) -> void:
@@ -1076,6 +1075,8 @@ func _atingir_area(
 			continue
 		var queda := clampf(1.0 - distancia / maxf(raio, 1.0), 0.25, 1.0)
 		if alvo.has_method("tomarDano"):
+			if alvo is InimigoBase:
+				alvo.registrar_ataque_lunar(self)
 			alvo.tomarDano(dano_area * queda * multiplicador_dano_habilidade)
 		if empurrao > 0.0 and alvo.has_method("aplicar_empurrao"):
 			var direcao := centro.direction_to(alvo.global_position)
@@ -2734,6 +2735,8 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 		return
 	if UsandoHabilidade and dano_colisao_habilidade > 0.0:
 		if body.has_method("tomarDano"):
+			if body is InimigoBase:
+				body.registrar_ataque_lunar(self)
 			body.tomarDano(dano_colisao_habilidade)
 		if body.is_queued_for_deletion():
 			return

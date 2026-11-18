@@ -128,6 +128,7 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:self_modulate"),
 		NodePath(".:scale"),
 		NodePath(".:camadas_gelo"),
+		NodePath(".:flor_visivel"),
 		NodePath(".:congelado_totalmente"),
 	]
 	for caminho in propriedades_movimento:
@@ -155,6 +156,9 @@ func _physics_process(delta: float) -> void:
 	if morto:
 		return
 
+	atualizar_flor(delta)
+	if morto:
+		return
 	atualizar_estados(delta)
 	_atualizar_estado_gelo(delta)
 	if morto:
@@ -363,6 +367,69 @@ func Mover(_delta: float) -> void:
 	pass
 
 
+var bonus_marca := 1.0
+var acertos_jardim: Dictionary = {}
+var tempo_flor := 0.0
+var flor_visivel := false:
+	set(valor):
+		flor_visivel = valor
+		var flor := get_node_or_null("FlorCrescente") as Polygon2D
+		if valor and not is_instance_valid(flor):
+			flor = Polygon2D.new()
+			flor.name = "FlorCrescente"
+			flor.position = Vector2(0, -16)
+			flor.color = Color("ff79b2")
+			flor.z_index = 5
+			var pontos := PackedVector2Array()
+			for i in 40:
+				var angulo := TAU * i / 40.0
+				pontos.append(Vector2.from_angle(angulo) * (5.0 + 2.0 * cos(5.0 * angulo)))
+			flor.polygon = pontos
+			add_child(flor)
+		if is_instance_valid(flor):
+			flor.visible = valor
+
+func registrar_ataque_lunar(piloto: Node) -> void:
+	if morto or not piloto is Player or (Rede.modo_multiplayer and not multiplayer.is_server()):
+		return
+	match piloto.mutacao_habilidade:
+		&"u10_marca_cacador":
+			bonus_marca = 1.2
+		&"u05_jardim_crescente":
+			var id := piloto.get_instance_id()
+			if tempo_flor <= 0.0:
+				acertos_jardim[id] = int(acertos_jardim.get(id, 0)) + 1
+				if acertos_jardim[id] >= 6:
+					infectar_flor()
+
+func infectar_flor() -> void:
+	if morto or tempo_flor > 0.0:
+		return
+	acertos_jardim.clear()
+	tempo_flor = 5.0
+	flor_visivel = true
+
+func atualizar_flor(delta: float) -> void:
+	if tempo_flor <= 0.0:
+		return
+	for owner_id in get_shape_owners():
+		if is_shape_owner_disabled(owner_id):
+			continue
+		for i in shape_owner_get_shape_count(owner_id):
+			var consulta := PhysicsShapeQueryParameters2D.new()
+			consulta.shape = shape_owner_get_shape(owner_id, i)
+			consulta.transform = global_transform * shape_owner_get_transform(owner_id)
+			consulta.collision_mask = 4
+			consulta.exclude = [get_rid()]
+			for contato in get_world_2d().direct_space_state.intersect_shape(consulta):
+				var outro := contato.collider as InimigoBase
+				if is_instance_valid(outro):
+					outro.infectar_flor()
+	tempo_flor = maxf(0.0, tempo_flor - delta)
+	if tempo_flor == 0.0:
+		flor_visivel = false
+		tomarDano(obter_vida_maxima_atual() * 0.2)
+
 func tomarDano(valor: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
@@ -370,7 +437,7 @@ func tomarDano(valor: float) -> void:
 	if morto or valor <= 0.0:
 		return
 
-	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
+	var dano_final := maxf(valor * bonus_marca * multiplicador_dano_recebido, 0.0)
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
@@ -415,6 +482,7 @@ func _solicitar_dano_ao_host(valor: float) -> void:
 		return
 	registro["acumulado"] = acumulado + valor
 	janela_dano_pilotos[remetente] = registro
+	registrar_ataque_lunar(piloto)
 	tomarDano(valor)
 
 
@@ -423,12 +491,12 @@ func receber_eco_laco(valor: float) -> void:
 		return
 	if morto or valor <= 0.0:
 		return
-	Vida = maxf(Vida - valor * multiplicador_dano_recebido, 0.0)
+	Vida = maxf(Vida - valor * bonus_marca * multiplicador_dano_recebido, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
 		EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.ACERTO, Color(1.0, 0.34, 0.58), 0.65)
-		IndicadorDanoCena.criar(cena, global_position, valor * multiplicador_dano_recebido, Color(1.0, 0.42, 0.68))
+		IndicadorDanoCena.criar(cena, global_position, valor * bonus_marca * multiplicador_dano_recebido, Color(1.0, 0.42, 0.68))
 	if Vida <= 0.0:
 		morrer()
 

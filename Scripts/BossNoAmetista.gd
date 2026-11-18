@@ -229,7 +229,7 @@ func tomarDano(valor: float) -> void:
 	var indice := _proxima(alvo_amarra)
 	if indice >= 0:
 		alvo_amarra = indice
-		amarras[indice] = maxf(0.0, amarras[indice] - valor)
+		amarras[indice] = maxf(0.0, amarras[indice] - valor * bonus_marca)
 		var cena := _obter_cena()
 		if is_instance_valid(cena):
 			EfeitoCombateCena.criar(cena, _posicao_amarra(indice), EfeitoCombate.Tipo.ACERTO, cor_principal, 1.0)

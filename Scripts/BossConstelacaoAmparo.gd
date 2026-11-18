@@ -298,7 +298,7 @@ func tomarDano(valor: float) -> void:
 	if not exposto and _vivos() > 0:
 		alvo_satelite = _proximo(alvo_satelite)
 		var indice_atingido := alvo_satelite
-		satelites[indice_atingido] = maxf(0.0, satelites[indice_atingido] - valor)
+		satelites[indice_atingido] = maxf(0.0, satelites[indice_atingido] - valor * bonus_marca)
 		var cena := _obter_cena()
 		if is_instance_valid(cena):
 			EfeitoCombateCena.criar(cena, obter_posicao_satelite(indice_atingido), EfeitoCombate.Tipo.ACERTO, cor_principal, 1.0)

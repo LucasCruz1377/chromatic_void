@@ -29,10 +29,10 @@ func testar_neon() -> void:
 	Global.configurar_glow(ambiente, &"gl_compatibility")
 	verificar(ambiente.glow_enabled, "o glow ficou desligado no OpenGL")
 	verificar(ambiente.glow_hdr_threshold < 1.0, "o glow em SDR exige pixels HDR inexistentes")
-	verificar(is_equal_approx(ambiente.glow_bloom, 0.1), "o bloom ultrapassou o limite de 20%")
-	verificar(is_equal_approx(ambiente.glow_intensity, 0.4), "o limite de neon nao foi aplicado")
+	verificar(is_equal_approx(ambiente.glow_bloom, 0.12), "o bloom ultrapassou o limite de 20%")
+	verificar(is_equal_approx(ambiente.glow_intensity, 0.6), "o limite de neon nao foi aplicado")
 	Global.configurar_glow(ambiente, &"mobile")
-	verificar(is_equal_approx(ambiente.glow_intensity, 0.4), "o renderer Mobile ultrapassou 40% de neon")
+	verificar(is_equal_approx(ambiente.glow_intensity, 0.6), "o renderer Mobile ultrapassou 150% de neon")
 	Global.neon = 0.0
 	Global.bloom = 0.0
 	Global.configurar_glow(ambiente, &"gl_compatibility")

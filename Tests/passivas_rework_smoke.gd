@@ -20,11 +20,11 @@ func _ready() -> void:
 	var bloom_anterior: float = Global.bloom
 	Global.neon = 2.0
 	Global.bloom = 0.5
-	verificar(is_equal_approx(Global.neon, 0.4) and is_equal_approx(Global.bloom, 0.1), "limites nao impediram brilho acima de 40%/20%")
+	verificar(is_equal_approx(Global.neon, 0.6) and is_equal_approx(Global.bloom, 0.15), "limites nao impediram brilho acima de 150%")
 	for renderer in [&"mobile", &"gl_compatibility", &"forward_plus"]:
 		var ambiente := Environment.new()
 		Global.configurar_glow(ambiente, renderer)
-		verificar(ambiente.glow_intensity <= 0.4001 and ambiente.glow_bloom <= 0.1001, "renderer ultrapassou limite de brilho")
+		verificar(ambiente.glow_intensity <= 0.6001 and ambiente.glow_bloom <= 0.1501, "renderer ultrapassou limite de brilho")
 	Global.neon = -1.0
 	Global.bloom = -1.0
 	verificar(is_zero_approx(Global.neon) and is_zero_approx(Global.bloom), "limite inferior nao respeitado")
@@ -32,8 +32,8 @@ func _ready() -> void:
 	Global.bloom = bloom_anterior
 	var configuracoes := (load("res://Janela_Configurações.tscn") as PackedScene).instantiate()
 	var graficos := configuracoes.get_node("Painel/Margem/Coluna/Abas/GRAFICOS/Conteudo")
-	verificar(is_equal_approx(graficos.get_node("Neon/Controle").max_value, 0.4), "slider permite neon excessivo")
-	verificar(is_equal_approx(graficos.get_node("Bloom/Controle").max_value, 0.1), "slider permite bloom excessivo")
+	verificar(is_equal_approx(graficos.get_node("Neon/Controle").max_value, 1.5), "slider permite neon excessivo")
+	verificar(is_equal_approx(graficos.get_node("Bloom/Controle").max_value, 1.5), "slider permite bloom excessivo")
 	configuracoes.free()
 	var catalogo = preload("res://Scripts/MonthlyCatalog.gd")
 	verificar(catalogo.encontrar(&"n04_armadura_aco").is_empty(), "armadura ainda esta no catalogo")
@@ -60,6 +60,54 @@ func _ready() -> void:
 	jogador.multiplicador_dano_recebido = 1.0
 	jogador.resistencia_temporaria_multiplicador = 1.0
 	jogador.vivo = true
+	var cobaia := (load("res://Entities/InimigoMelee.tscn") as PackedScene).instantiate() as InimigoBase
+	batalha.add_child(cobaia, true)
+	cobaia.set_physics_process(false)
+	cobaia.global_position = jogador.global_position + Vector2(180, 0)
+	jogador.mutacao_habilidade = &"u12_noite_congelada"
+	jogador.passivas_nave._process(2.0)
+	verificar(cobaia.camadas_gelo == 1, "aura nao congelou na borda de 180 px")
+	cobaia.global_position += Vector2(1, 0)
+	jogador.passivas_nave._process(2.0)
+	verificar(cobaia.camadas_gelo == 1, "aura ultrapassou 180 px")
+	jogador.mutacao_habilidade = &"u02_cobertura_neve"
+	jogador.aplicar_mutacao_habilidade()
+	verificar(cobaia.camadas_gelo == 2, "especial nao congelou alvo distante")
+	jogador.mutacao_habilidade = &"u05_jardim_crescente"
+	for i in 5:
+		cobaia.registrar_ataque_lunar(jogador)
+	verificar(not cobaia.flor_visivel, "flor antes do sexto acerto")
+	cobaia.registrar_ataque_lunar(jogador)
+	verificar(cobaia.flor_visivel, "sexto acerto nao infectou")
+	cobaia.Vida = 100
+	var explosao := cobaia.obter_vida_maxima_atual() * 0.2
+	var vizinho := (load("res://Entities/InimigoMelee.tscn") as PackedScene).instantiate() as InimigoBase
+	batalha.add_child(vizinho, true)
+	vizinho.set_physics_process(false)
+	vizinho.global_position = cobaia.global_position
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	cobaia.atualizar_flor(5.0)
+	verificar(vizinho.flor_visivel, "contato nao transmitiu a flor")
+	vizinho.free()
+	verificar(is_equal_approx(cobaia.Vida, 100.0 - explosao), "dano do jardim incorreto")
+	jogador.mutacao_habilidade = &"u10_marca_cacador"
+	cobaia.registrar_ataque_lunar(jogador)
+	cobaia.Vida = 100
+	cobaia.tomarDano(10)
+	verificar(is_equal_approx(cobaia.Vida, 88), "marca nao amplificou dano externo")
+	cobaia.free()
+	jogador.mutacao_habilidade = &"u01_alcateia_lunar"
+	var disparos: Array[Node] = []
+	var contar := func(node: Node):
+		if node.get_script() == preload("res://Scripts/fireball.gd"):
+			disparos.append(node)
+	get_tree().node_added.connect(contar)
+	jogador.aplicar_mutacao_habilidade()
+	await get_tree().create_timer(3.2).timeout
+	get_tree().node_added.disconnect(contar)
+	verificar(disparos.size() == 9, "alcateia deveria criar nove projeteis: %d" % disparos.size())
+	jogador.mutacao_habilidade = &""
 	var passivas = jogador.passivas_nave
 	passivas.set_process(false)
 	jogador.rotation = 0.0

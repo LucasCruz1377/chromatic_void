@@ -227,8 +227,8 @@ func carregar_interface() -> void:
 	tela_cheia.button_pressed = Global.tela_cheia
 	vsync.button_pressed = Global.vsync
 	_selecionar_fps(Global.limite_fps)
-	neon.value = Global.neon
-	bloom.value = Global.bloom
+	neon.value = Global.neon / Global.NEON_BASE
+	bloom.value = Global.bloom / Global.BLOOM_BASE
 	tremor.value = Global.tremor_tela
 	volume_master.value = Global.volume_master
 	volume_musica.value = Global.volume_musica
@@ -312,13 +312,13 @@ func _on_fps_selecionado(index: int) -> void:
 
 
 func _on_neon_alterado(valor: float) -> void:
-	Global.neon = valor
+	Global.neon = valor * Global.NEON_BASE
 	_atualizar_valores()
 	_aplicar_previa()
 
 
 func _on_bloom_alterado(valor: float) -> void:
-	Global.bloom = valor
+	Global.bloom = valor * Global.BLOOM_BASE
 	_atualizar_valores()
 	_aplicar_previa()
 
@@ -354,7 +354,7 @@ func _on_slider_finalizado(valor_alterado: bool) -> void:
 func _atualizar_valores() -> void:
 	valor_zona_morta.text = "%d%%" % roundi(zona_morta.value * 100.0)
 	valor_neon.text = "%d%%" % roundi(neon.value * 100.0)
-	valor_bloom.text = "%d%%" % roundi(bloom.value * 200.0)
+	valor_bloom.text = "%d%%" % roundi(bloom.value * 100.0)
 	valor_tremor.text = "%d%%" % roundi(tremor.value * 100.0)
 	valor_master.text = _texto_volume(volume_master.value)
 	valor_musica.text = _texto_volume(volume_musica.value)

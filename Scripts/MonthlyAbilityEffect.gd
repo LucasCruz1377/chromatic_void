@@ -259,6 +259,8 @@ func _processar_tempestade(delta: float) -> void:
 					continue
 				atingidos[id] = true
 				if not somente_visual_rede and alvo.has_method("tomarDano"):
+					if alvo is InimigoBase:
+						alvo.registrar_ataque_lunar(player)
 					alvo.call("tomarDano", maxf(float(config.get("dano", 5.0)), 5.0) * potencia * player.multiplicador_dano_habilidade)
 				folha["restantes"] = int(folha["restantes"]) - 1
 				EfeitoCombateCena.criar(get_tree().current_scene, posicao, EfeitoCombate.Tipo.ACERTO, cor, 0.42, Vector2.RIGHT, -1, false)
@@ -323,6 +325,8 @@ func _explodir_infectados() -> void:
 		if is_instance_valid(alvo):
 			posicao = alvo.global_position
 		if is_instance_valid(alvo) and alvo.has_method("tomarDano"):
+			if alvo is InimigoBase:
+				alvo.registrar_ataque_lunar(player)
 			alvo.call("tomarDano", 8.0 * potencia * player.multiplicador_dano_habilidade)
 		ExplosaoMonthlyCena.criar(get_tree().current_scene, posicao, cor, 1.0, &"florescimento", -1, false)
 		if bool(config.get("projeteis_explosao", false)):
@@ -340,6 +344,7 @@ func _criar_laco() -> void:
 		return
 	var laco := LacoCena.new()
 	get_tree().current_scene.add_child(laco)
+	laco.piloto = player
 	laco.configurar(Global.obter_retangulo_area_visivel().get_center(), alvos, cor, potencia)
 
 
@@ -370,9 +375,13 @@ func _derrotar_area(centro: Vector2, raio: float, dano_boss: float) -> void:
 	for alvo in _inimigos_no_raio(centro, raio):
 		if alvo.is_in_group("boss"):
 			if alvo.has_method("tomarDano"):
+				if alvo is InimigoBase:
+					alvo.registrar_ataque_lunar(player)
 				alvo.call("tomarDano", dano_boss * player.multiplicador_dano_habilidade)
 		elif alvo.has_method("tomarDano"):
 			var vida_atual: Variant = alvo.get("Vida")
+			if alvo is InimigoBase:
+				alvo.registrar_ataque_lunar(player)
 			alvo.call("tomarDano", maxf(float(vida_atual) + 1.0, dano_boss))
 
 

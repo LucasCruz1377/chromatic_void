@@ -478,6 +478,18 @@ func atualizar_mira_gravitacional(delta: float) -> void:
 	if forca_homing <= 0.0:
 		return
 
+	if estilo_monthly == &"alcateia":
+		var menor := INF
+		alvo_homing = null
+		for piloto in get_tree().get_nodes_in_group("player"):
+			if piloto is Player and piloto.vivo:
+				var distancia := global_position.distance_squared_to(piloto.global_position)
+				if distancia < menor:
+					menor = distancia
+					alvo_homing = piloto
+		if is_instance_valid(alvo_homing):
+			global_rotation = rotate_toward(global_rotation, global_position.angle_to_point(alvo_homing.global_position), forca_homing * delta)
+		return
 	if (
 		is_instance_valid(alvo_homing)
 		and global_position.distance_to(alvo_homing.global_position) > alcance_homing
@@ -844,6 +856,8 @@ func _aplicar_dano_critico(alvo: Node2D, valor: float) -> void:
 			)
 			return
 	alvo.set_meta("impacto_critico", eh_critico)
+	if alvo is InimigoBase:
+		alvo.registrar_ataque_lunar(dono_player)
 	alvo.tomarDano(valor)
 	if is_instance_valid(alvo):
 		alvo.remove_meta("impacto_critico")

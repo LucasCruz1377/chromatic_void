@@ -135,7 +135,7 @@ func tomarDano(valor: float) -> void:
 		return
 	if morto or estado == Estado.TRANSICAO or valor <= 0.0:
 		return
-	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
+	var dano_final := maxf(valor * bonus_marca * multiplicador_dano_recebido, 0.0)
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
