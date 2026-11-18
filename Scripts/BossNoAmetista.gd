@@ -27,7 +27,6 @@ func _capturar_estado_defesas_rede() -> Dictionary:
 		"pulso": pulso_reacao,
 		"espiral": espiral_ativa,
 		"fase": fase,
-		"angulo_visual": angulo_visual,
 	}
 
 
@@ -46,7 +45,6 @@ func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
 	pulso_reacao = maxf(0.0, float(dados.get("pulso", pulso_reacao)))
 	espiral_ativa = maxf(0.0, float(dados.get("espiral", espiral_ativa)))
 	fase = maxi(1, int(dados.get("fase", fase)))
-	angulo_visual = float(dados.get("angulo_visual", angulo_visual))
 
 
 func _ready() -> void:

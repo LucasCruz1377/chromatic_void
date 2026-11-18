@@ -317,6 +317,8 @@ func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
 
 
 func anunciar_ataque(texto: String) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	subtitulo_alterado.emit(texto)
 	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
 		_receber_aviso_ataque.rpc(texto)

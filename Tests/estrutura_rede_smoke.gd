@@ -48,6 +48,8 @@ func testar_quadros_dos_chefes() -> void:
 		visual.add_child(linha)
 		for i in 256:
 			linha.add_point(Vector2(i, i % 7))
+		if boss is BossMensal:
+			boss.angulo_visual = 1.5
 		var snapshot := boss._capturar_snapshot_visual_boss(41)
 		verificar(not snapshot.visuais.is_empty(), nome + " descartou o quadro visual grande")
 		var partes := boss.dividir_snapshot_visual(snapshot)
@@ -71,6 +73,12 @@ func testar_quadros_dos_chefes() -> void:
 			nome + " perdeu a rotacao com partes fora de ordem"
 		)
 		verificar(linha.points.size() == 256, nome + " perdeu os pontos da linha")
+		if boss is BossMensal:
+			var defesas: Dictionary = boss._capturar_estado_defesas_rede()
+			defesas["sequencia"] = 1
+			defesas["angulo_visual"] = 0.5
+			boss.receber_estado_defesas_rede(defesas)
+			verificar(is_equal_approx(boss.angulo_visual, 1.5), nome + " voltou ao angulo antigo")
 		var vida := boss.Vida
 		boss.receber_eco_laco(10.0)
 		boss.morrer()
