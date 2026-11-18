@@ -30,7 +30,7 @@ static func criar(
 	explosao.z_index = 24
 	var rng := RandomNumberGenerator.new()
 	rng.seed = explosao.semente
-	var quantidade := 18
+	var quantidade := 18 if estilo_efeito.is_empty() else 10
 	for indice in range(quantidade):
 		var angulo := TAU * float(indice) / float(quantidade) + rng.randf_range(-0.16, 0.16)
 		explosao.posicoes.append(Vector2.ZERO)
@@ -76,7 +76,16 @@ func _draw() -> void:
 				var p := posicoes[indice]
 				draw_line(p - Vector2(tamanho, 0), p + Vector2(tamanho, 0), brilho, 1.8)
 				draw_line(p - Vector2(0, tamanho), p + Vector2(0, tamanho), brilho, 1.8)
-			&"natureza", &"determinacao":
+			&"clone", &"fantasma":
+				var ponta := velocidades[indice].normalized() * tamanho
+				draw_polyline(PackedVector2Array([posicoes[indice] - ponta.orthogonal(), posicoes[indice] + ponta, posicoes[indice] + ponta.orthogonal()]), brilho, 1.5, true)
+			&"renascimento", &"ovo":
+				draw_circle(posicoes[indice], tamanho * 0.75, brilho)
+				draw_line(posicoes[indice], posicoes[indice] + Vector2(2, -5) * (1.0 - progresso), brilho, 1.0)
+			&"parry", &"laco":
+				var ponta := velocidades[indice].normalized() * tamanho
+				draw_line(posicoes[indice] - ponta, posicoes[indice] + ponta * 1.8, brilho, 1.5, true)
+			&"natureza", &"determinacao", &"protetor":
 				var p := posicoes[indice]
 				draw_colored_polygon(PackedVector2Array([p + Vector2(tamanho, 0), p + Vector2(0, tamanho), p - Vector2(tamanho, 0), p - Vector2(0, tamanho)]), brilho)
 			_:

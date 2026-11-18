@@ -60,6 +60,10 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, raio, Color(1.0, 0.20, 0.04, 0.055))
 	draw_arc(Vector2.ZERO, raio, 0.0, TAU, 54, Color(1.0, 0.48, 0.10, 0.48), 2.0)
 
+	for i in 3:
+		var ciclo := fposmod(pulso * 0.14 + float(i) / 3.0, 1.0)
+		var p := Vector2(sin(i * 2.1 + ciclo) * 12, -8 - 22 * ciclo)
+		draw_line(p, p + Vector2(1, -3), Color(cor, 1.0 - ciclo), 1.5, true)
 	var chama := PackedVector2Array([
 		Vector2(-15.0, 16.0),
 		Vector2(-11.0, -4.0) * oscilacao,
