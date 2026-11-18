@@ -6,8 +6,6 @@ var alvo: Player
 var habilidade_id: StringName
 var cor := Color(0.45, 0.9, 1.0)
 var icone: Texture2D
-var poses: Array[Transform2D] = []
-var intervalo_pose := 0.0
 var tempo := 0.0
 var duracao := 0.9
 
@@ -33,15 +31,6 @@ func _process(delta: float) -> void:
 	tempo += delta
 	if is_instance_valid(alvo):
 		global_position = alvo.global_position
-		if habilidade_id in [&"hiperdash", &"retrocesso", &"fevereiro_carnaval"]:
-			intervalo_pose -= delta
-			if intervalo_pose <= 0.0:
-				intervalo_pose = 0.055
-				if poses.is_empty() or poses.back().origin.distance_to(global_position) > 100.0:
-					poses.clear()
-				poses.append(alvo.global_transform)
-				if poses.size() > (2 if habilidade_id == &"hiperdash" else 5):
-					poses.pop_front()
 	queue_redraw()
 	if tempo >= duracao:
 		queue_free()
@@ -51,36 +40,27 @@ func _draw() -> void:
 	var progresso := clampf(tempo / duracao, 0.0, 1.0)
 	var alpha := pow(1.0 - progresso, 1.4)
 	var raio := lerpf(26.0, 72.0, progresso)
-	var tinta := Color(cor, alpha)
+	draw_circle(Vector2.ZERO, raio, Color(cor.r, cor.g, cor.b, alpha * 0.10))
 	match habilidade_id:
-		&"retrocesso", &"hiperdash", &"fevereiro_carnaval":
-			for i in poses.size():
-				var pose := poses[i]
-				var centro := to_local(pose.origin)
-				var eixo := pose.x.normalized()
-				var lateral := eixo.orthogonal()
-				var pontos := PackedVector2Array([centro - eixo * 8 + lateral * 6, centro + eixo * 12, centro - eixo * 8 - lateral * 6])
-				draw_polyline(pontos, Color(cor, alpha * (i + 1.0) / poses.size()), 1.5, true)
-		&"abril_azul":
-			for i in 4:
-				var angulo := i * PI / 2.0
-				draw_arc(Vector2.ZERO, lerpf(52, 22, progresso), angulo - 0.2, angulo + 0.2, 8, tinta, 1.5, true)
-		&"junho_vermelho":
-			for i in 3:
-				draw_arc(Vector2.ZERO, 10 + fposmod(1.0 - progresso + i / 3.0, 1.0) * 24, -0.8, 0.8, 12, tinta, 2, true)
-		&"marco_lilas", &"dia_das_maes":
-			for i in 2:
-				var centro := PI * i
-				var abertura := lerpf(0.15, PI * 0.48, progresso)
-				draw_arc(Vector2.ZERO, 26 + 12 * (1.0 - progresso), centro - abertura, centro + abertura, 24, tinta, 2, true)
-		&"janeiro_branco":
-			draw_arc(Vector2.ZERO, 30 + 3 * sin(progresso * PI), 0, TAU, 42, Color(cor, alpha * 0.55), 1, true)
-		&"festa_junina":
-			for i in 3:
-				draw_line(Vector2((i - 1) * 8, -8 - progresso * 18), Vector2((i - 1) * 10, -13 - progresso * 23), tinta, 2, true)
-		&"onda_choque":
-			draw_arc(Vector2.ZERO, raio, 0, TAU, 48, tinta, 2, true)
-			draw_arc(Vector2.ZERO, raio - 5, 0, TAU, 48, Color(cor, alpha * 0.16), 5, true)
+		&"hiperdash":
+			for indice in 4:
+				var y := float(indice - 2) * 9.0
+				draw_line(Vector2(-95.0 - indice * 12.0, y), Vector2(-20.0, y), Color(cor.r, cor.g, cor.b, alpha), 4.0 - indice * 0.55, true)
+		&"foco_absoluto":
+			for indice in 3:
+				draw_arc(Vector2.ZERO, raio - indice * 12.0, progresso * TAU + indice, progresso * TAU + indice + PI * 1.4, 28, Color(cor.r, cor.g, cor.b, alpha), 2.5, true)
+		&"transfusao":
+			for indice in 3:
+				draw_arc(Vector2.ZERO, 30.0 + indice * 8.0, -PI * 0.8, PI * 0.8, 24, Color(cor.r, cor.g, cor.b, alpha), 3.0, true)
+		&"escudo_protetor":
+			draw_circle(Vector2.ZERO, 43.0, Color(cor.r, cor.g, cor.b, alpha * 0.15))
+			draw_arc(Vector2.ZERO, 43.0, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, alpha), 4.0, true)
+		&"abraco_materno", &"aura_serenidade":
+			draw_arc(Vector2.ZERO, raio, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, alpha), 3.0, true)
+			draw_line(Vector2(-11, 0), Vector2(11, 0), Color(1, 1, 1, alpha), 4.0)
+			draw_line(Vector2(0, -11), Vector2(0, 11), Color(1, 1, 1, alpha), 4.0)
+		_:
+			draw_arc(Vector2.ZERO, raio, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, alpha), 3.0, true)
 	if is_instance_valid(icone):
 		var tamanho := 34.0 * (1.0 + sin(progresso * PI) * 0.18)
 		draw_texture_rect(

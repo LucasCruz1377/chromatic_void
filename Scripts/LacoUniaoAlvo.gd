@@ -73,8 +73,7 @@ func _draw() -> void:
 		if is_instance_valid(alvo):
 			var ponto := to_local(alvo.global_position)
 			draw_line(Vector2.ZERO, ponto, Color(cor, 0.18), 8.0)
-			var meio := ponto * 0.5 + ponto.normalized().orthogonal() * sin(fase * 4.0) * 4.0
-			draw_polyline(PackedVector2Array([Vector2.ZERO, meio, ponto]), cor, 2.0, true)
+			draw_line(Vector2.ZERO, ponto, cor, 2.0)
 	var pulso := 1.0 + sin(fase * 7.0) * 0.08
 	draw_circle(Vector2.ZERO, 27.0 * pulso, Color(cor, 0.18))
 	draw_arc(Vector2.ZERO, 23.0 * pulso, 0.0, TAU, 24, cor.lightened(0.35), 3.0)

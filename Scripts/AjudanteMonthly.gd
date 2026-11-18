@@ -143,10 +143,6 @@ func _draw() -> void:
 		var corpo := PackedVector2Array([
 			Vector2(20, 0), Vector2(-13, -12), Vector2(-7, 0), Vector2(-13, 12)
 		])
-		if fase < 0.12:
-			var separacao := 7.0 * (1.0 - fase / 0.12)
-			draw_polyline(corpo, Color(brilho, 0.4), 1.5, true)
-			draw_set_transform(Vector2(0, separacao))
 		draw_colored_polygon(corpo, Color(brilho, 0.72))
 		draw_polyline(corpo + PackedVector2Array([corpo[0]]), brilho, 2.0)
 		draw_circle(Vector2(-3, 0), 4.0, Color.WHITE)

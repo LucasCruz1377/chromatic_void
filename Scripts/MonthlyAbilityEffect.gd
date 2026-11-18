@@ -397,9 +397,7 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, 27.0 * pulso, Color(cor, 0.16))
 			draw_colored_polygon(PackedVector2Array([Vector2(0, -25), Vector2(16, -11), Vector2(19, 12), Vector2(0, 27), Vector2(-19, 12), Vector2(-16, -11)]), Color(cor, 0.9))
 			draw_polyline(PackedVector2Array([Vector2(0, -25), Vector2(16, -11), Vector2(19, 12), Vector2(0, 27), Vector2(-19, 12), Vector2(-16, -11), Vector2(0, -25)]), brilho, 3.0)
-			for i in mini(3, 1 + int(tempo / duracao * 3)):
-				var inicio := Vector2(-10 + i * 6, -12 + i * 8)
-				draw_polyline(PackedVector2Array([inicio, inicio + Vector2(6, 4), inicio + Vector2(3, 8), inicio + Vector2(10, 11)]), brilho, 1.5, true)
+			for y in [-9.0, 3.0, 14.0]: draw_arc(Vector2(0, y), 11.0, 0.25, PI - 0.25, 12, Color.WHITE, 2.0)
 		&"orbe_cura":
 			draw_circle(Vector2.ZERO, 19.0 + sin(fase * 9.0) * 2.0, Color(cor, 0.2))
 			draw_circle(Vector2.ZERO, 10.0, cor)
@@ -412,20 +410,15 @@ func _draw() -> void:
 					ponta = infectados[indice].global_position
 				var origem := player.global_position
 				draw_line(origem, ponta, Color(cor, 0.22), 8.0)
-				var meio := origem.lerp(ponta, 0.5) + (ponta - origem).normalized().orthogonal() * 5.0 * clampf((duracao - tempo) / 0.3, 0.0, 1.0)
-				draw_polyline(PackedVector2Array([origem, meio, ponta]), cor, 2.0, true)
+				draw_line(origem, ponta, cor, 2.0)
 				_desenhar_flor(ponta, 10.0 + sin(fase * 7.0) * 1.5)
 		&"fantasma":
 			for posicao in posicoes_fantasma:
 				draw_circle(posicao, 17.0 + sin(fase * 6.0) * 2.0, Color(cor, 0.18))
-				draw_circle(posicao, 5.0 + 3.0 * clampf((duracao - tempo) / 0.35, 0.0, 1.0), Color(cor, 0.8))
+				draw_circle(posicao, 8.0, Color(cor, 0.8))
 				draw_arc(posicao, 12.0, 0.0, TAU, 20, brilho, 2.0)
 		&"presente":
 			draw_circle(Vector2.ZERO, 42.0 + sin(fase * 5.0) * 3.0, Color(cor, 0.12))
-			for i in 6:
-				var eixo := Vector2.from_angle(i * TAU / 6)
-				var r := 40 + fposmod(1.0 - tempo * 1.6 + i * 0.16, 1.0) * 35
-				draw_line(eixo * r, eixo * (r + 5), Color(cor, 0.52), 1.5, true)
 			draw_rect(Rect2(-25, -20, 50, 40), Color(cor, 0.88), true)
 			draw_rect(Rect2(-28, -25, 56, 10), brilho, true)
 			draw_rect(Rect2(-5, -25, 10, 45), Color.WHITE, true)
@@ -446,6 +439,6 @@ func _desenhar_flor(centro: Vector2, raio: float) -> void:
 func _desenhar_folha(posicao: Vector2, escala: float) -> void:
 	var angulo := deg_to_rad(315.0)
 	var frente := Vector2.from_angle(angulo) * 13.0 * escala
-	var lado := frente.orthogonal().normalized() * (4.0 if escala < 1.0 else 7.0) * escala
-	draw_colored_polygon(PackedVector2Array([posicao + frente, posicao + lado * 0.85 - frente * 0.2, posicao - frente, posicao - lado]), Color(cor, 0.9))
+	var lado := frente.orthogonal().normalized() * 6.0 * escala
+	draw_colored_polygon(PackedVector2Array([posicao + frente, posicao + lado, posicao - frente, posicao - lado]), Color(cor, 0.9))
 	draw_line(posicao - frente, posicao + frente, cor.lightened(0.45), 1.5)

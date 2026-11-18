@@ -1012,7 +1012,6 @@ func _criar_habilidade_visual_rede(dados: Dictionary) -> void:
 	if bool(dados.get("monthly", false)):
 		var config_variant: Variant = dados.get("config", {})
 		var config: Dictionary = config_variant if config_variant is Dictionary else {}
-		ExplosaoMonthlyCena.criar(self, alvo.global_position, cor, 0.82 * float(dados.get("potencia", 1.0)), StringName(str(dados.get("efeito_id", ""))), int(config.get("semente_visual", 0)), false)
 		EfeitoMonthlyRedeCena.criar_visual_rede(
 			self, alvo, StringName(str(dados.get("efeito_id", ""))), cor,
 			clampf(float(dados.get("potencia", 1.0)), 0.25, 3.0), config
@@ -1022,6 +1021,7 @@ func _criar_habilidade_visual_rede(dados: Dictionary) -> void:
 			self, alvo, StringName(str(dados.get("habilidade_id", ""))),
 			cor, str(dados.get("icone", "")), 1.0
 		)
+	ExplosaoMonthlyCena.criar(self, alvo.global_position, cor, 0.82, &"", -1, false)
 
 
 func replicar_loadout_player(configuracao: Dictionary) -> void:

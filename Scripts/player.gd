@@ -963,7 +963,7 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 	# Uma assinatura visual própria nasce em toda ativação. Os feedbacks de
 	# impacto posteriores continuam separados e não escondem a leitura do poder.
 	# A ativação já é recriada pelo evento da habilidade no outro peer.
-	ExplosaoMonthlyCena.criar(cena, global_position, cor, 0.82 * potencia, efeito_id, int(config.get("semente_visual", 0)), false)
+	ExplosaoMonthlyCena.criar(cena, global_position, cor, 0.82 * potencia, efeito_id, -1, false)
 	_replicar_habilidade_visual({
 		"monthly": true,
 		"efeito_id": efeito_id,
@@ -1945,7 +1945,6 @@ func registrar_projetil_rede(
 func _replicar_habilidade_visual_generica() -> void:
 	if not HabilidadeEquipada:
 		return
-	preload("res://Scripts/EfeitoHabilidadeRede.gd").criar(get_parent(), self, HabilidadeEquipada.Id, _cor_visual_habilidade(HabilidadeEquipada.Id))
 	var caminho_icone := ""
 	if HabilidadeEquipada.Icone:
 		caminho_icone = HabilidadeEquipada.Icone.resource_path
@@ -1970,10 +1969,10 @@ func _cor_visual_habilidade(id: StringName) -> Color:
 	match id:
 		&"foco_absoluto": return Color(0.3, 0.68, 1.0)
 		&"hiperdash": return Color(0.1, 0.82, 1.0)
-		&"junho_vermelho": return Color(1.0, 0.08, 0.28)
-		&"festa_junina": return Color(1.0, 0.52, 0.1)
-		&"marco_lilas": return Color(0.72, 0.42, 1.0)
-		&"dia_das_maes": return Color(1.0, 0.42, 0.68)
+		&"transfusao": return Color(1.0, 0.08, 0.28)
+		&"fogueira_ardente": return Color(1.0, 0.52, 0.1)
+		&"escudo_protetor": return Color(0.72, 0.42, 1.0)
+		&"abraco_materno": return Color(1.0, 0.42, 0.68)
 		_: return Color(0.55, 0.92, 1.0)
 
 func obter_alvos_para_multitiro(quantidade: int) -> Array[Node2D]:

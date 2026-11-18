@@ -95,14 +95,14 @@ func criar_fluxo_vital(player, origem: Vector2, destino: Vector2) -> void:
 		linha.add_point(destino)
 		efeito.add_child(linha)
 
-	for i in 3:
-		var pulso := Polygon2D.new()
-		pulso.polygon = criar_circulo(5.0 - i * 0.7, 12)
-		pulso.color = Color("ff5480")
-		efeito.add_child(pulso)
-		pulso.global_position = origem
-		var movimento := efeito.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		movimento.tween_property(pulso, "global_position", destino, 0.22).set_delay(0.045 * i)
+	var nucleo := Polygon2D.new()
+	nucleo.polygon = criar_circulo(11.0, 18)
+	nucleo.color = Color(1.0, 0.12, 0.30, 1.0)
+	nucleo.global_position = origem
+	efeito.add_child(nucleo)
+
+	var tween_movimento := efeito.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween_movimento.tween_property(nucleo, "global_position", destino, 0.32)
 	var tween_sumico := efeito.create_tween().set_parallel(true)
 	tween_sumico.tween_property(efeito, "modulate:a", 0.0, 0.42)
 	tween_sumico.chain().tween_callback(efeito.queue_free)
