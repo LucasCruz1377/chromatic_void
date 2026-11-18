@@ -8,6 +8,10 @@ class_name HabilidadeAbracoMaterno
 @export_range(0.1, 1.0, 0.05) var multiplicador_dano: float = 0.55
 
 
+func em_uso() -> bool:
+	return is_instance_valid(piloto_ativacao) and piloto_ativacao.tempo_resistencia_temporaria > 0.0
+
+
 func executar(player) -> void:
 	player.curar(cura)
 	player.aplicar_resistencia_temporaria(

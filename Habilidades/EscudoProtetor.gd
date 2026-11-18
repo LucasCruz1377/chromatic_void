@@ -7,6 +7,10 @@ class_name HabilidadeEscudoProtetor
 @export var duracao: float = 7.0
 
 
+func em_uso() -> bool:
+	return is_instance_valid(piloto_ativacao) and piloto_ativacao.escudo_habilidade > 0.0 and piloto_ativacao.tempo_escudo_habilidade > 0.0
+
+
 func executar(player) -> void:
 	player.ativar_escudo(
 		resistencia_escudo,

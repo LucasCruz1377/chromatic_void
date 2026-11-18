@@ -14,6 +14,10 @@ class_name HabilidadeHiperdash
 var ativo := false
 
 
+func em_uso() -> bool:
+	return ativo
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not ativo
 

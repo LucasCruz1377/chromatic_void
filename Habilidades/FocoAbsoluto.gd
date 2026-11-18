@@ -12,6 +12,10 @@ var escala_anterior := 1.0
 var movimento_anterior := 1.0
 
 
+func em_uso() -> bool:
+	return ativo
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not ativo
 

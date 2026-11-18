@@ -162,6 +162,8 @@ func _resolver_ovo() -> void:
 		var ajudante := AjudanteCena.new() as AjudanteMonthly
 		get_tree().current_scene.add_child(ajudante)
 		ajudante.add_to_group("ajudante_ovo")
+		if player.HabilidadeEquipada and player.HabilidadeEquipada.efeito_persistente == self:
+			player.HabilidadeEquipada.efeito_persistente = ajudante
 		ajudante.configurar_drone_ovo(
 			player, cor,
 			float(config.get("dano_drone", 0.8)) * potencia,
@@ -344,6 +346,8 @@ func _criar_laco() -> void:
 		return
 	var laco := LacoCena.new()
 	get_tree().current_scene.add_child(laco)
+	if player.HabilidadeEquipada is HabilidadeMonthly:
+		player.HabilidadeEquipada.efeito_persistente = laco
 	laco.piloto = player
 	laco.configurar(Global.obter_retangulo_area_visivel().get_center(), alvos, cor, potencia)
 

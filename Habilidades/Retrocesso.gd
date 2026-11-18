@@ -14,6 +14,10 @@ var recordando := false
 var efeito_tela_ativo: Node
 
 
+func em_uso() -> bool:
+	return recordando
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not recordando and not memoria.is_empty()
 

@@ -12,6 +12,20 @@ var nivel_upgrade_3 := 0
 var nivel_upgrade_4 := 0
 
 
+func em_uso() -> bool:
+	if super():
+		return true
+	if not is_instance_valid(piloto_ativacao):
+		return false
+	match efeito_id:
+		&"renascimento": return piloto_ativacao.semente_renascimento_ativa
+		&"parry": return piloto_ativacao.janela_parry > 0.0
+		&"imaginacao": return piloto_ativacao.tempo_poder_monthly > 0.0
+		&"determinacao": return piloto_ativacao.tempo_escudo_habilidade > 0.0
+		&"natureza": return piloto_ativacao.sequencia_natureza_ativa
+	return false
+
+
 func executar(player) -> void:
 	if is_instance_valid(player) and player.has_method("aplicar_poder_monthly"):
 		var configuracao := _config_rework()

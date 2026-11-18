@@ -12,6 +12,10 @@ var tempo_restante := 0.0
 var multiplicador_anterior := 1.0
 
 
+func em_uso() -> bool:
+	return ativa
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not ativa
 

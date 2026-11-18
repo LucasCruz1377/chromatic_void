@@ -972,7 +972,9 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 		"config": config.duplicate(true),
 	})
 	if efeito_id in [&"ovo", &"florescimento", &"fantasma", &"presente", &"laco", &"tempestade"]:
-		EFEITO_HABILIDADE_MONTHLY.criar(cena, self, efeito_id, cor, potencia, config)
+		var efeito = EFEITO_HABILIDADE_MONTHLY.criar(cena, self, efeito_id, cor, potencia, config)
+		if HabilidadeEquipada is HabilidadeMonthly and not efeito.is_queued_for_deletion():
+			HabilidadeEquipada.efeito_persistente = efeito
 		return
 	match efeito_id:
 		&"clone":
@@ -1199,14 +1201,18 @@ func _repetir_disparos_recentes(cor: Color, potencia: float) -> void:
 		criar_projetil(angulo, 0.58 * potencia, true, null, 0.0, &"firework", cor)
 
 
+var sequencia_natureza_ativa := false
+
 func _furia_natureza_em_sequencia(cor: Color, potencia: float) -> void:
+	sequencia_natureza_ativa = true
 	for indice in range(1, 8):
 		if not vivo:
-			return
+			break
 		var ponto := global_position + transform.x * 62.0 * float(indice)
 		_atingir_area(ponto, 55.0, 8.0 * potencia, 90.0, 0.5)
 		EfeitoCombateCena.criar(get_tree().current_scene, ponto, EfeitoCombate.Tipo.MORTE, cor, 0.68, transform.x)
 		await get_tree().create_timer(0.065).timeout
+	sequencia_natureza_ativa = false
 
 
 func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia: float) -> void:
@@ -1220,6 +1226,8 @@ func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia:
 	get_tree().current_scene.add_child(ajudante)
 	ajudante.add_to_group(grupo)
 	ajudante.configurar(self, tipo, cor, potencia)
+	if HabilidadeEquipada is HabilidadeMonthly:
+		HabilidadeEquipada.efeito_persistente = ajudante
 
 
 func _mutacao_atrasada(_estilo: StringName) -> void:

@@ -27,6 +27,10 @@ var cores := [
 ]
 
 
+func em_uso() -> bool:
+	return ativa
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not ativa
 

@@ -68,6 +68,19 @@ func _testar_execucao_em_batalha() -> void:
 	add_child(batalha)
 	await get_tree().process_frame
 	var jogador := batalha.get_node("Player") as Player
+	var chuva := load("res://Habilidades/monthly_p14.tres").duplicate() as HabilidadeMonthly
+	jogador.HabilidadeEquipada = chuva
+	chuva.aplicar_upgrade_especifico(&"tempestade_duracao", 1)
+	verificar(chuva.activate(jogador), "chuva inicial recusada")
+	chuva.update(jogador, 7.0)
+	chuva.reduzir_cooldown_atual(1.0)
+	verificar(is_equal_approx(chuva.cooldown_atual, chuva.Cooldown), "chuva recarregou durante o uso")
+	verificar(not chuva.pode_ativar(jogador), "chuva sobreposta")
+	for filho in get_tree().current_scene.get_children():
+		if filho is MonthlyAbilityEffect and filho.modo == &"tempestade":
+			filho.queue_free()
+	chuva.update(jogador, 1.0)
+	verificar(is_equal_approx(chuva.cooldown_atual, chuva.Cooldown - 1.0), "recarga nao iniciou ao terminar")
 	for modo in [&"florescimento", &"presente"]:
 		var efeito := MonthlyAbilityEffect.criar(batalha, jogador, modo, Color("ff68ae"), 1.0, {"duracao": 0.2})
 		efeito._process(0.1)
