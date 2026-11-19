@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/FinalDoCiclo.gd" id="1"]
+[ext_resource type="AudioStream" path="res://Assets/Final/final_do_ciclo.ogg" id="2"]
+
+[node name="FinalDoCiclo" type="Node2D"]
+script = ExtResource("1")
+texture_filter = 2
+
+[node name="Audio" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2")
+bus = &"Sound"
+
+[node name="Voltar" type="Button" parent="."]
+visible = false
+offset_left = 393.0
+offset_top = 484.0
+offset_right = 567.0
+offset_bottom = 530.0
+flat = true
+text = "VOLTAR AO MENU"
+theme_override_font_sizes/font_size = 11

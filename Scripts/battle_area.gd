@@ -1,6 +1,7 @@
 extends Node2D
 
 
+const FinalDoCiclo := preload("res://Scripts/FinalDoCiclo.gd")
 const DadosSetores = preload("res://Scripts/SectorData.gd")
 const PainelDesenvolvedorCena = preload("res://Scripts/PainelDesenvolvedor.gd")
 const ControlesMobileCena = preload("res://Scripts/ControlesMobile.gd")
@@ -88,6 +89,12 @@ const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 @onready var tela_upgrades: Control = $GUI/TelaUpgrades
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var world_spawner: MultiplayerSpawner = $WorldSpawner
+
+var final_apresentado := false
+var recorde_antes_da_partida := 0
+var combo_maximo_partida := 0
+var duracao_partida := 0.0
+var conquistas_anteriores: Array[StringName] = []
 
 var pontos: float = 0.0
 var timer: float = TIMER_MAX
@@ -179,6 +186,8 @@ var inimigos_suspensos_rede: Dictionary = {}
 
 
 func _ready() -> void:
+	recorde_antes_da_partida = Global.pontos_maximos
+	conquistas_anteriores.assign(Global.conquistas_desbloqueadas)
 	get_tree().paused = false
 	Global.limpar_area_multiplayer()
 	_configurar_spawners_multiplayer()
@@ -1276,6 +1285,8 @@ func _process(delta: float) -> void:
 		_atualizar_estado_morte_multiplayer(delta)
 	if game_over or escolha_setor_ativa or intro_boss_ativa:
 		return
+	duracao_partida += delta
+	combo_maximo_partida = maxi(combo_maximo_partida, Global.Combo)
 	atualizar_pontos(delta)
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		if not is_instance_valid(_obter_jogador_rede(Rede.peer_local())):
@@ -2733,24 +2744,40 @@ func _receber_vitoria_rede(pontuacao_final: int) -> void:
 
 
 func _apresentar_vitoria(pontuacao_final: int) -> void:
+	if final_apresentado:
+		return
+	final_apresentado = true
 	game_over = true
 	Global.Pontos = maxi(pontuacao_final, 0)
 	pontos = float(Global.Pontos)
 	if is_instance_valid(contpontos):
 		contpontos.text = str(Global.Pontos).pad_zeros(8)
+	Global.registrar_recordes_partida(combo_maximo_partida,Global.Pontos)
 	Global.registrar_jogo_zerado()
-	var linha := iniciar_painel_escolha(
-		"CICLO DE SETORES CONCLUÍDO",
-		"Todos os cinco bosses foram derrotados sem repetir setores."
-	)
-	var botao := criar_cartao_setor(linha, {
-		"nome": "VOLTAR AO MENU",
-		"subtitulo": tr("PONTUAÇÃO %s") % str(Global.Pontos).pad_zeros(8),
-		"descricao": "A tentativa foi concluída.",
-		"cor_destaque": Color(0.42, 1.0, 0.68)
-	})
-	botao.pressed.connect(_on_vitoria_menu)
-	botao.call_deferred("grab_focus")
+	escolha_setor_ativa = true
+	get_tree().paused = true
+	Global.definir_cursor_interface(true)
+	tocarmusica.stop()
+	$GUI.hide()
+	camada_escolha = CanvasLayer.new()
+	camada_escolha.layer = 400
+	camada_escolha.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(camada_escolha)
+	var fundo := ColorRect.new()
+	fundo.color = Color.BLACK
+	camada_escolha.add_child(fundo)
+	fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var final := preload("res://Rooms/FinalDoCiclo.tscn").instantiate() as FinalDoCiclo
+	final.pontuacao = Global.Pontos
+	final.recorde_anterior = recorde_antes_da_partida
+	final.maior_combo = combo_maximo_partida
+	final.nivel = player.nivel_atual if is_instance_valid(player) else 1
+	final.duracao = int(duracao_partida)
+	for id in Global.conquistas_desbloqueadas:
+		if id not in conquistas_anteriores:
+			final.conquistas.append(id)
+	final.voltar_ao_menu.connect(_on_vitoria_menu, CONNECT_ONE_SHOT)
+	camada_escolha.add_child(final)
 
 
 func _on_vitoria_menu() -> void:
