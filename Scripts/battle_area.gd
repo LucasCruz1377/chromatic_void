@@ -2772,11 +2772,12 @@ func _apresentar_vitoria(pontuacao_final: int) -> void:
 	camada_escolha.layer = 400
 	camada_escolha.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(camada_escolha)
+	var final := preload("res://Rooms/FinalDoCiclo.tscn").instantiate() as FinalDoCiclo
 	var fundo := ColorRect.new()
-	fundo.color = Color.BLACK
+	fundo.color = final.cor_fundo
 	camada_escolha.add_child(fundo)
 	fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var final := preload("res://Rooms/FinalDoCiclo.tscn").instantiate() as FinalDoCiclo
+	final.capturar_build(player as Player)
 	final.pontuacao = Global.Pontos
 	final.recorde_anterior = recorde_antes_da_partida
 	final.maior_combo = combo_maximo_partida

@@ -2,7 +2,6 @@ extends Node2D
 
 signal voltar_ao_menu
 
-const background := preload("res://Assets/Final/fundo.png")
 const approach_gradient := preload("res://Assets/Final/aproximacao.png")
 const blast_glow := preload("res://Assets/Final/blast_glow.png")
 const plume := preload("res://Assets/Final/plume_profile.png")
@@ -13,6 +12,7 @@ const reward_icons := [
 	preload("res://Habilidades/Icones/monthly/p15_determinacao.svg")
 ]
 
+var cor_fundo: Color = ProjectSettings.get_setting("rendering/environment/defaults/default_clear_color")
 var pontuacao := 0
 var recorde_anterior := 0
 var maior_combo := 0
@@ -23,6 +23,7 @@ var stars: Array[Vector4] = []
 var font := ThemeDB.fallback_font
 var t := 0.0
 var inicio_ms := 0
+@onready var rolagem_build: ScrollContainer = $RolagemBuild
 @onready var voltar: Button = $Voltar
 
 func _ready() -> void:
@@ -36,6 +37,10 @@ func _ready() -> void:
 	for i in range(255):
 		stars.append(Vector4(rng.randf_range(0, 960), rng.randf_range(0, 540), rng.randf_range(0.2, 1.0), rng.randf_range(0, TAU)))
 
+func capturar_build(jogador: Player) -> void:
+	$RolagemBuild/Build.capturar(jogador)
+
+
 func ajustar_tamanho() -> void:
 	var area := get_viewport_rect().size
 	scale = Vector2.ONE * minf(area.x / 960.0, area.y / 540.0)
@@ -44,6 +49,8 @@ func ajustar_tamanho() -> void:
 func _process(_delta: float) -> void:
 	var elapsed := (Time.get_ticks_msec()-inicio_ms)/1000.0
 	t = minf(elapsed,11.2)*(12.0/11.2) + maxf(elapsed-11.2,0.0)
+	rolagem_build.visible = t >= 12.0
+	rolagem_build.modulate.a = blend_time(12.0, 13.2, t)
 	if t >= 18.0 and not voltar.visible:
 		voltar.show()
 		voltar.grab_focus()
@@ -57,11 +64,10 @@ func blend_time(a: float, b: float, value: float) -> float:
 
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
-	draw_rect(Rect2(0, 0, 960, 540), Color(0.008, 0.009, 0.034))
+	draw_rect(Rect2(0, 0, 960, 540), cor_fundo)
 	var arrival := blend_time(3.3, 7.3, t)
 	var absorption := blend_time(9.2, 10.6, t)
 	var hole := Vector2(480, lerpf(-180, 156, arrival))
-	draw_texture_rect(background, Rect2(-8, -8 + sin(t * 0.12) * 6.0, 976, 556), false)
 	var approach := blend_time(3.8, 9.4, t) * (1.0 - blend_time(10.5, 11.8, t))
 	draw_texture_rect(approach_gradient, Rect2(0,0,960,540), false, Color(1,1,1,approach))
 	if t >= 12.0:
@@ -212,9 +218,6 @@ func draw_results() -> void:
 	var accent := Color(0.65,0.6,0.95,a)
 	label_center(57, "P A R T I D A", 23, white)
 	label_center(80, "CICLO CONCLUÍDO", 10, accent)
-	hex_icon(Vector2(26,28),ship_texture,Color(0.8,0.78,0.4),a,22)
-	hex_icon(Vector2(26,78),reward_icons[1],Color(0.55,0.63,1),a,22)
-	hex_icon(Vector2(26,128),reward_icons[0],Color(0.42,0.9,0.75),a,22)
 	var count := blend_time(12.9,15.1,t)
 	var labels_left := ["Modo", "Tempo de partida", "Nível alcançado", "Chefes derrotados"]
 	var values_left := [tr("Cooperativo") if Rede.modo_multiplayer else tr("Progressão"), "%02d:%02d" % [floori(duracao/60.0),duracao%60], str(nivel), "5 / 5"]
