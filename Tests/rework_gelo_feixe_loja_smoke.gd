@@ -41,16 +41,16 @@ func testar_catalogo_e_upgrades() -> void:
 func testar_curva_feixe() -> void:
 	var jogador := Player.new()
 	var anterior := jogador.obter_dps_feixe_perielio()
-	verificar(is_equal_approx(anterior, 4.0), "potência inicial incorreta")
-	var razao := pow(16.0, 0.25 / 10.0)
+	verificar(is_equal_approx(anterior, 1.0), "potência inicial incorreta")
+	var razao := pow(10.0, 0.25 / 10.0)
 	for hit in range(1, 41):
 		jogador.tempo_uso_feixe_perielio = hit * 0.25
 		var atual := jogador.obter_dps_feixe_perielio()
 		verificar(is_equal_approx(atual / anterior, razao), "crescimento incorreto no hit %d" % hit)
 		anterior = atual
-	verificar(is_equal_approx(anterior, 64.0), "teto base incorreto")
+	verificar(is_equal_approx(anterior, 10.0), "teto base incorreto")
 	jogador.niveis_upgrades = {&"perielio_potencia": 3, &"perielio_resfriamento": 2}
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 216.0), "teto com melhorias incorreto")
+	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 33.75), "teto com melhorias incorreto")
 	verificar(is_equal_approx(jogador.obter_limite_uso_feixe_perielio(), 15.0), "resfriamento não amplia o uso contínuo")
 	jogador.free()
 
@@ -64,13 +64,6 @@ func testar_localizacao() -> void:
 
 
 func testar_visual_feixe() -> void:
-	var feixe := (load("res://Entities/fireball.tscn") as PackedScene).instantiate()
-	add_child(feixe)
-	feixe.configurar_estilo_monthly(&"perielio_ray", Color("ffd83d"), {})
-	verificar(feixe.get("linha_feixe") is Line2D, "feixe externo não usa Line2D")
-	verificar(feixe.get("centro_feixe") is Line2D, "centro branco do feixe não usa Line2D")
-	var centro := feixe.get("centro_feixe") as Line2D
-	verificar(is_instance_valid(centro) and centro.default_color == Color.WHITE, "centro do feixe não começa branco")
 	var arena := preload("res://Rooms/Battle_area.tscn").instantiate()
 	add_child(arena)
 	arena.set_process(false)
@@ -79,25 +72,36 @@ func testar_visual_feixe() -> void:
 	jogador.ctrlblock = false
 	jogador.set_physics_process(false)
 	jogador.global_position = Vector2(50, 100)
-	feixe.dono_player = jogador
+	jogador._iniciar_feixe_perielio()
+	var feixe := jogador.feixe_perielio_ativo
+	verificar(feixe.get("linha_feixe") is Line2D, "feixe externo não usa Line2D")
+	var centro := feixe.get("centro_feixe") as Line2D
+	verificar(is_instance_valid(centro) and centro.default_color == Color.WHITE, "centro do feixe não começa branco")
 	var lua := preload("res://Entities/BossEclipseColheita.tscn").instantiate() as BossSizigiaEterna
 	arena.add_child(lua)
 	lua.set_physics_process(false)
 	lua.global_position = Vector2(450, 155)
 	var vida := lua.Vida
-	feixe._processar_feixe_perielio(1.0 / 60.0)
-	verificar(lua.Vida < vida, "o feixe que raspa a Lua a 55 px do centro não causa dano")
-	var primeiro_hit := vida - lua.Vida
-	vida = lua.Vida
-	jogador.tempo_uso_feixe_perielio = 0.25
-	feixe._processar_feixe_perielio(0.25)
-	verificar(vida - lua.Vida > primeiro_hit and primeiro_hit > 0.0, "segundo hit não é mais forte")
+	var ultimo_quadro := -1
+	var acertos := 0
+	var fator_critico := 1.5 if bool(feixe.get("eh_critico")) else 1.0
+	for quadro in range(116):
+		jogador.tempo_uso_feixe_perielio = quadro / 60.0
+		vida = lua.Vida
+		feixe._processar_feixe_perielio(1.0 / 60.0)
+		if lua.Vida < vida:
+			var esperado := 0.25 * pow(10.0, jogador.tempo_uso_feixe_perielio / 10.0) * fator_critico
+			verificar(absf(vida - lua.Vida - esperado) < 0.0001, "dano real por hit incorreto")
+			if ultimo_quadro >= 0:
+				verificar(absi(quadro - ultimo_quadro - 15) <= 1, "o mesmo alvo não recebeu um hit a cada 0,25 s")
+			ultimo_quadro = quadro
+			acertos += 1
+	verificar(acertos == 8, "a borda da Lua não recebeu quatro hits por segundo")
 	lua.global_position.y = 180.0
 	vida = lua.Vida
 	feixe._processar_feixe_perielio(0.25)
 	verificar(is_equal_approx(lua.Vida, vida), "feixe no espaço vazio acertou a Lua")
 	testar_impacto_remoto(arena, jogador, lua)
-	jogador.feixe_perielio_ativo = feixe
 	Input.action_press("atirar")
 	jogador._atualizar_feixe_perielio(10.0)
 	verificar(jogador.feixe_perielio_ativo == null and feixe.is_queued_for_deletion(), "o feixe não se apagou ao superaquecer")

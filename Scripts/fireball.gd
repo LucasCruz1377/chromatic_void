@@ -691,7 +691,7 @@ func _processar_feixe_perielio(delta: float) -> void:
 	if intervalo_dano_feixe > 0.0:
 		return
 	intervalo_dano_feixe += INTERVALO_FEIXE
-	var dps := 4.0
+	var dps := 1.0
 	if dono_player.has_method("obter_dps_feixe_perielio"):
 		dps = float(dono_player.call("obter_dps_feixe_perielio"))
 	for candidato in get_tree().get_nodes_in_group("inimigo"):

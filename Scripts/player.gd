@@ -22,6 +22,7 @@ const AJUDANTE_MONTHLY = preload("res://Scripts/AjudanteMonthly.gd")
 const AudioCombateCena = preload("res://Scripts/AudioCombate.gd")
 const EFEITO_HABILIDADE_MONTHLY = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const REROLLS_UPGRADES_INICIAIS := 3
+const DANO_BASE_NAVE := 1.25
 const BONUS_DANO_POR_NIVEL := [0.25, 0.18, 0.14, 0.10, 0.08]
 const FATOR_CADENCIA_POR_NIVEL := [0.85, 0.88, 0.91, 0.94, 0.96]
 const BONUS_VIDA_POR_NIVEL := [0.20, 0.15, 0.12, 0.10, 0.08]
@@ -36,7 +37,7 @@ const XP_PROGRESSAO_INICIAL := [2, 3, 4, 6, 8, 11, 14, 18, 23]
 @export_category("Combate")
 @export var tiro: PackedScene
 @export var HabilidadeEquipada: Habilidade
-@export var dano := 1.25
+@export var dano := DANO_BASE_NAVE
 @export var CD_MAX := 0.22
 
 @export_category("Movimento")
@@ -1616,7 +1617,7 @@ func _iniciar_feixe_perielio() -> void:
 	if is_instance_valid(feixe_perielio_ativo) or bloqueio_feixe_perielio > 0.0:
 		return
 	feixe_perielio_ativo = criar_projetil(
-		rotation, 1.0, false, null, 0.0, &"perielio_ray",
+		rotation, 1.0 / DANO_BASE_NAVE, false, null, 0.0, &"perielio_ray",
 		Color(1.0, 0.78, 0.08), {"tempo_vida": 3600.0}
 	)
 	if is_instance_valid(somtiro):
@@ -1637,10 +1638,10 @@ func obter_limite_uso_feixe_perielio() -> float:
 
 func obter_dps_feixe_perielio() -> float:
 	var nivel_potencia := nivel_upgrade_arma(&"perielio_potencia")
-	var dano_maximo := 64.0 * pow(1.5, nivel_potencia)
+	var dano_maximo := 10.0 * pow(1.5, nivel_potencia)
 	var tempo_crescimento := 10.0 * pow(0.70, nivel_upgrade_arma(&"perielio_foco"))
 	var progresso := clampf(tempo_uso_feixe_perielio / tempo_crescimento, 0.0, 1.0)
-	return 4.0 * pow(dano_maximo / 4.0, progresso)
+	return pow(dano_maximo, progresso)
 
 
 func obter_cor_calor_perielio() -> Color:
