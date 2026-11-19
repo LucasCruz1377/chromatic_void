@@ -69,7 +69,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	checar(flor.Dano >= 48.0, "o dano do Florecimento não foi aumentado")
 	checar(
-		(flor.get_node("CollisionShape2D") as CollisionShape2D).shape.radius >= 82.0,
+		flor.get_shape_owners().size() == 13,
 		"a área vulnerável do Florecimento não cobre o corpo visível"
 	)
 	checar(
@@ -82,7 +82,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	checar(sizigia.Dano >= 42.0, "o dano-base da Sizígia não foi aumentado")
 	checar(
-		(sizigia.get_node("CollisionShape2D") as CollisionShape2D).shape.radius >= 64.0,
+		is_equal_approx(sizigia.get_node("CollisionShape2D").shape.radius, 108.0 * sizigia.visual_fase.scale.x),
 		"a área vulnerável da Sizígia não cobre o astro visível"
 	)
 	checar(

@@ -698,6 +698,7 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 			"peer_id": int(dados.get("peer_id", 0)),
 			"origem": Vector2(dados.get("posicao", Vector2.ZERO)),
 			"criado_ms": Time.get_ticks_msec(),
+			"feixe": str(dados.get("estilo", "")) == "perielio_ray",
 			"velocidade": clampf(float(dados.get("velocidade", 1000.0)), 0.0, 2400.0),
 			"critico": bool(dados.get("critico", false)),
 			"tempo_vida": clampf(float(dados.get("tempo_vida", 5.0)), 0.05, 15.0),
@@ -939,7 +940,8 @@ func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
 	if criado <= 0:
 		return
 	var duracao_ms := roundi(float(disparo.get("tempo_vida", 5.0)) * 1000.0)
-	if agora - criado > duracao_ms + PRAZO_FILA_IMPACTOS_MS:
+	var feixe := bool(disparo.get("feixe", false))
+	if not feixe and agora - criado > duracao_ms + PRAZO_FILA_IMPACTOS_MS:
 		return
 	var expirado := int(disparo.get("expirado_ms", 0))
 	if expirado > 0 and int(entrada.get("recebido_ms", agora)) > expirado + 600:
@@ -947,17 +949,22 @@ func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
 	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as InimigoBase
 	if not is_instance_valid(inimigo) or inimigo.morto or inimigo.is_queued_for_deletion():
 		return
-	var posicao := Vector2(entrada.get("posicao", Vector2.ZERO))
-	var origem := Vector2(disparo.get("origem", Vector2.ZERO))
-	var velocidade := float(disparo.get("velocidade", 1000.0))
-	var tempo_percorrido := maxf(
-		float(int(entrada.get("recebido_ms", agora)) - criado) / 1000.0, 0.0
-	)
-	var distancia_maxima := velocidade * (tempo_percorrido + 0.35) + DISTANCIA_TOLERANCIA_IMPACTO
-	if origem.distance_to(posicao) > distancia_maxima:
-		return
-	if inimigo.global_position.distance_to(posicao) > DISTANCIA_TOLERANCIA_IMPACTO:
-		return
+	if feixe:
+		var visual := _obter_disparo_visual(id_disparo)
+		if not is_instance_valid(visual) or not visual.call("feixe_intersecta", inimigo):
+			return
+	else:
+		var posicao := Vector2(entrada.get("posicao", Vector2.ZERO))
+		var origem := Vector2(disparo.get("origem", Vector2.ZERO))
+		var velocidade := float(disparo.get("velocidade", 1000.0))
+		var tempo_percorrido := maxf(
+			float(int(entrada.get("recebido_ms", agora)) - criado) / 1000.0, 0.0
+		)
+		var distancia_maxima := velocidade * (tempo_percorrido + 0.35) + DISTANCIA_TOLERANCIA_IMPACTO
+		if origem.distance_to(posicao) > distancia_maxima:
+			return
+		if inimigo.global_position.distance_to(posicao) > DISTANCIA_TOLERANCIA_IMPACTO:
+			return
 	var piloto := _obter_jogador_rede(peer_id)
 	if not is_instance_valid(piloto):
 		return
@@ -1323,6 +1330,8 @@ func _limpar_registros_rede() -> void:
 	var agora := Time.get_ticks_msec()
 	for identificador in disparos_autorizados_rede.keys():
 		var disparo: Dictionary = disparos_autorizados_rede[identificador]
+		if disparo.get("feixe", false) and is_instance_valid(_obter_disparo_visual(identificador)):
+			continue
 		if agora - int(disparo.get("criado_ms", 0)) > 6000:
 			disparos_autorizados_rede.erase(identificador)
 	for chave in impactos_projetil_rede.keys():

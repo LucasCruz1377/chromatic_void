@@ -40,16 +40,17 @@ func testar_catalogo_e_upgrades() -> void:
 
 func testar_curva_feixe() -> void:
 	var jogador := Player.new()
-	jogador.tempo_uso_feixe_perielio = 0.0
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.2), "feixe não começa em 0,2 DPS")
-	jogador.tempo_uso_feixe_perielio = 0.49
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 0.2), "feixe aumenta antes de completar 0,5 segundo")
-	jogador.tempo_uso_feixe_perielio = 0.5
-	verificar(jogador.obter_dps_feixe_perielio() > 0.2, "feixe não aumenta no primeiro intervalo de 0,5 segundo")
-	jogador.tempo_uso_feixe_perielio = 10.0
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 5.0), "feixe base não chega a 5 DPS")
+	var anterior := jogador.obter_dps_feixe_perielio()
+	verificar(is_equal_approx(anterior, 4.0), "potência inicial incorreta")
+	var razao := pow(16.0, 0.25 / 10.0)
+	for hit in range(1, 41):
+		jogador.tempo_uso_feixe_perielio = hit * 0.25
+		var atual := jogador.obter_dps_feixe_perielio()
+		verificar(is_equal_approx(atual / anterior, razao), "crescimento incorreto no hit %d" % hit)
+		anterior = atual
+	verificar(is_equal_approx(anterior, 64.0), "teto base incorreto")
 	jogador.niveis_upgrades = {&"perielio_potencia": 3, &"perielio_resfriamento": 2}
-	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 30.0), "melhorias não elevam o teto até 30 DPS")
+	verificar(is_equal_approx(jogador.obter_dps_feixe_perielio(), 216.0), "teto com melhorias incorreto")
 	verificar(is_equal_approx(jogador.obter_limite_uso_feixe_perielio(), 15.0), "resfriamento não amplia o uso contínuo")
 	jogador.free()
 
@@ -68,11 +69,102 @@ func testar_visual_feixe() -> void:
 	feixe.configurar_estilo_monthly(&"perielio_ray", Color("ffd83d"), {})
 	verificar(feixe.get("linha_feixe") is Line2D, "feixe externo não usa Line2D")
 	verificar(feixe.get("centro_feixe") is Line2D, "centro branco do feixe não usa Line2D")
-	verificar(feixe.get("raycast_feixe") is RayCast2D, "feixe não cria RayCast2D")
 	var centro := feixe.get("centro_feixe") as Line2D
 	verificar(is_instance_valid(centro) and centro.default_color == Color.WHITE, "centro do feixe não começa branco")
-	feixe.queue_free()
+	var arena := preload("res://Rooms/Battle_area.tscn").instantiate()
+	add_child(arena)
+	arena.set_process(false)
+	var jogador := arena.get_node("Player") as Player
+	jogador.arma_monthly = &"a06_feixe_perielio"
+	jogador.ctrlblock = false
+	jogador.set_physics_process(false)
+	jogador.global_position = Vector2(50, 100)
+	feixe.dono_player = jogador
+	var lua := preload("res://Entities/BossEclipseColheita.tscn").instantiate() as BossSizigiaEterna
+	arena.add_child(lua)
+	lua.set_physics_process(false)
+	lua.global_position = Vector2(450, 155)
+	var vida := lua.Vida
+	feixe._processar_feixe_perielio(1.0 / 60.0)
+	verificar(lua.Vida < vida, "o feixe que raspa a Lua a 55 px do centro não causa dano")
+	var primeiro_hit := vida - lua.Vida
+	vida = lua.Vida
+	jogador.tempo_uso_feixe_perielio = 0.25
+	feixe._processar_feixe_perielio(0.25)
+	verificar(vida - lua.Vida > primeiro_hit and primeiro_hit > 0.0, "segundo hit não é mais forte")
+	lua.global_position.y = 180.0
+	vida = lua.Vida
+	feixe._processar_feixe_perielio(0.25)
+	verificar(is_equal_approx(lua.Vida, vida), "feixe no espaço vazio acertou a Lua")
+	testar_impacto_remoto(arena, jogador, lua)
+	jogador.feixe_perielio_ativo = feixe
+	Input.action_press("atirar")
+	jogador._atualizar_feixe_perielio(10.0)
+	verificar(jogador.feixe_perielio_ativo == null and feixe.is_queued_for_deletion(), "o feixe não se apagou ao superaquecer")
+	jogador._atualizar_feixe_perielio(1.1)
+	verificar(is_equal_approx(jogador.calor_feixe_perielio, 0.5) and not jogador.feixe_perielio_pode_causar_dano(), "o bloqueio não acompanha o calor")
+	jogador._atualizar_feixe_perielio(1.1)
+	jogador._atualizar_feixe_perielio(0.016)
+	verificar(is_instance_valid(jogador.feixe_perielio_ativo), "o disparo não retomou ao esfriar")
+	Input.action_release("atirar")
+	jogador._atualizar_feixe_perielio(0.016)
+	await testar_pecas_moveis(arena)
+	arena.queue_free()
 	await get_tree().process_frame
+
+
+func testar_pecas_moveis(arena: Node) -> void:
+	var feixe := preload("res://Entities/fireball.tscn").instantiate()
+	arena.add_child(feixe)
+	feixe.set_physics_process(false)
+	feixe.configurar_estilo_monthly(&"perielio_ray", Color.GOLD, {})
+	feixe.global_position = Vector2(50, 100)
+	var pet := preload("res://Entities/BossPet0.tscn").instantiate() as BossPet0
+	arena.add_child(pet)
+	pet.set_physics_process(false)
+	pet.global_position = Vector2(450, 172)
+	verificar(not feixe.feixe_intersecta(pet), "o feixe acertou acima da garrafa horizontal")
+	pet.visual.rotation = -PI / 2
+	await get_tree().process_frame
+	verificar(feixe.feixe_intersecta(pet), "a colisão não acompanhou a tampa da garrafa ao girar")
+	var flor := preload("res://Entities/BossFlorEquinocio.tscn").instantiate() as BossCaosPrimaveril
+	arena.add_child(flor)
+	flor.set_physics_process(false)
+	flor.global_position = Vector2(450, 162)
+	await get_tree().process_frame
+	verificar(feixe.feixe_intersecta(flor), "a ponta da pétala visível não foi atingida")
+	flor.get_node("Visual/Petalas/Petala0").hide()
+	await get_tree().process_frame
+	verificar(not feixe.feixe_intersecta(flor), "uma pétala destacada ainda recebeu dano")
+
+
+func testar_impacto_remoto(arena: Node, jogador: Player, lua: BossSizigiaEterna) -> void:
+	var id := "2:1"
+	arena.jogadores_rede[2] = jogador
+	arena._criar_disparo_visual_rede({
+		"id_disparo": id, "peer_id": 2, "estilo": "perielio_ray",
+		"posicao": jogador.PontaArma.global_position, "velocidade": 0.0,
+	})
+	var remoto: Node2D = arena._obter_disparo_visual(id)
+	remoto._processar_feixe_perielio(0.25)
+	arena.disparos_autorizados_rede[id]["criado_ms"] = Time.get_ticks_msec() - 7000
+	arena._limpar_registros_rede()
+	verificar(arena.disparos_autorizados_rede.has(id), "o host descartou um feixe ainda ativo")
+	arena.disparos_autorizados_rede[id]["criado_ms"] = 1
+	var entrada := {
+		"chave": id + "#1", "id_disparo": id, "peer_id": 2, "dano": 1.0,
+		"caminho": arena.get_path_to(lua), "posicao": jogador.global_position
+	}
+	lua.global_position.y = 155
+	var vida := lua.Vida
+	arena._aplicar_impacto_aguardando_rede(entrada, 16001)
+	verificar(lua.Vida < vida, "o host recusou o acerto distante de um feixe ativo")
+	vida = lua.Vida
+	lua.global_position.y = 180
+	entrada["chave"] = id + "#2"
+	arena._aplicar_impacto_aguardando_rede(entrada, 16251)
+	verificar(is_equal_approx(vida, lua.Vida), "o host aceitou um alvo fora do feixe")
+	arena._finalizar_disparo_visual(id)
 
 
 func testar_gelo() -> void:

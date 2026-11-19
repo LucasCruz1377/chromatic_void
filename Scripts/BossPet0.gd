@@ -49,6 +49,12 @@ var tempo_rastro_rolamento := 0.0
 
 func _ready() -> void:
 	super._ready()
+	for peca in visual.get_children():
+		if peca is Polygon2D:
+			for poligono in Geometry2D.decompose_polygon_in_convex(peca.polygon):
+				var forma := ConvexPolygonShape2D.new()
+				forma.points = poligono
+				vincular_colisao_visual(peca, forma)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	fase_alterada.emit(fase)
 	reciclagem_alterada.emit(reciclagem_atual, meta_reciclagem)

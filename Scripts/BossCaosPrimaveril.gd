@@ -27,6 +27,10 @@ enum Estado {
 	RECUPERANDO,
 }
 
+@export var forma_miolo: CircleShape2D
+@export var forma_petala: ConvexPolygonShape2D
+@export var forma_espinho: ConvexPolygonShape2D
+
 @export_category("Identidade")
 @export var nome_exibicao := "CAOS PRIMAVERIL"
 @export var selo_monthly_colors := "PRIMAVERA • SETEMBRO"
@@ -69,6 +73,11 @@ var inversao_vinhas_pendente := false
 
 func _ready() -> void:
 	super._ready()
+	vincular_colisao_visual($Visual/Miolo, forma_miolo)
+	for petala in petalas.get_children():
+		vincular_colisao_visual(petala, forma_petala)
+	for espinho in espinhos_ornamentais.get_children():
+		vincular_colisao_visual(espinho, forma_espinho)
 	configurar_circulo_aviso()
 	configurar_aviso_vinhas()
 	ativar_escudo(true)

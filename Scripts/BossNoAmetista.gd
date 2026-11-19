@@ -47,10 +47,33 @@ func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
 	fase = maxi(1, int(dados.get("fase", fase)))
 
 
+var colisoes_orbitais: Array[CollisionShape2D] = []
+
+
 func _ready() -> void:
 	super._ready()
+	for indice in amarras.size():
+		var colisao := CollisionShape2D.new()
+		colisao.shape = CircleShape2D.new()
+		add_child(colisao)
+		colisoes_orbitais.append(colisao)
+	_atualizar_colisoes_orbitais()
 	multiplicador_dano_recebido = 0.28
 	tempo_ataque = 0.78
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if not morto:
+		_atualizar_colisoes_orbitais()
+
+
+func _atualizar_colisoes_orbitais() -> void:
+	for indice in colisoes_orbitais.size():
+		var colisao := colisoes_orbitais[indice]
+		colisao.position = _posicao_amarra(indice) - global_position
+		colisao.disabled = amarras[indice] <= 0.0
+		(colisao.shape as CircleShape2D).radius = 14.0 if indice == alvo_amarra else 10.0
 
 
 func Mover(delta: float) -> void:

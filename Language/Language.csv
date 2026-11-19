@@ -151,7 +151,7 @@ RASTRO PADRÃO,RASTRO PADRÃO,DEFAULT TRAIL
 RASTRO ESTELAR O,RASTRO ESTELAR O,MODEL O STAR TRAIL
 ARCO-ÍRIS SPECTRUM,ARCO-ÍRIS SPECTRUM,SPECTRUM RAINBOW
 MARCAS FSPEED,MARCAS FSPEED,FSPEED TRACKS
-"Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.","Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.",Continuous infinite-range laser: rises from 0.2 to 5 DPS and overheats after 10 seconds.
+"Feixe contínuo que cresce exponencialmente de 4 a 64 DPS. Superaquece após 10 s e esfria em 2,2 s.","Feixe contínuo que cresce exponencialmente de 4 a 64 DPS. Superaquece após 10 s e esfria em 2,2 s.",Continuous beam with exponential growth from 4 to 64 DPS. Overheats after 10 s and cools down in 2.2 s.
 Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.,Dispara gelo azul-claro de baixo dano. Cada impacto reduz 10% da velocidade; na quinta camada o alvo congela e se rompe após 3 segundos.,Fires low-damage light-blue ice. Each hit reduces speed by 10%; at five stacks the target freezes and shatters after 3 seconds.
 Chassi cromático que percorre lentamente todo o espectro RGB.,Chassi cromático que percorre lentamente todo o espectro RGB.,Chromatic chassis that slowly cycles through the full RGB spectrum.
 Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.,Modelo B-EL integrado como recompensa por sustentar um combo de 300x. Inclui rastro arco-íris exclusivo.,B-EL model awarded for sustaining a 300x combo. Includes an exclusive rainbow trail.
@@ -566,7 +566,7 @@ JANELA DO PERIÉLIO,JANELA DO PERIÉLIO,PERIHELION WINDOW
 CONVERGÊNCIA SOLAR,CONVERGÊNCIA SOLAR,SOLAR CONVERGENCE
 A curva exponencial alcança o dano máximo 28% mais rápido por nível.,A curva exponencial alcança o dano máximo 28% mais rápido por nível.,The exponential curve reaches maximum damage 28% faster per level.
 NÚCLEO HIPERQUENTE,NÚCLEO HIPERQUENTE,SUPERHEATED CORE
-"Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,2 DPS.","Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,2 DPS.","Raises the beam cap to 10, 20, and 30 DPS while keeping its starting value at 0.2 DPS."
+"Eleva o teto do feixe para 96, 144 e 216 DPS, mantendo o início em 4 DPS.","Eleva o teto do feixe para 96, 144 e 216 DPS, mantendo o início em 4 DPS.","Raises the beam cap to 96, 144, and 216 DPS while keeping its starting value at 4 DPS."
 SOL SEM OCASO,SOL SEM OCASO,SUN WITHOUT SUNSET
 "ULTRARRARA: remove a sobrecarga. Após o limite, o feixe fica vermelho e devolve 1% do próprio DPS ao casco por segundo.","ULTRARRARA: remove a sobrecarga. Após o limite, o feixe fica vermelho e devolve 1% do próprio DPS ao casco por segundo.","ULTRA RARE: removes overheating. Beyond the limit, the beam turns red and deals 1% of its own DPS to the hull each second."
 ULTRARRARA,ULTRARRARA,ULTRA RARE

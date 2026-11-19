@@ -65,7 +65,8 @@ var abaixo_zero_gelo := false
 var linha_feixe: Line2D
 var brilho_feixe: Line2D
 var centro_feixe: Line2D
-var raycast_feixe: RayCast2D
+const INTERVALO_FEIXE := 0.25
+var forma_feixe: RectangleShape2D
 var intervalo_dano_feixe := 0.0
 var comprimento_feixe := 1200.0
 
@@ -662,12 +663,7 @@ func _configurar_feixe_perielio() -> void:
 	centro_feixe.default_color = Color.WHITE
 	centro_feixe.antialiased = true
 	add_child(centro_feixe)
-	raycast_feixe = RayCast2D.new()
-	raycast_feixe.name = "RayCastFeixePerielio"
-	raycast_feixe.enabled = true
-	raycast_feixe.collide_with_areas = false
-	raycast_feixe.collide_with_bodies = true
-	add_child(raycast_feixe)
+	forma_feixe = RectangleShape2D.new()
 	_atualizar_geometria_feixe()
 	queue_redraw()
 
@@ -677,13 +673,11 @@ func _processar_feixe_perielio(delta: float) -> void:
 		queue_free()
 		return
 	var nave := dono_player as Node2D
-	global_position = nave.global_position + Vector2.from_angle(nave.global_rotation) * 28.0
+	global_position = (nave as Player).PontaArma.global_position if nave is Player else nave.global_position
 	global_rotation = nave.global_rotation
-	comprimento_feixe = _comprimento_ate_borda(global_position, Vector2.from_angle(global_rotation))
-	if dono_player.has_method("feixe_perielio_em_sobrecarga") and bool(dono_player.call("feixe_perielio_em_sobrecarga")):
-		cor_monthly = Color(1.0, 0.16, 0.12)
-	else:
-		cor_monthly = Color(1.0, 0.78, 0.08)
+	comprimento_feixe = _comprimento_ate_borda(global_position, global_transform.x.normalized()) / global_transform.x.length()
+	if not somente_visual_rede and nave is Player:
+		cor_monthly = (nave as Player).obter_cor_calor_perielio()
 	_atualizar_cor_feixe()
 	_atualizar_geometria_feixe()
 	if somente_visual_rede:
@@ -696,23 +690,29 @@ func _processar_feixe_perielio(delta: float) -> void:
 	intervalo_dano_feixe -= delta
 	if intervalo_dano_feixe > 0.0:
 		return
-	var passo := 0.10
-	intervalo_dano_feixe = passo
-	var dps := 0.2
+	intervalo_dano_feixe += INTERVALO_FEIXE
+	var dps := 4.0
 	if dono_player.has_method("obter_dps_feixe_perielio"):
 		dps = float(dono_player.call("obter_dps_feixe_perielio"))
-	var direcao := Vector2.from_angle(global_rotation)
 	for candidato in get_tree().get_nodes_in_group("inimigo"):
-		if not is_instance_valid(candidato) or not candidato is Node2D or not candidato.has_method("tomarDano"):
-			continue
-		var deslocamento := (candidato as Node2D).global_position - global_position
-		var projecao := deslocamento.dot(direcao)
-		if projecao < 0.0 or projecao > comprimento_feixe:
-			continue
-		if absf(deslocamento.cross(direcao)) <= 11.0:
-			_aplicar_dano_critico(candidato as Node2D, dps * passo * dmg)
-			if is_instance_valid(dono_player) and dono_player.has_method("registrar_acerto_projetil"):
+		if candidato is CollisionObject2D and candidato.has_method("tomarDano") and feixe_intersecta(candidato):
+			_aplicar_dano_critico(candidato, dps * INTERVALO_FEIXE * dmg)
+			if dono_player.has_method("registrar_acerto_projetil"):
 				dono_player.call("registrar_acerto_projetil")
+
+
+func feixe_intersecta(alvo: CollisionObject2D) -> bool:
+	if not forma_feixe or is_queued_for_deletion() or not alvo.is_visible_in_tree() or alvo.is_queued_for_deletion():
+		return false
+	var centro := global_transform.translated_local(Vector2(comprimento_feixe * 0.5, 0.0))
+	for id in alvo.get_shape_owners():
+		if alvo.is_shape_owner_disabled(id):
+			continue
+		var pose := alvo.global_transform * alvo.shape_owner_get_transform(id)
+		for indice in alvo.shape_owner_get_shape_count(id):
+			if forma_feixe.collide(centro, alvo.shape_owner_get_shape(id, indice), pose):
+				return true
+	return false
 
 
 func _comprimento_ate_borda(origem: Vector2, direcao: Vector2) -> float:
@@ -741,8 +741,8 @@ func _atualizar_geometria_feixe() -> void:
 		linha_feixe.points = pontos
 	if is_instance_valid(centro_feixe):
 		centro_feixe.points = pontos
-	if is_instance_valid(raycast_feixe):
-		raycast_feixe.target_position = Vector2(comprimento_feixe, 0.0)
+	if forma_feixe:
+		forma_feixe.size = Vector2(comprimento_feixe, linha_feixe.width)
 
 
 func _atualizar_cor_feixe() -> void:

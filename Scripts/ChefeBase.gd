@@ -25,6 +25,22 @@ const ESTADOS_BOSS_REDE: Array[StringName] = [
 ]
 
 
+## Liga a forma física à peça desenhada, inclusive quando ela gira ou desaparece.
+func vincular_colisao_visual(peca: Node2D, forma: Shape2D) -> void:
+	var colisao := CollisionShape2D.new()
+	colisao.shape = forma
+	add_child(colisao)
+	colisao.global_transform = peca.global_transform
+	var vinculo := RemoteTransform2D.new()
+	peca.add_child(vinculo)
+	vinculo.remote_path = vinculo.get_path_to(colisao)
+	colisao.disabled = not peca.is_visible_in_tree()
+	peca.visibility_changed.connect(func():
+		if is_instance_valid(colisao):
+			colisao.set_deferred("disabled", morto or not peca.is_visible_in_tree())
+	)
+
+
 func _process(delta: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		# Consistencia acima de fluidez: somente snapshots autoritativos
@@ -56,7 +72,7 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 	var visuais: Array[Dictionary] = []
 	for candidato in find_children("*", "CanvasItem", true, false):
 		var item := candidato as CanvasItem
-		if not is_instance_valid(item):
+		if not is_instance_valid(item) or item is CollisionShape2D or item is RemoteTransform2D:
 			continue
 		var dados: Dictionary = {
 			"caminho": get_path_to(item),

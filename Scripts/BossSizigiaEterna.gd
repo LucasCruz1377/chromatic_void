@@ -81,7 +81,6 @@ func _ready() -> void:
 	VidaMaxima = vidas_fases[0]
 	Vida = VidaMaxima
 	escala_base_impacto = scale
-	atualizar_colisao(64.0)
 	criar_visuais_transicao()
 	atualizar_visual_fase()
 	vida_alterada.emit(Vida, VidaMaxima)
@@ -592,7 +591,6 @@ func concluir_transicao_para_sol() -> void:
 	VidaMaxima = vidas_fases[1]
 	Vida = VidaMaxima
 	Velocidade = 118.0
-	atualizar_colisao(68.0)
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.35
 	ultimo_ataque = -1
@@ -708,7 +706,6 @@ func preparar_dados_fase_eclipse() -> void:
 	VidaMaxima = vidas_fases[2]
 	Vida = VidaMaxima
 	Velocidade = 128.0
-	atualizar_colisao(70.0)
 	atualizar_visual_fase()
 	# O corpo definitivo já nasce luminoso sob a tela escura; a onda de choque
 	# não é mais responsável por "ligar" o neon depois.
@@ -831,13 +828,20 @@ func limpar_ataques_astrais() -> void:
 				node.queue_free()
 
 
-func atualizar_colisao(raio: float) -> void:
-	var forma := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if not is_instance_valid(forma):
-		return
-	var circulo := forma.shape as CircleShape2D
-	if is_instance_valid(circulo):
-		circulo.radius = raio
+func _process(delta: float) -> void:
+	super._process(delta)
+	if Rede.modo_multiplayer and not multiplayer.is_server() and not morto:
+		atualizar_colisao_visual()
+
+
+func atualizar_colisao_visual() -> void:
+	var circulo := $CollisionShape2D.shape as CircleShape2D
+	var raio_textura := 108.0
+	if visual_fase.texture == TEXTURA_SOL:
+		raio_textura = 124.0
+	elif visual_fase.texture == TEXTURA_ECLIPSE:
+		raio_textura = 126.0
+	circulo.radius = raio_textura * visual_fase.scale.x
 
 
 func morrer() -> void:
@@ -899,6 +903,7 @@ func atualizar_visual_fase() -> void:
 			visual_fase.texture = TEXTURA_ECLIPSE
 			visual_fase.scale = Vector2.ONE * 0.53
 	visual_fase.visible = true
+	atualizar_colisao_visual()
 	visual_fase.self_modulate = (
 		Color(1.92, 1.58, 2.14, 1.0)
 		if fase_atual == Fase.ECLIPSE
@@ -915,6 +920,7 @@ func atualizar_animacao_visual(delta: float) -> void:
 	var amplitude_pulso := 0.032 if fase_atual == Fase.SOL else 0.018
 	var pulso := 1.0 + sin(tempo_animacao_visual * velocidade_pulso) * amplitude_pulso
 	visual_fase.scale = Vector2.ONE * escala_base * pulso
+	atualizar_colisao_visual()
 	if fase_atual == Fase.SOL:
 		# O núcleo pontudo novo permanece legível enquanto a coroa externa gira e
 		# pulsa como na versão antiga.

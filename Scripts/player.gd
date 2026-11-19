@@ -170,8 +170,7 @@ var calor_feixe := 0.2
 var feixe_perielio_ativo: Node2D
 var tempo_uso_feixe_perielio := 0.0
 var bloqueio_feixe_perielio := 0.0
-var sobrecarga_feixe_perielio := false
-var aviso_sobrecarga_feixe_perielio := 0.0
+var calor_feixe_perielio := 0.0
 var tempo_poder_monthly := 0.0
 var tipo_poder_temporario: StringName = &""
 var cor_poder_temporario := Color.WHITE
@@ -1485,7 +1484,7 @@ func atualizar_combate(delta: float) -> void:
 		_atualizar_feixe_perielio(delta)
 		return
 	elif is_instance_valid(feixe_perielio_ativo):
-		_encerrar_feixe_perielio(true)
+		_encerrar_feixe_perielio()
 	if ctrlblock:
 		if carga_arma > 0.0:
 			carga_arma = 0.0
@@ -1570,50 +1569,44 @@ func nivel_upgrade_arma(id: StringName) -> int:
 
 
 func _atualizar_feixe_perielio(delta: float) -> void:
-	bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0)
-	if aviso_sobrecarga_feixe_perielio > 0.0:
-		aviso_sobrecarga_feixe_perielio = maxf(
-			aviso_sobrecarga_feixe_perielio - delta, 0.0
-		)
-		sobrecarga_feixe_perielio = true
-		if aviso_sobrecarga_feixe_perielio <= 0.0:
-			_concluir_sobrecarga_feixe_perielio()
+	var resfriamento := duracao_resfriamento_perielio()
+	if bloqueio_feixe_perielio > 0.0:
+		bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0.0)
+		calor_feixe_perielio = bloqueio_feixe_perielio / resfriamento
+		queue_redraw()
 		return
 	var pressionando := vivo and not ctrlblock and Input.is_action_pressed("atirar")
 	if not pressionando:
-		_encerrar_feixe_perielio(true)
-		return
-	if bloqueio_feixe_perielio > 0.0:
+		_encerrar_feixe_perielio()
+		if calor_feixe_perielio > 0.0:
+			calor_feixe_perielio = maxf(calor_feixe_perielio - delta / resfriamento, 0.0)
+			queue_redraw()
 		return
 	if not is_instance_valid(feixe_perielio_ativo):
 		_iniciar_feixe_perielio()
 	if not is_instance_valid(feixe_perielio_ativo):
 		return
 	tempo_uso_feixe_perielio += delta
-	var limite_uso := obter_limite_uso_feixe_perielio()
+	calor_feixe_perielio = minf(calor_feixe_perielio + delta / obter_limite_uso_feixe_perielio(), 1.0)
+	queue_redraw()
 	var infinito := nivel_upgrade_arma(&"perielio_infinito") > 0
-	if tempo_uso_feixe_perielio < limite_uso:
-		sobrecarga_feixe_perielio = false
+	if not is_equal_approx(calor_feixe_perielio, 1.0):
 		return
 	if infinito:
-		sobrecarga_feixe_perielio = true
 		# Custo direto e contínuo: usar tomar_dano aqui faria os frames de
 		# invencibilidade descartarem quase todo o 1% prometido pela melhoria.
 		# Como é um custo da própria arma, ele também não interfere no combo.
 		vida = maxf(vida - obter_dps_feixe_perielio() * 0.01 * delta, 0.0)
 		return
-	sobrecarga_feixe_perielio = true
 	_criar_feedback_monthly(
 		PontaArma.global_position, Color(1.0, 0.14, 0.10), 0.9, 2.0
 	)
-	# Mantém um aviso vermelho curto e sem dano antes de recolher o Line2D.
-	aviso_sobrecarga_feixe_perielio = 0.70
+	_encerrar_feixe_perielio()
+	bloqueio_feixe_perielio = duracao_resfriamento_perielio()
 
 
-func _concluir_sobrecarga_feixe_perielio() -> void:
-	_encerrar_feixe_perielio(false)
-	tempo_uso_feixe_perielio = 0.0
-	bloqueio_feixe_perielio = clampf(
+func duracao_resfriamento_perielio() -> float:
+	return clampf(
 		2.2 - float(nivel_upgrade_arma(&"perielio_resfriamento")) * 0.35,
 		1.0, 3.0
 	)
@@ -1622,7 +1615,6 @@ func _concluir_sobrecarga_feixe_perielio() -> void:
 func _iniciar_feixe_perielio() -> void:
 	if is_instance_valid(feixe_perielio_ativo) or bloqueio_feixe_perielio > 0.0:
 		return
-	sobrecarga_feixe_perielio = false
 	feixe_perielio_ativo = criar_projetil(
 		rotation, 1.0, false, null, 0.0, &"perielio_ray",
 		Color(1.0, 0.78, 0.08), {"tempo_vida": 3600.0}
@@ -1632,14 +1624,11 @@ func _iniciar_feixe_perielio() -> void:
 		somtiro.play()
 
 
-func _encerrar_feixe_perielio(reiniciar_carga: bool) -> void:
+func _encerrar_feixe_perielio() -> void:
 	if is_instance_valid(feixe_perielio_ativo):
 		feixe_perielio_ativo.queue_free()
 	feixe_perielio_ativo = null
-	if reiniciar_carga:
-		tempo_uso_feixe_perielio = 0.0
-		sobrecarga_feixe_perielio = false
-		aviso_sobrecarga_feixe_perielio = 0.0
+	tempo_uso_feixe_perielio = 0.0
 
 
 func obter_limite_uso_feixe_perielio() -> float:
@@ -1648,32 +1637,18 @@ func obter_limite_uso_feixe_perielio() -> float:
 
 func obter_dps_feixe_perielio() -> float:
 	var nivel_potencia := nivel_upgrade_arma(&"perielio_potencia")
-	var dano_maximo := 5.0
-	match nivel_potencia:
-		1: dano_maximo = 10.0
-		2: dano_maximo = 20.0
-		3: dano_maximo = 30.0
-	var tempo_crescimento := 10.0 * pow(
-		0.70, nivel_upgrade_arma(&"perielio_foco")
-	)
-	# Começa em 0,2 DPS e avança em degraus perceptíveis a cada 0,5 s.
-	var tempo_em_degraus := floorf(tempo_uso_feixe_perielio / 0.5) * 0.5
-	var progresso := clampf(
-		tempo_em_degraus / maxf(tempo_crescimento, 0.1), 0.0, 1.0
-	)
-	# Interpolação exponencial de 0,2 DPS até o teto atual.
-	return 0.2 * pow(dano_maximo / 0.2, progresso)
+	var dano_maximo := 64.0 * pow(1.5, nivel_potencia)
+	var tempo_crescimento := 10.0 * pow(0.70, nivel_upgrade_arma(&"perielio_foco"))
+	var progresso := clampf(tempo_uso_feixe_perielio / tempo_crescimento, 0.0, 1.0)
+	return 4.0 * pow(dano_maximo / 4.0, progresso)
 
 
-func feixe_perielio_em_sobrecarga() -> bool:
-	return sobrecarga_feixe_perielio
+func obter_cor_calor_perielio() -> Color:
+	return Color("ffcf28").lerp(Color("ff351d"), smoothstep(0.45, 1.0, calor_feixe_perielio))
 
 
 func feixe_perielio_pode_causar_dano() -> bool:
-	return (
-		not sobrecarga_feixe_perielio
-		or nivel_upgrade_arma(&"perielio_infinito") > 0
-	)
+	return bloqueio_feixe_perielio <= 0.0
 
 
 func obter_tempo_carga_esturjao() -> float:
@@ -2260,6 +2235,10 @@ func atualizar_passivos(delta: float) -> void:
 
 
 func _draw() -> void:
+	if arma_monthly == &"a06_feixe_perielio" and calor_feixe_perielio > 0.0:
+		var cor := Color("68dafa") if bloqueio_feixe_perielio > 0.0 else obter_cor_calor_perielio()
+		draw_arc(Vector2.ZERO, 30.0, PI * 0.65, PI * 1.35, 32, Color(0.08, 0.09, 0.14, 0.85), 4.0, true)
+		draw_arc(Vector2.ZERO, 30.0, PI * 0.65, PI * (0.65 + 0.70 * calor_feixe_perielio), 32, cor, 2.5, true)
 	_desenhar_carga_arma()
 	if escudo_habilidade > 0.0 and escudo_habilidade_max > 0.0:
 		var proporcao := clampf(escudo_habilidade / escudo_habilidade_max, 0.0, 1.0)
@@ -2657,6 +2636,7 @@ func morrer() -> void:
 		return
 
 	vivo = false
+	_encerrar_feixe_perielio()
 	if is_instance_valid(barra_cooldown_habilidade):
 		barra_cooldown_habilidade.hide()
 	velocity = Vector2.ZERO
