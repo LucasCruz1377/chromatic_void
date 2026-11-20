@@ -14,7 +14,7 @@ var angulo := 0.0
 var raio_orbita := 115.0
 var velocidade_orbita := 0.9
 var cor := Color(1.0, 0.48, 0.1)
-var destruido := false
+var morto := false
 
 
 func _ready() -> void:
@@ -51,14 +51,14 @@ func _physics_process(delta: float) -> void:
 
 
 func tomarDano(valor: float) -> void:
-	if destruido:
+	if morto:
 		return
 	vida -= maxf(valor, 0.0)
 	modulate = Color(1.0, 0.85, 0.55)
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color.WHITE, 0.09)
 	if vida <= 0.0:
-		destruido = true
+		morto = true
 		var cena := get_tree().current_scene
 		if is_instance_valid(cena):
 			EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.MORTE, cor, 0.8)
@@ -66,9 +66,9 @@ func tomarDano(valor: float) -> void:
 
 
 func explodir() -> void:
-	if destruido:
+	if morto:
 		return
-	destruido = true
+	morto = true
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
 		EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.AVISO, cor, 1.15)

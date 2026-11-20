@@ -197,11 +197,39 @@ func _ready() -> void:
 	verificar(sync.replication_config.has_property(NodePath(".:estrelas_solidarias")), "cargas nao entram na replicacao")
 	verificar(sync.replication_config.has_property(NodePath(".:fase_estrelas_solidarias")), "fase orbital nao entra na replicacao")
 	verificar(sync.replication_config.has_property(NodePath(".:direcao_propulsao")), "lado de protecao nao entra na replicacao")
+	alvo.queue_free()
+	testar_manchas_solares(jogador)
 	jogador.vivo = false
 	passivas._process(0.01)
 	verificar(jogador.estrelas_solidarias == Vector4.ZERO, "morte manteve estrelas ativas")
-	alvo.queue_free()
 	batalha.queue_free()
 	await get_tree().process_frame
 	print("TESTE %s: limites de brilho, duplo toque, quatro estrelas, protecao direcional e remocao de passivas" % ("OK" if falhas.is_empty() else "FALHOU"))
 	get_tree().quit(0 if falhas.is_empty() else 1)
+
+
+func testar_manchas_solares(nave: Player) -> void:
+	var boss := preload("res://Entities/BossEclipseColheita.tscn").instantiate() as BossSizigiaEterna
+	nave.get_parent().add_child(boss)
+	boss.global_position = nave.global_position + Vector2(300, 0)
+	boss.tomarDano(boss.Vida + 1.0)
+	boss.concluir_transicao_para_sol()
+	nave.modulo_nave = &"n05_reserva_solidaria"
+	nave.estrelas_solidarias = Vector4(1.0, 0.0, 0.0, 0.0)
+	boss.criar_manchas_solares(1)
+	var orbe := get_tree().get_first_node_in_group("mancha_solar") as OrbeAstral
+	verificar(is_instance_valid(orbe), "o Sol não criou a mancha solar")
+	if is_instance_valid(orbe):
+		orbe.global_position = nave.passivas_nave.to_global(nave.passivas_nave.posicao_estrela(0))
+		var vida_inicial := orbe.vida
+		nave.passivas_nave.atingir_inimigos()
+		verificar(is_equal_approx(orbe.vida, vida_inicial - 1.0), "a estrela não atingiu a mancha solar")
+		verificar(nave.estrelas_solidarias == Vector4.ZERO, "a estrela não consumiu a carga no impacto")
+		nave.UsandoHabilidade = true
+		nave.dano_colisao_habilidade = orbe.vida
+		nave._on_hitbox_body_entered(orbe)
+		verificar(orbe.is_queued_for_deletion(), "o impacto da habilidade não destruiu a mancha")
+		var disparos := get_tree().get_nodes_in_group("projetil_astral").size()
+		orbe.explodir()
+		verificar(get_tree().get_nodes_in_group("projetil_astral").size() == disparos, "a mancha destruída ainda disparou")
+	boss.queue_free()
