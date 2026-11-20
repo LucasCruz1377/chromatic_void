@@ -38,6 +38,7 @@ func _ready() -> void:
 	testar_mina_temporizada()
 	testar_bumerangue_colheita()
 	testar_tremor_sem_acumulo()
+	await testar_fragmentacao_em_colisao()
 	finalizar()
 
 
@@ -375,6 +376,45 @@ func testar_tremor_sem_acumulo() -> void:
 	camera.shake(18.0, true)
 	verificar(camera.ForcaShake >= 17.9, "o tremor forte reservado não alcançou a intensidade esperada")
 	camera.queue_free()
+
+
+func testar_fragmentacao_em_colisao() -> void:
+	var centro := Vector2(480, 260)
+	var alvos: Array[CharacterBody2D] = []
+	for indice in 2:
+		var alvo := AlvoBumerangueTeste.new()
+		var forma := CollisionShape2D.new()
+		forma.shape = CircleShape2D.new()
+		forma.shape.radius = 3.0
+		alvo.collision_layer = 4
+		alvo.position = centro
+		alvo.add_child(forma)
+		add_child(alvo)
+		alvos.append(alvo)
+	for penetracao in [0, 1]:
+		var tiro = CenaProjetil.instantiate()
+		tiro.position = centro
+		add_child(tiro)
+		tiro.configurar(10.0, 0.0, 1.0, penetracao, 0.0, 3, 0, null, CenaProjetil)
+		var filhos: Array[Area2D] = []
+		var contar := func(no: Node):
+			if no.scene_file_path == CenaProjetil.resource_path:
+				filhos.append(no)
+		child_entered_tree.connect(contar)
+		tiro.body_entered.connect(func(_alvo: Node2D):
+			verificar(filhos.is_empty(), "fragmentação criou colisores dentro do sinal de impacto")
+		)
+		for quadro in 5:
+			await get_tree().physics_frame
+		child_entered_tree.disconnect(contar)
+		verificar(filhos.size() == 3 * (1 + penetracao), "quantidade de fragmentos incorreta para a penetração")
+		for filho in filhos:
+			verificar(filho.eh_fragmento and filho.quantidade_fragmentos == 0 and is_equal_approx(filho.dmg, 2.8), "fragmento perdeu seu dano ou gerou outra fragmentação")
+			verificar(is_equal_approx(filho.position.distance_to(centro), 16.0), "fragmento fora do impacto")
+			filho.queue_free()
+		await get_tree().process_frame
+	for alvo in alvos:
+		alvo.queue_free()
 
 
 func finalizar() -> void:

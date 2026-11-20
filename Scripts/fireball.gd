@@ -572,7 +572,7 @@ func verificar_fora_da_arena() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if bool(get_meta("apenas_visual_rede", false)):
+	if is_queued_for_deletion() or bool(get_meta("apenas_visual_rede", false)):
 		return
 	if not body.has_method("tomarDano"):
 		return
@@ -597,7 +597,7 @@ func _on_body_entered(body: Node2D) -> void:
 		dono_player.registrar_acerto_projetil()
 
 	if quantidade_fragmentos > 0 and not eh_fragmento:
-		criar_fragmentos()
+		criar_fragmentos.call_deferred(get_tree().current_scene, global_position, global_rotation)
 	if dano_explosao > 0.0 and raio_explosao > 0.0 and not eh_fragmento:
 		aplicar_onda_de_impacto(body)
 
@@ -793,12 +793,14 @@ func aplicar_onda_de_impacto(alvo_direto: Node2D) -> void:
 			_aplicar_dano_critico(alvo, dmg * dano_explosao)
 
 
-func criar_fragmentos() -> void:
-	if not cena_origem:
+func criar_fragmentos(arena: Node, impacto: Vector2, rotacao_impacto: float) -> void:
+	if not cena_origem or not is_inside_tree() or not is_instance_valid(arena):
+		return
+	if arena.is_queued_for_deletion() or arena != get_tree().current_scene:
 		return
 
 	var arco := deg_to_rad(130.0)
-	var base := global_rotation + PI
+	var base := rotacao_impacto + PI
 	for indice in range(quantidade_fragmentos):
 		var deslocamento := 0.0
 		if quantidade_fragmentos > 1:
@@ -809,10 +811,10 @@ func criar_fragmentos() -> void:
 			)
 
 		var fragmento = cena_origem.instantiate()
-		get_tree().current_scene.add_child(fragmento)
+		arena.add_child(fragmento)
 		fragmento.eh_critico = eh_critico
 		fragmento.global_rotation = base + deslocamento
-		fragmento.global_position = global_position + fragmento.transform.x * 16.0
+		fragmento.global_position = impacto + Vector2.from_angle(fragmento.global_rotation) * 16.0
 
 		if fragmento.has_method("configurar"):
 			fragmento.configurar(
@@ -823,7 +825,7 @@ func criar_fragmentos() -> void:
 				forca_homing * 0.45,
 				0,
 				maxi(ricochetes_restantes - 1, 0),
-				dono_player,
+				dono_player if is_instance_valid(dono_player) else null,
 				cena_origem,
 				true,
 				multiplicador_dano_fragmento,
