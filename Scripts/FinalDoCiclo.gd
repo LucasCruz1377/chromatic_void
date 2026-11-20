@@ -5,13 +5,13 @@ signal voltar_ao_menu
 const approach_gradient := preload("res://Assets/Final/aproximacao.png")
 const blast_glow := preload("res://Assets/Final/blast_glow.png")
 const plume := preload("res://Assets/Final/plume_profile.png")
-const ship_texture := preload("res://UI/modelo_o.svg")
 const reward_icons := [
 	preload("res://Habilidades/Icones/monthly/n05_reserva_solidaria.svg"),
 	preload("res://Habilidades/Icones/monthly/u01_alcateia_lunar.svg"),
 	preload("res://Habilidades/Icones/monthly/p15_determinacao.svg")
 ]
 
+var ship_texture: Texture2D
 var cor_fundo: Color = ProjectSettings.get_setting("rendering/environment/defaults/default_clear_color")
 var pontuacao := 0
 var recorde_anterior := 0
@@ -38,7 +38,43 @@ func _ready() -> void:
 		stars.append(Vector4(rng.randf_range(0, 960), rng.randf_range(0, 540), rng.randf_range(0.2, 1.0), rng.randf_range(0, TAU)))
 
 func capturar_build(jogador: Player) -> void:
-	$RolagemBuild/Build.capturar(jogador)
+	ship_texture = capturar_retrato(jogador)
+	$RolagemBuild/Build.capturar(jogador, ship_texture)
+
+
+func capturar_retrato(jogador: Player) -> Texture2D:
+	var retrato: SubViewport = $RetratoNave
+	var modelo: Node2D = $RetratoNave/Modelo
+	for parte in modelo.get_children():
+		parte.free()
+	if not is_instance_valid(jogador):
+		return null
+	var limites := Rect2()
+	var sprite := jogador.sprite_modelo_o
+	if jogador.sprites_modelos_exclusivos.has(jogador.modelo_visual_nave):
+		sprite = jogador.sprites_modelos_exclusivos[jogador.modelo_visual_nave]
+	if is_instance_valid(sprite) and sprite.visible:
+		modelo.add_child(sprite.duplicate(0))
+		var regiao := Rect2(sprite.texture.get_image().get_used_rect())
+		regiao.position += sprite.get_rect().position
+		limites = sprite.transform * regiao
+	else:
+		for parte: Polygon2D in [jogador.corpo_visual, jogador.detalhe_visual]:
+			var copia := parte.duplicate(0) as Polygon2D
+			copia.material = null # Descarta o flash temporário de dano.
+			modelo.add_child(copia)
+			var pontos := parte.transform * parte.polygon
+			var caixa := Rect2(pontos[0], Vector2.ZERO)
+			for ponto in pontos:
+				caixa = caixa.expand(ponto)
+			limites = limites.merge(caixa) if limites.has_area() else caixa
+	# Em combate o nariz aponta para a direita. No final a nave voa para cima.
+	modelo.rotation = -PI / 2.0
+	modelo.scale = Vector2.ONE * ((retrato.size.x - 4.0) / maxf(limites.size.x, limites.size.y))
+	modelo.position = Vector2(retrato.size) * 0.5 - modelo.transform.basis_xform(limites.get_center())
+	retrato.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if jogador.modelo_visual_nave == &"c08_modelo_spectrum" else SubViewport.UPDATE_ONCE
+	return retrato.get_texture()
+
 
 
 func ajustar_tamanho() -> void:
@@ -189,8 +225,9 @@ func draw_ship(ship_pos: Vector2, hole: Vector2, bank: float, scale_factor: floa
 		var edge := Vector2(width,0)
 		draw_primitive(PackedVector2Array([previous-edge, previous+edge, next+edge, next-edge]), PackedColorArray([Color.WHITE]), PackedVector2Array([Vector2(0,v), Vector2(1,v), Vector2(1,u), Vector2(0,u)]), plume)
 		previous = next
-	var dimensions := Vector2(64.0/sqrt(stretch),64.0*stretch)*scale_factor
-	draw_texture_rect(ship_texture,Rect2(-dimensions*0.5,dimensions),false)
+	var dimensions := Vector2(40.0/sqrt(stretch),40.0*stretch)*scale_factor
+	if ship_texture:
+		draw_texture_rect(ship_texture,Rect2(-dimensions*0.5,dimensions),false)
 
 
 func label_at(pos: Vector2, message: String, font_size: int, color: Color) -> void:

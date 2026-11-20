@@ -9,6 +9,13 @@
 script = ExtResource("1")
 texture_filter = 2
 
+[node name="RetratoNave" type="SubViewport" parent="."]
+transparent_bg = true
+disable_3d = true
+size = Vector2i(128, 128)
+
+[node name="Modelo" type="Node2D" parent="RetratoNave"]
+
 [node name="Audio" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2")
 bus = &"Sound"

@@ -8,10 +8,11 @@ const COR_VAZIA := Color("#566073")
 var itens: Array[Dictionary] = []
 
 
-func capturar(jogador: Player) -> void:
+func capturar(jogador: Player, retrato: Texture2D) -> void:
 	itens.clear()
 	if is_instance_valid(jogador):
-		adicionar_catalogo(jogador.modelo_visual_nave, "SKIN")
+		var modelo := MonthlyCatalog.encontrar(jogador.modelo_visual_nave)
+		adicionar("SKIN", modelo.get("nome", str(jogador.modelo_visual_nave)), retrato, jogador.obter_cor_personalizacao())
 		if jogador.arma_monthly.is_empty():
 			adicionar("ARMA", "ARMA PADRÃO", preload("res://Assets/UpgradeDano.png"), Color("#f4aa52"))
 		else:
@@ -44,14 +45,6 @@ func adicionar_catalogo(id: StringName, categoria: String) -> void:
 func adicionar_dados(categoria: String, dados: Dictionary, nome_padrao: String, nivel := 0) -> void:
 	var caminho := str(dados.get("icone", ""))
 	var icone := load(caminho) as Texture2D if not caminho.is_empty() and ResourceLoader.exists(caminho) else null
-	# Os modelos da loja têm margens transparentes diferentes em torno da nave.
-	if categoria == "SKIN" and icone:
-		var imagem := icone.get_image()
-		if imagem:
-			var recorte := AtlasTexture.new()
-			recorte.atlas = icone
-			recorte.region = imagem.get_used_rect()
-			icone = recorte
 	adicionar(categoria, dados.get("nome", nome_padrao), icone, dados.get("cor", COR_VAZIA), nivel)
 
 

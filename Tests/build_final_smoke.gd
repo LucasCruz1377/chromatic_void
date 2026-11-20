@@ -16,6 +16,8 @@ func _ready() -> void:
 	get_tree().current_scene = arena
 	var piloto: Player = arena.player
 	piloto.modelo_visual_nave = &"c04_dardo"
+	piloto.cor_visual_nave = &"c12_rosa"
+	piloto.aplicar_personalizacao_nave()
 	piloto.arma_monthly = &"a06_feixe_perielio"
 	piloto.HabilidadeEquipada = preload("res://Habilidades/monthly_p14.tres")
 	piloto.mutacao_habilidade = &"u12_noite_congelada"
@@ -26,6 +28,10 @@ func _ready() -> void:
 	final.set_process(false)
 	var rolagem := final.get_node("RolagemBuild") as ScrollContainer
 	var build := rolagem.get_node("Build")
+	var modelo := final.get_node("RetratoNave/Modelo")
+	var corpo := modelo.get_child(0) as Polygon2D
+	conferir(corpo.polygon == piloto.corpo_visual.polygon and corpo.color == Color("ff4fa3"), "o retrato perdeu a forma ou a cor do Dardo")
+	conferir(final.ship_texture is ViewportTexture and build.itens[0].icone == final.ship_texture, "a cutscene e a build devem usar o mesmo retrato")
 	var nomes := [
 		MonthlyCatalog.encontrar(piloto.modelo_visual_nave).nome,
 		MonthlyCatalog.encontrar(piloto.arma_monthly).nome,
@@ -50,7 +56,7 @@ func _ready() -> void:
 		piloto.niveis_upgrades[id] = 1
 	for i in range(85):
 		piloto.niveis_upgrades["melhoria_teste_%d" % i] = 1
-	build.capturar(piloto)
+	final.capturar_build(piloto)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	rolagem.scroll_vertical = 9999
@@ -61,9 +67,17 @@ func _ready() -> void:
 	piloto.mutacao_habilidade = &""
 	piloto.modulo_nave = &""
 	piloto.niveis_upgrades.clear()
-	build.capturar(piloto)
+	final.capturar_build(piloto)
 	conferir(build.itens.size() == 5 and build.itens[1].nome == "ARMA PADRÃO", "equipamento padrão")
 	conferir(build.itens[3].icone == null and build.itens[4].icone == null, "slot vazio mostrou equipamento")
+	for id in [&"c07_modelo_o", &"c08_modelo_spectrum", &"c09_modelo_fspeed"]:
+		piloto.modelo_visual_nave = id
+		piloto.aplicar_personalizacao_nave()
+		final.capturar_build(piloto)
+		var copia := modelo.get_child(0) as Sprite2D
+		var equipado: Sprite2D = piloto.sprites_modelos_exclusivos.get(id, piloto.sprite_modelo_o)
+		conferir(modelo.get_child_count() == 1 and copia.texture == equipado.texture and copia.material == equipado.material, "sprite ou shader incorreto: " + id)
+		conferir(build.itens[0].icone == final.ship_texture, "hexágono perdeu o modelo exclusivo")
 	arena.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
