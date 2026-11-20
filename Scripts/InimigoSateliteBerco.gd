@@ -29,18 +29,17 @@ func tomarDano(valor: float) -> void:
 	if morto or valor <= 0.0:
 		return
 	if estilo == Estilo.SATELITE_BERCO and not drones_liberados:
-		_soltar_drones()
+		drones_liberados = true
+		_criar_drones.call_deferred(get_tree().current_scene, global_position)
 	super.tomarDano(valor)
 
 
-func _soltar_drones() -> void:
-	if drones_liberados or (Rede.modo_multiplayer and not multiplayer.is_server()):
+func _criar_drones(batalha: Node, origem: Vector2) -> void:
+	if not is_instance_valid(batalha) or batalha.is_queued_for_deletion() or not is_inside_tree():
 		return
-	drones_liberados = true
-	var cena := load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
-	var batalha := get_tree().current_scene
-	if not is_instance_valid(batalha) or batalha.is_queued_for_deletion() or not cena:
+	if batalha != get_tree().current_scene or (Rede.modo_multiplayer and not multiplayer.is_server()):
 		return
+	var cena := preload("res://Entities/InimigoCentelhaGuia.tscn")
 	for lado in [-1.0, 1.0]:
 		if batalha.has_method("contar_inimigos_regulares"):
 			if int(batalha.call("contar_inimigos_regulares")) >= 10:
@@ -50,7 +49,7 @@ func _soltar_drones() -> void:
 			continue
 		# Somente o host cria o drone na arena. O MultiplayerSpawner
 		# replica a MESMA entidade, inclusive sua remocao.
-		drone.position = global_position + Vector2(30.0 * lado, 10.0)
+		drone.position = origem + Vector2(30.0 * lado, 10.0)
 		drone.VidaMaxima *= 0.5
 		drone.ValorXP = 0.25
 		batalha.add_child(drone, true)

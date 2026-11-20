@@ -358,6 +358,7 @@ func _ready() -> void:
 	conquistas_disponiveis.assign(CONQUISTAS.keys())
 	carregar_conquistas()
 	get_tree().node_added.connect(_on_node_adicionado)
+	get_viewport().size_changed.connect(_atualizar_ambientes)
 	call_deferred("aplicar_configuracoes")
 
 
@@ -808,7 +809,7 @@ func aplicar_configuracoes() -> void:
 	_aplicar_volume("Sound", volume_som)
 	TranslationServer.set_locale(idioma)
 
-	if not OS.has_feature("web") and not dispositivo_mobile():
+	if not OS.has_feature("web") and not dispositivo_mobile() and not Engine.is_embedded_in_editor():
 		DisplayServer.window_set_mode(
 			DisplayServer.WINDOW_MODE_FULLSCREEN
 			if tela_cheia
@@ -834,6 +835,10 @@ func aplicar_configuracoes() -> void:
 		if InputMap.has_action(acao):
 			InputMap.action_set_deadzone(acao, zona_morta_controle)
 
+	_atualizar_ambientes()
+
+
+func _atualizar_ambientes() -> void:
 	for ambiente in get_tree().get_nodes_in_group("ambiente_global"):
 		_aplicar_ambiente(ambiente)
 
@@ -861,10 +866,13 @@ func _aplicar_ambiente(node: Node) -> void:
 	var world := node as WorldEnvironment
 	if not world.environment:
 		return
-	configurar_glow(world.environment, RenderingServer.get_current_rendering_method())
+	configurar_glow(world.environment, RenderingServer.get_current_rendering_method(), world.get_viewport().get_texture().get_size())
 
 
-func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
+func configurar_glow(
+	ambiente: Environment, renderizador: StringName,
+	dimensoes: Vector2i = Vector2i(get_viewport().get_texture().get_size())
+) -> void:
 	ambiente.glow_enabled = neon > 0.01 or bloom > 0.01
 	ambiente.glow_bloom = bloom
 	ambiente.glow_intensity = neon
@@ -875,6 +883,13 @@ func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
 		ambiente.glow_hdr_scale = 0.35
 	elif renderizador == &"mobile":
 		ambiente.glow_hdr_threshold = 0.9
+		# O blur Mobile lê dois mipmaps além do índice do nível durante a recomposição.
+		var lado_maior := maxi(dimensoes.x, dimensoes.y)
+		for indice in 7:
+			var tamanho_minimo := 1 << (indice + 3)
+			ambiente.set_glow_level(indice, 1.5 if lado_maior >= tamanho_minimo else 0.0)
+		if mini(dimensoes.x, dimensoes.y) < 8:
+			ambiente.glow_enabled = false
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:
