@@ -19,6 +19,12 @@ func _ready() -> void:
 	add_child(projetil)
 	projetil.set_physics_process(false)
 	projetil.configurar_id_disparo_rede("2:regressao", true)
+	projetil.aplicar_estado_visual_rede(Vector2(200, 100), 0.0, Vector2.ONE, true, Color.WHITE, 2)
+	projetil.aplicar_estado_visual_rede(Vector2.ZERO, PI, Vector2.ONE, false, Color.RED, 1)
+	verificar(projetil.position == Vector2(200, 100) and projetil.visible, "pacote antigo fez o disparo retroceder")
+	projetil.estilo_monthly = &"perielio_ray"
+	projetil.aplicar_estado_visual_rede(Vector2.ZERO, PI, Vector2.ONE, true, Color.RED, 3)
+	verificar(projetil.position == Vector2(200, 100) and projetil.cor_monthly == Color.RED, "pacote deslocou o feixe do cano ou perdeu a cor")
 	projetil.configurar_estilo_monthly(&"harvest_boomerang", Color.WHITE, {})
 	projetil.monitoring = false
 	var alvo := Alvo.new()

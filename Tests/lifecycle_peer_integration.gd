@@ -5,8 +5,8 @@ var arena: Node2D
 var prontos: Dictionary = {}
 var iniciar_saida := false
 var concluido := false
-var fim_confirmado := false
-var preservacao_confirmada := false
+var confirmacoes_fim: Dictionary = {}
+var confirmacoes_preservacao: Dictionary = {}
 
 
 func _ready() -> void:
@@ -21,17 +21,17 @@ func _ready() -> void:
 	if erro != OK:
 		falhar("nao abriu conexao")
 		return
-	if not await esperar(func() -> bool: return Rede.jogadores.size() == 3):
-		falhar("lobby nao chegou a tres pilotos")
+	if not await esperar(func() -> bool: return Rede.jogadores.size() == 4):
+		falhar("lobby nao chegou a quatro pilotos")
 		return
 	arena = (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate() as Node2D
 	get_tree().root.add_child(arena)
 	arena.set("preservar_conexao_ao_sair", true)
 	arena.set("spawns_pausados_desenvolvedor", true)
 	if not await esperar(func() -> bool:
-		return get_tree().get_nodes_in_group("player").size() == 3 and (papel == "host" or bool(arena.get("entrada_estado_confirmada")))
+		return get_tree().get_nodes_in_group("player").size() == 4 and (papel == "host" or bool(arena.get("entrada_estado_confirmada")))
 	):
-		falhar("tres naves nao foram replicadas")
+		falhar("quatro naves nao foram replicadas")
 		return
 	for piloto in get_tree().get_nodes_in_group("player"):
 		piloto.invencibilidade = true
@@ -41,7 +41,7 @@ func _ready() -> void:
 	else:
 		_marcar_pronto.rpc_id(1)
 	if papel == "host":
-		if not await esperar(func() -> bool: return prontos.size() == 3):
+		if not await esperar(func() -> bool: return prontos.size() == 4):
 			falhar("peers nao confirmaram entrada")
 			return
 		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as ChefeBase
@@ -78,16 +78,16 @@ func _ready() -> void:
 		print("TESTE OK: client_b saiu da arena")
 		get_tree().quit(0)
 		return
-	if not await esperar(func() -> bool: return Rede.jogadores.size() == 2 and get_tree().get_nodes_in_group("player").size() == 2):
+	if not await esperar(func() -> bool: return Rede.jogadores.size() == 3 and get_tree().get_nodes_in_group("player").size() == 3):
 		falhar("a nave desconectada nao foi removida pelo host")
 		return
 	if get_tree().get_nodes_in_group("projetil_primaveril").size() != 3:
 		falhar("espinhos foram apagados no cliente")
 		return
-	if papel == "client_a":
+	if papel != "host":
 		_confirmar_preservacao.rpc_id(1)
 	if papel == "host":
-		if not await esperar(func() -> bool: return preservacao_confirmada):
+		if not await esperar(func() -> bool: return confirmacoes_preservacao.size() == 2):
 			falhar("cliente nao confirmou preservacao dos espinhos")
 			return
 		# Mantem o cliente sobrevivente ativo enquanto o host emite os despawns.
@@ -101,10 +101,10 @@ func _ready() -> void:
 	if not await esperar(func() -> bool: return get_tree().get_nodes_in_group("projetil_primaveril").is_empty()):
 		falhar("despawn dos espinhos nao chegou")
 		return
-	if papel == "client_a":
+	if papel != "host":
 		_confirmar_fim.rpc_id(1)
 		await get_tree().create_timer(0.2).timeout
-	elif not await esperar(func() -> bool: return fim_confirmado):
+	elif not await esperar(func() -> bool: return confirmacoes_fim.size() == 2):
 		falhar("cliente nao confirmou recebimento do fim")
 		return
 	await sair()
@@ -129,12 +129,12 @@ func _finalizar() -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _confirmar_preservacao() -> void:
-	preservacao_confirmada = true
+	confirmacoes_preservacao[multiplayer.get_remote_sender_id()] = true
 
 
 @rpc("any_peer", "call_remote", "reliable")
 func _confirmar_fim() -> void:
-	fim_confirmado = true
+	confirmacoes_fim[multiplayer.get_remote_sender_id()] = true
 
 
 func esperar(condicao: Callable) -> bool:

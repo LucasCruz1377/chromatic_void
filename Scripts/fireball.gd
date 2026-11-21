@@ -55,11 +55,8 @@ var id_disparo_rede := ""
 var numero_impacto_rede := 0
 var somente_visual_rede := false
 var intervalo_estado_rede := 0.05
-var posicao_estado_rede := Vector2.ZERO
-var rotacao_estado_rede := 0.0
-var escala_estado_rede := Vector2.ONE
-var visibilidade_estado_rede := true
-var recebeu_estado_rede := false
+var sequencia_estado_rede := 0
+var ultima_sequencia_estado_rede := 0
 var nevasca_gelo := false
 var abaixo_zero_gelo := false
 var linha_feixe: Line2D
@@ -106,14 +103,22 @@ func configurar_id_disparo_rede(novo_id: String, visual_remoto: bool) -> void:
 func aplicar_estado_visual_rede(
 	nova_posicao: Vector2, nova_rotacao: float,
 	nova_escala: Vector2, nova_visibilidade: bool,
-	nova_cor: Color = Color.TRANSPARENT
+	nova_cor: Color = Color.TRANSPARENT, sequencia: int = 0
 ) -> void:
-	posicao_estado_rede = nova_posicao
-	rotacao_estado_rede = nova_rotacao
-	escala_estado_rede = nova_escala
-	visibilidade_estado_rede = nova_visibilidade
-	recebeu_estado_rede = true
-	if nova_cor.a > 0.0:
+	if sequencia > 0:
+		if sequencia <= ultima_sequencia_estado_rede:
+			return
+		ultima_sequencia_estado_rede = sequencia
+	# O feixe já acompanha o cano da nave remota em cada quadro de física.
+	if estilo_monthly != &"perielio_ray":
+		if global_position.distance_squared_to(nova_posicao) > 90.0 * 90.0:
+			global_position = nova_posicao
+		else:
+			global_position = global_position.lerp(nova_posicao, 0.72)
+		global_rotation = lerp_angle(global_rotation, nova_rotacao, 0.78)
+	scale = nova_escala
+	visible = nova_visibilidade
+	if nova_cor.a > 0.0 and nova_cor != cor_monthly:
 		cor_monthly = nova_cor
 		_atualizar_cor_feixe()
 	set_meta("estado_rede_recebido", true)
@@ -257,17 +262,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _atualizar_estado_rede(delta: float) -> void:
-	if id_disparo_rede.is_empty() or not Rede.esta_conectado():
-		return
-	if somente_visual_rede:
-		if not recebeu_estado_rede:
-			return
-		var distancia := global_position.distance_to(posicao_estado_rede)
-		global_position = posicao_estado_rede if distancia > 90.0 else global_position.lerp(posicao_estado_rede, 0.72)
-		global_rotation = lerp_angle(global_rotation, rotacao_estado_rede, 0.78)
-		scale = scale.lerp(escala_estado_rede, 0.72)
-		visible = visibilidade_estado_rede
-		_atualizar_cor_feixe()
+	if somente_visual_rede or id_disparo_rede.is_empty() or not Rede.esta_conectado():
 		return
 	intervalo_estado_rede -= delta
 	if intervalo_estado_rede > 0.0:
@@ -275,7 +270,9 @@ func _atualizar_estado_rede(delta: float) -> void:
 	intervalo_estado_rede = 0.05
 	var batalha := _obter_batalha_rede()
 	if is_instance_valid(batalha) and batalha.has_method("replicar_estado_disparo"):
+		sequencia_estado_rede += 1
 		batalha.call("replicar_estado_disparo", {
+			"sequencia": sequencia_estado_rede,
 			"id_disparo": id_disparo_rede,
 			"posicao": global_position,
 			"rotacao": global_rotation,

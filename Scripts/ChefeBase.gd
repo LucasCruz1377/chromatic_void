@@ -226,10 +226,7 @@ func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
 
 
 func _possui_propriedade_rede(nome: StringName) -> bool:
-	for dados in get_property_list():
-		if StringName(dados.get("name", "")) == nome:
-			return true
-	return false
+	return nome in self
 
 
 # Cada datagrama fica abaixo do MTU, inclusive quando uma Line2D tem muitos pontos.

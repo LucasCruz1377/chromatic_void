@@ -739,7 +739,7 @@ func replicar_estado_disparo(dados: Dictionary) -> void:
 		_encaminhar_estado_disparo.rpc_id(1, dados)
 
 
-@rpc("any_peer", "call_remote", "unreliable_ordered", 2)
+@rpc("any_peer", "call_remote", "unreliable", 2)
 func _encaminhar_estado_disparo(dados: Dictionary) -> void:
 	if not multiplayer.is_server():
 		return
@@ -760,7 +760,7 @@ func _enviar_estado_disparo_para_outros(dados: Dictionary, remetente: int) -> vo
 			_receber_estado_disparo.rpc_id(id, dados)
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 2)
+@rpc("authority", "call_remote", "unreliable", 2)
 func _receber_estado_disparo(dados: Dictionary) -> void:
 	_aplicar_estado_disparo_visual(dados)
 
@@ -777,7 +777,8 @@ func _aplicar_estado_disparo_visual(dados: Dictionary) -> void:
 			float(dados.get("rotacao", projetil.global_rotation)),
 			Vector2(dados.get("escala", projetil.scale)),
 			bool(dados.get("visivel", projetil.visible)),
-			Color(dados.get("cor", Color.TRANSPARENT))
+			Color(dados.get("cor", Color.TRANSPARENT)),
+			int(dados.get("sequencia", 0))
 		)
 
 
@@ -1441,14 +1442,18 @@ func _capturar_posicoes_mundo() -> Dictionary:
 
 func _dividir_posicoes_mundo(snapshot: Dictionary) -> Array[Dictionary]:
 	var partes: Array[Dictionary] = []
-	var pacote := snapshot.duplicate(true)
+	var pacote := snapshot.duplicate()
 	pacote["inimigos"] = []
+	var tamanho := var_to_bytes(pacote).size()
 	for estado in snapshot["inimigos"]:
-		pacote["inimigos"].append(estado)
-		if var_to_bytes(pacote).size() > 1000:
-			pacote["inimigos"].pop_back()
+		# No Array de Variants, cada entrada acrescenta seu tamanho serializado.
+		var bytes_estado := var_to_bytes(estado).size()
+		if tamanho + bytes_estado > 1000:
 			partes.append(pacote)
-			pacote = {"sequencia": snapshot["sequencia"], "players": {}, "cristais_coop": snapshot["cristais_coop"], "inimigos": [estado]}
+			pacote = {"sequencia": snapshot["sequencia"], "players": {}, "cristais_coop": snapshot["cristais_coop"], "inimigos": []}
+			tamanho = var_to_bytes(pacote).size()
+		pacote["inimigos"].append(estado)
+		tamanho += bytes_estado
 	partes.append(pacote)
 	return partes
 

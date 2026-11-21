@@ -1,4 +1,4 @@
-"""Executa tres peers e rejeita erros de replicacao, mesmo com exit code zero."""
+"""Executa quatro peers e rejeita erros de replicacao, mesmo com exit code zero."""
 from pathlib import Path
 import os
 import re
@@ -16,7 +16,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="cv-lifecycle-") as temporary:
         folder = Path(temporary)
         try:
-            for role in ("host", "client_a", "client_b"):
+            for role in ("host", "client_a", "client_b", "client_c"):
                 env = os.environ.copy()
                 env["XDG_DATA_HOME"] = str(folder / role)
                 with (folder / f"{role}.log").open("w") as log:
