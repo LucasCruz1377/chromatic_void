@@ -143,7 +143,7 @@ jobs:
           done
           python3 Tests/run_lifecycle_integration.py
           tc -s qdisc show dev lo
-          tc -s qdisc show dev lo | awk '/qdisc netem 30:/ { getline; ok = ($2 > 0 && $4 > 0) } END { exit !ok }'
+          tc -s qdisc show dev lo | awk '/qdisc netem 30:/ { getline; ok = ($2 > 0 && $4 > 0 && $7 + 0 > 0) } END { exit !ok }'
 
   exportar:
     name: Exportar ${{ matrix.nome }}

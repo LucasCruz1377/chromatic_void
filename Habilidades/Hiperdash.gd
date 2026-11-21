@@ -12,6 +12,8 @@ class_name HabilidadeHiperdash
 @export var dano_dash: float = 4.0
 
 var ativo := false
+var aplicou_camera_lenta := false
+var escala_anterior := 1.0
 
 
 func em_uso() -> bool:
@@ -25,17 +27,20 @@ func pode_ativar(player) -> bool:
 func executar(player) -> void:
 	ativo = true
 	player.BloquearControle()
-	Engine.time_scale = desaceleracao_tempo
+	aplicou_camera_lenta = not Rede.modo_multiplayer
+	if aplicou_camera_lenta:
+		escala_anterior = Engine.time_scale
+		Engine.time_scale = desaceleracao_tempo
 	executar_dash(player)
 
 
 func executar_dash(player) -> void:
-	await player.get_tree().create_timer(intervalo_preparo * desaceleracao_tempo).timeout
+	await player.get_tree().create_timer(intervalo_preparo, true, false, true).timeout
 	if not ativo or not is_instance_valid(player):
-		Engine.time_scale = 1.0
+		_restaurar_tempo()
 		ativo = false
 		return
-	Engine.time_scale = 1.0
+	_restaurar_tempo()
 	player.BloquearGiro()
 	preload("res://Scripts/AudioCombate.gd").tocar(player, &"dash")
 	player.IniciarHabilidade(true)
@@ -50,6 +55,12 @@ func executar_dash(player) -> void:
 		return
 	player.velocity *= desaceleracao
 	finalizar(player)
+
+
+func _restaurar_tempo() -> void:
+	if aplicou_camera_lenta:
+		Engine.time_scale = escala_anterior
+		aplicou_camera_lenta = false
 
 
 func gerar_loop_de_rastros(player) -> void:
@@ -79,7 +90,7 @@ func finalizar(player) -> void:
 	if not ativo:
 		return
 	ativo = false
-	Engine.time_scale = 1.0
+	_restaurar_tempo()
 	if is_instance_valid(player):
 		player.EncerrarHabilidade()
 		player.DesbloquearControle()
@@ -92,6 +103,7 @@ func ao_desequipar(player) -> void:
 
 func reiniciar_estado() -> void:
 	super()
+	_restaurar_tempo()
 	ativo = false
 
 

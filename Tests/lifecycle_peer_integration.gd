@@ -54,6 +54,15 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return prontos.size() == 4):
 			falhar("peers nao confirmaram entrada")
 			return
+		var dash := preload("res://Habilidades/habilidadeHiperdash.tres").duplicate() as HabilidadeHiperdash
+		var tempo_anterior := Engine.time_scale
+		dash.executar(local)
+		if not is_equal_approx(Engine.time_scale, tempo_anterior):
+			falhar("o hiperdash do host alterou o relogio da partida")
+			return
+		if not await esperar(func() -> bool: return not dash.em_uso()):
+			falhar("o hiperdash do host nao terminou")
+			return
 		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as ChefeBase
 		flor.name = "FlorCicloVida"
 		arena.add_child(flor, true)
