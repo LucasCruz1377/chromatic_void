@@ -6,6 +6,7 @@ var prontos: Dictionary = {}
 var pausas_confirmadas: Dictionary = {}
 var iniciar_saida := false
 var concluido := false
+var saida_liberada := false
 var confirmacoes_fim: Dictionary = {}
 var confirmacoes_preservacao: Dictionary = {}
 
@@ -195,10 +196,17 @@ func _ready() -> void:
 		return
 	if papel != "host":
 		_confirmar_fim.rpc_id(1)
-		await get_tree().create_timer(0.2).timeout
-	elif not await esperar(func() -> bool: return confirmacoes_fim.size() == 2):
-		falhar("cliente nao confirmou recebimento do fim")
-		return
+		if not await esperar(func() -> bool: return saida_liberada):
+			falhar("host nao liberou a saida")
+			return
+	else:
+		if not await esperar(func() -> bool: return confirmacoes_fim.size() == 2):
+			falhar("cliente nao confirmou recebimento do fim")
+			return
+		_liberar_saida.rpc()
+		if not await esperar(func() -> bool: return Rede.jogadores.size() == 1):
+			falhar("clientes nao encerraram apos a liberacao")
+			return
 	await sair()
 	print("TESTE OK: %s preservou replicas e recebeu despawns apos saida de outro cliente" % papel)
 	get_tree().quit(0)
@@ -232,6 +240,11 @@ func _confirmar_preservacao() -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _confirmar_fim() -> void:
 	confirmacoes_fim[multiplayer.get_remote_sender_id()] = true
+
+
+@rpc("authority", "call_remote", "reliable")
+func _liberar_saida() -> void:
+	saida_liberada = true
 
 
 func destino_teste(peer: int) -> Vector2:
