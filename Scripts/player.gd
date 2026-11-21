@@ -100,6 +100,14 @@ var invencibilidade := false
 var invencibilidade_cd := 0.0
 var invencibilidade_cd_max := 1.15
 var save := false
+# Três intervalos do sincronizador de naves (20 Hz).
+const LIMITE_PREVISAO_REDE := 0.15
+const LIMIAR_SALTO_REDE := 96.0
+var tempo_previsao_rede := 0.0
+var ultima_amostra_direta_ms := -1
+var posicao_exibida_rede := Vector2.ZERO
+var correcao_visual_rede := Vector2.ZERO
+var tem_amostra_movimento := false
 var peer_id_dono := 1
 var nickname_rede := "PILOTO"
 var configuracao_visual_rede: Dictionary = {}
@@ -222,6 +230,7 @@ func _ready() -> void:
 	passivas_nave.name = "PassivasNave"
 	add_child(passivas_nave)
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		$MultiplayerSynchronizer.synchronized.connect(_receber_movimento_direto)
 		set_physics_process(false)
 		return
 	carregar_habilidade_equipada()
@@ -250,7 +259,7 @@ func _process(delta: float) -> void:
 		# Predição somente visual: a autoridade continua sendo o dono da nave.
 		# Os snapshots corrigem a posição, mas a nave não congela entre pacotes.
 		if vivo and visible:
-			global_position += velocity * delta
+			_avancar_movimento_remoto(delta)
 		_atualizar_efeitos_visuais_rede()
 		return
 	mira_mouse = Global.mira_mouse
@@ -265,6 +274,40 @@ func _process(delta: float) -> void:
 	atualizar_combate(delta)
 	atualizar_limites()
 	atualizar_vida()
+
+
+func _receber_movimento_direto() -> void:
+	ultima_amostra_direta_ms = Time.get_ticks_msec()
+	_registrar_amostra_movimento()
+
+
+func tem_movimento_direto_recente() -> bool:
+	return ultima_amostra_direta_ms >= 0 and Time.get_ticks_msec() - ultima_amostra_direta_ms < 150
+
+
+func _registrar_amostra_movimento() -> void:
+	tempo_previsao_rede = LIMITE_PREVISAO_REDE
+	# O host usa a posição recebida para colisões. Nos clientes, uma pequena
+	# diferença é absorvida em alguns quadros. Wrap e teleporte são imediatos.
+	var diferenca := posicao_exibida_rede - global_position
+	correcao_visual_rede = Vector2.ZERO
+	if tem_amostra_movimento and not multiplayer.is_server() and diferenca.length_squared() < LIMIAR_SALTO_REDE * LIMIAR_SALTO_REDE:
+		correcao_visual_rede = -diferenca
+		global_position = posicao_exibida_rede
+	posicao_exibida_rede = global_position
+	tem_amostra_movimento = true
+
+
+func _avancar_movimento_remoto(delta: float) -> void:
+	if not tem_amostra_movimento:
+		return
+	var passo := minf(delta, tempo_previsao_rede)
+	tempo_previsao_rede -= passo
+	var ajuste := correcao_visual_rede * (1.0 - exp(-28.0 * delta))
+	correcao_visual_rede -= ajuste
+	global_position += velocity * passo + ajuste
+	atualizar_limites()
+	posicao_exibida_rede = global_position
 
 
 func _atualizar_efeitos_visuais_rede() -> void:

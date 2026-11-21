@@ -36,6 +36,16 @@ func _ready() -> void:
 	for piloto in get_tree().get_nodes_in_group("player"):
 		piloto.invencibilidade = true
 		piloto.invencibilidade_cd = 60.0
+	# Cada processo move somente a nave que controla. Os quatro precisam
+	# observar a posição final dos três colegas antes de iniciar o combate.
+	var local := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
+	var destino_local := destino_teste(Rede.peer_local())
+	for quadro in 36:
+		local.global_position = local.global_position.move_toward(destino_local, 6.0)
+		await get_tree().physics_frame
+	if not await esperar(todos_chegaram):
+		falhar("movimento dos quatro pilotos nao convergiu")
+		return
 	if papel == "host":
 		prontos[1] = true
 	else:
@@ -135,6 +145,22 @@ func _confirmar_preservacao() -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _confirmar_fim() -> void:
 	confirmacoes_fim[multiplayer.get_remote_sender_id()] = true
+
+
+func destino_teste(peer: int) -> Vector2:
+	var origem: Vector2 = arena.call("_posicao_inicial_peer", peer)
+	return origem + Vector2(50, 24)
+
+
+func todos_chegaram() -> bool:
+	var pilotos := get_tree().get_nodes_in_group("player")
+	if pilotos.size() != 4:
+		return false
+	for candidato in pilotos:
+		var piloto := candidato as Player
+		if piloto.global_position.distance_to(destino_teste(piloto.peer_id_dono)) > 4.0:
+			return false
+	return true
 
 
 func esperar(condicao: Callable) -> bool:

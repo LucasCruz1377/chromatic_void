@@ -130,6 +130,21 @@ jobs:
       - name: Validar saida de cliente com quatro jogadores
         run: python3 Tests/run_lifecycle_integration.py
 
+      - name: Jogar com quatro pilotos sob atraso, jitter e perda UDP
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Apenas UDP da partida no loopback deste runner recebe a degradação.
+          sudo tc qdisc add dev lo root handle 1: prio bands 3 priomap 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+          trap 'sudo tc qdisc del dev lo root' EXIT
+          sudo tc qdisc add dev lo parent 1:3 handle 30: netem delay 45ms 15ms loss 2%
+          for port in src_port dst_port; do
+            sudo tc filter add dev lo parent 1: protocol ip flower ip_proto udp "$port" 24567 classid 1:3
+          done
+          python3 Tests/run_lifecycle_integration.py
+          tc -s qdisc show dev lo
+          tc -s qdisc show dev lo | awk '/qdisc netem 30:/ { getline; ok = ($2 > 0 && $4 > 0) } END { exit !ok }'
+
   exportar:
     name: Exportar ${{ matrix.nome }}
     needs: validar

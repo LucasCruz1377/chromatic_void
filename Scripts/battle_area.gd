@@ -1405,6 +1405,7 @@ func _receber_posicao_player(
 	jogador_remoto.global_position = posicao
 	jogador_remoto.rotation = wrapf(rotacao, -PI, PI)
 	jogador_remoto.velocity = velocidade
+	jogador_remoto._registrar_amostra_movimento()
 
 
 func _capturar_posicoes_mundo() -> Dictionary:
@@ -1422,6 +1423,8 @@ func _capturar_posicoes_mundo() -> Dictionary:
 	for candidato in get_tree().get_nodes_in_group("inimigo"):
 		if candidato is Node2D and is_ancestor_of(candidato):
 			var inimigo := candidato as Node2D
+			if inimigo is InimigoBase and (inimigo as InimigoBase).movimento_replicado_pelo_sincronizador:
+				continue
 			var velocidade_inimigo := Vector2.ZERO
 			if inimigo is CharacterBody2D:
 				velocidade_inimigo = (inimigo as CharacterBody2D).velocity
@@ -1476,8 +1479,13 @@ func _aplicar_posicoes_mundo(snapshot: Dictionary) -> void:
 		var jogador := _obter_jogador_rede(peer_id) as Player
 		if not is_instance_valid(jogador):
 			continue
+		if jogador.tem_movimento_direto_recente():
+			var anterior := int(jogador.get_meta(&"sequencia_posicao_mundo", -1))
+			jogador.set_meta(&"sequencia_posicao_mundo", maxi(anterior, numero))
+			continue
 		var estado: Dictionary = posicoes_players[peer_variant]
-		_aplicar_movimento_mundo(jogador, estado, numero)
+		if _aplicar_movimento_mundo(jogador, estado, numero):
+			jogador._registrar_amostra_movimento()
 	for estado_variant in Array(snapshot.get("inimigos", [])):
 		var estado := Dictionary(estado_variant)
 		var inimigo := get_node_or_null(
@@ -1487,16 +1495,17 @@ func _aplicar_posicoes_mundo(snapshot: Dictionary) -> void:
 			_aplicar_movimento_mundo(inimigo, estado, numero)
 
 
-func _aplicar_movimento_mundo(alvo: Node2D, estado: Dictionary, numero: int) -> void:
+func _aplicar_movimento_mundo(alvo: Node2D, estado: Dictionary, numero: int) -> bool:
 	# Dois fragmentos consecutivos podem trazer entidades diferentes.
 	if numero <= int(alvo.get_meta(&"sequencia_posicao_mundo", -1)):
-		return
+		return false
 	alvo.set_meta(&"sequencia_posicao_mundo", numero)
 	alvo.global_position = estado.get("posicao", alvo.global_position)
 	alvo.rotation = float(estado.get("rotacao", alvo.rotation))
 	if alvo is CharacterBody2D:
 		var corpo := alvo as CharacterBody2D
 		corpo.velocity = estado.get("velocidade", corpo.velocity)
+	return true
 
 
 func _atualizar_hud_boss_cliente() -> void:

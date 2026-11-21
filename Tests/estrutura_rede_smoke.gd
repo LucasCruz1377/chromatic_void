@@ -14,6 +14,7 @@ func _ready() -> void:
 	await testar_especies()
 	testar_pacotes_mundo()
 	testar_movimento_fora_de_ordem()
+	testar_limite_previsao()
 	print(
 		(
 			"TESTE %s: estrutura, fragmentacao e autoridade de entidades"
@@ -156,3 +157,14 @@ func testar_movimento_fora_de_ordem() -> void:
 	verificar(primeiro.position == recente.posicao and primeiro.velocity == Vector2.RIGHT, "inimigo voltou para a posicao de um quadro antigo")
 	verificar(segundo.position == atrasado.posicao, "fragmento atrasado perdeu a ultima posicao do segundo inimigo")
 	arena.free()
+
+
+func testar_limite_previsao() -> void:
+	var nave := Player.new()
+	nave.position = Vector2(180, 200)
+	nave.velocity = Vector2(200, 0)
+	nave._registrar_amostra_movimento()
+	for quadro in 60:
+		nave._avancar_movimento_remoto(1.0 / 60.0)
+	verificar(nave.position.is_equal_approx(Vector2(210, 200)), "a nave continuou se movendo sem receber pacotes")
+	nave.free()

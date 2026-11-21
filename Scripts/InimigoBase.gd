@@ -42,6 +42,7 @@ signal morreu(inimigo: InimigoBase)
 
 var Vida: float = 0.0
 var tempo_atordoado: float = 0.0
+var movimento_replicado_pelo_sincronizador := false
 var morto: bool = false
 var tween_impacto: Tween
 var modulacao_base := Color.WHITE
@@ -148,6 +149,7 @@ func _configurar_sincronizador_multiplayer() -> void:
 	# só ocupam banda quando mudam. Isso preserva os snapshots de posição sob carga.
 	sincronizador.replication_interval = 0.066
 	add_child(sincronizador)
+	movimento_replicado_pelo_sincronizador = true
 
 
 func _physics_process(delta: float) -> void:
