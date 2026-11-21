@@ -21,7 +21,7 @@ def main():
                 env["XDG_DATA_HOME"] = str(folder / role)
                 with (folder / f"{role}.log").open("w") as log:
                     process = subprocess.Popen(
-                        ["godot", "--headless", "--audio-driver", "Dummy", "--path", str(ROOT),
+                        ["godot", "--headless", "--verbose", "--audio-driver", "Dummy", "--path", str(ROOT),
                          "Tests/lifecycle_peer_integration.tscn", "--", f"--lifecycle-role={role}"],
                         cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
                     )
@@ -35,8 +35,13 @@ def main():
                     process.wait()
                     status = -1
                 output = (folder / f"{role}.log").read_text()
+                peer_failed = status != 0 or bool(ERRORS.search(output)) or "TESTE OK:" not in output
+                if not peer_failed:
+                    output = "\n".join(line for line in output.splitlines() if any(
+                        term in line.lower() for term in ("teste ok:", "error:", "warning:", "leaked instance", "resource still in use")
+                    ))
                 print(f"{role}: exit={status}\n{output}", flush=True)
-                failed |= status != 0 or bool(ERRORS.search(output)) or "TESTE OK:" not in output
+                failed |= peer_failed
         finally:
             for _, process in processes:
                 if process.poll() is None:
