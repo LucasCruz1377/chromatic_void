@@ -341,13 +341,22 @@ func _reconciliar_residuos_pet0(sequencia: int, ativos: PackedStringArray) -> vo
 
 
 func preparar_saida_multiplayer() -> void:
+	_encerrar_audio_arena()
 	# Encerrar o peer enquanto as naves e sincronizadores ainda existem.
 	# Fechar somente em _exit_tree deixa pacotes chegarem a caminhos removidos.
 	if Rede.modo_multiplayer:
 		Rede.encerrar_lobby()
 
 
+func _encerrar_audio_arena() -> void:
+	if is_instance_valid(tocarmusica):
+		tocarmusica.stop()
+		tocarmusica.stream = null
+	musica_partida_padrao = null
+
+
 func _exit_tree() -> void:
+	_encerrar_audio_arena()
 	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
 	Global.definir_cursor_interface(true)

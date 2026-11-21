@@ -7,7 +7,7 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-ERRORS = re.compile(r"SCRIPT ERROR:|ERROR: (?:Can't find overlapping|Condition.*recv_nodes|Ignoring delta|Node not found|Failed to get cached node)")
+ERRORS = re.compile(r"(?:SCRIPT )?ERROR:|ObjectDB instances were leaked at exit")
 
 
 def main():

@@ -188,6 +188,9 @@ func sair() -> void:
 		arena.queue_free()
 		await get_tree().process_frame
 	Rede.encerrar_lobby()
+	# O processo headless termina logo após a arena. Deixe o mixer consumir a
+	# parada e liberar o playback de Ogg antes de encerrar o AudioServer.
+	await get_tree().create_timer(0.25, true, false, true).timeout
 
 
 func falhar(mensagem: String) -> void:
