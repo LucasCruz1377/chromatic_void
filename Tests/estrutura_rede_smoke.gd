@@ -13,6 +13,7 @@ func _ready() -> void:
 	await testar_quadros_dos_chefes()
 	await testar_especies()
 	testar_pacotes_mundo()
+	testar_movimento_fora_de_ordem()
 	print(
 		(
 			"TESTE %s: estrutura, fragmentacao e autoridade de entidades"
@@ -136,4 +137,22 @@ func testar_pacotes_mundo() -> void:
 		verificar(var_to_bytes(parte).size() < 1200, "snapshot de mundo excedeu MTU com quatro pilotos")
 		total += parte.inimigos.size()
 	verificar(total == 100, "fragmentacao do mundo perdeu inimigos")
+	arena.free()
+
+
+func testar_movimento_fora_de_ordem() -> void:
+	var arena := load("res://Scripts/battle_area.gd").new() as Node2D
+	var primeiro := CharacterBody2D.new()
+	var segundo := Node2D.new()
+	primeiro.name = "Primeiro"
+	segundo.name = "Segundo"
+	arena.add_child(primeiro)
+	arena.add_child(segundo)
+	var recente := {"caminho": ^"Primeiro", "posicao": Vector2(80, 20), "velocidade": Vector2.RIGHT}
+	var antigo := {"caminho": ^"Primeiro", "posicao": Vector2.ZERO, "velocidade": Vector2.ZERO}
+	var atrasado := {"caminho": ^"Segundo", "posicao": Vector2(40, 10)}
+	arena.call("_aplicar_posicoes_mundo", {"sequencia": 12, "inimigos": [recente]})
+	arena.call("_aplicar_posicoes_mundo", {"sequencia": 11, "inimigos": [antigo, atrasado]})
+	verificar(primeiro.position == recente.posicao and primeiro.velocity == Vector2.RIGHT, "inimigo voltou para a posicao de um quadro antigo")
+	verificar(segundo.position == atrasado.posicao, "fragmento atrasado perdeu a ultima posicao do segundo inimigo")
 	arena.free()

@@ -154,7 +154,6 @@ var sequencia_movimento_local := 0
 var ultima_sequencia_movimento_peer: Dictionary = {}
 var ultimo_movimento_peer_ms: Dictionary = {}
 var sequencia_mundo_rede := 0
-var ultima_sequencia_mundo_rede := -1
 var disparos_autorizados_rede: Dictionary = {}
 var entrada_estado_confirmada := false
 const JANELA_IMPACTO_REDE_MS := 1500
@@ -1462,10 +1461,11 @@ func _dividir_posicoes_mundo(snapshot: Dictionary) -> Array[Dictionary]:
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
+	_aplicar_posicoes_mundo(snapshot)
+
+
+func _aplicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	var numero := int(snapshot.get("sequencia", 0))
-	if numero < ultima_sequencia_mundo_rede:
-		return
-	ultima_sequencia_mundo_rede = numero
 	_aplicar_total_cristais_coop(int(snapshot.get("cristais_coop", 0)))
 	var posicoes_players: Dictionary = snapshot.get("players", {})
 	for peer_variant in posicoes_players:
@@ -1477,22 +1477,26 @@ func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 		if not is_instance_valid(jogador):
 			continue
 		var estado: Dictionary = posicoes_players[peer_variant]
-		jogador.global_position = estado.get("posicao", jogador.global_position)
-		jogador.rotation = float(estado.get("rotacao", jogador.rotation))
-		jogador.velocity = estado.get("velocidade", jogador.velocity)
+		_aplicar_movimento_mundo(jogador, estado, numero)
 	for estado_variant in Array(snapshot.get("inimigos", [])):
 		var estado := Dictionary(estado_variant)
 		var inimigo := get_node_or_null(
 			NodePath(str(estado.get("caminho", "")))
 		) as Node2D
-		if not is_instance_valid(inimigo):
-			continue
-		inimigo.global_position = estado.get("posicao", inimigo.global_position)
-		inimigo.rotation = float(estado.get("rotacao", inimigo.rotation))
-		if inimigo is CharacterBody2D:
-			(inimigo as CharacterBody2D).velocity = Vector2(
-				estado.get("velocidade", (inimigo as CharacterBody2D).velocity)
-			)
+		if is_instance_valid(inimigo):
+			_aplicar_movimento_mundo(inimigo, estado, numero)
+
+
+func _aplicar_movimento_mundo(alvo: Node2D, estado: Dictionary, numero: int) -> void:
+	# Dois fragmentos consecutivos podem trazer entidades diferentes.
+	if numero <= int(alvo.get_meta(&"sequencia_posicao_mundo", -1)):
+		return
+	alvo.set_meta(&"sequencia_posicao_mundo", numero)
+	alvo.global_position = estado.get("posicao", alvo.global_position)
+	alvo.rotation = float(estado.get("rotacao", alvo.rotation))
+	if alvo is CharacterBody2D:
+		var corpo := alvo as CharacterBody2D
+		corpo.velocity = estado.get("velocidade", corpo.velocity)
 
 
 func _atualizar_hud_boss_cliente() -> void:
