@@ -3,6 +3,7 @@ extends Node
 var papel := ""
 var arena: Node2D
 var prontos: Dictionary = {}
+var pausas_confirmadas: Dictionary = {}
 var iniciar_saida := false
 var concluido := false
 var confirmacoes_fim: Dictionary = {}
@@ -60,6 +61,14 @@ func _ready() -> void:
 	if papel == "host":
 		prontos[1] = true
 	else:
+		await get_tree().process_frame
+		Input.action_press("pausar")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		Input.action_release("pausar")
+		if get_tree().paused or arena.get_node("GUI/caixa pause").visible:
+			falhar("cliente abriu a pausa")
+			return
 		_marcar_pronto.rpc_id(1)
 	if papel == "host":
 		if not await esperar(func() -> bool: return prontos.size() == 4):
@@ -67,13 +76,6 @@ func _ready() -> void:
 			return
 		var dash := preload("res://Habilidades/habilidadeHiperdash.tres").duplicate() as HabilidadeHiperdash
 		var tempo_anterior := Engine.time_scale
-		dash.executar(local)
-		if not is_equal_approx(Engine.time_scale, tempo_anterior):
-			falhar("o hiperdash do host alterou o relogio da partida")
-			return
-		if not await esperar(func() -> bool: return not dash.em_uso()):
-			falhar("o hiperdash do host nao terminou")
-			return
 		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as ChefeBase
 		flor.name = "FlorCicloVida"
 		arena.add_child(flor, true)
@@ -85,8 +87,68 @@ func _ready() -> void:
 			tiro.velocidade = 0.01
 			arena.add_child(tiro, true)
 		await get_tree().create_timer(0.5).timeout
+		flor.call("ativar_escudo", false)
+		flor.set_physics_process(true)
+		var vida_antes := flor.Vida
+		dash.executar(local)
+		if not is_equal_approx(Engine.time_scale, tempo_anterior):
+			falhar("o hiperdash do host alterou o relogio da partida")
+			return
+		await get_tree().process_frame
+		Input.action_press("pausar")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		Input.action_release("pausar")
+		if not get_tree().paused:
+			falhar("botao do host nao pausou")
+			return
+		var espinho := get_tree().get_first_node_in_group("projetil_primaveril") as ProjetilInimigo
+		var tempo_ataque := float(flor.get("tempo_ataque"))
+		var vida_do_tiro := espinho.tempo_vida
+		var posicao_do_tiro := espinho.position
+		if not await esperar(func() -> bool: return pausas_confirmadas.size() == 3):
+			falhar("tres clientes nao confirmaram a pausa")
+			return
+		if (
+			flor.Vida != vida_antes or float(flor.get("tempo_ataque")) != tempo_ataque
+			or espinho.tempo_vida != vida_do_tiro or espinho.position != posicao_do_tiro
+			or flor.can_process()
+		):
+			falhar("boss ou ataque avancou na pausa")
+			return
+		if not dash.em_uso() or local.UsandoHabilidade:
+			falhar("preparo do hiperdash avancou durante a pausa")
+			return
+		arena.get_node("GUI/caixa pause/despause").pressed.emit()
+		flor.set_physics_process(false)
+		if not await esperar(func() -> bool: return local.UsandoHabilidade):
+			falhar("o hiperdash nao executou ao retomar")
+			return
+		if not await esperar(func() -> bool: return not dash.em_uso()):
+			falhar("o hiperdash nao terminou")
+			return
 		_ordenar_saida.rpc()
 		iniciar_saida = true
+	else:
+		if not await esperar(func() -> bool: return get_tree().paused):
+			falhar("a pausa do host nao chegou")
+			return
+		var flor := arena.get_node("FlorCicloVida") as ChefeBase
+		local.HabilidadeEquipada.cooldown_atual = 3.0
+		var posicao := local.global_position
+		var tiros_antes := local.contador_disparos_rede
+		await get_tree().process_frame
+		Input.action_press("pausar")
+		Input.action_press("acelerar")
+		Input.action_press("atirar")
+		flor.tomarDano(8.0)
+		await get_tree().create_timer(0.8, true).timeout
+		for acao in ["pausar", "acelerar", "atirar"]:
+			Input.action_release(acao)
+		if not get_tree().paused or local.global_position != posicao or local.contador_disparos_rede != tiros_antes or local.HabilidadeEquipada.cooldown_atual != 3.0:
+			falhar("cliente moveu, disparou, retomou ou perdeu recarga durante a pausa")
+			return
+		_confirmar_pausa.rpc_id(1)
 	if not await esperar(func() -> bool: return iniciar_saida):
 		falhar("ordem de saida nao chegou")
 		return
@@ -140,6 +202,11 @@ func _ready() -> void:
 	await sair()
 	print("TESTE OK: %s preservou replicas e recebeu despawns apos saida de outro cliente" % papel)
 	get_tree().quit(0)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_pausa() -> void:
+	pausas_confirmadas[multiplayer.get_remote_sender_id()] = true
 
 
 @rpc("any_peer", "call_remote", "reliable")

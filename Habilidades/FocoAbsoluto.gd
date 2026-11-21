@@ -24,7 +24,7 @@ func executar(player) -> void:
 	ativo = true
 	escala_anterior = Engine.time_scale
 	movimento_anterior = player.multiplicador_velocidade_habilidade
-	instante_final_ms = Time.get_ticks_msec() + int(duracao_real * 1000.0)
+	instante_final_ms = Global.tempo_combate_ms() + int(duracao_real * 1000.0)
 	Engine.time_scale = escala_tempo
 	player.multiplicador_velocidade_habilidade = movimento_anterior / escala_tempo
 	player.foco_movimento_tempo_real = true
@@ -40,7 +40,7 @@ func atualizar(player, _delta: float) -> void:
 		Engine.time_scale = escala_anterior
 		ativo = false
 		return
-	if Time.get_ticks_msec() >= instante_final_ms:
+	if Global.tempo_combate_ms() >= instante_final_ms:
 		finalizar(player)
 
 

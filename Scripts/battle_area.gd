@@ -654,7 +654,7 @@ func replicar_disparo_player(dados: Dictionary) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _encaminhar_disparo_visual(dados: Dictionary) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -708,7 +708,7 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 		disparos_autorizados_rede[id_disparo] = {
 			"peer_id": int(dados.get("peer_id", 0)),
 			"origem": Vector2(dados.get("posicao", Vector2.ZERO)),
-			"criado_ms": Time.get_ticks_msec(),
+			"criado_ms": Global.tempo_combate_ms(),
 			"feixe": str(dados.get("estilo", "")) == "perielio_ray",
 			"velocidade": clampf(float(dados.get("velocidade", 1000.0)), 0.0, 2400.0),
 			"critico": bool(dados.get("critico", false)),
@@ -752,7 +752,7 @@ func replicar_estado_disparo(dados: Dictionary) -> void:
 
 @rpc("any_peer", "call_remote", "unreliable", 2)
 func _encaminhar_estado_disparo(dados: Dictionary) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -838,7 +838,7 @@ func _receber_fim_disparo(dados: Dictionary) -> void:
 
 func _finalizar_disparo_visual(id_disparo: String) -> void:
 	if disparos_autorizados_rede.has(id_disparo):
-		disparos_autorizados_rede[id_disparo]["expirado_ms"] = Time.get_ticks_msec()
+		disparos_autorizados_rede[id_disparo]["expirado_ms"] = Global.tempo_combate_ms()
 	var candidato: Variant = disparos_visuais_rede.get(id_disparo)
 	disparos_visuais_rede.erase(id_disparo)
 	if is_instance_valid(candidato) and candidato is Node:
@@ -880,7 +880,7 @@ func _solicitar_impacto_projetil_rede(
 	id_disparo: String, caminho_inimigo: NodePath,
 	dano: float, posicao_impacto: Vector2, numero_impacto: int
 ) -> void:
-	if not Rede.modo_multiplayer or not multiplayer.is_server():
+	if Rede.pausa_do_host or not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -906,7 +906,7 @@ func _solicitar_impacto_projetil_rede(
 		"caminho": caminho_inimigo,
 		"dano": dano,
 		"posicao": posicao_impacto,
-		"recebido_ms": Time.get_ticks_msec(),
+		"recebido_ms": Global.tempo_combate_ms(),
 	})
 	_processar_fila_impactos_rede()
 
@@ -914,7 +914,7 @@ func _solicitar_impacto_projetil_rede(
 func _processar_fila_impactos_rede() -> void:
 	if not multiplayer.is_server() or fila_impactos_rede.is_empty():
 		return
-	var agora := Time.get_ticks_msec()
+	var agora := Global.tempo_combate_ms()
 	var bloqueados: Dictionary = {}
 	var restantes: Array[Dictionary] = []
 	for entrada in fila_impactos_rede:
@@ -1009,7 +1009,7 @@ func replicar_habilidade_player(dados: Dictionary) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _encaminhar_habilidade_visual(dados: Dictionary) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -1339,7 +1339,7 @@ func _process(delta: float) -> void:
 
 
 func _limpar_registros_rede() -> void:
-	var agora := Time.get_ticks_msec()
+	var agora := Global.tempo_combate_ms()
 	for identificador in disparos_autorizados_rede.keys():
 		var disparo: Dictionary = disparos_autorizados_rede[identificador]
 		if disparo.get("feixe", false) and is_instance_valid(_obter_disparo_visual(identificador)):
@@ -1375,7 +1375,7 @@ func _processar_posicoes_rede(delta: float) -> void:
 func _receber_posicao_player(
 	posicao: Vector2, rotacao: float, velocidade: Vector2, sequencia: int
 ) -> void:
-	if not Rede.modo_multiplayer or not multiplayer.is_server():
+	if Rede.pausa_do_host or not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -1777,6 +1777,7 @@ func solicitar_reinicio_multiplayer() -> void:
 	if not multiplayer.is_server():
 		_mostrar_aviso_rede(tr("APENAS O HOST PODE REINICIAR A PARTIDA"), false)
 		return
+	Rede.definir_pausa_partida(false)
 	_reiniciar_partida_rede.rpc()
 
 
@@ -1824,7 +1825,7 @@ func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
 
 
 func _ocultar_aviso_rede_depois(token: int) -> void:
-	await get_tree().create_timer(4.0).timeout
+	await get_tree().create_timer(4.0, false).timeout
 	if is_instance_valid(aviso_rede) and int(aviso_rede.get_meta("token_aviso", -1)) == token:
 		aviso_rede.visible = false
 
@@ -2161,7 +2162,6 @@ func _mostrar_intro_boss(id: StringName) -> void:
 
 	raiz.modulate.a = 0.0
 	var tween := create_tween()
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(raiz, "modulate:a", 1.0, 0.22)
 	tween.tween_interval(1.45)
 	tween.tween_property(raiz, "modulate:a", 0.0, 0.30)
@@ -2242,6 +2242,7 @@ func spawns_teste_estao_pausados() -> bool:
 func pode_abrir_painel_desenvolvedor() -> bool:
 	return (
 		Global.modo_desenvolvedor
+		and (not Rede.modo_multiplayer or multiplayer.is_server())
 		and not game_over
 		and not tutorial_ativo
 		and not escolha_setor_ativa
@@ -2560,7 +2561,7 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 		tween.tween_interval(0.9)
 		tween.tween_property(boss_hud, "modulate:a", 0.0, 0.35)
 		tween.tween_callback(boss_hud.queue_free)
-	await get_tree().create_timer(1.1).timeout
+	await get_tree().create_timer(1.1, false).timeout
 	if game_over:
 		return
 	var proximo_setor: StringName = DadosSetores.proximo_no_ciclo(setor_atual)
@@ -2677,7 +2678,7 @@ func mostrar_escolha_setor(opcoes: Array[StringName]) -> void:
 
 func iniciar_painel_escolha(titulo: String, subtitulo: String) -> HBoxContainer:
 	escolha_setor_ativa = true
-	get_tree().paused = true
+	Rede.definir_pausa_partida(true)
 	Global.definir_cursor_interface(true)
 	camada_escolha = CanvasLayer.new()
 	camada_escolha.layer = 80
@@ -2761,7 +2762,7 @@ func _on_setor_escolhido(id: StringName) -> void:
 
 func encerrar_escolha_setor() -> void:
 	escolha_setor_ativa = false
-	get_tree().paused = false
+	Rede.definir_pausa_partida(false)
 	Global.definir_cursor_interface(false)
 	if is_instance_valid(camada_escolha):
 		camada_escolha.queue_free()

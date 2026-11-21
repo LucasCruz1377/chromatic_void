@@ -152,7 +152,7 @@ func _aplicar_perigo() -> void:
 		return
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		return
-	var agora := Time.get_ticks_msec()
+	var agora := Global.tempo_combate_ms()
 	for candidato in get_tree().get_nodes_in_group("player"):
 		if not is_instance_valid(candidato) or not candidato is Node2D:
 			continue

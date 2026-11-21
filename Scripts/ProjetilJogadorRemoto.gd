@@ -24,7 +24,7 @@ static func criar(parent: Node, dados: Dictionary) -> ProjetilJogadorRemoto:
 		projetil.cor = nova_cor
 	projetil.estilo = StringName(dados.get("estilo", &""))
 	projetil.z_index = 3
-	projetil.process_mode = Node.PROCESS_MODE_ALWAYS
+	projetil.process_mode = Node.PROCESS_MODE_PAUSABLE
 	projetil.queue_redraw()
 	return projetil
 

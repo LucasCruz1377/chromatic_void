@@ -151,7 +151,7 @@ func testar_impacto_remoto(arena: Node, jogador: Player, lua: BossSizigiaEterna)
 	})
 	var remoto: Node2D = arena._obter_disparo_visual(id)
 	remoto._processar_feixe_perielio(0.25)
-	arena.disparos_autorizados_rede[id]["criado_ms"] = Time.get_ticks_msec() - 7000
+	arena.disparos_autorizados_rede[id]["criado_ms"] = Global.tempo_combate_ms() - 7000
 	arena._limpar_registros_rede()
 	verificar(arena.disparos_autorizados_rede.has(id), "o host descartou um feixe ainda ativo")
 	arena.disparos_autorizados_rede[id]["criado_ms"] = 1

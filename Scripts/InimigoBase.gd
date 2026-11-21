@@ -244,7 +244,7 @@ func aplicar_camada_gelo(
 func _solicitar_camada_gelo(
 	quantidade: int, ativar_nevasca: bool, ativar_abaixo_zero: bool
 ) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -443,7 +443,7 @@ func tomarDano(valor: float) -> void:
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
-	if has_meta("laco_parceiro") and Time.get_ticks_msec() <= int(get_meta("laco_expira", 0)):
+	if has_meta("laco_parceiro") and Global.tempo_combate_ms() <= int(get_meta("laco_expira", 0)):
 		var parceiro = get_meta("laco_parceiro")
 		if is_instance_valid(parceiro) and parceiro.has_method("receber_eco_laco"):
 			parceiro.call("receber_eco_laco", dano_final * 0.38)
@@ -458,7 +458,7 @@ var janela_dano_pilotos: Dictionary = {}
 
 @rpc("any_peer", "call_remote", "reliable")
 func _solicitar_dano_ao_host(valor: float) -> void:
-	if not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
+	if Rede.pausa_do_host or not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -475,7 +475,7 @@ func _solicitar_dano_ao_host(valor: float) -> void:
 	# Abrange tiros longos e habilidades de area, sem aceitar hits de outra arena.
 	if piloto.global_position.distance_squared_to(global_position) > 2400.0 * 2400.0:
 		return
-	var agora := Time.get_ticks_msec()
+	var agora := Global.tempo_combate_ms()
 	var registro: Dictionary = janela_dano_pilotos.get(remetente, {})
 	if agora - int(registro.get("inicio", 0)) >= 1000:
 		registro = {"inicio": agora, "acumulado": 0.0}

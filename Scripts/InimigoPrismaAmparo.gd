@@ -19,7 +19,7 @@ func _executar() -> void:
 	)
 	fechado = true
 	multiplicador_dano_recebido = 0.22
-	get_tree().create_timer(1.1).timeout.connect(_abrir_prisma)
+	get_tree().create_timer(1.1, false).timeout.connect(_abrir_prisma)
 
 
 func _abrir_prisma() -> void:

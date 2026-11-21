@@ -141,7 +141,7 @@ func _draw() -> void:
 		draw_line(normal, fim + normal, Color(cor.r, cor.g, cor.b, 0.42), 2.0, true)
 		draw_line(-normal, fim - normal, Color(cor.r, cor.g, cor.b, 0.42), 2.0, true)
 		draw_dashed_line(Vector2.ZERO, fim, aviso, 3.0 + carga * 2.0, 13.0, true)
-		draw_circle(Vector2.ZERO, 14.0 + carga * 20.0 + sin(Time.get_ticks_msec() * 0.018) * 3.0, Color(cor.r, cor.g, cor.b, 0.20 + carga * 0.48))
+		draw_circle(Vector2.ZERO, 14.0 + carga * 20.0 + sin(Global.tempo_combate_ms() * 0.018) * 3.0, Color(cor.r, cor.g, cor.b, 0.20 + carga * 0.48))
 		draw_arc(Vector2.ZERO, 24.0 + carga * 16.0, 0.0, TAU, 32, aviso, 3.0 + carga * 2.0, true)
 		if is_instance_valid(player):
 			var alvo := to_local(player.global_position)

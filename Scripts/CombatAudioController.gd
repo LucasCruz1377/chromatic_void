@@ -17,7 +17,7 @@ var poderes_ametista_anterior := 0
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	get_tree().node_added.connect(_ao_adicionar_node)
 
 

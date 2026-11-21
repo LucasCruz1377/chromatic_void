@@ -195,7 +195,7 @@ func preparar_ataque(indice: int) -> void:
 func processar_aviso(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, 420.0 * delta)
 	tempo_estado -= delta
-	linha_aviso.modulate.a = 0.35 + absf(sin(Time.get_ticks_msec() * 0.019)) * 0.65
+	linha_aviso.modulate.a = 0.35 + absf(sin(Global.tempo_combate_ms() * 0.019)) * 0.65
 	if tempo_estado > 0.0:
 		return
 	linha_aviso.visible = false
@@ -458,7 +458,7 @@ func criar_circulo_pontos(raio: float, segmentos: int) -> PackedVector2Array:
 
 
 func _draw() -> void:
-	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.006) * 0.06
+	var pulso := 1.0 + sin(Global.tempo_combate_ms() * 0.006) * 0.06
 	match tema:
 		Tema.FLOR_EQUINOCIO:
 			for indice in range(8):

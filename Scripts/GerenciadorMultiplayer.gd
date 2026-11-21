@@ -26,6 +26,7 @@ var hospedando := false
 var em_lobby := false
 var modo_multiplayer := false
 var partida_em_andamento := false
+var pausa_do_host := false
 var arena_host_pronta := false
 var aguardando_arenas := false
 var clientes_na_arena: Dictionary = {}
@@ -135,6 +136,8 @@ func entrar_lobby(endereco: String, nickname: String) -> Error:
 
 
 func encerrar_lobby() -> void:
+	if pausa_do_host:
+		_aplicar_pausa_partida(false)
 	_encerrar_anuncio_lan()
 	_encerrar_descoberta_lan()
 	if is_instance_valid(peer_enet):
@@ -341,11 +344,24 @@ func _iniciar_partida_remota() -> void:
 
 
 # A arena é dinâmica, mas este autoload já existe dos dois lados da conexão.
+func definir_pausa_partida(pausada: bool) -> void:
+	if not modo_multiplayer:
+		get_tree().paused = pausada
+	elif esta_conectado() and multiplayer.is_server():
+		_aplicar_pausa_partida.rpc(pausada)
+
+
+@rpc("authority", "call_local", "reliable")
+func _aplicar_pausa_partida(pausada: bool) -> void:
+	pausa_do_host = pausada
+	get_tree().paused = pausada
+
+
 func anunciar_arena_carregada() -> void:
 	if multiplayer.is_server():
 		arena_host_pronta = true
 		for id in clientes_na_arena:
-			_confirmar_arena_host.rpc_id(int(id))
+			_confirmar_arena_host.rpc_id(int(id), pausa_do_host)
 	else:
 		_cliente_carregou_arena.rpc_id(1)
 
@@ -359,7 +375,7 @@ func _cliente_carregou_arena() -> void:
 		return
 	clientes_na_arena[id] = true
 	if arena_host_pronta:
-		_confirmar_arena_host.rpc_id(id)
+		_confirmar_arena_host.rpc_id(id, pausa_do_host)
 	else:
 		_iniciar_host_quando_prontos()
 
@@ -375,7 +391,9 @@ func _iniciar_host_quando_prontos() -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _confirmar_arena_host() -> void:
+func _confirmar_arena_host(pausada: bool) -> void:
+	if pausada or pausa_do_host:
+		_aplicar_pausa_partida(pausada)
 	arena_host_pronta = true
 	arena_host_disponivel.emit()
 

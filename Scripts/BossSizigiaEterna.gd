@@ -184,7 +184,7 @@ func Mover(delta: float) -> void:
 		var distancia := global_position.distance_to(player.global_position)
 		var alvo_distancia := 280.0 if fase_atual == Fase.LUA else 235.0
 		var fator := 1.0 if distancia > alvo_distancia else -0.58
-		var tangente := direcao_player.rotated(PI * 0.5) * sin(Time.get_ticks_msec() * 0.0016)
+		var tangente := direcao_player.rotated(PI * 0.5) * sin(Global.tempo_combate_ms() * 0.0016)
 		velocity = (direcao_player * fator + tangente * 0.52).normalized() * Velocidade
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, Velocidade * delta)
@@ -450,7 +450,7 @@ func iniciar_investida_solar() -> void:
 
 
 func _ativar_investida_depois(token: int, fase_esperada: int) -> void:
-	await get_tree().create_timer(0.72).timeout
+	await get_tree().create_timer(0.72, false).timeout
 	if morto or token != token_acao or fase_atual != fase_esperada or estado == Estado.TRANSICAO:
 		return
 	estado = Estado.INVESTINDO
@@ -527,7 +527,7 @@ func iniciar_totalidade(frenesi: bool) -> void:
 
 
 func criar_raio_totalidade_atrasado(fase_esperada: int, atraso: float) -> void:
-	await get_tree().create_timer(atraso).timeout
+	await get_tree().create_timer(atraso, false).timeout
 	if morto or fase_atual != fase_esperada or estado == Estado.TRANSICAO:
 		return
 	criar_raio_solar(true)
@@ -564,7 +564,7 @@ func _transicao_para_sol(token: int) -> void:
 		return
 	if token != token_transicao:
 		return
-	await get_tree().create_timer(0.22).timeout
+	await get_tree().create_timer(0.22, false).timeout
 	if morto:
 		ocultar_visuais_transicao()
 		return
@@ -611,7 +611,7 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	var posicao_sol_inicial := global_position
 	global_position = CENTRO_FUSAO
 	preparar_fusao(posicao_sol_inicial)
-	await get_tree().create_timer(0.42).timeout
+	await get_tree().create_timer(0.42, false).timeout
 	if morto:
 		ocultar_visuais_transicao()
 		return
@@ -632,7 +632,7 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 		return
 	if token != token_transicao:
 		return
-	await get_tree().create_timer(0.48).timeout
+	await get_tree().create_timer(0.48, false).timeout
 	if morto:
 		ocultar_visuais_transicao()
 		return
@@ -1056,7 +1056,7 @@ func piscar_eclipse_no_escuro(token: int) -> void:
 	)
 	acomodar.tween_method(atualizar_flash_shader, 0.48, 0.0, 0.42)
 	await acomodar.finished
-	await get_tree().create_timer(0.36).timeout
+	await get_tree().create_timer(0.36, false).timeout
 
 
 func ocultar_visuais_transicao() -> void:

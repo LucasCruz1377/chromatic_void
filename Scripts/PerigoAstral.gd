@@ -225,7 +225,7 @@ func _draw() -> void:
 				true
 			)
 			return
-		var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.016) * 0.08
+		var pulso := 1.0 + sin(Global.tempo_combate_ms() * 0.016) * 0.08
 		var progresso := clampf(tempo / maxf(duracao_total, 0.01), 0.0, 1.0)
 		var aviso := cor
 		aviso.a = 0.24 if tempo > 0.0 else 0.62
@@ -257,7 +257,7 @@ func _draw() -> void:
 	else:
 		var sombra := Color(0.015, 0.02, 0.09, 0.54)
 		draw_circle(Vector2.ZERO, 940.0, sombra)
-		var pulso_seguro := 0.30 + absf(sin(Time.get_ticks_msec() * 0.008)) * 0.18
+		var pulso_seguro := 0.30 + absf(sin(Global.tempo_combate_ms() * 0.008)) * 0.18
 		var seguro := Color(0.32, 0.82, 1.0, pulso_seguro)
 		draw_colored_polygon(PackedVector2Array([
 			Vector2.ZERO,

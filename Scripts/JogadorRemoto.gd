@@ -22,7 +22,7 @@ func configurar(id: int, nome: String, posicao_inicial: Vector2) -> void:
 	global_position = posicao_inicial
 	posicao_alvo = posicao_inicial
 	z_index = 2
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player_remoto")
 	queue_redraw()
 
@@ -64,7 +64,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var alpha := 1.0 if vivo else 0.28
-	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.012) * 0.08 if usando_habilidade else 1.0
+	var pulso := 1.0 + sin(Global.tempo_combate_ms() * 0.012) * 0.08 if usando_habilidade else 1.0
 	var brilho := Color(cor_nave, 0.16 * alpha)
 	draw_circle(Vector2.ZERO, 31.0 * pulso, brilho)
 	var casco := PackedVector2Array([

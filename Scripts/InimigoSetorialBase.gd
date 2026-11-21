@@ -340,9 +340,9 @@ func _ligar(mesmo: bool) -> void:
 		return
 	if mesmo:
 		set_meta("laco_parceiro", parceiro)
-		set_meta("laco_expira", Time.get_ticks_msec() + 5000)
+		set_meta("laco_expira", Global.tempo_combate_ms() + 5000)
 		parceiro.set_meta("laco_parceiro", self)
-		parceiro.set_meta("laco_expira", Time.get_ticks_msec() + 5000)
+		parceiro.set_meta("laco_expira", Global.tempo_combate_ms() + 5000)
 	else:
 		parceiro.multiplicador_dano_recebido = 0.52
 		parceiro.set_meta("no_protetor", self)

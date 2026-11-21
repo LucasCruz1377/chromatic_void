@@ -92,7 +92,7 @@ func explodir() -> void:
 
 
 func _draw() -> void:
-	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.014 + angulo) * 0.12
+	var pulso := 1.0 + sin(Global.tempo_combate_ms() * 0.014 + angulo) * 0.12
 	draw_circle(Vector2.ZERO, 22.0 * pulso, Color(cor.r, cor.g, cor.b, 0.14))
 	draw_circle(Vector2.ZERO, 15.0 * pulso, Color(0.19, 0.035, 0.018, 1.0))
 	draw_arc(Vector2.ZERO, 14.0 * pulso, 0.0, TAU, 24, cor, 3.0, true)

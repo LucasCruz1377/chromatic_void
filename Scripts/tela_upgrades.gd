@@ -50,7 +50,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if menu_aberto:
-		if not pode_manter_menu_aberto():
+		if Rede.pausa_do_host or not pode_manter_menu_aberto():
 			fechar_menu()
 		return
 
@@ -305,6 +305,8 @@ func _texto_tecla_melhorias() -> String:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Rede.modo_multiplayer and event.is_action_pressed("pausar"):
+		return
 	if menu_aberto and event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		fechar_menu()

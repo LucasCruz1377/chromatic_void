@@ -26,7 +26,7 @@ var audio_intro: AudioStreamPlayer
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	audio_intro = AudioStreamPlayer.new()
 	audio_intro.name = "AudioIntroBoss"
 	add_child(audio_intro)

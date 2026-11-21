@@ -344,6 +344,18 @@ func obter_centro_area_visivel() -> Vector2:
 	return obter_retangulo_area_visivel().get_center()
 
 
+var segundos_combate := 0.0
+
+
+func _physics_process(delta: float) -> void:
+	if not get_tree().paused and Engine.time_scale > 0.0:
+		segundos_combate += delta / Engine.time_scale
+
+
+func tempo_combate_ms() -> int:
+	return roundi(segundos_combate * 1000.0)
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	modo_desenvolvedor = calcular_permissao_desenvolvedor(

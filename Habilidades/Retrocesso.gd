@@ -62,10 +62,10 @@ func rewind(player) -> void:
 		var vida_salva: float = estado["vida"]
 		if vida_salva > player.vida:
 			player.vida = minf(vida_salva, player.VIDA_MAXIMA)
-		player.modulate.a = 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() / 80.0))
+		player.modulate.a = 0.55 + 0.45 * absf(sin(Global.tempo_combate_ms() / 80.0))
 		if indice % intervalo_rastro_rewind == 0:
 			criar_rastros(player)
-		await player.get_tree().create_timer(intervalo_memorias).timeout
+		await player.get_tree().create_timer(intervalo_memorias, false).timeout
 	finalizar_rewind(player)
 
 

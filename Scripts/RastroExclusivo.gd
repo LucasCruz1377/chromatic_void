@@ -28,7 +28,6 @@ func configurar(novo_alvo: Node2D, novo_tipo: StringName, nova_cor: Color) -> vo
 	set_as_top_level(true)
 	global_position = Vector2.ZERO
 	z_index = 2
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_preparar_linhas_spectrum()
 
 

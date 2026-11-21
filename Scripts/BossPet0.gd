@@ -154,8 +154,8 @@ func iniciar_rolamento() -> void:
 func avisar_rolamento(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, 520.0 * delta)
 	tempo_estado -= delta
-	linha_aviso.modulate.a = 0.35 + absf(sin(Time.get_ticks_msec() * 0.017)) * 0.65
-	visual.scale = Vector2.ONE * (1.0 + absf(sin(Time.get_ticks_msec() * 0.02)) * 0.08)
+	linha_aviso.modulate.a = 0.35 + absf(sin(Global.tempo_combate_ms() * 0.017)) * 0.65
+	visual.scale = Vector2.ONE * (1.0 + absf(sin(Global.tempo_combate_ms() * 0.02)) * 0.08)
 
 	if tempo_estado <= 0.0:
 		estado = Estado.ROLANDO

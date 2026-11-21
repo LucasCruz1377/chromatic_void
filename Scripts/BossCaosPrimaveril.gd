@@ -188,7 +188,7 @@ func preparar_onda_espinhos(delta: float) -> void:
 	petalas.rotation += giro * delta
 	espinhos_ornamentais.rotation = petalas.rotation
 	aviso_espinhos.rotation += giro * 0.55 * delta
-	aviso_espinhos.modulate.a = 0.34 + absf(sin(Time.get_ticks_msec() * 0.018)) * 0.58
+	aviso_espinhos.modulate.a = 0.34 + absf(sin(Global.tempo_combate_ms() * 0.018)) * 0.58
 	tempo_estado -= delta
 	if tempo_estado <= 0.0:
 		estado = Estado.ONDA_ESPINHOS
@@ -354,7 +354,7 @@ func ir_ao_centro(_delta: float) -> void:
 
 func avisar_vinhas(delta: float) -> void:
 	velocity = Vector2.ZERO
-	aviso_vinhas.modulate.a = 0.28 + absf(sin(Time.get_ticks_msec() * 0.021)) * 0.70
+	aviso_vinhas.modulate.a = 0.28 + absf(sin(Global.tempo_combate_ms() * 0.021)) * 0.70
 	visual.rotation += 0.34 * sentido_rotacao * delta
 	# O aviso acompanha exatamente o ângulo que será entregue ao pivô real.
 	aviso_vinhas.rotation = visual.rotation

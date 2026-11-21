@@ -415,7 +415,7 @@ func _obter_cena() -> Node:
 
 
 func _draw() -> void:
-	var brilho := 1.0 + sin(Time.get_ticks_msec() * 0.009) * 0.08
+	var brilho := 1.0 + sin(Global.tempo_combate_ms() * 0.009) * 0.08
 	var nucleo := PackedVector2Array()
 	for indice in range(6):
 		nucleo.append(Vector2.from_angle(angulo_visual + indice * TAU / 6.0) * 32.0 * brilho)

@@ -428,7 +428,7 @@ func _atualizar_nickname_rede() -> void:
 
 func obter_cor_personalizacao() -> Color:
 	if modelo_visual_nave == &"c08_modelo_spectrum":
-		return Color.from_hsv(fmod(float(Time.get_ticks_msec()) / 9000.0, 1.0), 0.72, 1.0)
+		return Color.from_hsv(fmod(float(Global.tempo_combate_ms()) / 9000.0, 1.0), 0.72, 1.0)
 	var dados_cor := CatalogoMonthly.encontrar(cor_visual_nave)
 	var cor_nave := Color("8bff2a")
 	if not dados_cor.is_empty():
@@ -950,7 +950,7 @@ func atualizar_vida() -> void:
 func atualizar_invencibilidade(delta: float) -> void:
 	if invencibilidade_cd > 0.0:
 		invencibilidade_cd = maxf(invencibilidade_cd - delta, 0.0)
-		modulate.a = 0.48 + absf(sin(Time.get_ticks_msec() / 90.0)) * 0.52
+		modulate.a = 0.48 + absf(sin(Global.tempo_combate_ms() / 90.0)) * 0.52
 	else:
 		modulate.a = 1.0
 		invencibilidade = false
@@ -1048,7 +1048,7 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 		&"determinacao":
 			ativar_escudo(32.0 * potencia, 6.0, cor)
 			for alvo in _inimigos_mais_proximos(6):
-				alvo.set_meta("marcado_determinacao", Time.get_ticks_msec() + 6000)
+				alvo.set_meta("marcado_determinacao", Global.tempo_combate_ms() + 6000)
 				_criar_feedback_monthly(alvo.global_position, cor, 0.48, 0.0)
 			_atingir_area(global_position, 190.0, 13.0 * potencia, 260.0, 0.8)
 			_criar_feedback_monthly(global_position, cor, 1.7, 10.0)
@@ -1207,7 +1207,7 @@ func _inimigos_mais_fortes(quantidade: int) -> Array[Node2D]:
 
 
 func _repetir_disparo_clone(cor: Color, potencia: float) -> void:
-	await get_tree().create_timer(0.28).timeout
+	await get_tree().create_timer(0.28, false).timeout
 	if not vivo:
 		return
 	for deslocamento in [-0.18, 0.0, 0.18]:
@@ -1216,7 +1216,7 @@ func _repetir_disparo_clone(cor: Color, potencia: float) -> void:
 
 
 func _abrir_presente_depois(tipo_presente: int, cor: Color, potencia: float) -> void:
-	await get_tree().create_timer(0.48).timeout
+	await get_tree().create_timer(0.48, false).timeout
 	if not vivo:
 		return
 	_criar_feedback_monthly(global_position, cor, 1.35, 3.0)
@@ -1229,7 +1229,7 @@ func _abrir_presente_depois(tipo_presente: int, cor: Color, potencia: float) -> 
 
 
 func _repetir_disparos_recentes(cor: Color, potencia: float) -> void:
-	var agora := Time.get_ticks_msec()
+	var agora := Global.tempo_combate_ms()
 	var recentes: Array[Dictionary] = []
 	for registro in historico_disparos:
 		if agora - int(registro.get("tempo", 0)) <= 4200:
@@ -1254,7 +1254,7 @@ func _furia_natureza_em_sequencia(cor: Color, potencia: float) -> void:
 		var ponto := global_position + transform.x * 62.0 * float(indice)
 		_atingir_area(ponto, 55.0, 8.0 * potencia, 90.0, 0.5)
 		EfeitoCombateCena.criar(get_tree().current_scene, ponto, EfeitoCombate.Tipo.MORTE, cor, 0.68, transform.x)
-		await get_tree().create_timer(0.065).timeout
+		await get_tree().create_timer(0.065, false).timeout
 	sequencia_natureza_ativa = false
 
 
@@ -1274,7 +1274,7 @@ func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia:
 
 
 func _mutacao_atrasada(_estilo: StringName) -> void:
-	await get_tree().create_timer(0.45).timeout
+	await get_tree().create_timer(0.45, false).timeout
 	if not vivo:
 		return
 	var alvos := _inimigos_mais_proximos(1)
@@ -1326,7 +1326,7 @@ func atualizar_equipamentos_monthly(delta: float) -> void:
 
 
 func _explodir_eco_fantasma(posicao: Vector2, cor: Color) -> void:
-	await get_tree().create_timer(0.42).timeout
+	await get_tree().create_timer(0.42, false).timeout
 	if not is_inside_tree():
 		return
 	_atingir_area(posicao, 42.0, 2.2, 45.0, 0.1)
@@ -1865,7 +1865,7 @@ func criar_projetil(
 		projetil.global_position = origem_personalizada
 	projetil.rotation = angulo
 	if not eh_nova:
-		historico_disparos.append({"tempo": Time.get_ticks_msec(), "angulo": angulo})
+		historico_disparos.append({"tempo": Global.tempo_combate_ms(), "angulo": angulo})
 		while historico_disparos.size() > 24:
 			historico_disparos.pop_front()
 
@@ -2301,7 +2301,7 @@ func _draw() -> void:
 		)
 	if tempo_queimadura > 0.0 and pulsos_queimadura_restantes > 0:
 		var chama := Color(1.0, 0.35, 0.06, 0.86)
-		var oscilacao := sin(Time.get_ticks_msec() * 0.018) * 3.0
+		var oscilacao := sin(Global.tempo_combate_ms() * 0.018) * 3.0
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(-7.0, -30.0),
 			Vector2(oscilacao, -47.0),
@@ -2318,14 +2318,14 @@ func _draw() -> void:
 		draw_arc(local_seguro, 28.0, 0.0, TAU, 32, Color(1.0, 0.82, 0.24, 0.8), 2.0, true)
 	if modulo_nave == &"n09_familia_satelites":
 		for indice in range(satelites_restantes):
-			var angulo := Time.get_ticks_msec() * 0.0015 + TAU * float(indice) / 3.0
+			var angulo := Global.tempo_combate_ms() * 0.0015 + TAU * float(indice) / 3.0
 			var ponto := Vector2.from_angle(angulo) * 48.0
 			draw_circle(ponto, 5.0, Color(1.0, 0.78, 0.24, 0.9))
 	if modulo_nave == &"n02_luz_vital" and progresso_luz_vital > 0.0:
 		draw_arc(Vector2.ZERO, 44.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(progresso_luz_vital / 30.0, 0.0, 1.0), 40, Color(1.0, 0.84, 0.28), 3.0, true)
 	if folhas_tempestade_ativas:
 		for indice in range(8):
-			var angulo := -Time.get_ticks_msec() * 0.002 + TAU * float(indice) / 8.0
+			var angulo := -Global.tempo_combate_ms() * 0.002 + TAU * float(indice) / 8.0
 			draw_circle(Vector2.from_angle(angulo) * 48.0, 3.5, Color(0.3, 1.0, 0.55, 0.9))
 
 
@@ -2335,7 +2335,7 @@ func _desenhar_carga_arma() -> void:
 	var carga_maxima := obter_tempo_carga_esturjao()
 	var progresso := clampf(carga_arma / carga_maxima, 0.0, 1.0)
 	var cor_carga := Color(0.26, 0.86, 1.0)
-	var pulso := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.022)
+	var pulso := 0.5 + 0.5 * sin(Global.tempo_combate_ms() * 0.022)
 	var centro := PontaArma.position + Vector2(5.0, 0.0)
 	var raio := lerpf(2.8, 9.5, progresso)
 	draw_circle(
@@ -2708,7 +2708,7 @@ func morrer() -> void:
 	if is_instance_valid(batalha) and batalha.has_method("_on_player_morreu"):
 		batalha.call("_on_player_morreu", self)
 
-	await get_tree().create_timer(1.5).timeout
+	await get_tree().create_timer(1.5, false).timeout
 	if Rede.modo_multiplayer:
 		return
 	queue_free()

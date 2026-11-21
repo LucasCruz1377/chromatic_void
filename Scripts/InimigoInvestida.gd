@@ -85,7 +85,7 @@ func iniciar_aviso() -> void:
 func atualizar_aviso(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, aceleracao * 2.0 * delta)
 	tempo_estado -= delta
-	linha_aviso.modulate.a = 0.35 + absf(sin(Time.get_ticks_msec() * 0.018)) * 0.65
+	linha_aviso.modulate.a = 0.35 + absf(sin(Global.tempo_combate_ms() * 0.018)) * 0.65
 
 	if tempo_estado <= 0.0:
 		preload("res://Scripts/AudioCombate.gd").tocar(self, &"investida")

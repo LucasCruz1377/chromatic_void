@@ -35,7 +35,7 @@ func executar(player) -> void:
 
 
 func executar_dash(player) -> void:
-	await player.get_tree().create_timer(intervalo_preparo, true, false, true).timeout
+	await player.get_tree().create_timer(intervalo_preparo, false, false, true).timeout
 	if not ativo or not is_instance_valid(player):
 		_restaurar_tempo()
 		ativo = false
@@ -50,7 +50,7 @@ func executar_dash(player) -> void:
 	if camera and camera.has_method("shake"):
 		camera.shake(5.0)
 	gerar_loop_de_rastros(player)
-	await player.get_tree().create_timer(duracao_dash).timeout
+	await player.get_tree().create_timer(duracao_dash, false).timeout
 	if not ativo or not is_instance_valid(player):
 		return
 	player.velocity *= desaceleracao
@@ -67,7 +67,7 @@ func gerar_loop_de_rastros(player) -> void:
 	while ativo and is_instance_valid(player) and player.velocity.length() > 100.0:
 		criar_copia_poligono(player, player.get_node_or_null("corpo") as Polygon2D)
 		criar_copia_poligono(player, player.get_node_or_null("corpo2") as Polygon2D)
-		await player.get_tree().create_timer(intervalo_rastro).timeout
+		await player.get_tree().create_timer(intervalo_rastro, false).timeout
 
 
 func criar_copia_poligono(player, poligono_original: Polygon2D) -> void:
