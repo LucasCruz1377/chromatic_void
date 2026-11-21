@@ -16,6 +16,9 @@ func _ready() -> void:
 	if papel.is_empty():
 		get_tree().quit(0)
 		return
+	await get_tree().process_frame
+	# O controlador do teste acompanha a troca real de cena feita pelo lobby.
+	get_tree().current_scene = null
 	GerenciadorDeSave.salvar({"tutorialconcluido": true})
 	var erro := Rede.criar_lobby(papel) if papel == "host" else Rede.entrar_lobby("127.0.0.1", papel)
 	if erro != OK:
@@ -24,8 +27,16 @@ func _ready() -> void:
 	if not await esperar(func() -> bool: return Rede.jogadores.size() == 4):
 		falhar("lobby nao chegou a quatro pilotos")
 		return
-	arena = (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate() as Node2D
-	get_tree().root.add_child(arena)
+	if papel == "host" and not Rede.solicitar_inicio_partida():
+		falhar("host nao iniciou pelo lobby")
+		return
+	if not await esperar(func() -> bool:
+		var cena := get_tree().current_scene
+		return cena != null and cena.scene_file_path == "res://Rooms/Battle_area.tscn"
+	):
+		falhar("transicao do lobby para a arena nao terminou")
+		return
+	arena = get_tree().current_scene as Node2D
 	arena.set("preservar_conexao_ao_sair", true)
 	arena.set("spawns_pausados_desenvolvedor", true)
 	if not await esperar(func() -> bool:

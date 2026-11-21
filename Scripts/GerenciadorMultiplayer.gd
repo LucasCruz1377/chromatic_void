@@ -1,6 +1,7 @@
 extends Node
 
 
+signal arena_host_disponivel
 signal lobby_alterado(jogadores: Dictionary)
 signal status_alterado(mensagem: String, erro: bool)
 signal conexao_alterada(conectado: bool)
@@ -25,6 +26,9 @@ var hospedando := false
 var em_lobby := false
 var modo_multiplayer := false
 var partida_em_andamento := false
+var arena_host_pronta := false
+var aguardando_arenas := false
+var clientes_na_arena: Dictionary = {}
 var peer_enet: ENetMultiplayerPeer
 var configuracao_teste: Dictionary = {}
 var emissor_lan: PacketPeerUDP
@@ -141,6 +145,9 @@ func encerrar_lobby() -> void:
 	em_lobby = false
 	modo_multiplayer = false
 	partida_em_andamento = false
+	arena_host_pronta = false
+	aguardando_arenas = false
+	clientes_na_arena.clear()
 	jogadores.clear()
 	lobby_alterado.emit({})
 	conexao_alterada.emit(false)
@@ -311,11 +318,15 @@ func solicitar_inicio_partida() -> bool:
 	if not pode_iniciar_partida():
 		status_alterado.emit(tr("Aguardando pelo menos dois jogadores na sala."), true)
 		return false
+	aguardando_arenas = true
+	clientes_na_arena.clear()
+	partida_em_andamento = true
+	em_lobby = false
 	_iniciar_partida_remota.rpc()
 	return true
 
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "call_remote", "reliable")
 func _iniciar_partida_remota() -> void:
 	if get_tree().current_scene and get_tree().current_scene.scene_file_path == "res://Rooms/Battle_area.tscn":
 		partida_em_andamento = true
@@ -327,6 +338,46 @@ func _iniciar_partida_remota() -> void:
 	Global.primeira_vez_jogando = false
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://Rooms/Battle_area.tscn")
+
+
+# A arena é dinâmica, mas este autoload já existe dos dois lados da conexão.
+func anunciar_arena_carregada() -> void:
+	if multiplayer.is_server():
+		arena_host_pronta = true
+		for id in clientes_na_arena:
+			_confirmar_arena_host.rpc_id(int(id))
+	else:
+		_cliente_carregou_arena.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _cliente_carregou_arena() -> void:
+	if not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if not jogadores.has(id):
+		return
+	clientes_na_arena[id] = true
+	if arena_host_pronta:
+		_confirmar_arena_host.rpc_id(id)
+	else:
+		_iniciar_host_quando_prontos()
+
+
+func _iniciar_host_quando_prontos() -> void:
+	if not aguardando_arenas:
+		return
+	for id in jogadores:
+		if int(id) != 1 and not clientes_na_arena.has(id):
+			return
+	aguardando_arenas = false
+	_iniciar_partida_remota()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _confirmar_arena_host() -> void:
+	arena_host_pronta = true
+	arena_host_disponivel.emit()
 
 
 @rpc("any_peer", "reliable")
@@ -365,8 +416,10 @@ func _on_peer_conectado(_id: int) -> void:
 func _on_peer_desconectado(id: int) -> void:
 	if jogadores.has(id):
 		jogadores.erase(id)
+	clientes_na_arena.erase(id)
 	if hospedando:
 		_enviar_lista_jogadores()
+		_iniciar_host_quando_prontos()
 	status_alterado.emit(tr("Um jogador saiu da sala."), true)
 	lobby_alterado.emit(jogadores.duplicate())
 	jogador_desconectado.emit(id)

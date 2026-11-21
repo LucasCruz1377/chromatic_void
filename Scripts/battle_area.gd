@@ -382,7 +382,8 @@ func _configurar_jogadores_multiplayer() -> void:
 	if multiplayer.is_server():
 		player.call_deferred("aplicar_configuracao_visual_rede")
 	else:
-		_enviar_solicitacao_entrada()
+		Rede.arena_host_disponivel.connect(_enviar_solicitacao_entrada)
+	Rede.anunciar_arena_carregada()
 	call_deferred("_vincular_jogador_local")
 
 
@@ -489,6 +490,8 @@ func _posicao_inicial_peer(id: int) -> Vector2:
 
 
 func _enviar_solicitacao_entrada() -> void:
+	if not Rede.arena_host_pronta:
+		return
 	tempo_nova_solicitacao_rede = 0.5
 	_solicitar_entrada_partida.rpc_id(
 		1, Rede.nickname_local, Rede.obter_configuracao_nave_local()
@@ -2371,7 +2374,7 @@ func _enviar_tamanho_viewport_local() -> void:
 	var tamanho := get_viewport().get_visible_rect().size
 	if multiplayer.is_server():
 		_registrar_tamanho_viewport(1, tamanho)
-	elif Rede.esta_conectado():
+	elif Rede.esta_conectado() and Rede.arena_host_pronta:
 		_registrar_tamanho_viewport_remoto.rpc_id(1, tamanho)
 
 
