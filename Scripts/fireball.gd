@@ -52,19 +52,18 @@ var bumerangue_graca_retorno := 0.0
 var bumerangue_alvos_ida: Dictionary = {}
 var bumerangue_alvos_retorno: Dictionary = {}
 var id_disparo_rede := ""
+var numero_impacto_rede := 0
 var somente_visual_rede := false
 var intervalo_estado_rede := 0.05
-var posicao_estado_rede := Vector2.ZERO
-var rotacao_estado_rede := 0.0
-var escala_estado_rede := Vector2.ONE
-var visibilidade_estado_rede := true
-var recebeu_estado_rede := false
+var sequencia_estado_rede := 0
+var ultima_sequencia_estado_rede := 0
 var nevasca_gelo := false
 var abaixo_zero_gelo := false
 var linha_feixe: Line2D
 var brilho_feixe: Line2D
 var centro_feixe: Line2D
-var raycast_feixe: RayCast2D
+const INTERVALO_FEIXE := 0.25
+var forma_feixe: RectangleShape2D
 var intervalo_dano_feixe := 0.0
 var comprimento_feixe := 1200.0
 
@@ -104,14 +103,22 @@ func configurar_id_disparo_rede(novo_id: String, visual_remoto: bool) -> void:
 func aplicar_estado_visual_rede(
 	nova_posicao: Vector2, nova_rotacao: float,
 	nova_escala: Vector2, nova_visibilidade: bool,
-	nova_cor: Color = Color.TRANSPARENT
+	nova_cor: Color = Color.TRANSPARENT, sequencia: int = 0
 ) -> void:
-	posicao_estado_rede = nova_posicao
-	rotacao_estado_rede = nova_rotacao
-	escala_estado_rede = nova_escala
-	visibilidade_estado_rede = nova_visibilidade
-	recebeu_estado_rede = true
-	if nova_cor.a > 0.0:
+	if sequencia > 0:
+		if sequencia <= ultima_sequencia_estado_rede:
+			return
+		ultima_sequencia_estado_rede = sequencia
+	# O feixe já acompanha o cano da nave remota em cada quadro de física.
+	if estilo_monthly != &"perielio_ray":
+		if global_position.distance_squared_to(nova_posicao) > 90.0 * 90.0:
+			global_position = nova_posicao
+		else:
+			global_position = global_position.lerp(nova_posicao, 0.72)
+		global_rotation = lerp_angle(global_rotation, nova_rotacao, 0.78)
+	scale = nova_escala
+	visible = nova_visibilidade
+	if nova_cor.a > 0.0 and nova_cor != cor_monthly:
 		cor_monthly = nova_cor
 		_atualizar_cor_feixe()
 	set_meta("estado_rede_recebido", true)
@@ -255,17 +262,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _atualizar_estado_rede(delta: float) -> void:
-	if id_disparo_rede.is_empty() or not Rede.esta_conectado():
-		return
-	if somente_visual_rede:
-		if not recebeu_estado_rede:
-			return
-		var distancia := global_position.distance_to(posicao_estado_rede)
-		global_position = posicao_estado_rede if distancia > 90.0 else global_position.lerp(posicao_estado_rede, 0.72)
-		global_rotation = lerp_angle(global_rotation, rotacao_estado_rede, 0.78)
-		scale = scale.lerp(escala_estado_rede, 0.72)
-		visible = visibilidade_estado_rede
-		_atualizar_cor_feixe()
+	if somente_visual_rede or id_disparo_rede.is_empty() or not Rede.esta_conectado():
 		return
 	intervalo_estado_rede -= delta
 	if intervalo_estado_rede > 0.0:
@@ -273,7 +270,9 @@ func _atualizar_estado_rede(delta: float) -> void:
 	intervalo_estado_rede = 0.05
 	var batalha := _obter_batalha_rede()
 	if is_instance_valid(batalha) and batalha.has_method("replicar_estado_disparo"):
+		sequencia_estado_rede += 1
 		batalha.call("replicar_estado_disparo", {
+			"sequencia": sequencia_estado_rede,
 			"id_disparo": id_disparo_rede,
 			"posicao": global_position,
 			"rotacao": global_rotation,
@@ -329,7 +328,7 @@ func _processar_movimento_monthly(delta: float) -> bool:
 				if is_instance_valid(alvo):
 					global_position = alvo.global_position - transform.x * 36.0
 				visible = true
-				monitoring = true
+				monitoring = not somente_visual_rede
 				_criar_feedback_monthly(0.75)
 			global_position += transform.x * velocidade * delta
 			_criar_rastro_monthly()
@@ -420,12 +419,16 @@ func _iniciar_retorno_bumerangue() -> void:
 
 
 func _atingir_alvos_sobrepostos_bumerangue() -> void:
+	if somente_visual_rede or not monitoring or not is_inside_tree() or is_queued_for_deletion():
+		return
 	for corpo in get_overlapping_bodies():
 		if corpo is Node2D:
 			_atingir_com_bumerangue(corpo as Node2D)
 
 
 func _atingir_com_bumerangue(body: Node2D) -> void:
+	if somente_visual_rede:
+		return
 	if not is_instance_valid(body) or not body.has_method("tomarDano"):
 		return
 	var id_alvo := body.get_instance_id()
@@ -473,6 +476,18 @@ func atualizar_mira_gravitacional(delta: float) -> void:
 	if forca_homing <= 0.0:
 		return
 
+	if estilo_monthly == &"alcateia":
+		var menor := INF
+		alvo_homing = null
+		for piloto in get_tree().get_nodes_in_group("player"):
+			if piloto is Player and piloto.vivo:
+				var distancia := global_position.distance_squared_to(piloto.global_position)
+				if distancia < menor:
+					menor = distancia
+					alvo_homing = piloto
+		if is_instance_valid(alvo_homing):
+			global_rotation = rotate_toward(global_rotation, global_position.angle_to_point(alvo_homing.global_position), forca_homing * delta)
+		return
 	if (
 		is_instance_valid(alvo_homing)
 		and global_position.distance_to(alvo_homing.global_position) > alcance_homing
@@ -554,7 +569,7 @@ func verificar_fora_da_arena() -> void:
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if bool(get_meta("apenas_visual_rede", false)):
+	if is_queued_for_deletion() or bool(get_meta("apenas_visual_rede", false)):
 		return
 	if not body.has_method("tomarDano"):
 		return
@@ -579,7 +594,7 @@ func _on_body_entered(body: Node2D) -> void:
 		dono_player.registrar_acerto_projetil()
 
 	if quantidade_fragmentos > 0 and not eh_fragmento:
-		criar_fragmentos()
+		criar_fragmentos.call_deferred(get_tree().current_scene, global_position, global_rotation)
 	if dano_explosao > 0.0 and raio_explosao > 0.0 and not eh_fragmento:
 		aplicar_onda_de_impacto(body)
 
@@ -645,12 +660,7 @@ func _configurar_feixe_perielio() -> void:
 	centro_feixe.default_color = Color.WHITE
 	centro_feixe.antialiased = true
 	add_child(centro_feixe)
-	raycast_feixe = RayCast2D.new()
-	raycast_feixe.name = "RayCastFeixePerielio"
-	raycast_feixe.enabled = true
-	raycast_feixe.collide_with_areas = false
-	raycast_feixe.collide_with_bodies = true
-	add_child(raycast_feixe)
+	forma_feixe = RectangleShape2D.new()
 	_atualizar_geometria_feixe()
 	queue_redraw()
 
@@ -660,13 +670,11 @@ func _processar_feixe_perielio(delta: float) -> void:
 		queue_free()
 		return
 	var nave := dono_player as Node2D
-	global_position = nave.global_position + Vector2.from_angle(nave.global_rotation) * 28.0
+	global_position = (nave as Player).PontaArma.global_position if nave is Player else nave.global_position
 	global_rotation = nave.global_rotation
-	comprimento_feixe = _comprimento_ate_borda(global_position, Vector2.from_angle(global_rotation))
-	if dono_player.has_method("feixe_perielio_em_sobrecarga") and bool(dono_player.call("feixe_perielio_em_sobrecarga")):
-		cor_monthly = Color(1.0, 0.16, 0.12)
-	else:
-		cor_monthly = Color(1.0, 0.78, 0.08)
+	comprimento_feixe = _comprimento_ate_borda(global_position, global_transform.x.normalized()) / global_transform.x.length()
+	if not somente_visual_rede and nave is Player:
+		cor_monthly = (nave as Player).obter_cor_calor_perielio()
 	_atualizar_cor_feixe()
 	_atualizar_geometria_feixe()
 	if somente_visual_rede:
@@ -679,23 +687,29 @@ func _processar_feixe_perielio(delta: float) -> void:
 	intervalo_dano_feixe -= delta
 	if intervalo_dano_feixe > 0.0:
 		return
-	var passo := 0.10
-	intervalo_dano_feixe = passo
-	var dps := 0.2
+	intervalo_dano_feixe += INTERVALO_FEIXE
+	var dps := 1.0
 	if dono_player.has_method("obter_dps_feixe_perielio"):
 		dps = float(dono_player.call("obter_dps_feixe_perielio"))
-	var direcao := Vector2.from_angle(global_rotation)
 	for candidato in get_tree().get_nodes_in_group("inimigo"):
-		if not is_instance_valid(candidato) or not candidato is Node2D or not candidato.has_method("tomarDano"):
-			continue
-		var deslocamento := (candidato as Node2D).global_position - global_position
-		var projecao := deslocamento.dot(direcao)
-		if projecao < 0.0 or projecao > comprimento_feixe:
-			continue
-		if absf(deslocamento.cross(direcao)) <= 11.0:
-			_aplicar_dano_critico(candidato as Node2D, dps * passo * dmg)
-			if is_instance_valid(dono_player) and dono_player.has_method("registrar_acerto_projetil"):
+		if candidato is CollisionObject2D and candidato.has_method("tomarDano") and feixe_intersecta(candidato):
+			_aplicar_dano_critico(candidato, dps * INTERVALO_FEIXE * dmg)
+			if dono_player.has_method("registrar_acerto_projetil"):
 				dono_player.call("registrar_acerto_projetil")
+
+
+func feixe_intersecta(alvo: CollisionObject2D) -> bool:
+	if not forma_feixe or is_queued_for_deletion() or not alvo.is_visible_in_tree() or alvo.is_queued_for_deletion():
+		return false
+	var centro := global_transform.translated_local(Vector2(comprimento_feixe * 0.5, 0.0))
+	for id in alvo.get_shape_owners():
+		if alvo.is_shape_owner_disabled(id):
+			continue
+		var pose := alvo.global_transform * alvo.shape_owner_get_transform(id)
+		for indice in alvo.shape_owner_get_shape_count(id):
+			if forma_feixe.collide(centro, alvo.shape_owner_get_shape(id, indice), pose):
+				return true
+	return false
 
 
 func _comprimento_ate_borda(origem: Vector2, direcao: Vector2) -> float:
@@ -724,8 +738,8 @@ func _atualizar_geometria_feixe() -> void:
 		linha_feixe.points = pontos
 	if is_instance_valid(centro_feixe):
 		centro_feixe.points = pontos
-	if is_instance_valid(raycast_feixe):
-		raycast_feixe.target_position = Vector2(comprimento_feixe, 0.0)
+	if forma_feixe:
+		forma_feixe.size = Vector2(comprimento_feixe, linha_feixe.width)
 
 
 func _atualizar_cor_feixe() -> void:
@@ -776,12 +790,14 @@ func aplicar_onda_de_impacto(alvo_direto: Node2D) -> void:
 			_aplicar_dano_critico(alvo, dmg * dano_explosao)
 
 
-func criar_fragmentos() -> void:
-	if not cena_origem:
+func criar_fragmentos(arena: Node, impacto: Vector2, rotacao_impacto: float) -> void:
+	if not cena_origem or not is_inside_tree() or not is_instance_valid(arena):
+		return
+	if arena.is_queued_for_deletion() or arena != get_tree().current_scene:
 		return
 
 	var arco := deg_to_rad(130.0)
-	var base := global_rotation + PI
+	var base := rotacao_impacto + PI
 	for indice in range(quantidade_fragmentos):
 		var deslocamento := 0.0
 		if quantidade_fragmentos > 1:
@@ -792,10 +808,10 @@ func criar_fragmentos() -> void:
 			)
 
 		var fragmento = cena_origem.instantiate()
-		get_tree().current_scene.add_child(fragmento)
+		arena.add_child(fragmento)
 		fragmento.eh_critico = eh_critico
 		fragmento.global_rotation = base + deslocamento
-		fragmento.global_position = global_position + fragmento.transform.x * 16.0
+		fragmento.global_position = impacto + Vector2.from_angle(fragmento.global_rotation) * 16.0
 
 		if fragmento.has_method("configurar"):
 			fragmento.configurar(
@@ -806,7 +822,7 @@ func criar_fragmentos() -> void:
 				forca_homing * 0.45,
 				0,
 				maxi(ricochetes_restantes - 1, 0),
-				dono_player,
+				dono_player if is_instance_valid(dono_player) else null,
 				cena_origem,
 				true,
 				multiplicador_dano_fragmento,
@@ -825,6 +841,22 @@ func _on_visible_on_screen_notifier_3d_screen_exited() -> void:
 
 
 func _aplicar_dano_critico(alvo: Node2D, valor: float) -> void:
+	if somente_visual_rede:
+		return
+	if not is_instance_valid(alvo):
+		return
+	if Rede.modo_multiplayer and not multiplayer.is_server() and not id_disparo_rede.is_empty():
+		var arena := _obter_batalha_rede()
+		if is_instance_valid(arena) and arena.has_method("enviar_impacto_projetil_rede"):
+			numero_impacto_rede += 1
+			arena.call(
+				"enviar_impacto_projetil_rede", id_disparo_rede, alvo,
+				valor, global_position, numero_impacto_rede
+			)
+			return
 	alvo.set_meta("impacto_critico", eh_critico)
+	if alvo is InimigoBase:
+		alvo.registrar_ataque_lunar(dono_player)
 	alvo.tomarDano(valor)
-	if is_instance_valid(alvo): alvo.remove_meta("impacto_critico")
+	if is_instance_valid(alvo):
+		alvo.remove_meta("impacto_critico")

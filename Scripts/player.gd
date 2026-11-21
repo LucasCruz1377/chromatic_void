@@ -4,6 +4,7 @@ class_name Player
 
 const CAMINHO_HABILIDADE_PADRAO := "res://Habilidades/habilidadeRetrocesso.tres"
 const DadosUpgrades = preload("res://Scripts/UpgradeData.gd")
+const RegrasProjetil = preload("res://Scripts/RegrasProjetil.gd")
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 const CatalogoMonthly = preload("res://Scripts/MonthlyCatalog.gd")
@@ -21,6 +22,7 @@ const AJUDANTE_MONTHLY = preload("res://Scripts/AjudanteMonthly.gd")
 const AudioCombateCena = preload("res://Scripts/AudioCombate.gd")
 const EFEITO_HABILIDADE_MONTHLY = preload("res://Scripts/MonthlyAbilityEffect.gd")
 const REROLLS_UPGRADES_INICIAIS := 3
+const DANO_BASE_NAVE := 1.25
 const BONUS_DANO_POR_NIVEL := [0.25, 0.18, 0.14, 0.10, 0.08]
 const FATOR_CADENCIA_POR_NIVEL := [0.85, 0.88, 0.91, 0.94, 0.96]
 const BONUS_VIDA_POR_NIVEL := [0.20, 0.15, 0.12, 0.10, 0.08]
@@ -35,7 +37,7 @@ const XP_PROGRESSAO_INICIAL := [2, 3, 4, 6, 8, 11, 14, 18, 23]
 @export_category("Combate")
 @export var tiro: PackedScene
 @export var HabilidadeEquipada: Habilidade
-@export var dano := 1.25
+@export var dano := DANO_BASE_NAVE
 @export var CD_MAX := 0.22
 
 @export_category("Movimento")
@@ -98,6 +100,14 @@ var invencibilidade := false
 var invencibilidade_cd := 0.0
 var invencibilidade_cd_max := 1.15
 var save := false
+# Três intervalos do sincronizador de naves (20 Hz).
+const LIMITE_PREVISAO_REDE := 0.15
+const LIMIAR_SALTO_REDE := 96.0
+var tempo_previsao_rede := 0.0
+var ultima_amostra_direta_ms := -1
+var posicao_exibida_rede := Vector2.ZERO
+var correcao_visual_rede := Vector2.ZERO
+var tem_amostra_movimento := false
 var peer_id_dono := 1
 var nickname_rede := "PILOTO"
 var configuracao_visual_rede: Dictionary = {}
@@ -169,8 +179,7 @@ var calor_feixe := 0.2
 var feixe_perielio_ativo: Node2D
 var tempo_uso_feixe_perielio := 0.0
 var bloqueio_feixe_perielio := 0.0
-var sobrecarga_feixe_perielio := false
-var aviso_sobrecarga_feixe_perielio := 0.0
+var calor_feixe_perielio := 0.0
 var tempo_poder_monthly := 0.0
 var tipo_poder_temporario: StringName = &""
 var cor_poder_temporario := Color.WHITE
@@ -181,14 +190,14 @@ var folhas_tempestade_ativas := false
 var tempo_eco_fantasma := 0.0
 var historico_disparos: Array[Dictionary] = []
 var sementes_vermelhas := 0
-var reserva_celulas := 0.0
+var estrelas_solidarias := Vector4.ZERO
+var fase_estrelas_solidarias := 0.0
+var direcao_propulsao := 0
+var passivas_nave: Node2D
 var progresso_luz_vital := 0.0
 var ponto_seguro_ativo := false
 var ponto_seguro := Vector2.ZERO
 var tempo_motor_maia := 0.0
-var tempo_scanner := 0.0
-var tempo_reflexo := 0.0
-var intervalo_quase_colisao := 0.0
 var satelites_restantes := 3
 var fase_equinocio_solar := false
 
@@ -217,7 +226,11 @@ func _ready() -> void:
 	criar_visuais_modelos_exclusivos()
 	aplicar_personalizacao_nave()
 	_criar_nickname_rede()
+	passivas_nave = preload("res://Scripts/PassivasNave.gd").new()
+	passivas_nave.name = "PassivasNave"
+	add_child(passivas_nave)
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		$MultiplayerSynchronizer.synchronized.connect(_receber_movimento_direto)
 		set_physics_process(false)
 		return
 	carregar_habilidade_equipada()
@@ -246,7 +259,7 @@ func _process(delta: float) -> void:
 		# Predição somente visual: a autoridade continua sendo o dono da nave.
 		# Os snapshots corrigem a posição, mas a nave não congela entre pacotes.
 		if vivo and visible:
-			global_position += velocity * delta
+			_avancar_movimento_remoto(delta)
 		_atualizar_efeitos_visuais_rede()
 		return
 	mira_mouse = Global.mira_mouse
@@ -263,13 +276,47 @@ func _process(delta: float) -> void:
 	atualizar_vida()
 
 
+func _receber_movimento_direto() -> void:
+	ultima_amostra_direta_ms = Time.get_ticks_msec()
+	_registrar_amostra_movimento()
+
+
+func tem_movimento_direto_recente() -> bool:
+	return ultima_amostra_direta_ms >= 0 and Time.get_ticks_msec() - ultima_amostra_direta_ms < 150
+
+
+func _registrar_amostra_movimento() -> void:
+	tempo_previsao_rede = LIMITE_PREVISAO_REDE
+	# O host usa a posição recebida para colisões. Nos clientes, uma pequena
+	# diferença é absorvida em alguns quadros. Wrap e teleporte são imediatos.
+	var diferenca := posicao_exibida_rede - global_position
+	correcao_visual_rede = Vector2.ZERO
+	if tem_amostra_movimento and not multiplayer.is_server() and diferenca.length_squared() < LIMIAR_SALTO_REDE * LIMIAR_SALTO_REDE:
+		correcao_visual_rede = -diferenca
+		global_position = posicao_exibida_rede
+	posicao_exibida_rede = global_position
+	tem_amostra_movimento = true
+
+
+func _avancar_movimento_remoto(delta: float) -> void:
+	if not tem_amostra_movimento:
+		return
+	var passo := minf(delta, tempo_previsao_rede)
+	tempo_previsao_rede -= passo
+	var ajuste := correcao_visual_rede * (1.0 - exp(-28.0 * delta))
+	correcao_visual_rede -= ajuste
+	global_position += velocity * passo + ajuste
+	atualizar_limites()
+	posicao_exibida_rede = global_position
+
+
 func _atualizar_efeitos_visuais_rede() -> void:
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
 	# A velocidade funciona como redundância visual caso a mudança booleana do
 	# rastro chegue depois do primeiro snapshot.
 	var emitindo_rastro := (
-		(rastro_ativo_rede or velocity.length_squared() > 64.0)
+		rastro_ativo_rede
 		and visible
 	)
 	if is_instance_valid(particles):
@@ -305,6 +352,8 @@ func aplicar_configuracao_visual_rede() -> void:
 func _aplicar_campos_configuracao_rede() -> void:
 	arma_monthly = StringName(str(configuracao_visual_rede.get("arma", "")))
 	modulo_nave = StringName(str(configuracao_visual_rede.get("modulo", "")))
+	if not modulo_nave.is_empty() and CatalogoMonthly.encontrar(modulo_nave).is_empty():
+		modulo_nave = &""
 	mutacao_habilidade = StringName(str(configuracao_visual_rede.get("mutacao", "")))
 	modelo_visual_nave = StringName(str(configuracao_visual_rede.get("modelo", "c01_modelo_padrao")))
 	cor_visual_nave = StringName(str(configuracao_visual_rede.get("cor", "c10_verde_original")))
@@ -342,9 +391,7 @@ func _criar_nickname_rede() -> void:
 	barra_vida_rede = ProgressBar.new()
 	barra_vida_rede.name = "BarraVidaRede"
 	barra_vida_rede.position = Vector2(-43.0, -19.0)
-	barra_vida_rede.size = Vector2(86.0, 1.0)
 	barra_vida_rede.custom_minimum_size = Vector2(86.0, 3.0)
-	barra_vida_rede.custom_maximum_size = Vector2(86.0, 3.0)
 	barra_vida_rede.max_value = VIDA_MAXIMA
 	barra_vida_rede.value = vida
 	barra_vida_rede.show_percentage = false
@@ -358,6 +405,9 @@ func _criar_nickname_rede() -> void:
 	barra_vida_rede.add_theme_stylebox_override("background", fundo_vida)
 	barra_vida_rede.add_theme_stylebox_override("fill", estilo_vida_rede)
 	suporte_nickname_rede.add_child(barra_vida_rede)
+	# O minimo inicial do tema com porcentagem ativa nao pode fixar a altura.
+	# Aplicar o tamanho depois de ocultar o texto e instalar os estilos.
+	barra_vida_rede.size = Vector2(86.0, 3.0)
 	_atualizar_nickname_rede()
 
 
@@ -378,7 +428,7 @@ func _atualizar_nickname_rede() -> void:
 
 func obter_cor_personalizacao() -> Color:
 	if modelo_visual_nave == &"c08_modelo_spectrum":
-		return Color.from_hsv(fmod(float(Time.get_ticks_msec()) / 9000.0, 1.0), 0.72, 1.0)
+		return Color.from_hsv(fmod(float(Global.tempo_combate_ms()) / 9000.0, 1.0), 0.72, 1.0)
 	var dados_cor := CatalogoMonthly.encontrar(cor_visual_nave)
 	var cor_nave := Color("8bff2a")
 	if not dados_cor.is_empty():
@@ -605,10 +655,14 @@ func aplicar_personalizacao_nave() -> void:
 		var material_particulas_o := particulas_rastro_modelo_o.material as ShaderMaterial
 		if is_instance_valid(material_particulas_o):
 			material_particulas_o.set_shader_parameter("cor_estrela", cor_nave)
+	# Cada instancia usa material proprio: evita vazamento de cores entre peers.
+	# Nao duplicar novamente a cada atualizacao de personalizacao.
 	var material_particulas := particles.process_material as ParticleProcessMaterial
 	if is_instance_valid(material_particulas):
-		material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
-		particles.process_material = material_particulas
+		if not particles.has_meta("material_rastro_individual"):
+			material_particulas = material_particulas.duplicate(true) as ParticleProcessMaterial
+			particles.process_material = material_particulas
+			particles.set_meta("material_rastro_individual", true)
 		material_particulas.color = cor_nave
 	_configurar_rastro_exclusivo(cor_nave)
 
@@ -896,7 +950,7 @@ func atualizar_vida() -> void:
 func atualizar_invencibilidade(delta: float) -> void:
 	if invencibilidade_cd > 0.0:
 		invencibilidade_cd = maxf(invencibilidade_cd - delta, 0.0)
-		modulate.a = 0.48 + absf(sin(Time.get_ticks_msec() / 90.0)) * 0.52
+		modulate.a = 0.48 + absf(sin(Global.tempo_combate_ms() / 90.0)) * 0.52
 	else:
 		modulate.a = 1.0
 		invencibilidade = false
@@ -961,7 +1015,9 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 		"config": config.duplicate(true),
 	})
 	if efeito_id in [&"ovo", &"florescimento", &"fantasma", &"presente", &"laco", &"tempestade"]:
-		EFEITO_HABILIDADE_MONTHLY.criar(cena, self, efeito_id, cor, potencia, config)
+		var efeito = EFEITO_HABILIDADE_MONTHLY.criar(cena, self, efeito_id, cor, potencia, config)
+		if HabilidadeEquipada is HabilidadeMonthly and not efeito.is_queued_for_deletion():
+			HabilidadeEquipada.efeito_persistente = efeito
 		return
 	match efeito_id:
 		&"clone":
@@ -992,7 +1048,7 @@ func aplicar_poder_monthly(efeito_id: StringName, cor: Color, potencia: float, c
 		&"determinacao":
 			ativar_escudo(32.0 * potencia, 6.0, cor)
 			for alvo in _inimigos_mais_proximos(6):
-				alvo.set_meta("marcado_determinacao", Time.get_ticks_msec() + 6000)
+				alvo.set_meta("marcado_determinacao", Global.tempo_combate_ms() + 6000)
 				_criar_feedback_monthly(alvo.global_position, cor, 0.48, 0.0)
 			_atingir_area(global_position, 190.0, 13.0 * potencia, 260.0, 0.8)
 			_criar_feedback_monthly(global_position, cor, 1.7, 10.0)
@@ -1007,18 +1063,15 @@ func aplicar_mutacao_habilidade() -> void:
 		return
 	match mutacao_habilidade:
 		&"u01_alcateia_lunar":
-			criar_projetil(rotation - 0.32, 0.58, true, null, 0.0, &"moon", Color(0.78, 0.88, 1.0))
-			criar_projetil(rotation + 0.32, 0.58, true, null, 0.0, &"moon", Color(0.78, 0.88, 1.0))
+			_disparar_alcateia()
 		&"u02_cobertura_neve":
-			_atingir_area(global_position, 150.0, 1.0, 0.0, 1.8)
-			_criar_feedback_monthly(global_position, Color(0.72, 0.92, 1.0), 1.2, 0.0)
+			for inimigo in get_tree().get_nodes_in_group("inimigo"):
+				if inimigo is InimigoBase and not inimigo.morto:
+					inimigo.aplicar_camada_gelo(1)
 		&"u03_retorno_subterraneo":
 			_mutacao_atrasada(&"worm")
 		&"u04_floracao_rosa":
 			_disparar_radial(10, 0.38, &"petal", Color(1.0, 0.48, 0.7))
-		&"u05_jardim_crescente":
-			_atingir_area(global_position, 180.0, 4.5, 60.0, 0.65)
-			_criar_feedback_monthly(global_position, Color(1.0, 0.42, 0.68), 1.45, 3.0)
 		&"u06_sementes_vermelhas":
 			var bonus := 1.0 + float(sementes_vermelhas) * 0.12
 			_disparar_radial(6 + sementes_vermelhas, 0.38 * bonus, &"seed", Color(1.0, 0.25, 0.36))
@@ -1031,16 +1084,18 @@ func aplicar_mutacao_habilidade() -> void:
 		&"u09_colheita_cromatica":
 			_coletar_experiencia_proxima()
 			_disparar_radial(6, 0.4, &"harvest", Color(1.0, 0.7, 0.26))
-		&"u10_marca_cacador":
-			var alvos := _inimigos_mais_fortes(1)
-			if not alvos.is_empty():
-				for angulo in [-0.12, 0.0, 0.12]:
-					criar_projetil(rotation + angulo, 0.55, true, alvos[0], 0.0, &"hunter", Color(1.0, 0.55, 0.25), {"homing": 4.0})
 		&"u11_barragem_castor":
 			ativar_escudo(22.0, 5.0, Color(0.78, 0.53, 0.3))
-		&"u12_noite_congelada":
-			_limpar_projeteis_inimigos(global_position, 190.0, true)
-			_criar_feedback_monthly(global_position, Color(0.5, 0.78, 1.0), 1.35, 2.0)
+
+
+func _disparar_alcateia() -> void:
+	var critico := preload("res://Scripts/Criticos.gd").valores(arma_monthly, niveis_upgrades)
+	for indice in 9:
+		if not is_inside_tree() or not vivo:
+			return
+		criar_projetil(randf() * TAU, critico.y * 0.5, true, null, 0.0, &"alcateia", Color("dcecff"), {"homing": 4.0})
+		if indice < 8:
+			await get_tree().create_timer(1.0 / 3.0, false).timeout
 
 
 func _criar_feedback_monthly(posicao: Vector2, cor: Color, intensidade: float, tremor: float) -> void:
@@ -1065,6 +1120,8 @@ func _atingir_area(
 			continue
 		var queda := clampf(1.0 - distancia / maxf(raio, 1.0), 0.25, 1.0)
 		if alvo.has_method("tomarDano"):
+			if alvo is InimigoBase:
+				alvo.registrar_ataque_lunar(self)
 			alvo.tomarDano(dano_area * queda * multiplicador_dano_habilidade)
 		if empurrao > 0.0 and alvo.has_method("aplicar_empurrao"):
 			var direcao := centro.direction_to(alvo.global_position)
@@ -1150,7 +1207,7 @@ func _inimigos_mais_fortes(quantidade: int) -> Array[Node2D]:
 
 
 func _repetir_disparo_clone(cor: Color, potencia: float) -> void:
-	await get_tree().create_timer(0.28).timeout
+	await get_tree().create_timer(0.28, false).timeout
 	if not vivo:
 		return
 	for deslocamento in [-0.18, 0.0, 0.18]:
@@ -1159,7 +1216,7 @@ func _repetir_disparo_clone(cor: Color, potencia: float) -> void:
 
 
 func _abrir_presente_depois(tipo_presente: int, cor: Color, potencia: float) -> void:
-	await get_tree().create_timer(0.48).timeout
+	await get_tree().create_timer(0.48, false).timeout
 	if not vivo:
 		return
 	_criar_feedback_monthly(global_position, cor, 1.35, 3.0)
@@ -1172,7 +1229,7 @@ func _abrir_presente_depois(tipo_presente: int, cor: Color, potencia: float) -> 
 
 
 func _repetir_disparos_recentes(cor: Color, potencia: float) -> void:
-	var agora := Time.get_ticks_msec()
+	var agora := Global.tempo_combate_ms()
 	var recentes: Array[Dictionary] = []
 	for registro in historico_disparos:
 		if agora - int(registro.get("tempo", 0)) <= 4200:
@@ -1187,14 +1244,18 @@ func _repetir_disparos_recentes(cor: Color, potencia: float) -> void:
 		criar_projetil(angulo, 0.58 * potencia, true, null, 0.0, &"firework", cor)
 
 
+var sequencia_natureza_ativa := false
+
 func _furia_natureza_em_sequencia(cor: Color, potencia: float) -> void:
+	sequencia_natureza_ativa = true
 	for indice in range(1, 8):
 		if not vivo:
-			return
+			break
 		var ponto := global_position + transform.x * 62.0 * float(indice)
 		_atingir_area(ponto, 55.0, 8.0 * potencia, 90.0, 0.5)
 		EfeitoCombateCena.criar(get_tree().current_scene, ponto, EfeitoCombate.Tipo.MORTE, cor, 0.68, transform.x)
-		await get_tree().create_timer(0.065).timeout
+		await get_tree().create_timer(0.065, false).timeout
+	sequencia_natureza_ativa = false
 
 
 func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia: float) -> void:
@@ -1208,10 +1269,12 @@ func _invocar_ajudante_monthly(tipo: AjudanteMonthly.Tipo, cor: Color, potencia:
 	get_tree().current_scene.add_child(ajudante)
 	ajudante.add_to_group(grupo)
 	ajudante.configurar(self, tipo, cor, potencia)
+	if HabilidadeEquipada is HabilidadeMonthly:
+		HabilidadeEquipada.efeito_persistente = ajudante
 
 
 func _mutacao_atrasada(_estilo: StringName) -> void:
-	await get_tree().create_timer(0.45).timeout
+	await get_tree().create_timer(0.45, false).timeout
 	if not vivo:
 		return
 	var alvos := _inimigos_mais_proximos(1)
@@ -1231,7 +1294,6 @@ func _coletar_experiencia_proxima() -> void:
 
 func atualizar_equipamentos_monthly(delta: float) -> void:
 	janela_parry = maxf(janela_parry - delta, 0.0)
-	tempo_reflexo = maxf(tempo_reflexo - delta, 0.0)
 	calor_feixe = maxf(calor_feixe - delta * 0.34, 0.0)
 	if tempo_poder_monthly > 0.0:
 		tempo_poder_monthly = maxf(tempo_poder_monthly - delta, 0.0)
@@ -1250,16 +1312,6 @@ func atualizar_equipamentos_monthly(delta: float) -> void:
 			tempo_motor_maia = minf(tempo_motor_maia + delta, 12.0)
 		else:
 			tempo_motor_maia = maxf(tempo_motor_maia - delta * 2.0, 0.0)
-	if modulo_nave == &"n06_scanner_preventivo":
-		tempo_scanner -= delta
-		if tempo_scanner <= 0.0:
-			tempo_scanner = 0.18
-			_atualizar_scanner()
-	if modulo_nave == &"n01_reflexos_rapidos":
-		intervalo_quase_colisao -= delta
-		if intervalo_quase_colisao <= 0.0:
-			intervalo_quase_colisao = 0.09
-			_verificar_quase_colisao()
 	if ponto_seguro_ativo and global_position.distance_to(ponto_seguro) <= 42.0:
 		ponto_seguro_ativo = false
 		ativar_escudo(20.0, 5.0, Color(1.0, 0.82, 0.24))
@@ -1274,33 +1326,11 @@ func atualizar_equipamentos_monthly(delta: float) -> void:
 
 
 func _explodir_eco_fantasma(posicao: Vector2, cor: Color) -> void:
-	await get_tree().create_timer(0.42).timeout
+	await get_tree().create_timer(0.42, false).timeout
 	if not is_inside_tree():
 		return
 	_atingir_area(posicao, 42.0, 2.2, 45.0, 0.1)
 	EfeitoCombateCena.criar(get_tree().current_scene, posicao, EfeitoCombate.Tipo.MORTE, cor, 0.56)
-
-
-func _atualizar_scanner() -> void:
-	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
-		if not is_instance_valid(node) or not (node is CanvasItem) or not (node is Node2D):
-			continue
-		var distancia := global_position.distance_to((node as Node2D).global_position)
-		(node as CanvasItem).modulate = Color(1.3, 0.55, 0.25, 1.0) if distancia < 210.0 else Color.WHITE
-
-
-func _verificar_quase_colisao() -> void:
-	if tempo_reflexo > 0.0:
-		return
-	for node in get_tree().get_nodes_in_group("projetil_inimigo"):
-		if not is_instance_valid(node) or not (node is Node2D):
-			continue
-		var distancia := global_position.distance_to((node as Node2D).global_position)
-		if distancia > 34.0 and distancia < 72.0:
-			tempo_reflexo = 1.1
-			rotation += PI * 0.38
-			_criar_feedback_monthly(global_position, Color(1.0, 0.9, 0.35), 0.55, 1.0)
-			break
 
 
 func disparar_nova_de_ativacao() -> void:
@@ -1335,8 +1365,6 @@ func atualizar_movimento(delta: float) -> void:
 	var delta_rotacao := delta / maxf(Engine.time_scale, 0.01) if foco_movimento_tempo_real else delta
 	if modulo_nave == &"n08_motor_maia":
 		fator_movimento *= 1.0 + minf(tempo_motor_maia / 12.0, 1.0) * 0.22
-	if tempo_reflexo > 0.0:
-		fator_movimento *= 1.18
 	var usando_toque: bool = Global.controle_toque_ativo
 	var usando_controle_simplificado: bool = usando_toque or (
 		not Global.controle_avancado
@@ -1350,7 +1378,7 @@ func atualizar_movimento(delta: float) -> void:
 		else:
 			direcao_simplificada = _obter_analogico_esquerdo()
 			intensidade_re = _obter_intensidade_l2()
-	var acelerando := false
+	var propulsao_acionada := false
 
 	if usando_controle_simplificado:
 		if not giroblock and direcao_simplificada.length_squared() > 0.0:
@@ -1364,10 +1392,11 @@ func atualizar_movimento(delta: float) -> void:
 			# automática do analógico esquerdo.
 			if intensidade_re > 0.0:
 				brake(delta, fator_movimento * intensidade_re)
+				propulsao_acionada = true
 			elif direcao_simplificada.length_squared() > 0.0:
 				var intensidade := clampf(direcao_simplificada.length(), 0.0, 1.0)
 				acelerar(delta, fator_movimento * intensidade)
-				acelerando = true
+				propulsao_acionada = true
 	elif not giroblock:
 		var direcao_mira_controle := Input.get_vector(
 			"mirar_esquerda",
@@ -1399,11 +1428,23 @@ func atualizar_movimento(delta: float) -> void:
 	if not usando_controle_simplificado and not ctrlblock:
 		if Input.is_action_pressed("acelerar"):
 			acelerar(delta, fator_movimento)
-			acelerando = true
+			propulsao_acionada = true
 		if Input.is_action_pressed("freio"):
 			brake(delta, fator_movimento)
+			propulsao_acionada = true
 
-	var emitindo_rastro := acelerando or UsandoHabilidade or velocity.length_squared() > 64.0
+	var frente_acionada := false
+	var re_acionada := false
+	if not ctrlblock:
+		if usando_controle_simplificado:
+			re_acionada = intensidade_re > 0.0
+			frente_acionada = not re_acionada and direcao_simplificada.length_squared() > 0.0
+		else:
+			frente_acionada = Input.is_action_pressed("acelerar")
+			re_acionada = Input.is_action_pressed("freio")
+	passivas_nave.atualizar_propulsao(frente_acionada, re_acionada, delta)
+	fator_movimento *= passivas_nave.multiplicador_arrancada()
+	var emitindo_rastro := propulsao_acionada
 	rastro_ativo_rede = emitindo_rastro
 	var usando_estrelas_modelo_o := _usa_rastro_modelo_o()
 	var usando_rastro_especial := _usa_rastro_exclusivo()
@@ -1487,7 +1528,7 @@ func atualizar_combate(delta: float) -> void:
 		_atualizar_feixe_perielio(delta)
 		return
 	elif is_instance_valid(feixe_perielio_ativo):
-		_encerrar_feixe_perielio(true)
+		_encerrar_feixe_perielio()
 	if ctrlblock:
 		if carga_arma > 0.0:
 			carga_arma = 0.0
@@ -1572,50 +1613,44 @@ func nivel_upgrade_arma(id: StringName) -> int:
 
 
 func _atualizar_feixe_perielio(delta: float) -> void:
-	bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0)
-	if aviso_sobrecarga_feixe_perielio > 0.0:
-		aviso_sobrecarga_feixe_perielio = maxf(
-			aviso_sobrecarga_feixe_perielio - delta, 0.0
-		)
-		sobrecarga_feixe_perielio = true
-		if aviso_sobrecarga_feixe_perielio <= 0.0:
-			_concluir_sobrecarga_feixe_perielio()
+	var resfriamento := duracao_resfriamento_perielio()
+	if bloqueio_feixe_perielio > 0.0:
+		bloqueio_feixe_perielio = maxf(bloqueio_feixe_perielio - delta, 0.0)
+		calor_feixe_perielio = bloqueio_feixe_perielio / resfriamento
+		queue_redraw()
 		return
 	var pressionando := vivo and not ctrlblock and Input.is_action_pressed("atirar")
 	if not pressionando:
-		_encerrar_feixe_perielio(true)
-		return
-	if bloqueio_feixe_perielio > 0.0:
+		_encerrar_feixe_perielio()
+		if calor_feixe_perielio > 0.0:
+			calor_feixe_perielio = maxf(calor_feixe_perielio - delta / resfriamento, 0.0)
+			queue_redraw()
 		return
 	if not is_instance_valid(feixe_perielio_ativo):
 		_iniciar_feixe_perielio()
 	if not is_instance_valid(feixe_perielio_ativo):
 		return
 	tempo_uso_feixe_perielio += delta
-	var limite_uso := obter_limite_uso_feixe_perielio()
+	calor_feixe_perielio = minf(calor_feixe_perielio + delta / obter_limite_uso_feixe_perielio(), 1.0)
+	queue_redraw()
 	var infinito := nivel_upgrade_arma(&"perielio_infinito") > 0
-	if tempo_uso_feixe_perielio < limite_uso:
-		sobrecarga_feixe_perielio = false
+	if not is_equal_approx(calor_feixe_perielio, 1.0):
 		return
 	if infinito:
-		sobrecarga_feixe_perielio = true
 		# Custo direto e contínuo: usar tomar_dano aqui faria os frames de
 		# invencibilidade descartarem quase todo o 1% prometido pela melhoria.
 		# Como é um custo da própria arma, ele também não interfere no combo.
 		vida = maxf(vida - obter_dps_feixe_perielio() * 0.01 * delta, 0.0)
 		return
-	sobrecarga_feixe_perielio = true
 	_criar_feedback_monthly(
 		PontaArma.global_position, Color(1.0, 0.14, 0.10), 0.9, 2.0
 	)
-	# Mantém um aviso vermelho curto e sem dano antes de recolher o Line2D.
-	aviso_sobrecarga_feixe_perielio = 0.70
+	_encerrar_feixe_perielio()
+	bloqueio_feixe_perielio = duracao_resfriamento_perielio()
 
 
-func _concluir_sobrecarga_feixe_perielio() -> void:
-	_encerrar_feixe_perielio(false)
-	tempo_uso_feixe_perielio = 0.0
-	bloqueio_feixe_perielio = clampf(
+func duracao_resfriamento_perielio() -> float:
+	return clampf(
 		2.2 - float(nivel_upgrade_arma(&"perielio_resfriamento")) * 0.35,
 		1.0, 3.0
 	)
@@ -1624,9 +1659,8 @@ func _concluir_sobrecarga_feixe_perielio() -> void:
 func _iniciar_feixe_perielio() -> void:
 	if is_instance_valid(feixe_perielio_ativo) or bloqueio_feixe_perielio > 0.0:
 		return
-	sobrecarga_feixe_perielio = false
 	feixe_perielio_ativo = criar_projetil(
-		rotation, 1.0, false, null, 0.0, &"perielio_ray",
+		rotation, 1.0 / DANO_BASE_NAVE, false, null, 0.0, &"perielio_ray",
 		Color(1.0, 0.78, 0.08), {"tempo_vida": 3600.0}
 	)
 	if is_instance_valid(somtiro):
@@ -1634,14 +1668,11 @@ func _iniciar_feixe_perielio() -> void:
 		somtiro.play()
 
 
-func _encerrar_feixe_perielio(reiniciar_carga: bool) -> void:
+func _encerrar_feixe_perielio() -> void:
 	if is_instance_valid(feixe_perielio_ativo):
 		feixe_perielio_ativo.queue_free()
 	feixe_perielio_ativo = null
-	if reiniciar_carga:
-		tempo_uso_feixe_perielio = 0.0
-		sobrecarga_feixe_perielio = false
-		aviso_sobrecarga_feixe_perielio = 0.0
+	tempo_uso_feixe_perielio = 0.0
 
 
 func obter_limite_uso_feixe_perielio() -> float:
@@ -1650,32 +1681,18 @@ func obter_limite_uso_feixe_perielio() -> float:
 
 func obter_dps_feixe_perielio() -> float:
 	var nivel_potencia := nivel_upgrade_arma(&"perielio_potencia")
-	var dano_maximo := 5.0
-	match nivel_potencia:
-		1: dano_maximo = 10.0
-		2: dano_maximo = 20.0
-		3: dano_maximo = 30.0
-	var tempo_crescimento := 10.0 * pow(
-		0.70, nivel_upgrade_arma(&"perielio_foco")
-	)
-	# Começa em 0,2 DPS e avança em degraus perceptíveis a cada 0,5 s.
-	var tempo_em_degraus := floorf(tempo_uso_feixe_perielio / 0.5) * 0.5
-	var progresso := clampf(
-		tempo_em_degraus / maxf(tempo_crescimento, 0.1), 0.0, 1.0
-	)
-	# Interpolação exponencial de 0,2 DPS até o teto atual.
-	return 0.2 * pow(dano_maximo / 0.2, progresso)
+	var dano_maximo := 10.0 * pow(1.5, nivel_potencia)
+	var tempo_crescimento := 10.0 * pow(0.70, nivel_upgrade_arma(&"perielio_foco"))
+	var progresso := clampf(tempo_uso_feixe_perielio / tempo_crescimento, 0.0, 1.0)
+	return pow(dano_maximo, progresso)
 
 
-func feixe_perielio_em_sobrecarga() -> bool:
-	return sobrecarga_feixe_perielio
+func obter_cor_calor_perielio() -> Color:
+	return Color("ffcf28").lerp(Color("ff351d"), smoothstep(0.45, 1.0, calor_feixe_perielio))
 
 
 func feixe_perielio_pode_causar_dano() -> bool:
-	return (
-		not sobrecarga_feixe_perielio
-		or nivel_upgrade_arma(&"perielio_infinito") > 0
-	)
+	return bloqueio_feixe_perielio <= 0.0
 
 
 func obter_tempo_carga_esturjao() -> float:
@@ -1821,30 +1838,7 @@ func disparar_arma_monthly() -> void:
 
 
 func calcular_padrao_multitiro(indice: int, quantidade: int) -> Vector2:
-	if quantidade <= 1:
-		return Vector2.ZERO
-	var centro := float(indice) - float(quantidade - 1) * 0.5
-	var separacao_lateral := 14.0 if quantidade == 2 else 9.0
-	var deslocamento_lateral := centro * separacao_lateral
-	var deslocamento_angular := 0.0
-
-	# O tiro duplo viaja em paralelo. O tridente abre pouco e o leque só passa
-	# a cobrir uma área grande quando existem quatro ou mais projéteis.
-	if quantidade == 3:
-		deslocamento_angular = deg_to_rad(centro * 7.0)
-	elif quantidade >= 4:
-		var progresso := float(indice) / float(quantidade - 1)
-		deslocamento_angular = lerpf(
-			-deg_to_rad(dispersao_graus) * 0.5,
-			deg_to_rad(dispersao_graus) * 0.5,
-			progresso
-		)
-
-	if formacao_convergente:
-		# As linhas partem separadas e se encontram aproximadamente 300 px à
-		# frente. É uma mudança de geometria, não um bônus escondido de dano.
-		deslocamento_angular = atan2(-deslocamento_lateral, 300.0)
-	return Vector2(deslocamento_angular, deslocamento_lateral)
+	return RegrasProjetil.padrao_multitiro(indice, quantidade, dispersao_graus, formacao_convergente)
 
 
 func criar_projetil(
@@ -1871,7 +1865,7 @@ func criar_projetil(
 		projetil.global_position = origem_personalizada
 	projetil.rotation = angulo
 	if not eh_nova:
-		historico_disparos.append({"tempo": Time.get_ticks_msec(), "angulo": angulo})
+		historico_disparos.append({"tempo": Global.tempo_combate_ms(), "angulo": angulo})
 		while historico_disparos.size() > 24:
 			historico_disparos.pop_front()
 
@@ -1883,17 +1877,16 @@ func criar_projetil(
 	)
 	var bonus_movimento := 1.0 + bonus_vetor_ofensivo * velocidade_relativa
 	var bonus_chassi := 1.18 if modulo_nave == &"n10_chassi_equinocio" and fase_equinocio_solar else 1.0
-	var dano_final := (
-		dano
-		* multiplicador_dano_projetil
-		* multiplicador_dano_forma
-		* multiplicador_dano_mira
-		* multiplicador_dano_habilidade
-		* bonus_overdrive
-		* bonus_movimento
-		* multiplicador_dano_extra
-		* bonus_chassi
-	)
+	var dano_final := RegrasProjetil.multiplicar_dano(dano, [
+		multiplicador_dano_projetil,
+		multiplicador_dano_forma,
+		multiplicador_dano_mira,
+		multiplicador_dano_habilidade,
+		bonus_overdrive,
+		bonus_movimento,
+		multiplicador_dano_extra,
+		bonus_chassi,
+	])
 
 	if not eh_nova:
 		var critico := preload("res://Scripts/Criticos.gd").valores(arma_monthly, niveis_upgrades)
@@ -2038,10 +2031,32 @@ func registrar_acerto_projetil() -> void:
 		)
 
 
-func tomar_dano(valor: float) -> void:
+func aplicar_impulso_de_perigo_rede(impulso: Vector2) -> void:
+	if not impulso.is_finite() or impulso.length_squared() > 250000.0:
+		return
+	if not Rede.modo_multiplayer:
+		velocity += impulso
+		return
+	if not multiplayer.is_server():
+		return
+	if peer_id_dono <= 1:
+		velocity += impulso
+	elif Rede.jogadores.has(peer_id_dono):
+		_receber_impulso_de_perigo_rede.rpc_id(peer_id_dono, impulso)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_impulso_de_perigo_rede(impulso: Vector2) -> void:
+	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
+		return
+	if impulso.is_finite() and impulso.length_squared() <= 250000.0:
+		velocity += impulso
+
+
+func tomar_dano(valor: float, origem_dano := Vector2.INF) -> void:
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		if multiplayer.is_server() and peer_id_dono > 1:
-			_receber_dano_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+			_receber_dano_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0), origem_dano)
 		return
 	if (
 		invencibilidade
@@ -2063,16 +2078,7 @@ func tomar_dano(valor: float) -> void:
 		satelites_restantes -= 1
 		dano_restante *= 0.35
 		_criar_feedback_monthly(global_position, Color(1.0, 0.82, 0.28), 0.7, 2.0)
-	if modulo_nave == &"n05_reserva_solidaria" and reserva_celulas > 0.0:
-		var reserva_usada := minf(reserva_celulas, dano_restante)
-		reserva_celulas -= reserva_usada
-		dano_restante -= reserva_usada
-	if modulo_nave == &"n04_armadura_aco" and velocity.dot(transform.x) > 40.0:
-		dano_restante *= 0.7
-	if modulo_nave == &"n07_propulsor_janus":
-		var impulso_frontal := velocity.dot(transform.x)
-		if absf(impulso_frontal) > 80.0:
-			dano_restante *= 0.78
+	dano_restante *= passivas_nave.multiplicador_protecao(origem_dano)
 	if escudo_habilidade > 0.0:
 		var absorvido := minf(escudo_habilidade, dano_restante)
 		escudo_habilidade -= absorvido
@@ -2116,9 +2122,9 @@ func tomar_dano(valor: float) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _receber_dano_autoritativo(valor: float) -> void:
+func _receber_dano_autoritativo(valor: float, origem_dano := Vector2.INF) -> void:
 	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
-		tomar_dano(clampf(valor, 0.0, 10000.0))
+		tomar_dano(clampf(valor, 0.0, 10000.0), origem_dano)
 
 
 func reproduzir_feedback_dano(dano_recebido: float) -> void:
@@ -2151,7 +2157,7 @@ func curar(valor: float) -> void:
 	var excedente := maxf(vida + cura_total - VIDA_MAXIMA, 0.0)
 	vida = minf(vida + cura_total, VIDA_MAXIMA)
 	if modulo_nave == &"n05_reserva_solidaria" and excedente > 0.0:
-		reserva_celulas = minf(reserva_celulas + excedente, 35.0)
+		passivas_nave.armazenar_cura(excedente)
 
 
 func conceder_cura_rede(valor: float) -> void:
@@ -2273,6 +2279,10 @@ func atualizar_passivos(delta: float) -> void:
 
 
 func _draw() -> void:
+	if arma_monthly == &"a06_feixe_perielio" and calor_feixe_perielio > 0.0:
+		var cor := Color("68dafa") if bloqueio_feixe_perielio > 0.0 else obter_cor_calor_perielio()
+		draw_arc(Vector2.ZERO, 30.0, PI * 0.65, PI * 1.35, 32, Color(0.08, 0.09, 0.14, 0.85), 4.0, true)
+		draw_arc(Vector2.ZERO, 30.0, PI * 0.65, PI * (0.65 + 0.70 * calor_feixe_perielio), 32, cor, 2.5, true)
 	_desenhar_carga_arma()
 	if escudo_habilidade > 0.0 and escudo_habilidade_max > 0.0:
 		var proporcao := clampf(escudo_habilidade / escudo_habilidade_max, 0.0, 1.0)
@@ -2291,7 +2301,7 @@ func _draw() -> void:
 		)
 	if tempo_queimadura > 0.0 and pulsos_queimadura_restantes > 0:
 		var chama := Color(1.0, 0.35, 0.06, 0.86)
-		var oscilacao := sin(Time.get_ticks_msec() * 0.018) * 3.0
+		var oscilacao := sin(Global.tempo_combate_ms() * 0.018) * 3.0
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(-7.0, -30.0),
 			Vector2(oscilacao, -47.0),
@@ -2308,14 +2318,14 @@ func _draw() -> void:
 		draw_arc(local_seguro, 28.0, 0.0, TAU, 32, Color(1.0, 0.82, 0.24, 0.8), 2.0, true)
 	if modulo_nave == &"n09_familia_satelites":
 		for indice in range(satelites_restantes):
-			var angulo := Time.get_ticks_msec() * 0.0015 + TAU * float(indice) / 3.0
+			var angulo := Global.tempo_combate_ms() * 0.0015 + TAU * float(indice) / 3.0
 			var ponto := Vector2.from_angle(angulo) * 48.0
 			draw_circle(ponto, 5.0, Color(1.0, 0.78, 0.24, 0.9))
 	if modulo_nave == &"n02_luz_vital" and progresso_luz_vital > 0.0:
 		draw_arc(Vector2.ZERO, 44.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(progresso_luz_vital / 30.0, 0.0, 1.0), 40, Color(1.0, 0.84, 0.28), 3.0, true)
 	if folhas_tempestade_ativas:
 		for indice in range(8):
-			var angulo := -Time.get_ticks_msec() * 0.002 + TAU * float(indice) / 8.0
+			var angulo := -Global.tempo_combate_ms() * 0.002 + TAU * float(indice) / 8.0
 			draw_circle(Vector2.from_angle(angulo) * 48.0, 3.5, Color(0.3, 1.0, 0.55, 0.9))
 
 
@@ -2325,7 +2335,7 @@ func _desenhar_carga_arma() -> void:
 	var carga_maxima := obter_tempo_carga_esturjao()
 	var progresso := clampf(carga_arma / carga_maxima, 0.0, 1.0)
 	var cor_carga := Color(0.26, 0.86, 1.0)
-	var pulso := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.022)
+	var pulso := 0.5 + 0.5 * sin(Global.tempo_combate_ms() * 0.022)
 	var centro := PontaArma.position + Vector2(5.0, 0.0)
 	var raio := lerpf(2.8, 9.5, progresso)
 	draw_circle(
@@ -2360,17 +2370,32 @@ func ganhar_xp(valor: float) -> void:
 
 
 func conceder_xp_rede(valor: float) -> void:
+	var recompensa := clampf(valor, 0.0, 10000.0)
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
-		if multiplayer.is_server() and peer_id_dono > 1:
-			_receber_xp_autoritativo.rpc_id(peer_id_dono, clampf(valor, 0.0, 10000.0))
+		if multiplayer.is_server() and peer_id_dono > 1 and Rede.jogadores.has(peer_id_dono):
+			# O host mantem a progressao oficial dos pilotos remotos.
+			ganhar_xp(recompensa)
+			_receber_xp_autoritativo.rpc_id(
+				peer_id_dono, recompensa, nivel_atual, xp_atual,
+				xp_necessario, pontos_upgrade_pendentes
+			)
 		return
-	ganhar_xp(valor)
+	ganhar_xp(recompensa)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _receber_xp_autoritativo(valor: float) -> void:
-	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
-		ganhar_xp(clampf(valor, 0.0, 10000.0))
+func _receber_xp_autoritativo(
+	valor: float, nivel_servidor: int, xp_servidor: float,
+	proximo_xp_servidor: int, melhorias_servidor: int
+) -> void:
+	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
+		return
+	ganhar_xp(clampf(valor, 0.0, 10000.0))
+	nivel_atual = maxi(nivel_servidor, 1)
+	xp_necessario = maxi(proximo_xp_servidor, 1)
+	xp_atual = clampf(xp_servidor, 0.0, float(xp_necessario))
+	pontos_upgrade_pendentes = maxi(melhorias_servidor, 0)
+	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 
 
 func subir_de_nivel() -> void:
@@ -2395,12 +2420,32 @@ func calcular_xp_proximo_nivel(nivel: int) -> int:
 	return 23 + niveis_apos_dez * 5 + int(niveis_apos_dez * niveis_apos_dez / 5.0)
 
 
+var compra_upgrade_pendente_rede := false
+var compra_upgrade_enviada_ms := 0
+const TIMEOUT_COMPRA_REDE_MS := 5000
+
+
 func comprar_upgrade(id: StringName) -> bool:
-	if pontos_upgrade_pendentes <= 0:
+	if compra_upgrade_pendente_rede and compra_upgrade_enviada_ms > 0:
+		if Time.get_ticks_msec() - compra_upgrade_enviada_ms > TIMEOUT_COMPRA_REDE_MS:
+			compra_upgrade_pendente_rede = false
+			compra_upgrade_enviada_ms = 0
+	if compra_upgrade_pendente_rede or pontos_upgrade_pendentes <= 0:
 		return false
 	if not DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada, arma_monthly):
 		return false
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		if not is_multiplayer_authority() or not Rede.esta_conectado():
+			return false
+		compra_upgrade_pendente_rede = true
+		compra_upgrade_enviada_ms = Time.get_ticks_msec()
+		_solicitar_compra_upgrade_rede.rpc_id(1, id)
+		return true
+	_aplicar_compra_upgrade_local(id)
+	return true
 
+
+func _aplicar_compra_upgrade_local(id: StringName) -> void:
 	var novo_nivel := DadosUpgrades.nivel(id, niveis_upgrades) + 1
 	niveis_upgrades[id] = novo_nivel
 	pontos_upgrade_pendentes -= 1
@@ -2408,7 +2453,40 @@ func comprar_upgrade(id: StringName) -> bool:
 	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	upgrade_adquirido.emit(id, novo_nivel)
 	_sincronizar_loadout_rede()
-	return true
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_compra_upgrade_rede(id: StringName) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or remetente != peer_id_dono or not Rede.jogadores.has(remetente):
+		return
+	# As habilidades exclusivas usam o Resource equipado, nunca um ID arbitrario.
+	if HabilidadeEquipada == null and habilidade_rede_path.begins_with("res://Habilidades/"):
+		HabilidadeEquipada = load(habilidade_rede_path) as Habilidade
+	var permitido := (
+		pontos_upgrade_pendentes > 0
+		and DadosUpgrades.disponivel(id, niveis_upgrades, HabilidadeEquipada, arma_monthly)
+	)
+	if permitido:
+		_aplicar_compra_upgrade_local(id)
+	_confirmar_compra_upgrade_rede.rpc_id(remetente, id, permitido)
+
+
+# O host envia a confirmacao, embora o proprio Player tenha autoridade do cliente.
+# A regra de origem abaixo evita que outros clientes confirmem compras.
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_compra_upgrade_rede(id: StringName, permitido: bool) -> void:
+	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
+		return
+	compra_upgrade_pendente_rede = false
+	compra_upgrade_enviada_ms = 0
+	if permitido and pontos_upgrade_pendentes > 0:
+		_aplicar_compra_upgrade_local(id)
+	var menu := get_node_or_null("../GUI/TelaUpgrades")
+	if is_instance_valid(menu) and menu.has_method("ao_upgrade_confirmado_rede"):
+		menu.call("ao_upgrade_confirmado_rede")
 
 
 func gastar_reroll_upgrade() -> bool:
@@ -2602,6 +2680,7 @@ func morrer() -> void:
 		return
 
 	vivo = false
+	_encerrar_feixe_perielio()
 	if is_instance_valid(barra_cooldown_habilidade):
 		barra_cooldown_habilidade.hide()
 	velocity = Vector2.ZERO
@@ -2629,7 +2708,7 @@ func morrer() -> void:
 	if is_instance_valid(batalha) and batalha.has_method("_on_player_morreu"):
 		batalha.call("_on_player_morreu", self)
 
-	await get_tree().create_timer(1.5).timeout
+	await get_tree().create_timer(1.5, false).timeout
 	if Rede.modo_multiplayer:
 		return
 	queue_free()
@@ -2688,6 +2767,8 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 		return
 	if UsandoHabilidade and dano_colisao_habilidade > 0.0:
 		if body.has_method("tomarDano"):
+			if body is InimigoBase:
+				body.registrar_ataque_lunar(self)
 			body.tomarDano(dano_colisao_habilidade)
 		if body.is_queued_for_deletion():
 			return
@@ -2698,4 +2779,4 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 
 	var dano_contato = body.get("Dano")
 	if dano_contato != null:
-		tomar_dano(float(dano_contato))
+		tomar_dano(float(dano_contato), body.global_position)

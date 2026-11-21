@@ -63,8 +63,8 @@ const DADOS: Dictionary = {
 		"simbolo": "⬡",
 		"boss": &"constelacao_amparo",
 		"inimigos": [
-			[&"centelha_guia", 2.4], [&"elo_dourado", 1.8],
-			[&"prisma_amparo", 1.4], [&"satelite_berco", 1.2], [&"pulso_solar", 1.0]
+			[&"centelha_guia", 0.65], [&"elo_dourado", 1.4],
+			[&"prisma_amparo", 1.65], [&"satelite_berco", 0.8], [&"pulso_solar", 1.3]
 		]
 	},
 	&"no_ametista": {

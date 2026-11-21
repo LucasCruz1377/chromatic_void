@@ -22,7 +22,7 @@ const SLOT_DETONADOR_MINA: StringName = &"detonador_mina"
 const DADOS: Dictionary = {
 	&"dano_calibrado": {
 		"nome": "DANO CALIBRADO",
-		"descricao": "Aumenta o dano em +25%, +18%, +14%, +10% e +8%. Forte cedo, controlado depois.",
+		"descricao": "Seus tiros causam mais dano.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ARMA",
 		"raridade": "COMUM",
@@ -35,7 +35,7 @@ const DADOS: Dictionary = {
 	},
 	&"cadencia": {
 		"nome": "CÂMARA ACELERADA",
-		"descricao": "Aumenta muito a cadência nos primeiros níveis, com retornos decrescentes.",
+		"descricao": "Sua nave dispara mais rápido.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "ARMA",
 		"raridade": "COMUM",
@@ -48,7 +48,7 @@ const DADOS: Dictionary = {
 	},
 	&"blindagem": {
 		"nome": "BLINDAGEM VIVA",
-		"descricao": "Aumenta bastante a vida máxima e recupera somente a vida adicionada.",
+		"descricao": "Sua nave ganha mais vida máxima.",
 		"icone": "res://Assets/UpgradeVida.png",
 		"categoria": "CASCO",
 		"raridade": "COMUM",
@@ -61,7 +61,7 @@ const DADOS: Dictionary = {
 	},
 	&"propulsao": {
 		"nome": "PROPULSÃO VETORIAL",
-		"descricao": "Aumenta aceleração e velocidade; o primeiro nível concede +15%.",
+		"descricao": "Sua nave acelera e se move mais rápido.",
 		"icone": "res://Assets/UpgradeVelocidade.png",
 		"categoria": "MOBILIDADE",
 		"raridade": "COMUM",
@@ -74,7 +74,7 @@ const DADOS: Dictionary = {
 	},
 	&"tiro_duplo": {
 		"nome": "NÚCLEO PRISMÁTICO",
-		"descricao": "ESTILO PRISMA: duas linhas paralelas, cada uma com 62% do dano. Bloqueia os outros estilos de tiro.",
+		"descricao": "Dispara tiros paralelos mais fracos. Bloqueia outros estilos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO DE TIRO • PRISMA",
 		"raridade": "INCOMUM",
@@ -89,7 +89,7 @@ const DADOS: Dictionary = {
 	},
 	&"tiro_triplo": {
 		"nome": "FORMAÇÃO TRIDENTE",
-		"descricao": "PRISMA II: um tiro central e dois laterais a 7°. Cada projétil causa 42% do dano.",
+		"descricao": "Adiciona um tiro central, mas reduz o dano de cada projétil.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO PRISMA • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -104,7 +104,7 @@ const DADOS: Dictionary = {
 	},
 	&"leque_prismatico": {
 		"nome": "LEQUE PRISMÁTICO",
-		"descricao": "+1 projétil e +8° de cobertura; o dano total permanece próximo de 125%.",
+		"descricao": "Dispara mais projéteis em um leque maior.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO PRISMA • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -119,7 +119,7 @@ const DADOS: Dictionary = {
 	},
 	&"calibre_pesado": {
 		"nome": "NÚCLEO DE IMPACTO",
-		"descricao": "ESTILO IMPACTO: projétil maior e muito mais forte, mas 10% mais lento por nível. Bloqueia os outros estilos.",
+		"descricao": "Seus tiros ficam maiores, mais fortes e mais lentos. Bloqueia outros estilos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO DE TIRO • IMPACTO",
 		"raridade": "INCOMUM",
@@ -134,7 +134,7 @@ const DADOS: Dictionary = {
 	},
 	&"perfuracao": {
 		"nome": "PONTA PERFURANTE",
-		"descricao": "IMPACTO II: o projétil pesado atravessa +1 inimigo por nível.",
+		"descricao": "Seus tiros pesados atravessam mais inimigos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO IMPACTO • EVOLUÇÃO",
 		"raridade": "INCOMUM",
@@ -149,7 +149,7 @@ const DADOS: Dictionary = {
 	},
 	&"fragmentacao": {
 		"nome": "NÚCLEO DE ESTILHAÇOS",
-		"descricao": "ESTILO ESTILHAÇOS: o impacto gera dois fragmentos de 28% do dano; eles não se replicam.",
+		"descricao": "Seus tiros se partem ao atingir inimigos. Bloqueia outros estilos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO DE TIRO • ESTILHAÇOS",
 		"raridade": "RARA",
@@ -164,7 +164,7 @@ const DADOS: Dictionary = {
 	},
 	&"mira_gravitacional": {
 		"nome": "NÚCLEO PREDADOR",
-		"descricao": "ESTILO PREDADOR: projéteis perseguem alvos, mas causam somente 88% do dano. Bloqueia os outros estilos.",
+		"descricao": "Seus tiros perseguem inimigos, mas perdem dano. Bloqueia outros estilos.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
 		"categoria": "ESTILO DE TIRO • PREDADOR",
 		"raridade": "RARA",
@@ -179,7 +179,7 @@ const DADOS: Dictionary = {
 	},
 	&"ricochete": {
 		"nome": "NÚCLEO DE RICOCHETE",
-		"descricao": "ESTILO RICOCHETE: projéteis rebatem nas bordas da arena. Bloqueia os outros estilos de tiro.",
+		"descricao": "Seus tiros rebatem nas bordas da arena. Bloqueia outros estilos.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
 		"categoria": "ESTILO DE TIRO • RICOCHETE",
 		"raridade": "INCOMUM",
@@ -194,7 +194,7 @@ const DADOS: Dictionary = {
 	},
 	&"formacao_convergente": {
 		"nome": "FORMAÇÃO CONVERGENTE",
-		"descricao": "Os projéteis partem separados e convergem à frente. Concentra dano sem bônus oculto.",
+		"descricao": "Seus tiros convergem à frente da nave.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO PRISMA • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -209,7 +209,7 @@ const DADOS: Dictionary = {
 	},
 	&"onda_impacto": {
 		"nome": "ONDA DE IMPACTO",
-		"descricao": "Projéteis pesados explodem ao acertar, causando dano em área. Cada nível amplia dano e raio.",
+		"descricao": "Seus tiros pesados explodem e atingem inimigos próximos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO IMPACTO • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -224,7 +224,7 @@ const DADOS: Dictionary = {
 	},
 	&"ressonancia_borda": {
 		"nome": "RESSONÂNCIA DE BORDA",
-		"descricao": "Cada ricochete aumenta em 28% o dano restante do projétil e produz um pulso neon.",
+		"descricao": "Seus tiros ganham dano a cada ricochete.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
 		"categoria": "ESTILO RICOCHETE • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -239,7 +239,7 @@ const DADOS: Dictionary = {
 	},
 	&"predacao_gravitacional": {
 		"nome": "PREDAÇÃO GRAVITACIONAL",
-		"descricao": "A mira corrige com mais força e recupera parte da penalidade de dano dos projéteis guiados.",
+		"descricao": "Seus tiros perseguem melhor e causam mais dano.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
 		"categoria": "ESTILO PREDADOR • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -254,7 +254,7 @@ const DADOS: Dictionary = {
 	},
 	&"estilhacos_predadores": {
 		"nome": "ESTILHAÇOS PREDADORES",
-		"descricao": "Fragmentos causam +8% do dano-base e recebem uma correção gravitacional leve.",
+		"descricao": "Seus fragmentos ficam mais fortes e seguem os inimigos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "ESTILO ESTILHAÇOS • EVOLUÇÃO",
 		"raridade": "RARA",
@@ -269,7 +269,7 @@ const DADOS: Dictionary = {
 	},
 	&"vetor_ofensivo": {
 		"nome": "VETOR OFENSIVO",
-		"descricao": "Quanto mais rápido a nave se move, maior o dano: até +16% por nível.",
+		"descricao": "Mover sua nave mais rápido aumenta o dano dos tiros.",
 		"icone": "res://Assets/UpgradeVelocidade.png",
 		"categoria": "PASSIVO • PILOTAGEM",
 		"raridade": "INCOMUM",
@@ -282,7 +282,7 @@ const DADOS: Dictionary = {
 	},
 	&"casco_regenerativo": {
 		"nome": "CASCO REGENERATIVO",
-		"descricao": "Após 5 s sem sofrer dano, recupera 1,25 de vida por segundo por nível.",
+		"descricao": "Sua nave regenera vida após ficar um tempo sem sofrer dano.",
 		"icone": "res://Assets/UpgradeVida.png",
 		"categoria": "PASSIVO • CASCO",
 		"raridade": "INCOMUM",
@@ -294,20 +294,20 @@ const DADOS: Dictionary = {
 		"tags": [&"passivo", &"casco", &"cura"]
 	},
 	&"precisao_critica": {
-		"nome": "PRECISÃO CRÍTICA", "descricao": "+4 pontos percentuais de chance crítica por nível. Base depende da arma.",
+		"nome": "PRECISÃO CRÍTICA", "descricao": "Seus tiros acertam golpes críticos com mais frequência.",
 		"icone": "res://Assets/UpgradeCadencia.png", "categoria": "COMBATE • CRÍTICO",
 		"raridade": "INCOMUM", "cor": Color(1.0, 0.75, 0.2), "max_nivel": 3,
 		"peso": 0.7, "tipo": TIPO_SINERGIA, "requisitos": {}, "tags": [&"arma", &"critico"]
 	},
 	&"impacto_critico": {
-		"nome": "IMPACTO CRÍTICO", "descricao": "+15 pontos percentuais de dano nos acertos críticos por nível.",
+		"nome": "IMPACTO CRÍTICO", "descricao": "Seus acertos críticos causam mais dano.",
 		"icone": "res://Assets/UpgradeDano.png", "categoria": "COMBATE • CRÍTICO",
 		"raridade": "RARA", "cor": Color(1.0, 0.5, 0.2), "max_nivel": 3,
 		"peso": 0.5, "tipo": TIPO_SINERGIA, "requisitos": {&"precisao_critica": 1}, "tags": [&"arma", &"critico"]
 	},
 	&"reacao_adrenal": {
 		"nome": "REAÇÃO ADRENAL",
-		"descricao": "Ao sofrer dano, ganha +12% de cadência por nível durante 2,4 segundos.",
+		"descricao": "Sofrer dano faz sua nave disparar mais rápido por um tempo.",
 		"icone": "res://Assets/UpgradeAgilidade.png",
 		"categoria": "PASSIVO • DEFESA",
 		"raridade": "INCOMUM",
@@ -320,7 +320,7 @@ const DADOS: Dictionary = {
 	},
 	&"fluxo_habilidade": {
 		"nome": "FLUXO DA HABILIDADE",
-		"descricao": "A habilidade recarrega mais rápido, com bônus menor a cada nível.",
+		"descricao": "Sua habilidade recarrega mais rápido.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "HABILIDADE",
 		"raridade": "COMUM",
@@ -333,7 +333,7 @@ const DADOS: Dictionary = {
 	},
 	&"overdrive_habilidade": {
 		"nome": "RESSONÂNCIA ARMADA",
-		"descricao": "Usar a habilidade sobrecarrega a arma: +25% de dano e cadência temporariamente.",
+		"descricao": "Usar sua habilidade aumenta o dano e a cadência por um tempo.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "HABILIDADE + ARMA",
 		"raridade": "RARA",
@@ -346,7 +346,7 @@ const DADOS: Dictionary = {
 	},
 	&"conversor_impacto": {
 		"nome": "CONVERSOR DE IMPACTO",
-		"descricao": "Acertos reduzem a recarga em até 0,06 s no total; níveis posteriores rendem menos.",
+		"descricao": "Acertar inimigos ajuda a recarregar sua habilidade.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "HABILIDADE + PROJÉTIL",
 		"raridade": "INCOMUM",
@@ -359,7 +359,7 @@ const DADOS: Dictionary = {
 	},
 	&"nova_ativacao": {
 		"nome": "NOVA DE ATIVAÇÃO",
-		"descricao": "Ao usar a habilidade, dispara uma explosão circular de projéteis.",
+		"descricao": "Usar sua habilidade lança tiros ao redor da nave.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "HABILIDADE + PROJÉTIL",
 		"raridade": "RARA",
@@ -372,7 +372,7 @@ const DADOS: Dictionary = {
 	},
 	&"escudo_fase": {
 		"nome": "ESCUDO DE FASE",
-		"descricao": "Usar a habilidade concede 0,35 s de invulnerabilidade por nível.",
+		"descricao": "Usar sua habilidade protege sua nave por um instante.",
 		"icone": "res://Assets/UpgradeVida.png",
 		"categoria": "HABILIDADE + CASCO",
 		"raridade": "RARA",
@@ -385,7 +385,7 @@ const DADOS: Dictionary = {
 	},
 	&"tempestade_prismatica": {
 		"nome": "TEMPESTADE PRISMÁTICA",
-		"descricao": "SUPERMOD: +1 projétil e +10% de cadência, mas -15% de velocidade dos projéteis.",
+		"descricao": "Dispara mais tiros e mais rápido, com projéteis mais lentos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
@@ -400,7 +400,7 @@ const DADOS: Dictionary = {
 	},
 	&"singularidade": {
 		"nome": "COLAPSO DE SINGULARIDADE",
-		"descricao": "SUPERMOD DE IMPACTO: projétil colossal e perfurante ganha atração própria, mas perde 25% de velocidade.",
+		"descricao": "Seus tiros ficam enormes, perfurantes e perseguem inimigos, mas ficam mais lentos.",
 		"icone": "res://Assets/UpgradeDano.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
@@ -415,7 +415,7 @@ const DADOS: Dictionary = {
 	},
 	&"reator_sincronizado": {
 		"nome": "REATOR SINCRONIZADO",
-		"descricao": "SUPERMOD: a Nova dispara mais projéteis e o overdrive dura o dobro, mas a habilidade recarrega 15% mais devagar.",
+		"descricao": "Amplia a nova e a sobrecarga da arma, mas sua habilidade recarrega mais devagar.",
 		"icone": "res://Assets/UpgradeCadencia.png",
 		"categoria": "SUPERMOD",
 		"raridade": "SUPERMOD",
@@ -436,189 +436,189 @@ const DADOS: Dictionary = {
 # Colors: campanhas mensais, datas comemorativas e as doze luas anuais.
 const DADOS_ARMAS: Dictionary = {
 	&"rosa_petalas_extras": {
-		"nome": "PÉTALAS EXTRAS", "descricao": "+2 pétalas por disparo. O leque continua curto e cada pétala mantém seu dano.",
+		"nome": "PÉTALAS EXTRAS", "descricao": "Lança mais pétalas por disparo.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/rosa_petalas_extras.svg", "categoria": "LEQUE DA PRIMAVERA",
 		"raridade": "INCOMUM", "cor": Color("ff7eb7"), "max_nivel": 2, "peso": 0.92,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a01_espingarda_lua_rosa",
 		"tags": [&"arma_especifica", &"multitiro", &"primavera"]
 	},
 	&"rosa_cano_curto": {
-		"nome": "FLORAÇÃO CONCENTRADA", "descricao": "Fecha o cone e aumenta o dano próximo. A distância máxima não aumenta.",
+		"nome": "FLORAÇÃO CONCENTRADA", "descricao": "Concentra as pétalas e aumenta o dano de perto.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/rosa_cano_curto.svg", "categoria": "LEQUE DA PRIMAVERA",
 		"raridade": "RARA", "cor": Color("ff5f9f"), "max_nivel": 2, "peso": 0.66,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a01_espingarda_lua_rosa",
 		"tags": [&"arma_especifica", &"dano", &"curto_alcance"]
 	},
 	&"fogos_formacao": {
-		"nome": "CONSTELAÇÃO DE FOGOS", "descricao": "+1 foguete por salva, lançado por um novo ângulo ao redor do alvo.",
+		"nome": "CONSTELAÇÃO DE FOGOS", "descricao": "Lança mais fogos ao redor do alvo.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/fogos_formacao.svg", "categoria": "FOGOS DO RECOMEÇO",
 		"raridade": "INCOMUM", "cor": Color("e7edff"), "max_nivel": 2, "peso": 0.88,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a03_alcateia_misseis",
 		"tags": [&"arma_especifica", &"multitiro", &"ano_novo"]
 	},
 	&"fogos_estouro": {
-		"nome": "VIRADA LUMINOSA", "descricao": "Amplia a explosão e o dano em área de cada fogo do recomeço.",
+		"nome": "VIRADA LUMINOSA", "descricao": "Seus fogos explodem com mais força e alcance.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/fogos_estouro.svg", "categoria": "FOGOS DO RECOMEÇO",
 		"raridade": "RARA", "cor": Color("b8c8ff"), "max_nivel": 2, "peso": 0.62,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a03_alcateia_misseis",
 		"tags": [&"arma_especifica", &"area", &"ano_novo"]
 	},
 	&"esturjao_correnteza": {
-		"nome": "CORRENTEZA CRESCENTE", "descricao": "A carga completa chega 20% mais rápido por nível, sem reduzir o impacto final.",
+		"nome": "CORRENTEZA CRESCENTE", "descricao": "Seu canhão carrega mais rápido.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/esturjao_correnteza.svg", "categoria": "CANHÃO DO ESTURJÃO",
 		"raridade": "INCOMUM", "cor": Color("54c6ff"), "max_nivel": 2, "peso": 0.86,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a04_canhao_esturjao",
 		"tags": [&"arma_especifica", &"carga", &"esturjao"]
 	},
 	&"esturjao_perfurante": {
-		"nome": "MIGRAÇÃO PROFUNDA", "descricao": "+1 perfuração e mais dano para o disparo completamente carregado.",
+		"nome": "MIGRAÇÃO PROFUNDA", "descricao": "O tiro carregado fica mais forte e atravessa mais inimigos.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/esturjao_perfurante.svg", "categoria": "CANHÃO DO ESTURJÃO",
 		"raridade": "RARA", "cor": Color("309fe8"), "max_nivel": 2, "peso": 0.64,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a04_canhao_esturjao",
 		"tags": [&"arma_especifica", &"dano", &"perfuracao", &"esturjao"]
 	},
 	&"mina_pavio_curto": {
-		"nome": "CONTAGEM PREVENTIVA", "descricao": "O sinalizador detona 1 segundo antes por nível. O tempo mínimo é 2 segundos.",
+		"nome": "CONTAGEM PREVENTIVA", "descricao": "Seus sinalizadores explodem mais cedo.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/mina_pavio_curto.svg", "categoria": "SINALIZADORES AMARELOS",
 		"raridade": "INCOMUM", "cor": Color("ffd447"), "max_nivel": 3, "peso": 0.94,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a05_minas_castor",
 		"tags": [&"arma_especifica", &"tempo", &"maio_amarelo"]
 	},
 	&"mina_sensor_proximidade": {
-		"nome": "SENSOR DE PROXIMIDADE", "descricao": "DETONADOR RARO: troca o temporizador por uma zona que reage a ameaças próximas.",
+		"nome": "SENSOR DE PROXIMIDADE", "descricao": "Seus sinalizadores explodem quando inimigos se aproximam.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/mina_sensor_proximidade.svg", "categoria": "SINALIZADORES AMARELOS",
 		"raridade": "RARA", "cor": Color("fff06a"), "max_nivel": 1, "peso": 0.34,
 		"tipo": TIPO_ESTRUTURAL, "slot_estrutural": SLOT_DETONADOR_MINA, "rota_estrutural": &"proximidade",
 		"requisitos": {}, "arma_exclusiva": &"a05_minas_castor", "tags": [&"arma_especifica", &"detonador", &"maio_amarelo"]
 	},
 	&"mina_comando_remoto": {
-		"nome": "COMANDO DE SEGURANÇA", "descricao": "DETONADOR RARO: o próximo disparo explode todas as minas armadas; o seguinte instala outra.",
+		"nome": "COMANDO DE SEGURANÇA", "descricao": "Seu próximo disparo detona os sinalizadores; o seguinte instala outro.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/mina_comando_remoto.svg", "categoria": "SINALIZADORES AMARELOS",
 		"raridade": "RARA", "cor": Color("ffb52e"), "max_nivel": 1, "peso": 0.30,
 		"tipo": TIPO_ESTRUTURAL, "slot_estrutural": SLOT_DETONADOR_MINA, "rota_estrutural": &"remoto",
 		"requisitos": {}, "arma_exclusiva": &"a05_minas_castor", "tags": [&"arma_especifica", &"detonador", &"maio_amarelo"]
 	},
 	&"perielio_resfriamento": {
-		"nome": "JANELA DO PERIÉLIO", "descricao": "+2,5 segundos de uso contínuo por nível e reduz o bloqueio após uma sobrecarga.",
+		"nome": "JANELA DO PERIÉLIO", "descricao": "Seu feixe dura mais e se recupera mais rápido da sobrecarga.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_resfriamento.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "INCOMUM", "cor": Color("ffcf45"), "max_nivel": 2, "peso": 0.88,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a06_feixe_perielio",
 		"tags": [&"arma_especifica", &"duracao", &"perielio"]
 	},
 	&"perielio_foco": {
-		"nome": "CONVERGÊNCIA SOLAR", "descricao": "A curva exponencial alcança o dano máximo 28% mais rápido por nível.",
+		"nome": "CONVERGÊNCIA SOLAR", "descricao": "Seu feixe atinge a potência máxima mais rápido.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_foco.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "RARA", "cor": Color("ff9f2f"), "max_nivel": 2, "peso": 0.62,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a06_feixe_perielio",
 		"tags": [&"arma_especifica", &"dano", &"perielio"]
 	},
 	&"perielio_potencia": {
-		"nome": "NÚCLEO HIPERQUENTE", "descricao": "Eleva o teto do feixe para 10, 20 e 30 DPS, mantendo o início em 0,2 DPS.",
+		"nome": "NÚCLEO HIPERQUENTE", "descricao": "Aumenta a potência máxima do seu feixe.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_foco.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "RARA", "cor": Color("ff6b35"), "max_nivel": 3, "peso": 0.42,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"perielio_foco": 1}, "arma_exclusiva": &"a06_feixe_perielio",
 		"tags": [&"arma_especifica", &"dano", &"perielio"]
 	},
 	&"perielio_infinito": {
-		"nome": "SOL SEM OCASO", "descricao": "ULTRARRARA: remove a sobrecarga. Após o limite, o feixe fica vermelho e devolve 1% do próprio DPS ao casco por segundo.",
+		"nome": "SOL SEM OCASO", "descricao": "Seu feixe dispara sem parar, mas passa a causar dano ao seu casco.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/perielio_resfriamento.svg", "categoria": "FEIXE DO PERIÉLIO",
 		"raridade": "ULTRARRARA", "cor": Color("ff3344"), "max_nivel": 1, "peso": 0.10,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"perielio_resfriamento": 2, &"perielio_foco": 2}, "arma_exclusiva": &"a06_feixe_perielio",
 		"tags": [&"arma_especifica", &"risco", &"perielio"]
 	},
 	&"colheita_dupla": {
-		"nome": "CEIFA EM DUPLA", "descricao": "+1 arco de colheita por disparo, abrindo trajetórias laterais de ida e volta.",
+		"nome": "CEIFA EM DUPLA", "descricao": "Lança mais arcos por disparo.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/colheita_dupla.svg", "categoria": "ARCO DA COLHEITA",
 		"raridade": "INCOMUM", "cor": Color("ffb34d"), "max_nivel": 2, "peso": 0.86,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a07_foice_colheita",
 		"tags": [&"arma_especifica", &"multitiro", &"colheita"]
 	},
 	&"colheita_retorno": {
-		"nome": "COLHEITA COMPLETA", "descricao": "Aumenta o dano, a velocidade de retorno e a capacidade de atravessar inimigos.",
+		"nome": "COLHEITA COMPLETA", "descricao": "Seus arcos ficam mais fortes, voltam mais rápido e atravessam mais inimigos.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/colheita_retorno.svg", "categoria": "ARCO DA COLHEITA",
 		"raridade": "RARA", "cor": Color("ff8f35"), "max_nivel": 2, "peso": 0.62,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a07_foice_colheita",
 		"tags": [&"arma_especifica", &"dano", &"colheita"]
 	},
 	&"terra_raizes_gemeas": {
-		"nome": "RAÍZES GÊMEAS", "descricao": "+1 raiz subterrânea, emergindo por uma trajetória lateral diferente.",
+		"nome": "RAÍZES GÊMEAS", "descricao": "Lança mais raízes por caminhos diferentes.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/terra_raizes_gemeas.svg", "categoria": "RAIZ DO DIA DA TERRA",
 		"raridade": "INCOMUM", "cor": Color("8ae878"), "max_nivel": 2, "peso": 0.86,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a08_torpedo_subterraneo",
 		"tags": [&"arma_especifica", &"multitiro", &"dia_terra"]
 	},
 	&"terra_ruptura": {
-		"nome": "SOLO RENOVADO", "descricao": "Aumenta o raio e o dano da erupção quando a raiz deixa o solo.",
+		"nome": "SOLO RENOVADO", "descricao": "Suas raízes emergem com explosões maiores e mais fortes.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/terra_ruptura.svg", "categoria": "RAIZ DO DIA DA TERRA",
 		"raridade": "RARA", "cor": Color("5fcf69"), "max_nivel": 2, "peso": 0.62,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a08_torpedo_subterraneo",
 		"tags": [&"arma_especifica", &"area", &"dia_terra"]
 	},
 	&"fogueira_brasas": {
-		"nome": "RODA DE BRASAS", "descricao": "+1 brasa de morteiro por disparo, distribuída ao redor da mira.",
+		"nome": "RODA DE BRASAS", "descricao": "Lança mais brasas ao redor da mira.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/fogueira_brasas.svg", "categoria": "MORTEIRO DA FOGUEIRA",
 		"raridade": "INCOMUM", "cor": Color("ff6f32"), "max_nivel": 2, "peso": 0.86,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a09_morteiro_fogueira",
 		"tags": [&"arma_especifica", &"multitiro", &"festa_junina"]
 	},
 	&"fogueira_circulo": {
-		"nome": "FOGUEIRA MAIOR", "descricao": "Amplia o círculo incendiado e o dano da explosão de cada brasa.",
+		"nome": "FOGUEIRA MAIOR", "descricao": "Suas brasas explodem com mais força e queimam uma área maior.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/fogueira_circulo.svg", "categoria": "MORTEIRO DA FOGUEIRA",
 		"raridade": "RARA", "cor": Color("ff4224"), "max_nivel": 2, "peso": 0.60,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a09_morteiro_fogueira",
 		"tags": [&"arma_especifica", &"area", &"festa_junina"]
 	},
 	&"morango_cacho": {
-		"nome": "CACHO DE MORANGOS", "descricao": "+2 projéteis por rajada, preservando a formação simétrica.",
+		"nome": "CACHO DE MORANGOS", "descricao": "Sua rajada lança mais projéteis.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/morango_cacho.svg", "categoria": "SEMENTES VERMELHAS",
 		"raridade": "INCOMUM", "cor": Color("ff405f"), "max_nivel": 2, "peso": 0.90,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a10_rajada_morango",
 		"tags": [&"arma_especifica", &"multitiro", &"lua_morango"]
 	},
 	&"morango_sementes": {
-		"nome": "SEMENTES SILVESTRES", "descricao": "+1 semente criada em cada impacto e mais dano no projétil principal.",
+		"nome": "SEMENTES SILVESTRES", "descricao": "Seus tiros ficam mais fortes e espalham mais sementes.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/morango_sementes.svg", "categoria": "SEMENTES VERMELHAS",
 		"raridade": "RARA", "cor": Color("ff2448"), "max_nivel": 2, "peso": 0.62,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a10_rajada_morango",
 		"tags": [&"arma_especifica", &"fragmentacao", &"lua_morango"]
 	},
 	&"roxo_neblina": {
-		"nome": "NEBLINA VIOLETA", "descricao": "+2 partículas no cone de fevereiro, cobrindo melhor a área próxima.",
+		"nome": "NEBLINA VIOLETA", "descricao": "Seu disparo cobre uma área maior à frente da nave.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/roxo_neblina.svg", "categoria": "PROJETOR FEVEREIRO ROXO",
 		"raridade": "INCOMUM", "cor": Color("bd8cff"), "max_nivel": 2, "peso": 0.88,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a11_projetor_nevasca",
 		"tags": [&"arma_especifica", &"multitiro", &"fevereiro_roxo"]
 	},
 	&"roxo_persistencia": {
-		"nome": "CUIDADO CONTÍNUO", "descricao": "Os impactos desaceleram o inimigo por mais tempo e causam mais dano.",
+		"nome": "CUIDADO CONTÍNUO", "descricao": "Seus tiros causam mais dano e deixam os inimigos lentos por mais tempo.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/roxo_persistencia.svg", "categoria": "PROJETOR FEVEREIRO ROXO",
 		"raridade": "RARA", "cor": Color("9562e8"), "max_nivel": 2, "peso": 0.60,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a11_projetor_nevasca",
 		"tags": [&"arma_especifica", &"controle", &"fevereiro_roxo"]
 	},
 	&"jardim_petalas": {
-		"nome": "JARDIM EM FLORAÇÃO", "descricao": "+2 pétalas orbitais por nível antes do ataque conjunto.",
+		"nome": "JARDIM EM FLORAÇÃO", "descricao": "Mais pétalas orbitam sua nave antes de atacar.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/jardim_petalas.svg", "categoria": "JARDIM ORBITAL",
 		"raridade": "INCOMUM", "cor": Color("ff67b3"), "max_nivel": 2, "peso": 0.88,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a12_jardim_orbital",
 		"tags": [&"arma_especifica", &"multitiro", &"flores"]
 	},
 	&"jardim_sincronia": {
-		"nome": "DESABROCHAR CONJUNTO", "descricao": "As pétalas orbitam por menos tempo e avançam com mais dano.",
+		"nome": "DESABROCHAR CONJUNTO", "descricao": "Suas pétalas atacam mais cedo e com mais força.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/jardim_sincronia.svg", "categoria": "JARDIM ORBITAL",
 		"raridade": "RARA", "cor": Color("f04491"), "max_nivel": 2, "peso": 0.60,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a12_jardim_orbital",
 		"tags": [&"arma_especifica", &"dano", &"flores"]
 	},
 	&"solsticio_nucleo": {
-		"nome": "NEVASCA", "descricao": "Ao romper após cinco camadas, o alvo libera uma onda de 250 px que aplica duas camadas de gelo aos inimigos próximos.",
+		"nome": "NEVASCA", "descricao": "Quebrar inimigos congelados espalha gelo nos inimigos próximos.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/solsticio_nucleo.svg", "categoria": "CANHÃO DO SOLSTÍCIO",
 		"raridade": "RARA", "cor": Color("90dcff"), "max_nivel": 1, "peso": 0.34,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {}, "arma_exclusiva": &"a13_canhao_lua_fria",
 		"tags": [&"arma_especifica", &"area", &"gelo", &"solsticio"]
 	},
 	&"solsticio_absorcao": {
-		"nome": "ABAIXO DE ZERO", "descricao": "ULTRARRARA: o congelamento total dura 5 segundos e irradia uma camada de gelo por segundo em 250 px.",
+		"nome": "ABAIXO DE ZERO", "descricao": "O congelamento dura mais e espalha gelo continuamente.",
 		"icone": "res://Habilidades/Icones/upgrades_armas/solsticio_absorcao.svg", "categoria": "CANHÃO DO SOLSTÍCIO",
 		"raridade": "ULTRARRARA", "cor": Color("67a8ff"), "max_nivel": 1, "peso": 0.12,
 		"tipo": TIPO_ARMA_ESPECIFICA, "requisitos": {&"solsticio_nucleo": 1}, "arma_exclusiva": &"a13_canhao_lua_fria",

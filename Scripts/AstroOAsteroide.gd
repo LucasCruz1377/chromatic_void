@@ -238,7 +238,7 @@ func falar(texto: String) -> void:
 			som_digito.pitch_scale = randf_range(0.95, 1.05)
 			som_digito.play()
 
-		await get_tree().create_timer(velocidade_escrita).timeout
+		await get_tree().create_timer(velocidade_escrita, false).timeout
 
 	escrevendo = false
 	_on_fala_terminou()

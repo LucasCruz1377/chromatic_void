@@ -19,14 +19,11 @@ const IconesControle = preload("res://Scripts/IndicadoresControle.gd")
 @onready var barra_xp: TextureProgressBar = $Barra_xp
 @onready var texto_nivel: Label = $LvlText
 
-var pausa_anterior := false
 var gameover_anterior := false
-var menu_saida_cliente_aberto := false
 
 
 func _ready() -> void:
 	definir_player_local(player)
-	pausa_anterior = get_tree().paused
 	gameover_anterior = caixa_gameover.visible
 	botao_tentar_novamente.focus_neighbor_bottom = (
 		botao_tentar_novamente.get_path_to(botao_voltar_gameover)
@@ -59,8 +56,8 @@ func _ready() -> void:
 	_atualizar_indicador_habilidade()
 	call_deferred("_ajustar_hud_responsivo")
 	if Rede.modo_multiplayer and not multiplayer.is_server():
-		botao_despause.text = tr("CONTINUAR")
-		botao_voltar_pause.text = tr("SAIR DA PARTIDA")
+		botao_despause.hide()
+		botao_voltar_pause.hide()
 
 
 func definir_player_local(novo_player: Player) -> void:
@@ -139,19 +136,18 @@ func _process(_delta: float) -> void:
 	)
 	var pode_pausar := not Rede.modo_multiplayer or multiplayer.is_server()
 
-	if Input.is_action_just_pressed("pausar") and players > 0 and not escolhendo_setor:
-		if tela_upgrades.has_method("esta_aberta") and bool(
-			tela_upgrades.call("esta_aberta")
-		):
+	if pode_pausar and Input.is_action_just_pressed("pausar") and players > 0 and not escolhendo_setor:
+		var melhorias_abertas := bool(tela_upgrades.call("esta_aberta"))
+		if melhorias_abertas:
 			tela_upgrades.call("fechar_menu")
-		elif pode_pausar:
+		if Rede.modo_multiplayer or not melhorias_abertas:
 			if (
 				not get_tree().paused
 				and is_instance_valid(batalha)
 				and batalha.has_method("registrar_visual_boss_antes_pausa")
 			):
 				batalha.call("registrar_visual_boss_antes_pausa")
-			get_tree().paused = not get_tree().paused
+			Rede.definir_pausa_partida(not get_tree().paused)
 			if get_tree().paused:
 				Global.definir_cursor_interface(true)
 				botao_despause.call_deferred("grab_focus")
@@ -167,36 +163,17 @@ func _process(_delta: float) -> void:
 					and batalha.has_method("limpar_estado_visual_boss_pausa")
 				):
 					batalha.call("limpar_estado_visual_boss_pausa")
-		else:
-			# O cliente pode abrir a saída local, mas nunca altera a pausa da árvore.
-			menu_saida_cliente_aberto = not menu_saida_cliente_aberto
-			Global.definir_cursor_interface(menu_saida_cliente_aberto)
-			if menu_saida_cliente_aberto:
-				botao_despause.call_deferred("grab_focus")
 
-	caixa_pause.visible = (
-		not escolhendo_setor
-		and (
-			(get_tree().paused and pode_pausar)
-			or (menu_saida_cliente_aberto and Rede.modo_multiplayer and not pode_pausar)
-		)
-	)
-	if get_tree().paused != pausa_anterior:
-		pausa_anterior = get_tree().paused
-
+	caixa_pause.visible = not escolhendo_setor and get_tree().paused and (pode_pausar or Rede.pausa_do_host)
 	if caixa_gameover.visible and not gameover_anterior:
 		botao_tentar_novamente.call_deferred("grab_focus")
 	gameover_anterior = caixa_gameover.visible
 
-	if Input.is_action_just_pressed("reset") and not escolhendo_setor:
-		preparar_troca_de_cena()
-		Global.Pontos = 0
-		Global.Combo = 0
-		get_tree().reload_current_scene()
+	if pode_pausar and Input.is_action_just_pressed("reset") and not escolhendo_setor:
+		_on_tentar_de_novo_pressed()
 
 
 func preparar_troca_de_cena() -> void:
-	menu_saida_cliente_aberto = false
 	if tela_upgrades.has_method("esta_aberta") and bool(
 		tela_upgrades.call("esta_aberta")
 	):
@@ -207,6 +184,8 @@ func preparar_troca_de_cena() -> void:
 
 
 func _on_tentar_de_novo_pressed() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	preparar_troca_de_cena()
 	Global.Pontos = 0
 	Global.Combo = 0
@@ -219,11 +198,8 @@ func _on_tentar_de_novo_pressed() -> void:
 
 func _on_despause_pressed() -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
-		menu_saida_cliente_aberto = false
-		caixa_pause.hide()
-		Global.definir_cursor_interface(false)
 		return
-	get_tree().paused = false
+	Rede.definir_pausa_partida(false)
 	Global.definir_cursor_interface(false)
 	var batalha = get_parent()
 	if is_instance_valid(batalha) and batalha.has_method("limpar_estado_visual_boss_pausa"):
@@ -232,9 +208,15 @@ func _on_despause_pressed() -> void:
 
 func _on_voltarmenu_2_pressed() -> void:
 	preparar_troca_de_cena()
+	var batalha := get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("preparar_saida_multiplayer"):
+		batalha.call("preparar_saida_multiplayer")
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")
 
 
 func _on_voltarmenu_pressed() -> void:
 	preparar_troca_de_cena()
+	var batalha := get_parent()
+	if is_instance_valid(batalha) and batalha.has_method("preparar_saida_multiplayer"):
+		batalha.call("preparar_saida_multiplayer")
 	get_tree().change_scene_to_file("res://Rooms/TelaInicial.tscn")

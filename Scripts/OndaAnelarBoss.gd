@@ -16,6 +16,7 @@ var tempo_ativo := 0.9
 var intensidade_impulso := 0.0
 var tempo := 0.0
 var recarga := 0.0
+var recargas_por_jogador: Dictionary = {}
 var raio_atual := 0.0
 var tempo_ate_redesenho := 0.0
 
@@ -49,7 +50,6 @@ static func criar(cena: Node, dados: Dictionary) -> OndaAnelarBoss:
 
 func _process(delta: float) -> void:
 	tempo += delta
-	recarga = maxf(0.0, recarga - delta)
 	var local := tempo - atraso
 	if local >= tempo_aviso:
 		var progresso := clampf((local - tempo_aviso) / maxf(tempo_ativo, 0.01), 0.0, 1.0)
@@ -65,19 +65,31 @@ func _process(delta: float) -> void:
 func _aplicar_perigo() -> void:
 	if bool(get_meta("apenas_visual_rede", false)):
 		return
-	if recarga > 0.0:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
 		return
-	var jogador := get_tree().get_first_node_in_group("player") as Node2D
-	if not is_instance_valid(jogador):
-		return
-	var distancia := jogador.global_position.distance_to(centro)
-	if absf(distancia - raio_atual) <= espessura * 0.6 + 13.0:
+	var agora := Global.tempo_combate_ms()
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(candidato) or not candidato is Node2D:
+			continue
+		if candidato.is_queued_for_deletion() or candidato.get("vivo") == false:
+			continue
+		var jogador := candidato as Node2D
+		var distancia := jogador.global_position.distance_to(centro)
+		if absf(distancia - raio_atual) > espessura * 0.6 + 13.0:
+			continue
+		var identidade := jogador.get_instance_id()
+		if agora < int(recargas_por_jogador.get(identidade, 0)):
+			continue
 		if jogador.has_method("tomar_dano"):
-			jogador.call("tomar_dano", dano)
+			jogador.call("tomar_dano", float(dano))
 		if intensidade_impulso != 0.0 and jogador is CharacterBody2D:
 			var direcao := centro.direction_to(jogador.global_position)
-			(jogador as CharacterBody2D).velocity += direcao * intensidade_impulso
-		recarga = 0.42
+			var impulso := direcao * intensidade_impulso
+			if jogador.has_method("aplicar_impulso_de_perigo_rede"):
+				jogador.call("aplicar_impulso_de_perigo_rede", impulso)
+			else:
+				(jogador as CharacterBody2D).velocity += impulso
+		recargas_por_jogador[identidade] = agora + 420
 
 func _draw() -> void:
 	var local := tempo - atraso

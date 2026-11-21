@@ -41,7 +41,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var tempo := Time.get_ticks_msec() * 0.001
+	var tempo := Global.tempo_combate_ms() * 0.001
 	var pulso := fposmod(tempo * 72.0 * sinal, 86.0)
 	var halo := cor
 	halo.a = 0.10

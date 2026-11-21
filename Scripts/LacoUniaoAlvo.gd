@@ -5,6 +5,7 @@ class_name LacoUniaoAlvo
 const EfeitoCombateCena = preload("res://Scripts/EfeitoCombate.gd")
 const ExplosaoMonthlyCena = preload("res://Scripts/MonthlyBurst.gd")
 
+var piloto: Player
 var alvos: Array[Node2D] = []
 var cor := Color("ff5b8d")
 var vida := 14.0
@@ -55,6 +56,8 @@ func _romper() -> void:
 	for alvo in alvos:
 		if not is_instance_valid(alvo) or not alvo.has_method("tomarDano"):
 			continue
+		if alvo is InimigoBase:
+			alvo.registrar_ataque_lunar(piloto)
 		if alvo.is_in_group("boss"):
 			alvo.call("tomarDano", 45.0)
 		else:

@@ -16,8 +16,8 @@ const CONFIG_PADRAO := {
 	"tela_cheia": true,
 	"vsync": true,
 	"limite_fps": 60,
-	"neon": 1.0,
-	"bloom": 0.12,
+	"neon": 0.4,
+	"bloom": 0.1,
 	"tremor_tela": 1.0,
 	"zona_morta_controle": 0.22,
 	"vibracao": true,
@@ -62,8 +62,16 @@ var idioma := "en"
 var tela_cheia := true
 var vsync := true
 var limite_fps := 60
-var neon := 1.0
-var bloom := 0.12
+const NEON_BASE := 0.4
+const NEON_MAXIMO := NEON_BASE * 1.5
+const BLOOM_BASE := 0.1
+const BLOOM_MAXIMO := BLOOM_BASE * 1.5
+var neon: float = NEON_BASE:
+	set(valor):
+		neon = clampf(valor, 0.0, NEON_MAXIMO) if is_finite(valor) else NEON_MAXIMO
+var bloom: float = BLOOM_BASE:
+	set(valor):
+		bloom = clampf(valor, 0.0, BLOOM_MAXIMO) if is_finite(valor) else BLOOM_MAXIMO
 var tremor_tela := 1.0
 var zona_morta_controle := 0.22
 var vibracao := true
@@ -135,7 +143,7 @@ const CONQUISTAS: Dictionary = {
 		"nome": "NÓ DESATADO",
 		"descricao": "Derrote o Nó de Ametista.",
 		"tipo": &"boss", "alvo": &"no_ametista", "meta": 1,
-		"recompensas": [&"p06_rosa_espinhosa", &"n04_armadura_aco"]
+		"recompensas": [&"p06_rosa_espinhosa"]
 	},
 	&"boss_sizigia": {
 		"nome": "LUZ APÓS O ECLIPSE",
@@ -336,6 +344,18 @@ func obter_centro_area_visivel() -> Vector2:
 	return obter_retangulo_area_visivel().get_center()
 
 
+var segundos_combate := 0.0
+
+
+func _physics_process(delta: float) -> void:
+	if not get_tree().paused and Engine.time_scale > 0.0:
+		segundos_combate += delta / Engine.time_scale
+
+
+func tempo_combate_ms() -> int:
+	return roundi(segundos_combate * 1000.0)
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	modo_desenvolvedor = calcular_permissao_desenvolvedor(
@@ -350,12 +370,20 @@ func _ready() -> void:
 	conquistas_disponiveis.assign(CONQUISTAS.keys())
 	carregar_conquistas()
 	get_tree().node_added.connect(_on_node_adicionado)
+	get_viewport().size_changed.connect(_atualizar_ambientes)
 	call_deferred("aplicar_configuracoes")
 
 
 func carregar_economia() -> void:
 	var dados: Dictionary = GerenciadorDeSave.carregar()
 	cristais = maxi(int(dados.get("cristais", CRISTAIS_INICIAIS)), 0)
+	var equipamentos: Variant = dados.get("equipamentos_loja", {})
+	if equipamentos is Dictionary and not str(equipamentos.get("2", "")).is_empty():
+		var catalogo = preload("res://Scripts/MonthlyCatalog.gd")
+		var passiva: Dictionary = catalogo.encontrar(StringName(str(equipamentos["2"])))
+		if passiva.is_empty():
+			equipamentos["2"] = ""
+			GerenciadorDeSave.salvar({"equipamentos_loja": equipamentos})
 
 
 func carregar_conquistas() -> void:
@@ -702,8 +730,8 @@ func carregar_configuracoes() -> void:
 	tela_cheia = bool(config["tela_cheia"])
 	vsync = bool(config["vsync"])
 	limite_fps = int(config["limite_fps"])
-	neon = clampf(float(config["neon"]), 0.0, 2.0)
-	bloom = clampf(float(config["bloom"]), 0.0, 0.5)
+	neon = clampf(float(config["neon"]), 0.0, NEON_MAXIMO)
+	bloom = clampf(float(config["bloom"]), 0.0, BLOOM_MAXIMO)
 	tremor_tela = clampf(float(config["tremor_tela"]), 0.0, 1.0)
 	zona_morta_controle = clampf(float(config["zona_morta_controle"]), 0.05, 0.6)
 	vibracao = bool(config["vibracao"])
@@ -793,7 +821,7 @@ func aplicar_configuracoes() -> void:
 	_aplicar_volume("Sound", volume_som)
 	TranslationServer.set_locale(idioma)
 
-	if not OS.has_feature("web") and not dispositivo_mobile():
+	if not OS.has_feature("web") and not dispositivo_mobile() and not Engine.is_embedded_in_editor():
 		DisplayServer.window_set_mode(
 			DisplayServer.WINDOW_MODE_FULLSCREEN
 			if tela_cheia
@@ -819,6 +847,10 @@ func aplicar_configuracoes() -> void:
 		if InputMap.has_action(acao):
 			InputMap.action_set_deadzone(acao, zona_morta_controle)
 
+	_atualizar_ambientes()
+
+
+func _atualizar_ambientes() -> void:
 	for ambiente in get_tree().get_nodes_in_group("ambiente_global"):
 		_aplicar_ambiente(ambiente)
 
@@ -846,10 +878,13 @@ func _aplicar_ambiente(node: Node) -> void:
 	var world := node as WorldEnvironment
 	if not world.environment:
 		return
-	configurar_glow(world.environment, RenderingServer.get_current_rendering_method())
+	configurar_glow(world.environment, RenderingServer.get_current_rendering_method(), world.get_viewport().get_texture().get_size())
 
 
-func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
+func configurar_glow(
+	ambiente: Environment, renderizador: StringName,
+	dimensoes: Vector2i = Vector2i(get_viewport().get_texture().get_size())
+) -> void:
 	ambiente.glow_enabled = neon > 0.01 or bloom > 0.01
 	ambiente.glow_bloom = bloom
 	ambiente.glow_intensity = neon
@@ -860,7 +895,13 @@ func configurar_glow(ambiente: Environment, renderizador: StringName) -> void:
 		ambiente.glow_hdr_scale = 0.35
 	elif renderizador == &"mobile":
 		ambiente.glow_hdr_threshold = 0.9
-		ambiente.glow_intensity = neon * 1.5
+		# O blur Mobile lê dois mipmaps além do índice do nível durante a recomposição.
+		var lado_maior := maxi(dimensoes.x, dimensoes.y)
+		for indice in 7:
+			var tamanho_minimo := 1 << (indice + 3)
+			ambiente.set_glow_level(indice, 1.5 if lado_maior >= tamanho_minimo else 0.0)
+		if mini(dimensoes.x, dimensoes.y) < 8:
+			ambiente.glow_enabled = false
 
 
 func vibrar_controle(fraco := 0.25, forte := 0.5, duracao := 0.16) -> void:

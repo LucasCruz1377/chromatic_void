@@ -69,7 +69,7 @@ func iniciar_aviso(direcao: Vector2) -> void:
 
 func atualizar_aviso(delta: float) -> void:
 	tempo_aviso_atual -= delta
-	linha_aviso.modulate.a = 0.4 + absf(sin(Time.get_ticks_msec() * 0.02)) * 0.6
+	linha_aviso.modulate.a = 0.4 + absf(sin(Global.tempo_combate_ms() * 0.02)) * 0.6
 
 	if tempo_aviso_atual <= 0.0:
 		disparar()

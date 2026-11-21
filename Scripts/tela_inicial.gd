@@ -70,7 +70,7 @@ func _ready() -> void:
 	Global.definir_cursor_interface(Global.dispositivo_mobile())
 	Global.dispositivo_alterado.connect(_on_dispositivo_alterado)
 	_configurar_navegacao_menu()
-	botao_iniciar.call_deferred("grab_focus")
+	call_deferred("_focar_se_disponivel", botao_iniciar)
 
 	if not botao_loja.pressed.is_connected(_on_shop_pressed):
 		botao_loja.pressed.connect(_on_shop_pressed)
@@ -351,7 +351,7 @@ func _mostrar_escolha_modo() -> void:
 	var solo := _adicionar_botao_fluxo("JOGAR SOLO", _on_solo_pressed, true)
 	_adicionar_botao_fluxo("MULTIPLAYER", _on_multiplayer_pressed)
 	_adicionar_botao_fluxo("VOLTAR", _voltar_fluxo)
-	solo.call_deferred("grab_focus")
+	call_deferred("_focar_se_disponivel", solo)
 
 
 func _mostrar_escolha_multiplayer() -> void:
@@ -378,7 +378,7 @@ func _mostrar_escolha_multiplayer() -> void:
 	_criar_area_lobbies_lan()
 	_atualizar_lista_lobbies_lan(Rede.obter_lobbies_lan())
 	_adicionar_botao_fluxo("VOLTAR", _mostrar_escolha_modo)
-	criar.call_deferred("grab_focus")
+	call_deferred("_focar_se_disponivel", criar)
 
 
 func _criar_area_lobbies_lan() -> void:
@@ -514,7 +514,7 @@ func _mostrar_entrada_ip() -> void:
 	_adicionar_status_rede()
 	_adicionar_botao_fluxo("CONECTAR", _on_conectar_ip_pressed, true)
 	_adicionar_botao_fluxo("VOLTAR", _mostrar_escolha_multiplayer)
-	campo_ip.call_deferred("grab_focus")
+	call_deferred("_focar_se_disponivel", campo_ip)
 
 
 func _mostrar_lobby() -> void:
@@ -583,7 +583,7 @@ func _voltar_fluxo() -> void:
 			campo_nickname.editable = true
 			for botao in botoes_menu:
 				botao.disabled = false
-			botao_iniciar.call_deferred("grab_focus")
+			call_deferred("_focar_se_disponivel", botao_iniciar)
 
 
 func _on_lobby_alterado(_jogadores: Dictionary) -> void:
@@ -619,7 +619,7 @@ func _on_achievements_pressed() -> void:
 	camada_conquistas.show()
 	for botao in botoes_menu:
 		botao.disabled = true
-	botao_fechar_conquistas.call_deferred("grab_focus")
+	call_deferred("_focar_se_disponivel", botao_fechar_conquistas)
 
 
 func _on_options_pressed() -> void:
@@ -710,7 +710,7 @@ func _recuperar_falha_carregamento(caminho: String, erro: Error) -> void:
 		if is_instance_valid(botao):
 			botao.disabled = false
 	if is_instance_valid(botao_iniciar):
-		botao_iniciar.call_deferred("grab_focus")
+		call_deferred("_focar_se_disponivel", botao_iniciar)
 
 
 func _criar_tela_carregamento() -> void:
@@ -914,7 +914,7 @@ func _fechar_menu_conquistas() -> void:
 	camada_conquistas.hide()
 	for botao in botoes_menu:
 		botao.disabled = false
-	botao_conquistas.call_deferred("grab_focus")
+	call_deferred("_focar_se_disponivel", botao_conquistas)
 
 
 func _atualizar_tamanho_menu_conquistas() -> void:
@@ -941,3 +941,8 @@ func _estilo_conquistas(
 func _on_dispositivo_alterado(tipo: StringName) -> void:
 	if tipo == &"controle":
 		botao_iniciar.grab_focus()
+
+
+func _focar_se_disponivel(controle: Variant) -> void:
+	if is_instance_valid(controle) and controle.is_inside_tree() and controle.is_visible_in_tree():
+		controle.grab_focus()

@@ -23,6 +23,8 @@ func configurar(alvo_batalha: Node2D, alvo_player: Player) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 95
 	construir_interface()
+	var diagnostico := preload("res://Scripts/DiagnosticoDesempenho.gd").new()
+	add_child(diagnostico)
 
 
 func construir_interface() -> void:
@@ -227,7 +229,7 @@ func abrir() -> void:
 	aberto = true
 	pausado_antes = get_tree().paused
 	mouse_antes = Input.mouse_mode
-	get_tree().paused = true
+	Rede.definir_pausa_partida(true)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	atualizar_status("Painel de testes ativo")
 	indicador.hide()
@@ -242,7 +244,7 @@ func fechar() -> void:
 	aberto = false
 	overlay.hide()
 	indicador.show()
-	get_tree().paused = pausado_antes
+	Rede.definir_pausa_partida(pausado_antes)
 	Input.set_mouse_mode(mouse_antes)
 
 
@@ -296,7 +298,7 @@ func _limpar_arena() -> void:
 func _reiniciar_partida() -> void:
 	get_tree().paused = false
 	Engine.time_scale = 1.0
-	get_tree().reload_current_scene()
+	batalha.solicitar_reinicio_multiplayer()
 
 
 func _invocar_boss(id: StringName) -> void:

@@ -19,9 +19,12 @@ var painel_responsivo: Control
 var container_cards: HBoxContainer
 var indicador: Button
 var texto_pontos: Label
-var texto_habilidade: Label
-var texto_rotas: Label
-var dica_menu: HBoxContainer
+var painel_descricao: Control
+var nome_melhoria: Label
+var descricao_melhoria: Label
+var dica_confirmacao: Label
+var linha_destaque: ColorRect
+var upgrade_previsualizado: StringName = &""
 var botao_fechar: Button
 var botao_rerrolar: Button
 var opcoes_atuais: Array[StringName] = []
@@ -47,7 +50,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if menu_aberto:
-		if not pode_manter_menu_aberto():
+		if Rede.pausa_do_host or not pode_manter_menu_aberto():
 			fechar_menu()
 		return
 
@@ -96,8 +99,9 @@ func definir_player_local(novo_player: Player) -> void:
 func construir_interface() -> void:
 	overlay = ColorRect.new()
 	overlay.name = "OverlayMelhorias"
+	overlay.z_index = 10
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.color = Color(0.005, 0.008, 0.025, 0.94)
+	overlay.color = Color(0.015, 0.02, 0.065, 0.98)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	overlay.hide()
@@ -109,95 +113,106 @@ func construir_interface() -> void:
 	painel_responsivo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(painel_responsivo)
 
-	var faixa_topo := ColorRect.new()
-	faixa_topo.position = Vector2(0, 0)
-	faixa_topo.size = Vector2(960, 82)
-	faixa_topo.color = Color(0.025, 0.045, 0.095, 0.96)
-	faixa_topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(faixa_topo)
-
 	var titulo := Label.new()
-	titulo.position = Vector2(32, 12)
-	titulo.size = Vector2(400, 34)
-	titulo.text = tr("MATRIZ DE EVOLUÇÃO DA NAVE")
-	titulo.add_theme_font_size_override("font_size", 25)
-	titulo.add_theme_color_override("font_color", Color(0.58, 0.94, 1.0))
-	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	titulo.position = Vector2(180, 18)
+	titulo.size = Vector2(600, 36)
+	titulo.text = tr("MELHORIAS")
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 28)
+	titulo.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
 	painel_responsivo.add_child(titulo)
 
-	texto_habilidade = Label.new()
-	texto_habilidade.position = Vector2(32, 43)
-	texto_habilidade.size = Vector2(520, 20)
-	texto_habilidade.add_theme_font_size_override("font_size", 11)
-	texto_habilidade.add_theme_color_override("font_color", Color(0.48, 0.58, 0.76))
-	texto_habilidade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(texto_habilidade)
-
-	texto_rotas = Label.new()
-	texto_rotas.position = Vector2(32, 64)
-	texto_rotas.size = Vector2(896, 16)
-	texto_rotas.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	texto_rotas.add_theme_font_size_override("font_size", 10)
-	texto_rotas.add_theme_color_override("font_color", Color(0.46, 0.75, 0.92))
-	texto_rotas.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(texto_rotas)
+	var contadores := HBoxContainer.new()
+	contadores.position = Vector2(280, 56)
+	contadores.size = Vector2(400, 28)
+	contadores.alignment = BoxContainer.ALIGNMENT_CENTER
+	contadores.add_theme_constant_override("separation", 14)
+	painel_responsivo.add_child(contadores)
 
 	texto_pontos = Label.new()
-	texto_pontos.position = Vector2(590, 17)
-	texto_pontos.size = Vector2(220, 34)
-	texto_pontos.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	texto_pontos.add_theme_font_size_override("font_size", 17)
-	texto_pontos.add_theme_color_override("font_color", Color(1.0, 0.8, 0.28))
-	texto_pontos.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(texto_pontos)
+	texto_pontos.add_theme_font_size_override("font_size", 12)
+	texto_pontos.add_theme_color_override("font_color", Color(0.68, 0.72, 0.83))
+	contadores.add_child(texto_pontos)
+	var separador := Label.new()
+	separador.text = "•"
+	separador.add_theme_font_size_override("font_size", 12)
+	separador.add_theme_color_override("font_color", Color(0.38, 0.42, 0.6))
+	contadores.add_child(separador)
+
+	botao_rerrolar = Button.new()
+	botao_rerrolar.name = "Rerolls"
+	botao_rerrolar.flat = true
+	botao_rerrolar.custom_minimum_size = Vector2(96, 28)
+	botao_rerrolar.add_theme_font_size_override("font_size", 12)
+	botao_rerrolar.add_theme_color_override("font_color", Color(0.68, 0.72, 0.83))
+	botao_rerrolar.add_theme_color_override("font_hover_color", Color(0.45, 0.94, 1.0))
+	botao_rerrolar.add_theme_color_override("font_focus_color", Color(0.45, 0.94, 1.0))
+	for estado in ["normal", "hover", "pressed", "disabled"]:
+		botao_rerrolar.add_theme_stylebox_override(estado, StyleBoxEmpty.new())
+	botao_rerrolar.pressed.connect(_on_rerrolar_pressed)
+	contadores.add_child(botao_rerrolar)
 
 	botao_fechar = Button.new()
-	botao_fechar.position = Vector2(830, 15)
-	botao_fechar.size = Vector2(98, 38)
+	botao_fechar.position = Vector2(856, 24)
+	botao_fechar.size = Vector2(80, 32)
 	botao_fechar.text = tr("FECHAR")
+	botao_fechar.flat = true
+	botao_fechar.add_theme_font_size_override("font_size", 10)
 	botao_fechar.pressed.connect(fechar_menu)
-	botao_fechar.add_theme_stylebox_override(
-		"normal", criar_estilo_botao(Color(0.08, 0.1, 0.18), Color(0.34, 0.44, 0.65))
-	)
-	botao_fechar.add_theme_stylebox_override(
-		"hover", criar_estilo_botao(Color(0.13, 0.16, 0.27), Color(0.55, 0.8, 1.0))
-	)
-	botao_fechar.add_theme_stylebox_override(
-		"focus", criar_estilo_botao(Color(0.11, 0.14, 0.24), Color(0.48, 0.76, 1.0))
-	)
 	painel_responsivo.add_child(botao_fechar)
 
 	container_cards = HBoxContainer.new()
-	container_cards.position = Vector2(70, 88)
-	container_cards.size = Vector2(820, 336)
-	container_cards.add_theme_constant_override("separation", 20)
+	container_cards.name = "OpcoesHexagonais"
+	container_cards.position = Vector2(40, 182)
+	container_cards.size = Vector2(CardUpgrade.TAMANHO_CARD.x * 3, CardUpgrade.TAMANHO_CARD.y)
+	container_cards.add_theme_constant_override("separation", 0)
 	container_cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	container_cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	painel_responsivo.add_child(container_cards)
 
-	botao_rerrolar = Button.new()
-	botao_rerrolar.position = Vector2(382, 438)
-	botao_rerrolar.size = Vector2(196, 40)
-	botao_rerrolar.text = tr("RECALCULAR OPÇÕES")
-	botao_rerrolar.pressed.connect(_on_rerrolar_pressed)
-	botao_rerrolar.add_theme_stylebox_override(
-		"normal", criar_estilo_botao(Color(0.06, 0.15, 0.22), Color(0.2, 0.75, 1.0))
-	)
-	botao_rerrolar.add_theme_stylebox_override(
-		"hover", criar_estilo_botao(Color(0.09, 0.25, 0.34), Color(0.55, 0.94, 1.0))
-	)
-	botao_rerrolar.add_theme_stylebox_override(
-		"focus", criar_estilo_botao(Color(0.08, 0.21, 0.30), Color(0.48, 0.9, 1.0))
-	)
-	painel_responsivo.add_child(botao_rerrolar)
+	painel_descricao = Control.new()
+	painel_descricao.name = "DescricaoMelhoria"
+	painel_descricao.position = Vector2(620, 198)
+	painel_descricao.size = Vector2(300, 236)
+	painel_descricao.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	painel_descricao.hide()
+	painel_responsivo.add_child(painel_descricao)
 
-	dica_menu = HBoxContainer.new()
-	dica_menu.position = Vector2(120, 492)
-	dica_menu.size = Vector2(720, 24)
-	dica_menu.alignment = BoxContainer.ALIGNMENT_CENTER
-	dica_menu.add_theme_constant_override("separation", 5)
-	dica_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel_responsivo.add_child(dica_menu)
+	var coluna_descricao := VBoxContainer.new()
+	coluna_descricao.size = painel_descricao.size
+	coluna_descricao.add_theme_constant_override("separation", 0)
+	coluna_descricao.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	painel_descricao.add_child(coluna_descricao)
+
+	nome_melhoria = Label.new()
+	nome_melhoria.custom_minimum_size = Vector2(300, 36)
+	nome_melhoria.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nome_melhoria.add_theme_font_size_override("font_size", 22)
+	nome_melhoria.add_theme_color_override("font_color", Color(0.95, 0.97, 1.0))
+	coluna_descricao.add_child(nome_melhoria)
+
+	var margem_linha := MarginContainer.new()
+	margem_linha.add_theme_constant_override("margin_top", 12)
+	margem_linha.add_theme_constant_override("margin_bottom", 18)
+	coluna_descricao.add_child(margem_linha)
+	linha_destaque = ColorRect.new()
+	linha_destaque.custom_minimum_size = Vector2(90, 2)
+	linha_destaque.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	margem_linha.add_child(linha_destaque)
+
+	descricao_melhoria = Label.new()
+	descricao_melhoria.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	descricao_melhoria.add_theme_font_size_override("font_size", 16)
+	descricao_melhoria.add_theme_color_override("font_color", Color(0.87, 0.9, 0.96))
+	coluna_descricao.add_child(descricao_melhoria)
+
+	var margem_confirmacao := MarginContainer.new()
+	margem_confirmacao.add_theme_constant_override("margin_top", 24)
+	coluna_descricao.add_child(margem_confirmacao)
+	dica_confirmacao = Label.new()
+	dica_confirmacao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dica_confirmacao.add_theme_font_size_override("font_size", 12)
+	margem_confirmacao.add_child(dica_confirmacao)
 
 	indicador = Button.new()
 	indicador.name = "IndicadorMelhorias"
@@ -254,42 +269,15 @@ func criar_estilo_botao(cor: Color, borda: Color) -> StyleBoxFlat:
 
 
 func _atualizar_dica_menu() -> void:
-	if not is_instance_valid(dica_menu):
+	if not is_instance_valid(botao_fechar):
 		return
-	for filho in dica_menu.get_children():
-		dica_menu.remove_child(filho)
-		filho.queue_free()
-
-	var texto := Label.new()
-	texto.text = tr("Escolha um mod ou feche o menu para guardar os pontos. Abre/fecha:")
-	texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	texto.add_theme_font_size_override("font_size", 12)
-	texto.add_theme_color_override("font_color", Color(0.44, 0.54, 0.7))
-	texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dica_menu.add_child(texto)
-
-	var icone := IconesControle.textura_para_acao(&"abrir_melhorias")
-	if (
-		Global.ultimo_dispositivo == &"controle"
-		and not Input.get_connected_joypads().is_empty()
-		and icone != null
-	):
-		var imagem := TextureRect.new()
-		imagem.custom_minimum_size = Vector2(24, 18)
-		imagem.texture = icone
-		imagem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		imagem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		imagem.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		imagem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		dica_menu.add_child(imagem)
-	else:
-		var tecla := Label.new()
-		tecla.text = "[%s]" % _texto_tecla_melhorias()
-		tecla.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		tecla.add_theme_font_size_override("font_size", 12)
-		tecla.add_theme_color_override("font_color", Color(0.62, 0.78, 1.0))
-		tecla.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		dica_menu.add_child(tecla)
+	botao_fechar.tooltip_text = tr("Fechar") + " [%s]" % _texto_tecla_melhorias()
+	if is_instance_valid(dica_confirmacao):
+		dica_confirmacao.text = (
+			tr("Toque novamente para escolher.") if Global.dispositivo_mobile()
+			else tr("Confirme novamente para escolher.") if Global.ultimo_dispositivo == &"controle"
+			else tr("Clique novamente para escolher.")
+		)
 
 
 func _texto_tecla_melhorias() -> String:
@@ -317,6 +305,8 @@ func _texto_tecla_melhorias() -> String:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Rede.modo_multiplayer and event.is_action_pressed("pausar"):
+		return
 	if menu_aberto and event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		fechar_menu()
@@ -437,19 +427,7 @@ func pode_manter_menu_aberto() -> bool:
 
 
 func atualizar_cabecalho() -> void:
-	texto_pontos.text = tr("PONTOS PENDENTES: %d") % player.pontos_upgrade_pendentes
-	var nome_habilidade := tr("NENHUMA")
-	if player.HabilidadeEquipada:
-		nome_habilidade = tr(player.HabilidadeEquipada.Nome)
-	texto_habilidade.text = (
-		tr("HABILIDADE: %s   •   ESCOLHA UM ESTILO E APROFUNDE A CONSTRUÇÃO") %
-		nome_habilidade.to_upper()
-	)
-	texto_rotas.text = tr("CONSTRUÇÃO ATUAL") + "   •   " + DadosUpgrades.resumo_rotas(
-		player.niveis_upgrades,
-		player.HabilidadeEquipada,
-		player.arma_monthly
-	)
+	texto_pontos.text = tr("Pontos: %d") % player.pontos_upgrade_pendentes
 	_atualizar_botao_rerrolar()
 
 
@@ -472,14 +450,9 @@ func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 			id,
 			dados,
 			DadosUpgrades.nivel(id, player.niveis_upgrades),
-			DadosUpgrades.texto_requisitos(
-				id,
-				player.niveis_upgrades,
-				player.HabilidadeEquipada,
-				player.arma_monthly
-			)
+			""
 		)
-		card.escolhido.connect(_on_upgrade_escolhido)
+		card.escolhido.connect(_on_opcao_ativada)
 		container_cards.add_child(card)
 
 	configurar_navegacao_controle()
@@ -491,7 +464,7 @@ func mostrar_opcoes(evitar: Array[StringName] = []) -> void:
 
 
 func _on_rerrolar_pressed() -> void:
-	if not menu_aberto or not is_instance_valid(player):
+	if not menu_aberto or not is_instance_valid(player) or player.compra_upgrade_pendente_rede:
 		return
 	if not player.gastar_reroll_upgrade():
 		_atualizar_botao_rerrolar()
@@ -505,8 +478,8 @@ func _atualizar_botao_rerrolar() -> void:
 	if not is_instance_valid(botao_rerrolar) or not is_instance_valid(player):
 		return
 	var restantes: int = player.rerolls_upgrades_restantes
-	botao_rerrolar.text = tr("RECALCULAR (%d)") % restantes
-	botao_rerrolar.disabled = restantes <= 0
+	botao_rerrolar.text = tr("Rerolls: %d") % restantes
+	botao_rerrolar.disabled = restantes <= 0 or player.compra_upgrade_pendente_rede
 	botao_rerrolar.focus_mode = (
 		Control.FOCUS_NONE if botao_rerrolar.disabled else Control.FOCUS_ALL
 	)
@@ -540,7 +513,7 @@ func configurar_navegacao_controle() -> void:
 		botao_rerrolar.focus_neighbor_bottom = botao_rerrolar.get_path_to(botao_fechar)
 
 
-func _focar_controle_se_valido(controle: Control) -> void:
+func _focar_controle_se_valido(controle: Variant) -> void:
 	if (
 		menu_aberto
 		and is_instance_valid(controle)
@@ -551,19 +524,57 @@ func _focar_controle_se_valido(controle: Control) -> void:
 
 
 func limpar_cards() -> void:
+	upgrade_previsualizado = &""
+	painel_descricao.hide()
 	for filho in container_cards.get_children():
 		container_cards.remove_child(filho)
 		filho.queue_free()
 	opcoes_atuais.clear()
 
 
+func _on_opcao_ativada(id: StringName) -> void:
+	if not menu_aberto or not is_instance_valid(player) or player.compra_upgrade_pendente_rede:
+		return
+	if id not in opcoes_atuais:
+		return
+	if upgrade_previsualizado == id:
+		_on_upgrade_escolhido(id)
+		return
+
+	upgrade_previsualizado = id
+	var dados := DadosUpgrades.obter(id, player.HabilidadeEquipada)
+	var cor := Color(dados.get("cor", Color.WHITE))
+	for card in container_cards.get_children():
+		card.definir_selecionado(card.upgrade_id == id)
+	nome_melhoria.text = tr(str(dados.get("nome", id)))
+	descricao_melhoria.text = tr(str(dados.get("descricao", "")))
+	linha_destaque.color = cor
+	dica_confirmacao.add_theme_color_override("font_color", cor.lightened(0.18))
+	painel_descricao.show()
+
+
 func _on_upgrade_escolhido(id: StringName) -> void:
 	if not player.comprar_upgrade(id):
-		mostrar_opcoes()
+		if not player.compra_upgrade_pendente_rede:
+			mostrar_opcoes()
+		return
+	if player.compra_upgrade_pendente_rede:
+		_atualizar_botao_rerrolar()
 		return
 
 	Global.vibrar_controle(0.18, 0.35, 0.12)
 
+	if player.pontos_upgrade_pendentes > 0:
+		atualizar_cabecalho()
+		mostrar_opcoes()
+	else:
+		fechar_menu()
+
+
+# O servidor decide a compra antes da interface sortear outra carta.
+func ao_upgrade_confirmado_rede() -> void:
+	if not menu_aberto or not is_instance_valid(player):
+		return
 	if player.pontos_upgrade_pendentes > 0:
 		atualizar_cabecalho()
 		mostrar_opcoes()

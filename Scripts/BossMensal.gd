@@ -1,4 +1,4 @@
-extends InimigoBase
+extends "res://Scripts/ChefeBase.gd"
 class_name BossMensal
 
 
@@ -42,6 +42,12 @@ var angulo_visual := 0.0
 var indice_dificuldade := 1
 var linha_aviso: Line2D
 var tempo_ate_redesenho := 0.0
+# Estados compactos das defesas: nao trafegam junto dos snapshots visuais
+# grandes, que podem exceder o MTU e se perder.
+var tempo_estado_defesas_rede := 0.0
+var sequencia_estado_defesas_rede := 0
+var ultima_sequencia_defesas_recebida := -1
+const INTERVALO_DEFESAS_REDE := 0.35
 
 
 func _ready() -> void:
@@ -55,6 +61,50 @@ func _ready() -> void:
 	add_child(linha_aviso)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	fase_alterada.emit(fase)
+	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
+		return
+	tempo_estado_defesas_rede -= delta
+	if tempo_estado_defesas_rede <= 0.0:
+		_enviar_estado_defesas_rede()
+
+
+func _capturar_estado_defesas_rede() -> Dictionary:
+	# Os dois bosses de defesa implementam o proprio formato.
+	return {}
+
+
+func _aplicar_estado_defesas_rede(_dados: Dictionary) -> void:
+	pass
+
+
+func _enviar_estado_defesas_rede() -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
+		return
+	var estado_defesas := _capturar_estado_defesas_rede()
+	if estado_defesas.is_empty():
+		return
+	var arena := get_parent()
+	if not is_instance_valid(arena) or not arena.has_method("replicar_estado_defesas_boss"):
+		return
+	tempo_estado_defesas_rede = INTERVALO_DEFESAS_REDE
+	sequencia_estado_defesas_rede += 1
+	estado_defesas["sequencia"] = sequencia_estado_defesas_rede
+	arena.call("replicar_estado_defesas_boss", self, estado_defesas)
+
+
+func receber_estado_defesas_rede(dados: Dictionary) -> void:
+	if not Rede.modo_multiplayer or multiplayer.is_server():
+		return
+	var sequencia := int(dados.get("sequencia", 0))
+	if sequencia <= ultima_sequencia_defesas_recebida:
+		return
+	ultima_sequencia_defesas_recebida = sequencia
+	_aplicar_estado_defesas_rede(dados)
 	queue_redraw()
 
 
@@ -145,7 +195,7 @@ func preparar_ataque(indice: int) -> void:
 func processar_aviso(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, 420.0 * delta)
 	tempo_estado -= delta
-	linha_aviso.modulate.a = 0.35 + absf(sin(Time.get_ticks_msec() * 0.019)) * 0.65
+	linha_aviso.modulate.a = 0.35 + absf(sin(Global.tempo_combate_ms() * 0.019)) * 0.65
 	if tempo_estado > 0.0:
 		return
 	linha_aviso.visible = false
@@ -355,46 +405,20 @@ func criar_projetil(
 	projetil.position = posicao
 	projetil.configurar(direcao, Dano * multiplicador_dano, velocidade_projetil, rebotes)
 	projetil.modulate = Color.WHITE
+	projetil.cor_visual_rede = cor_projetil
 	var forma := projetil.get_node_or_null("Visual") as Polygon2D
 	if is_instance_valid(forma):
 		forma.color = cor_projetil
-	get_tree().current_scene.add_child(projetil, true)
 	projetil.aplicar_glow()
-	if Rede.modo_multiplayer and multiplayer.is_server():
-		_replicar_projetil_boss.rpc(
-			posicao, direcao, velocidade_projetil, Dano * multiplicador_dano,
-			rebotes, cor_projetil
-		)
+	# Evita registrar Area2D durante o processamento de contato.
+	get_tree().current_scene.add_child.call_deferred(projetil, true)
 	return projetil
 
 
-@rpc("authority", "call_remote", "reliable")
-func _replicar_projetil_boss(
-	posicao: Vector2,
-	direcao: Vector2,
-	velocidade_projetil: float,
-	dano_projetil: float,
-	rebotes: int,
-	cor_projetil: Color
-) -> void:
-	if multiplayer.is_server():
-		return
-	var projetil := PROJETIL.instantiate() as ProjetilInimigo
-	projetil.position = posicao
-	projetil.configurar(direcao, dano_projetil, velocidade_projetil, rebotes)
-	projetil.set_meta("apenas_visual_rede", true)
-	projetil.collision_layer = 0
-	projetil.collision_mask = 0
-	projetil.monitoring = false
-	projetil.monitorable = false
-	var forma := projetil.get_node_or_null("Visual") as Polygon2D
-	if is_instance_valid(forma):
-		forma.color = cor_projetil
-	get_tree().current_scene.add_child(projetil, true)
-	projetil.aplicar_glow()
-
-
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto:
 		return
 	super.tomarDano(valor)
@@ -421,7 +445,7 @@ func ao_colidir_com_player(alvo: Node) -> void:
 	if not alvo.has_method("tomar_dano"):
 		return
 	var multiplicador := 1.0 if estado == Estado.INVESTINDO else 0.42
-	alvo.tomar_dano(Dano * multiplicador)
+	alvo.tomar_dano(Dano * multiplicador, global_position)
 	if estado == Estado.INVESTINDO:
 		iniciar_recuperacao(0.8)
 
@@ -434,7 +458,7 @@ func criar_circulo_pontos(raio: float, segmentos: int) -> PackedVector2Array:
 
 
 func _draw() -> void:
-	var pulso := 1.0 + sin(Time.get_ticks_msec() * 0.006) * 0.06
+	var pulso := 1.0 + sin(Global.tempo_combate_ms() * 0.006) * 0.06
 	match tema:
 		Tema.FLOR_EQUINOCIO:
 			for indice in range(8):

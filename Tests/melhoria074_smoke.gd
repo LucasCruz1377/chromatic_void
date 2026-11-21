@@ -41,8 +41,7 @@ func testar_curva_xp_e_dano() -> void:
 	verificar(intervalo < 2.8 and intervalo >= 0.5, "o intervalo de ataque não acelerou com piso de 0,5 s")
 	inimigo.free()
 
-	var fita := InimigoSetorial.new()
-	fita.estilo = InimigoSetorial.Estilo.FITA_VIOLETA
+	var fita: Variant = (load("res://Scripts/InimigoFitaVioleta.gd") as Script).new()
 	fita.Velocidade = 100.0
 	add_child(fita)
 	verificar(fita.Velocidade > 140.0, "a Fita Violeta não recebeu velocidade extra para cruzar o mapa")
@@ -100,10 +99,10 @@ func testar_modelos_spectrum_e_fspeed() -> void:
 
 
 func testar_feedback_vinculos() -> void:
-	var inimigo := InimigoSetorial.new()
-	inimigo.estilo = InimigoSetorial.Estilo.CENTELHA_GUIA
+	var inimigo: Variant = (load("res://Scripts/InimigoCentelhaGuia.gd") as Script).new()
 	verificar("ESCUDO" in inimigo.obter_descricao_vinculo(), "o raio dourado não explica que concede escudo")
-	inimigo.estilo = InimigoSetorial.Estilo.ELO_DOURADO
+	inimigo.free()
+	inimigo = (load("res://Scripts/InimigoEloDourado.gd") as Script).new()
 	verificar("DANO COMPARTILHADO" in inimigo.obter_descricao_vinculo(), "o Elo não explica o dano compartilhado")
 	inimigo.free()
 

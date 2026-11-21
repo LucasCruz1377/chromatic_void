@@ -1,4 +1,4 @@
-extends InimigoBase
+extends "res://Scripts/ChefeBase.gd"
 class_name BossCaosPrimaveril
 
 
@@ -26,6 +26,10 @@ enum Estado {
 	DANCA_VINHAS,
 	RECUPERANDO,
 }
+
+@export var forma_miolo: CircleShape2D
+@export var forma_petala: ConvexPolygonShape2D
+@export var forma_espinho: ConvexPolygonShape2D
 
 @export_category("Identidade")
 @export var nome_exibicao := "CAOS PRIMAVERIL"
@@ -69,6 +73,11 @@ var inversao_vinhas_pendente := false
 
 func _ready() -> void:
 	super._ready()
+	vincular_colisao_visual($Visual/Miolo, forma_miolo)
+	for petala in petalas.get_children():
+		vincular_colisao_visual(petala, forma_petala)
+	for espinho in espinhos_ornamentais.get_children():
+		vincular_colisao_visual(espinho, forma_espinho)
 	configurar_circulo_aviso()
 	configurar_aviso_vinhas()
 	ativar_escudo(true)
@@ -179,7 +188,7 @@ func preparar_onda_espinhos(delta: float) -> void:
 	petalas.rotation += giro * delta
 	espinhos_ornamentais.rotation = petalas.rotation
 	aviso_espinhos.rotation += giro * 0.55 * delta
-	aviso_espinhos.modulate.a = 0.34 + absf(sin(Time.get_ticks_msec() * 0.018)) * 0.58
+	aviso_espinhos.modulate.a = 0.34 + absf(sin(Global.tempo_combate_ms() * 0.018)) * 0.58
 	tempo_estado -= delta
 	if tempo_estado <= 0.0:
 		estado = Estado.ONDA_ESPINHOS
@@ -220,15 +229,6 @@ func disparar_anel_espinhos() -> void:
 			Dano * 0.42,
 			235.0 + fase * 30.0,
 			0
-		)
-		replicar_projetil_inimigo_rede(
-			espinho,
-			espinho.global_position,
-			direcao,
-			Dano * 0.42,
-			235.0 + fase * 30.0,
-			0,
-			Color(1.0, 0.34, 0.55)
 		)
 
 
@@ -287,6 +287,11 @@ func lancar_petala(indice: int) -> void:
 		indice,
 		self
 	)
+	if Rede.modo_multiplayer and multiplayer.is_server():
+		_replicar_petala_boss.rpc(
+			petala.global_position, direcao, Dano * 0.54,
+			315.0 + fase * 25.0, 400.0 + fase * 35.0, indice
+		)
 	petala.retornou.connect(_on_petala_retornou)
 	petalas_lancadas.append(petala)
 	petalas_em_voo += 1
@@ -349,7 +354,7 @@ func ir_ao_centro(_delta: float) -> void:
 
 func avisar_vinhas(delta: float) -> void:
 	velocity = Vector2.ZERO
-	aviso_vinhas.modulate.a = 0.28 + absf(sin(Time.get_ticks_msec() * 0.021)) * 0.70
+	aviso_vinhas.modulate.a = 0.28 + absf(sin(Global.tempo_combate_ms() * 0.021)) * 0.70
 	visual.rotation += 0.34 * sentido_rotacao * delta
 	# O aviso acompanha exatamente o ângulo que será entregue ao pivô real.
 	aviso_vinhas.rotation = visual.rotation
@@ -387,8 +392,11 @@ func _replicar_petala_boss(
 ) -> void:
 	if multiplayer.is_server():
 		return
+	var sprite := petalas.get_node_or_null("Petala%d" % indice) as Sprite2D
+	if is_instance_valid(sprite):
+		sprite.visible = false
 	var petala := PETALA_BUMERANGUE.instantiate() as PetalaBumerangue
-	petala.name = "PetalaRede%d" % indice
+	petala.name = "PetalaRede%d_%d" % [indice, Time.get_ticks_usec()]
 	get_tree().current_scene.add_child(petala, true)
 	petala.configurar(posicao, direcao, dano, velocidade, velocidade_retorno, indice, self)
 	petala.set_meta("apenas_visual_rede", true)
@@ -396,6 +404,7 @@ func _replicar_petala_boss(
 	petala.collision_mask = 0
 	petala.monitoring = false
 	petala.monitorable = false
+	petala.retornou.connect(_on_petala_retornou)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -548,6 +557,9 @@ func ativar_escudo(ativar: bool) -> void:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto or valor <= 0.0:
 		return
 	if escudo_ativo:
@@ -600,10 +612,12 @@ func configurar_aviso_vinhas() -> void:
 
 func ao_colidir_com_player(alvo: Node) -> void:
 	if alvo.has_method("tomar_dano"):
-		alvo.tomar_dano(Dano * 0.42)
+		alvo.tomar_dano(Dano * 0.42, global_position)
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or Vida > 0.0:
 		return
 	set_meta("som_morte_personalizado", true)

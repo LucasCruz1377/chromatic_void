@@ -8,6 +8,10 @@ class_name HabilidadeAbracoMaterno
 @export_range(0.1, 1.0, 0.05) var multiplicador_dano: float = 0.55
 
 
+func em_uso() -> bool:
+	return is_instance_valid(piloto_ativacao) and piloto_ativacao.tempo_resistencia_temporaria > 0.0
+
+
 func executar(player) -> void:
 	player.curar(cura)
 	player.aplicar_resistencia_temporaria(
@@ -41,9 +45,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/abraco_materno.svg"
 	var cor := Color(1.0, 0.42, 0.68)
 	return {
-		&"abraco_cura": criar_carta_upgrade("ACOLHIMENTO", "+8 de cura imediata.", icone, cor, Nome, 3, [&"cura"]),
-		&"abraco_duracao": criar_carta_upgrade("CUIDADO DURADOURO", "+1 segundo de resistência.", icone, cor, Nome, 3, [&"duracao"]),
-		&"abraco_resistencia": criar_carta_upgrade("PROTEÇÃO MATERNA", "Recebe mais 8% de redução de dano.", icone, cor, Nome, 3, [&"defesa"]),
+		&"abraco_cura": criar_carta_upgrade("ACOLHIMENTO", "Sua habilidade recupera mais vida.", icone, cor, Nome, 3, [&"cura"]),
+		&"abraco_duracao": criar_carta_upgrade("CUIDADO DURADOURO", "Sua proteção dura mais tempo.", icone, cor, Nome, 3, [&"duracao"]),
+		&"abraco_resistencia": criar_carta_upgrade("PROTEÇÃO MATERNA", "Sua proteção reduz ainda mais o dano recebido.", icone, cor, Nome, 3, [&"defesa"]),
 	}
 
 

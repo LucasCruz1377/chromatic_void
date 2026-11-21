@@ -83,6 +83,8 @@ func _process(delta: float) -> void:
 
 
 func _formatar_valor(dano: float) -> String:
+	if dano > 0.0 and dano < 10.0:
+		return "<0.01" if dano < 0.01 else String.num(dano, 2)
 	if absf(dano - roundf(dano)) < 0.05:
 		return str(roundi(dano))
 	return "%.1f" % dano

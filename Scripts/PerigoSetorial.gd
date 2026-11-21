@@ -14,6 +14,7 @@ var dano := 10.0
 var forca := 0.0
 var tempo := 0.0
 var recarga := 0.0
+var recargas_por_jogador: Dictionary = {}
 
 static func criar(cena: Node, tipo: Forma, inicio: Vector2, fim: Vector2, cor_fx: Color, tempo_aviso: float, tempo_ativo: float, dano_fx: float, tamanho: float, forca_fx := 0.0) -> PerigoSetorial:
 	if not is_instance_valid(cena) or cena.is_queued_for_deletion():
@@ -31,17 +32,38 @@ func _process(delta: float) -> void:
 	elif tempo >= aviso + ativo + 0.18: queue_free()
 
 func _aplicar(delta: float) -> void:
-	var alvo := get_tree().get_first_node_in_group("player") as Node2D
-	if not is_instance_valid(alvo): return
-	var dentro := false
-	if forma == Forma.LINHA: dentro = _distancia_segmento(alvo.global_position, a, b) <= largura * 0.5
-	else: dentro = alvo.global_position.distance_to(a) <= raio
-	if not dentro: return
-	if forma == Forma.PUXAO:
-		if forca > 0.0: alvo.global_position += alvo.global_position.direction_to(a) * forca * delta
-		elif alvo.get("velocity") != null: alvo.set("velocity", Vector2(alvo.get("velocity")) * pow(0.78, delta * 10.0))
-	if recarga <= 0.0 and alvo.has_method("tomar_dano"):
-		alvo.call("tomar_dano", dano); recarga = 0.4 if forma == Forma.PUXAO else ativo + 0.1
+	if bool(get_meta("apenas_visual_rede", false)):
+		return
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
+	var agora := Global.tempo_combate_ms()
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(candidato) or not candidato is Node2D:
+			continue
+		if candidato.is_queued_for_deletion() or candidato.get("vivo") == false:
+			continue
+		var alvo := candidato as Node2D
+		var dentro := false
+		if forma == Forma.LINHA:
+			dentro = _distancia_segmento(alvo.global_position, a, b) <= largura * 0.5
+		else:
+			dentro = alvo.global_position.distance_to(a) <= raio
+		if not dentro:
+			continue
+		if forma == Forma.PUXAO:
+			# Impulso local somente para o jogador do host; o cliente
+			# recebe o dano pelo fluxo autoritativo do Player.
+			if not Rede.modo_multiplayer or alvo.get_multiplayer_authority() == 1:
+				if forca > 0.0:
+					alvo.global_position += alvo.global_position.direction_to(a) * forca * delta
+				elif alvo.get("velocity") != null:
+					alvo.set("velocity", Vector2(alvo.get("velocity")) * pow(0.78, delta * 10.0))
+		var identidade := alvo.get_instance_id()
+		if agora < int(recargas_por_jogador.get(identidade, 0)):
+			continue
+		if alvo.has_method("tomar_dano"):
+			alvo.call("tomar_dano", dano)
+			recargas_por_jogador[identidade] = agora + (400 if forma == Forma.PUXAO else roundi((ativo + 0.1) * 1000.0))
 
 func _draw() -> void:
 	var ligado := tempo >= aviso

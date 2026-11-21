@@ -14,6 +14,10 @@ var recordando := false
 var efeito_tela_ativo: Node
 
 
+func em_uso() -> bool:
+	return recordando
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not recordando and not memoria.is_empty()
 
@@ -58,10 +62,10 @@ func rewind(player) -> void:
 		var vida_salva: float = estado["vida"]
 		if vida_salva > player.vida:
 			player.vida = minf(vida_salva, player.VIDA_MAXIMA)
-		player.modulate.a = 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() / 80.0))
+		player.modulate.a = 0.55 + 0.45 * absf(sin(Global.tempo_combate_ms() / 80.0))
 		if indice % intervalo_rastro_rewind == 0:
 			criar_rastros(player)
-		await player.get_tree().create_timer(intervalo_memorias).timeout
+		await player.get_tree().create_timer(intervalo_memorias, false).timeout
 	finalizar_rewind(player)
 
 
@@ -152,9 +156,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/retrocesso.svg"
 	var cor := Color(0.72, 0.28, 1.0)
 	return {
-		&"retrocesso_memoria": criar_carta_upgrade("MEMÓRIA AMPLIADA", "+30 estados registrados para voltar mais longe.", icone, cor, Nome, 3, [&"distancia"]),
-		&"retrocesso_cura": criar_carta_upgrade("SEGUNDA CHANCE", "+8 de cura ao concluir o retorno.", icone, cor, Nome, 3, [&"cura"]),
-		&"retrocesso_recarga": criar_carta_upgrade("ATALHO TEMPORAL", "Recarga 12% mais rápida.", icone, cor, Nome, 3, [&"cooldown"]),
+		&"retrocesso_memoria": criar_carta_upgrade("MEMÓRIA AMPLIADA", "Sua nave pode voltar mais longe no tempo.", icone, cor, Nome, 3, [&"distancia"]),
+		&"retrocesso_cura": criar_carta_upgrade("SEGUNDA CHANCE", "Voltar no tempo recupera mais vida.", icone, cor, Nome, 3, [&"cura"]),
+		&"retrocesso_recarga": criar_carta_upgrade("ATALHO TEMPORAL", "Seu retrocesso recarrega mais rápido.", icone, cor, Nome, 3, [&"cooldown"]),
 	}
 
 

@@ -1,4 +1,4 @@
-extends InimigoBase
+extends "res://Scripts/ChefeBase.gd"
 class_name BossPet0
 
 
@@ -49,6 +49,12 @@ var tempo_rastro_rolamento := 0.0
 
 func _ready() -> void:
 	super._ready()
+	for peca in visual.get_children():
+		if peca is Polygon2D:
+			for poligono in Geometry2D.decompose_polygon_in_convex(peca.polygon):
+				var forma := ConvexPolygonShape2D.new()
+				forma.points = poligono
+				vincular_colisao_visual(peca, forma)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	fase_alterada.emit(fase)
 	reciclagem_alterada.emit(reciclagem_atual, meta_reciclagem)
@@ -76,6 +82,8 @@ func obter_velocidade_maxima() -> float:
 
 func movimento_livre(delta: float) -> void:
 	if not is_instance_valid(player):
+		# Sem alvo vivo, desacelera; o host retomara o ataque quando houver jogador.
+		velocity = velocity.move_toward(Vector2.ZERO, 150.0 * delta)
 		return
 
 	var ate_player := global_position.direction_to(player.global_position)
@@ -99,6 +107,8 @@ func movimento_livre(delta: float) -> void:
 
 
 func escolher_ataque() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var ataques: Array[StringName] = [&"rolamento", &"tampinha"]
 
 	if fase >= 2:
@@ -144,8 +154,8 @@ func iniciar_rolamento() -> void:
 func avisar_rolamento(delta: float) -> void:
 	velocity = velocity.move_toward(Vector2.ZERO, 520.0 * delta)
 	tempo_estado -= delta
-	linha_aviso.modulate.a = 0.35 + absf(sin(Time.get_ticks_msec() * 0.017)) * 0.65
-	visual.scale = Vector2.ONE * (1.0 + absf(sin(Time.get_ticks_msec() * 0.02)) * 0.08)
+	linha_aviso.modulate.a = 0.35 + absf(sin(Global.tempo_combate_ms() * 0.017)) * 0.65
+	visual.scale = Vector2.ONE * (1.0 + absf(sin(Global.tempo_combate_ms() * 0.02)) * 0.08)
 
 	if tempo_estado <= 0.0:
 		estado = Estado.ROLANDO
@@ -185,6 +195,8 @@ func rolar(delta: float) -> void:
 
 
 func disparar_tampinhas() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if not is_instance_valid(player):
 		return
 
@@ -201,8 +213,6 @@ func disparar_tampinhas() -> void:
 		projetil.tempo_vida = 7.0
 		projetil.configurar(direcao, Dano * 0.7, 410.0, 4)
 		get_tree().current_scene.add_child(projetil, true)
-		if Rede.modo_multiplayer and multiplayer.is_server():
-			_replicar_projetil_pet0.rpc(projetil.position, direcao, projetil.scale, projetil.modulate, Dano * 0.7, 410.0, 4)
 
 	iniciar_recuperacao(0.55)
 
@@ -227,6 +237,8 @@ func pressionar(delta: float) -> void:
 
 
 func liberar_pressao() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var quantidade := 10 + fase * 2
 	for indice in quantidade:
 		var angulo := TAU * float(indice) / float(quantidade)
@@ -236,11 +248,11 @@ func liberar_pressao() -> void:
 		projetil.modulate = Color(0.3, 1.0, 0.65, 1.0)
 		projetil.configurar(Vector2.from_angle(angulo), Dano * 0.42, 220.0, 0)
 		get_tree().current_scene.add_child(projetil, true)
-		if Rede.modo_multiplayer and multiplayer.is_server():
-			_replicar_projetil_pet0.rpc(projetil.position, Vector2.from_angle(angulo), projetil.scale, projetil.modulate, Dano * 0.42, 220.0, 0)
 
 
 func invocar_microplasticos() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var minions_existentes := get_tree().get_nodes_in_group("minion_pet0").size()
 	var quantidade_minions := mini(2 + fase - 2, max_minions - minions_existentes)
 
@@ -250,8 +262,6 @@ func invocar_microplasticos() -> void:
 			TAU * float(indice) / float(maxi(quantidade_minions, 1))
 		) * 70.0
 		get_tree().current_scene.add_child(minion, true)
-		if Rede.modo_multiplayer and multiplayer.is_server():
-			_replicar_minion_pet0.rpc(minion.position)
 
 	var fragmentos_existentes := get_tree().get_nodes_in_group("residuo_pet0").size()
 	var quantidade_fragmentos := mini(2, max_fragmentos - fragmentos_existentes)
@@ -263,65 +273,18 @@ func invocar_microplasticos() -> void:
 
 
 func criar_fragmento(deslocamento: Vector2) -> void:
-	var fragmento := FRAGMENTO.instantiate() as FragmentoReciclavel
-	if not fragmento:
-		return
-	get_tree().current_scene.add_child(fragmento)
-	fragmento.global_position = global_position + deslocamento
-	fragmento.dono_boss = self
-	if Rede.modo_multiplayer and multiplayer.is_server():
-		_replicar_fragmento_pet0.rpc(deslocamento)
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_projetil_pet0(
-	posicao: Vector2,
-	direcao: Vector2,
-	escala: Vector2,
-	cor: Color,
-	dano: float,
-	velocidade: float,
-	rebotes: int
-) -> void:
-	if multiplayer.is_server():
-		return
-	var projetil := PROJETIL.instantiate() as ProjetilInimigo
-	projetil.position = posicao
-	projetil.scale = escala
-	projetil.modulate = cor
-	projetil.configurar(direcao, dano, velocidade, rebotes)
-	projetil.set_meta("apenas_visual_rede", true)
-	projetil.collision_layer = 0
-	projetil.collision_mask = 0
-	projetil.monitoring = false
-	projetil.monitorable = false
-	get_tree().current_scene.add_child(projetil, true)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_minion_pet0(posicao: Vector2) -> void:
-	if multiplayer.is_server():
-		return
-	var minion := MINION.instantiate() as InimigoBase
-	minion.position = posicao
-	minion.set_meta("apenas_visual_rede", true)
-	minion.set_physics_process(false)
-	get_tree().current_scene.add_child(minion, true)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_fragmento_pet0(deslocamento: Vector2) -> void:
-	if multiplayer.is_server():
+	if Rede.modo_multiplayer and not multiplayer.is_server():
 		return
 	var fragmento := FRAGMENTO.instantiate() as FragmentoReciclavel
 	if not fragmento:
 		return
-	get_tree().current_scene.add_child(fragmento, true)
+	# A posicao precisa estar definida antes do spawn de rede.
+	# O MultiplayerSpawner replica a entidade e seu despawn pelo host.
 	fragmento.global_position = global_position + deslocamento
 	fragmento.dono_boss = self
-	fragmento.set_meta("apenas_visual_rede", true)
-	fragmento.set_physics_process(false)
-
-
+	# O dano pode chegar dentro de body_entered; inserir CollisionObject
+	# durante o flush do servidor de fisica provoca erros de shape.
+	get_tree().current_scene.add_child.call_deferred(fragmento, true)
 
 func iniciar_recuperacao(duracao: float) -> void:
 	estado = Estado.RECUPERANDO
@@ -340,6 +303,9 @@ func recuperar(delta: float) -> void:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		super.tomarDano(valor)
+		return
 	if morto:
 		return
 
@@ -351,6 +317,8 @@ func tomarDano(valor: float) -> void:
 
 
 func atualizar_fase() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	var porcentagem := Vida / obter_vida_maxima_atual()
 	var nova_fase := 1
 
@@ -381,6 +349,8 @@ func atualizar_fase() -> void:
 
 
 func registrar_reciclagem(quantidade: int) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or rotulo_removido:
 		return
 
@@ -392,6 +362,8 @@ func registrar_reciclagem(quantidade: int) -> void:
 
 
 func remover_rotulo() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	rotulo_removido = true
 	rotulo.visible = false
 	multiplicador_dano_recebido = 1.25
@@ -401,17 +373,21 @@ func remover_rotulo() -> void:
 
 
 func ao_colidir_com_player(alvo: Node) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or not alvo.has_method("tomar_dano"):
 		return
 
 	var dano_contato := Dano if estado == Estado.ROLANDO else Dano * 0.45
-	alvo.tomar_dano(dano_contato)
+	alvo.tomar_dano(dano_contato, global_position)
 
 	if estado == Estado.ROLANDO:
 		iniciar_recuperacao(0.9)
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto:
 		return
 	if Vida > 0.0:

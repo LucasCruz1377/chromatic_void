@@ -8,8 +8,10 @@ const TelaInicialScript = preload("res://Scripts/tela_inicial.gd")
 class AlvoContato:
 	extends Node
 	var dano_recebido := 0.0
+	var origem_recebida := Vector2.INF
 
-	func tomar_dano(valor: float) -> void:
+	func tomar_dano(valor: float, origem_dano := Vector2.INF) -> void:
+		origem_recebida = origem_dano
 		dano_recebido += valor
 
 
@@ -61,17 +63,18 @@ func testar_perfil_mobile_e_particulas() -> void:
 
 func testar_contato_vinculos_e_pausa() -> void:
 	var cena := load("res://Entities/InimigoCentelhaGuia.tscn") as PackedScene
-	var inimigo := cena.instantiate() as InimigoSetorial
+	var inimigo: Variant = cena.instantiate()
 	add_child(inimigo)
 	var alvo := AlvoContato.new()
 	add_child(alvo)
 	await get_tree().process_frame
-	var vida_antes := inimigo.Vida
+	var vida_antes: float = inimigo.Vida
 	inimigo.ao_colidir_com_player(alvo)
+	verificar(alvo.origem_recebida.is_equal_approx(inimigo.global_position), "o contato perdeu a origem do dano direcional")
 	verificar(not inimigo.morto, "o inimigo novo morreu ao tocar o player")
 	verificar(is_equal_approx(inimigo.Vida, vida_antes), "o contato removeu vida do inimigo novo")
 
-	var aliado := cena.instantiate() as InimigoSetorial
+	var aliado: Variant = cena.instantiate()
 	add_child(aliado)
 	await get_tree().process_frame
 	inimigo.protegido = aliado

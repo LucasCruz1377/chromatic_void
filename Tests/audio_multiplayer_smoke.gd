@@ -32,27 +32,28 @@ func _ready() -> void:
 		checar(controlador.has_method("_tocar_ametista_remoto"), "som da Ametista não configurado")
 		controlador.queue_free()
 
-	var fonte_projetil := FileAccess.get_file_as_string("res://Scripts/ProjetilInimigo.gd")
-	checar(
-		"configuracao.property_set_sync(caminho, false)" in fonte_projetil,
-		"projéteis ainda enviam posição continuamente"
+	Rede.modo_multiplayer = true
+	var projetil := (load("res://Entities/ProjetilInimigo.tscn") as PackedScene).instantiate() as ProjetilInimigo
+	add_child(projetil)
+	var sincronizador := projetil.get_node("MultiplayerSynchronizer") as MultiplayerSynchronizer
+	for propriedade in ["position", "rotation", "direcao", "rebotes"]:
+		var caminho := NodePath(".:" + propriedade)
+		checar(sincronizador.replication_config.property_get_sync(caminho), "projetil nao sincroniza " + propriedade)
+	Rede.modo_multiplayer = false
+	projetil.queue_free()
+	var canhao := (load("res://Entities/InimigoSementeCanhao.tscn") as PackedScene).instantiate() as InimigoSetorialBase
+	add_child(canhao)
+	var configuracao_spawn: Dictionary = {}
+	child_entered_tree.connect(func(filho: Node) -> void:
+		if filho is ProjetilInimigo:
+			configuracao_spawn["direcao"] = filho.direcao
+			configuracao_spawn["velocidade"] = filho.velocidade
+			configuracao_spawn["dano"] = filho.dano
 	)
-	checar(
-		"_processar_bordas_visual()" in fonte_projetil,
-		"predição visual não trata as bordas"
-	)
-
-	var fonte_setorial := FileAccess.get_file_as_string("res://Scripts/InimigoSetorial.gd")
-	checar(
-		fonte_setorial.find("p.configurar(dir,dano_tiro,vel,0)") <
-		fonte_setorial.find("cena.add_child(p, true)"),
-		"tiro setorial ainda nasce antes de ser configurado"
-	)
-	checar(
-		fonte_setorial.find("d.position=global_position") <
-		fonte_setorial.find("batalha.add_child(d, true)"),
-		"drones do Satélite Berço ainda nascem sem posição inicial"
-	)
+	canhao._disparar(Vector2.DOWN, 271.0, 13.0)
+	checar(configuracao_spawn.get("direcao") == Vector2.DOWN and configuracao_spawn.get("velocidade") == 271.0 and configuracao_spawn.get("dano") == 13.0, "tiro setorial nasceu antes de ser configurado")
+	canhao.queue_free()
+	await testar_drones_em_colisao()
 
 	var batalha := (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate()
 	get_tree().root.add_child.call_deferred(batalha)
@@ -75,3 +76,33 @@ func _ready() -> void:
 		get_tree().quit(0)
 	else:
 		get_tree().quit(1)
+
+
+func testar_drones_em_colisao() -> void:
+	var satelite := preload("res://Entities/InimigoSateliteBerco.tscn").instantiate() as InimigoBase
+	satelite.position = Vector2(300, 180)
+	add_child(satelite)
+	satelite.set_physics_process(false)
+	var tiro := Area2D.new()
+	tiro.collision_mask = satelite.collision_layer
+	tiro.position = satelite.position
+	var colisor := CollisionShape2D.new()
+	colisor.shape = CircleShape2D.new()
+	tiro.add_child(colisor)
+	var posicoes: Array[Vector2] = []
+	var contar_drone := func(filho: Node):
+		if filho.scene_file_path == "res://Entities/InimigoCentelhaGuia.tscn":
+			posicoes.append(filho.position)
+	child_entered_tree.connect(contar_drone)
+	tiro.body_entered.connect(func(alvo: Node2D):
+		if alvo == satelite:
+			satelite.tomarDano(1.0)
+			satelite.tomarDano(100.0)
+			checar(posicoes.is_empty(), "drones criados durante o sinal de colisão")
+	)
+	add_child(tiro)
+	for quadro in 5:
+		await get_tree().physics_frame
+	child_entered_tree.disconnect(contar_drone)
+	checar(posicoes == [Vector2(270, 190), Vector2(330, 190)], "drones ausentes, duplicados ou fora de posição após impacto letal")
+	tiro.queue_free()

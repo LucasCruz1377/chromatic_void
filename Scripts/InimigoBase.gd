@@ -42,6 +42,7 @@ signal morreu(inimigo: InimigoBase)
 
 var Vida: float = 0.0
 var tempo_atordoado: float = 0.0
+var movimento_replicado_pelo_sincronizador := false
 var morto: bool = false
 var tween_impacto: Tween
 var modulacao_base := Color.WHITE
@@ -58,16 +59,6 @@ var tempo_morte_congelado := 0.0
 var tempo_pulso_abaixo_zero := 0.0
 var nevasca_ao_quebrar := false
 var abaixo_zero_ativo := false
-var tempo_snapshot_visual_rede := 0.0
-var sequencia_snapshot_visual_rede := 0
-var ultima_sequencia_snapshot_visual_rede := -1
-
-const INTERVALO_SNAPSHOT_BOSS_REDE := 0.08
-const ESTADOS_BOSS_REDE: Array[StringName] = [
-	&"fase", &"fase_atual", &"estado", &"tempo_estado", &"ataque_pendente",
-	&"angulo_visual", &"progresso_fusao", &"tempo_animacao_visual",
-]
-
 @onready var player = get_tree().get_first_node_in_group("player")
 @onready var anim: AnimationPlayer = get_node_or_null("anim") as AnimationPlayer
 @onready var dmg_taken_audio: AudioStreamPlayer2D = (
@@ -136,7 +127,9 @@ func _configurar_sincronizador_multiplayer() -> void:
 		NodePath(".:morto"),
 		NodePath(".:visible"),
 		NodePath(".:self_modulate"),
+		NodePath(".:scale"),
 		NodePath(".:camadas_gelo"),
+		NodePath(".:flor_visivel"),
 		NodePath(".:congelado_totalmente"),
 	]
 	for caminho in propriedades_movimento:
@@ -156,120 +149,7 @@ func _configurar_sincronizador_multiplayer() -> void:
 	# só ocupam banda quando mudam. Isso preserva os snapshots de posição sob carga.
 	sincronizador.replication_interval = 0.066
 	add_child(sincronizador)
-
-
-func _process(delta: float) -> void:
-	if Rede.modo_multiplayer and not multiplayer.is_server():
-		# O cliente não executa IA, dano nem colisões. Apenas prolonga visualmente
-		# a última velocidade conhecida até o próximo snapshot do host.
-		if not morto and visible:
-			global_position += velocity * delta
-		return
-	if (
-		not Rede.modo_multiplayer
-		or not is_in_group("boss")
-		or morto
-	):
-		return
-	tempo_snapshot_visual_rede -= delta
-	if tempo_snapshot_visual_rede > 0.0:
-		return
-	tempo_snapshot_visual_rede = INTERVALO_SNAPSHOT_BOSS_REDE
-	sequencia_snapshot_visual_rede += 1
-	_aplicar_snapshot_visual_boss.rpc(_capturar_snapshot_visual_boss(sequencia_snapshot_visual_rede))
-
-
-func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
-	var estados: Dictionary = {}
-	for propriedade in ESTADOS_BOSS_REDE:
-		if _possui_propriedade_rede(propriedade):
-			estados[propriedade] = get(propriedade)
-	var visuais: Array[Dictionary] = []
-	for candidato in find_children("*", "CanvasItem", true, false):
-		var item := candidato as CanvasItem
-		if not is_instance_valid(item):
-			continue
-		var dados: Dictionary = {
-			"caminho": get_path_to(item),
-			"visible": item.visible,
-			"modulate": item.modulate,
-			"self_modulate": item.self_modulate,
-		}
-		if item is Node2D:
-			var node_2d := item as Node2D
-			dados["position"] = node_2d.position
-			dados["rotation"] = node_2d.rotation
-			dados["scale"] = node_2d.scale
-		if item is GPUParticles2D:
-			dados["emitting"] = (item as GPUParticles2D).emitting
-		if item is Line2D:
-			dados["points"] = (item as Line2D).points
-		visuais.append(dados)
-	var animacoes: Array[Dictionary] = []
-	for candidato in find_children("*", "AnimationPlayer", true, false):
-		var reprodutor := candidato as AnimationPlayer
-		if is_instance_valid(reprodutor) and not reprodutor.current_animation.is_empty():
-			animacoes.append({
-				"caminho": get_path_to(reprodutor),
-				"animacao": reprodutor.current_animation,
-				"posicao": reprodutor.current_animation_position,
-				"tocando": reprodutor.is_playing(),
-			})
-	return {"sequencia": sequencia, "estados": estados, "visuais": visuais, "animacoes": animacoes}
-
-
-@rpc("authority", "call_remote", "reliable", 0)
-func _aplicar_snapshot_visual_boss(snapshot: Dictionary) -> void:
-	if multiplayer.is_server():
-		return
-	var sequencia := int(snapshot.get("sequencia", 0))
-	if sequencia > 0 and sequencia <= ultima_sequencia_snapshot_visual_rede:
-		return
-	if sequencia > 0:
-		ultima_sequencia_snapshot_visual_rede = sequencia
-	var estados: Dictionary = snapshot.get("estados", {})
-	for propriedade in estados:
-		var nome := StringName(propriedade)
-		if _possui_propriedade_rede(nome):
-			set(nome, estados[propriedade])
-	for dados_variant in Array(snapshot.get("visuais", [])):
-		var dados := Dictionary(dados_variant)
-		var item := get_node_or_null(NodePath(str(dados.get("caminho", "")))) as CanvasItem
-		if not is_instance_valid(item):
-			continue
-		item.visible = bool(dados.get("visible", item.visible))
-		item.modulate = dados.get("modulate", item.modulate)
-		item.self_modulate = dados.get("self_modulate", item.self_modulate)
-		if item is Node2D:
-			var node_2d := item as Node2D
-			node_2d.position = dados.get("position", node_2d.position)
-			node_2d.rotation = float(dados.get("rotation", node_2d.rotation))
-			node_2d.scale = dados.get("scale", node_2d.scale)
-		if item is GPUParticles2D and dados.has("emitting"):
-			(item as GPUParticles2D).emitting = bool(dados["emitting"])
-		if item is Line2D and dados.has("points"):
-			(item as Line2D).points = dados["points"]
-	for dados_variant in Array(snapshot.get("animacoes", [])):
-		var dados := Dictionary(dados_variant)
-		var reprodutor := get_node_or_null(
-			NodePath(str(dados.get("caminho", "")))
-		) as AnimationPlayer
-		if not is_instance_valid(reprodutor):
-			continue
-		var animacao := StringName(dados.get("animacao", &""))
-		if bool(dados.get("tocando", false)) and reprodutor.current_animation != animacao:
-			reprodutor.play(animacao)
-		var posicao := float(dados.get("posicao", 0.0))
-		if absf(reprodutor.current_animation_position - posicao) > 0.16:
-			reprodutor.seek(posicao, true)
-	queue_redraw()
-
-
-func _possui_propriedade_rede(nome: StringName) -> bool:
-	for dados in get_property_list():
-		if StringName(dados.get("name", "")) == nome:
-			return true
-	return false
+	movimento_replicado_pelo_sincronizador = true
 
 
 func _physics_process(delta: float) -> void:
@@ -278,6 +158,9 @@ func _physics_process(delta: float) -> void:
 	if morto:
 		return
 
+	atualizar_flor(delta)
+	if morto:
+		return
 	atualizar_estados(delta)
 	_atualizar_estado_gelo(delta)
 	if morto:
@@ -361,7 +244,7 @@ func aplicar_camada_gelo(
 func _solicitar_camada_gelo(
 	quantidade: int, ativar_nevasca: bool, ativar_abaixo_zero: bool
 ) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -486,6 +369,69 @@ func Mover(_delta: float) -> void:
 	pass
 
 
+var bonus_marca := 1.0
+var acertos_jardim: Dictionary = {}
+var tempo_flor := 0.0
+var flor_visivel := false:
+	set(valor):
+		flor_visivel = valor
+		var flor := get_node_or_null("FlorCrescente") as Polygon2D
+		if valor and not is_instance_valid(flor):
+			flor = Polygon2D.new()
+			flor.name = "FlorCrescente"
+			flor.position = Vector2(0, -16)
+			flor.color = Color("ff79b2")
+			flor.z_index = 5
+			var pontos := PackedVector2Array()
+			for i in 40:
+				var angulo := TAU * i / 40.0
+				pontos.append(Vector2.from_angle(angulo) * (5.0 + 2.0 * cos(5.0 * angulo)))
+			flor.polygon = pontos
+			add_child(flor)
+		if is_instance_valid(flor):
+			flor.visible = valor
+
+func registrar_ataque_lunar(piloto: Node) -> void:
+	if morto or not piloto is Player or (Rede.modo_multiplayer and not multiplayer.is_server()):
+		return
+	match piloto.mutacao_habilidade:
+		&"u10_marca_cacador":
+			bonus_marca = 1.2
+		&"u05_jardim_crescente":
+			var id := piloto.get_instance_id()
+			if tempo_flor <= 0.0:
+				acertos_jardim[id] = int(acertos_jardim.get(id, 0)) + 1
+				if acertos_jardim[id] >= 6:
+					infectar_flor()
+
+func infectar_flor() -> void:
+	if morto or tempo_flor > 0.0:
+		return
+	acertos_jardim.clear()
+	tempo_flor = 5.0
+	flor_visivel = true
+
+func atualizar_flor(delta: float) -> void:
+	if tempo_flor <= 0.0:
+		return
+	for owner_id in get_shape_owners():
+		if is_shape_owner_disabled(owner_id):
+			continue
+		for i in shape_owner_get_shape_count(owner_id):
+			var consulta := PhysicsShapeQueryParameters2D.new()
+			consulta.shape = shape_owner_get_shape(owner_id, i)
+			consulta.transform = global_transform * shape_owner_get_transform(owner_id)
+			consulta.collision_mask = 4
+			consulta.exclude = [get_rid()]
+			for contato in get_world_2d().direct_space_state.intersect_shape(consulta):
+				var outro := contato.collider as InimigoBase
+				if is_instance_valid(outro):
+					outro.infectar_flor()
+	tempo_flor = maxf(0.0, tempo_flor - delta)
+	if tempo_flor == 0.0:
+		flor_visivel = false
+		tomarDano(obter_vida_maxima_atual() * 0.2)
+
 func tomarDano(valor: float) -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
@@ -493,11 +439,11 @@ func tomarDano(valor: float) -> void:
 	if morto or valor <= 0.0:
 		return
 
-	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
+	var dano_final := maxf(valor * bonus_marca * multiplicador_dano_recebido, 0.0)
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
-	if has_meta("laco_parceiro") and Time.get_ticks_msec() <= int(get_meta("laco_expira", 0)):
+	if has_meta("laco_parceiro") and Global.tempo_combate_ms() <= int(get_meta("laco_expira", 0)):
 		var parceiro = get_meta("laco_parceiro")
 		if is_instance_valid(parceiro) and parceiro.has_method("receber_eco_laco"):
 			parceiro.call("receber_eco_laco", dano_final * 0.38)
@@ -506,25 +452,53 @@ func tomarDano(valor: float) -> void:
 		morrer()
 
 
+# Limite por piloto evita RPCs falsos com dano arbitrario e spam de impactos.
+var janela_dano_pilotos: Dictionary = {}
+
+
 @rpc("any_peer", "call_remote", "reliable")
 func _solicitar_dano_ao_host(valor: float) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not Rede.modo_multiplayer or not multiplayer.is_server() or morto:
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
-	tomarDano(clampf(valor, 0.0, 10000.0))
+	if is_nan(valor) or is_inf(valor) or valor <= 0.0 or valor > 1500.0:
+		return
+	var piloto: Player
+	for candidato in get_tree().get_nodes_in_group("player"):
+		if candidato is Player and candidato.peer_id_dono == remetente:
+			piloto = candidato as Player
+			break
+	if not is_instance_valid(piloto) or not piloto.vivo:
+		return
+	# Abrange tiros longos e habilidades de area, sem aceitar hits de outra arena.
+	if piloto.global_position.distance_squared_to(global_position) > 2400.0 * 2400.0:
+		return
+	var agora := Global.tempo_combate_ms()
+	var registro: Dictionary = janela_dano_pilotos.get(remetente, {})
+	if agora - int(registro.get("inicio", 0)) >= 1000:
+		registro = {"inicio": agora, "acumulado": 0.0}
+	var acumulado := float(registro.get("acumulado", 0.0))
+	if acumulado + valor > 5000.0:
+		return
+	registro["acumulado"] = acumulado + valor
+	janela_dano_pilotos[remetente] = registro
+	registrar_ataque_lunar(piloto)
+	tomarDano(valor)
 
 
 func receber_eco_laco(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto or valor <= 0.0:
 		return
-	Vida = maxf(Vida - valor * multiplicador_dano_recebido, 0.0)
+	Vida = maxf(Vida - valor * bonus_marca * multiplicador_dano_recebido, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	var cena := get_tree().current_scene
 	if is_instance_valid(cena):
 		EfeitoCombateCena.criar(cena, global_position, EfeitoCombate.Tipo.ACERTO, Color(1.0, 0.34, 0.58), 0.65)
-		IndicadorDanoCena.criar(cena, global_position, valor * multiplicador_dano_recebido, Color(1.0, 0.42, 0.68))
+		IndicadorDanoCena.criar(cena, global_position, valor * bonus_marca * multiplicador_dano_recebido, Color(1.0, 0.42, 0.68))
 	if Vida <= 0.0:
 		morrer()
 
@@ -670,13 +644,15 @@ func ao_colidir_com_player(alvo: Node) -> void:
 		return
 
 	if alvo.has_method("tomar_dano"):
-		alvo.tomar_dano(Dano)
+		alvo.tomar_dano(Dano, global_position)
 
 	if morre_ao_colidir_player:
 		morrer()
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if morto:
 		return
 	# Mantém compatibilidade com o Player antigo, que chama morrer() em todo
@@ -803,6 +779,12 @@ func replicar_projetil_inimigo_rede(
 		or not is_instance_valid(projetil)
 	):
 		return
+	if projetil is ProjetilInimigo and projetil.get_parent() == get_tree().current_scene:
+		# A arena ja replica essas cenas com MultiplayerSpawner.
+		# Nao enviar uma segunda copia por RPC.
+		(projetil as ProjetilInimigo).cor_visual_rede = cor
+		projetil.scale = escala
+		return
 	_replicar_projetil_inimigo_rpc.rpc(
 		posicao, direcao, dano, velocidade, rebotes, cor, escala
 	)
@@ -831,6 +813,7 @@ func _replicar_projetil_inimigo_rpc(
 	projetil.collision_mask = 0
 	projetil.monitoring = false
 	projetil.monitorable = false
+	projetil.name = "ReplicaVisualLocal_%d_%d" % [Time.get_ticks_usec(), randi()]
 	get_tree().current_scene.add_child(projetil, true)
 
 

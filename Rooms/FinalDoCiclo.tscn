@@ -1,0 +1,46 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/FinalDoCiclo.gd" id="1"]
+[ext_resource type="AudioStream" path="res://Assets/Final/final_do_ciclo.ogg" id="2"]
+
+[ext_resource type="Script" path="res://Scripts/BuildFinal.gd" id="3"]
+
+[sub_resource type="World3D" id="MundoRetrato"]
+
+[node name="FinalDoCiclo" type="Node2D"]
+script = ExtResource("1")
+texture_filter = 2
+
+[node name="RetratoNave" type="SubViewport" parent="."]
+world_3d = SubResource("MundoRetrato")
+transparent_bg = true
+disable_3d = true
+size = Vector2i(128, 128)
+
+[node name="Modelo" type="Node2D" parent="RetratoNave"]
+
+[node name="Audio" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2")
+bus = &"Sound"
+
+[node name="RolagemBuild" type="ScrollContainer" parent="."]
+visible = false
+offset_left = 8.0
+offset_top = 10.0
+offset_right = 231.0
+offset_bottom = 528.0
+horizontal_scroll_mode = 0
+
+[node name="Build" type="Control" parent="RolagemBuild"]
+mouse_filter = 1
+script = ExtResource("3")
+
+[node name="Voltar" type="Button" parent="."]
+visible = false
+offset_left = 393.0
+offset_top = 484.0
+offset_right = 567.0
+offset_bottom = 530.0
+flat = true
+text = "VOLTAR AO MENU"
+theme_override_font_sizes/font_size = 11

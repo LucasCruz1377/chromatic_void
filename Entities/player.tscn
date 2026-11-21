@@ -125,6 +125,17 @@ properties/17/path = NodePath(".:habilidade_rede_path")
 properties/17/spawn = true
 properties/17/replication_mode = 2
 
+properties/18/path = NodePath(".:estrelas_solidarias")
+properties/18/spawn = true
+properties/18/replication_mode = 2
+properties/19/path = NodePath(".:direcao_propulsao")
+properties/19/spawn = true
+properties/19/replication_mode = 2
+
+properties/20/path = NodePath(".:fase_estrelas_solidarias")
+properties/20/spawn = true
+properties/20/replication_mode = 1
+
 [node name="Player" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1, 0.99607843, 1, 1)
 scale = Vector2(0.67625564, 0.67625564)

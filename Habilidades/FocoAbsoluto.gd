@@ -12,6 +12,10 @@ var escala_anterior := 1.0
 var movimento_anterior := 1.0
 
 
+func em_uso() -> bool:
+	return ativo
+
+
 func pode_ativar(player) -> bool:
 	return super(player) and not ativo
 
@@ -20,7 +24,7 @@ func executar(player) -> void:
 	ativo = true
 	escala_anterior = Engine.time_scale
 	movimento_anterior = player.multiplicador_velocidade_habilidade
-	instante_final_ms = Time.get_ticks_msec() + int(duracao_real * 1000.0)
+	instante_final_ms = Global.tempo_combate_ms() + int(duracao_real * 1000.0)
 	Engine.time_scale = escala_tempo
 	player.multiplicador_velocidade_habilidade = movimento_anterior / escala_tempo
 	player.foco_movimento_tempo_real = true
@@ -36,7 +40,7 @@ func atualizar(player, _delta: float) -> void:
 		Engine.time_scale = escala_anterior
 		ativo = false
 		return
-	if Time.get_ticks_msec() >= instante_final_ms:
+	if Global.tempo_combate_ms() >= instante_final_ms:
 		finalizar(player)
 
 
@@ -69,9 +73,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/foco_absoluto.svg"
 	var cor := Color(0.3, 0.62, 1.0)
 	return {
-		&"foco_duracao": criar_carta_upgrade("PERCEPÇÃO EXPANDIDA", "+0,6 segundo de duração real.", icone, cor, Nome, 3, [&"duracao"]),
-		&"foco_intensidade": criar_carta_upgrade("MUNDO EM DETALHES", "Desacelera o mundo mais 12%.", icone, cor, Nome, 3, [&"intensidade"]),
-		&"foco_recarga": criar_carta_upgrade("CLAREZA RENOVADA", "Recarga 12% mais rápida.", icone, cor, Nome, 3, [&"cooldown"]),
+		&"foco_duracao": criar_carta_upgrade("PERCEPÇÃO EXPANDIDA", "Seu foco permanece ativo por mais tempo.", icone, cor, Nome, 3, [&"duracao"]),
+		&"foco_intensidade": criar_carta_upgrade("MUNDO EM DETALHES", "Seu foco deixa o mundo ainda mais lento.", icone, cor, Nome, 3, [&"intensidade"]),
+		&"foco_recarga": criar_carta_upgrade("CLAREZA RENOVADA", "Seu foco recarrega mais rápido.", icone, cor, Nome, 3, [&"cooldown"]),
 	}
 
 

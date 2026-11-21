@@ -1,4 +1,4 @@
-extends InimigoBase
+extends "res://Scripts/ChefeBase.gd"
 class_name BossSizigiaEterna
 
 
@@ -81,7 +81,6 @@ func _ready() -> void:
 	VidaMaxima = vidas_fases[0]
 	Vida = VidaMaxima
 	escala_base_impacto = scale
-	atualizar_colisao(64.0)
 	criar_visuais_transicao()
 	atualizar_visual_fase()
 	vida_alterada.emit(Vida, VidaMaxima)
@@ -130,9 +129,12 @@ func obter_cor_fase() -> Color:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto or estado == Estado.TRANSICAO or valor <= 0.0:
 		return
-	var dano_final := maxf(valor * multiplicador_dano_recebido, 0.0)
+	var dano_final := maxf(valor * bonus_marca * multiplicador_dano_recebido, 0.0)
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
@@ -182,7 +184,7 @@ func Mover(delta: float) -> void:
 		var distancia := global_position.distance_to(player.global_position)
 		var alvo_distancia := 280.0 if fase_atual == Fase.LUA else 235.0
 		var fator := 1.0 if distancia > alvo_distancia else -0.58
-		var tangente := direcao_player.rotated(PI * 0.5) * sin(Time.get_ticks_msec() * 0.0016)
+		var tangente := direcao_player.rotated(PI * 0.5) * sin(Global.tempo_combate_ms() * 0.0016)
 		velocity = (direcao_player * fator + tangente * 0.52).normalized() * Velocidade
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, Velocidade * delta)
@@ -201,7 +203,7 @@ func atualizar_contato(delta: float) -> void:
 	if global_position.distance_to(player.global_position) <= raio_contato:
 		tempo_contato = 0.85
 		if player.has_method("tomar_dano"):
-			player.tomar_dano(Dano * 0.64)
+			player.tomar_dano(Dano * 0.64, global_position)
 		if fase_atual >= Fase.SOL and player.has_method("aplicar_queimadura"):
 			player.aplicar_queimadura(Dano * 0.24, 2.7)
 
@@ -314,6 +316,8 @@ func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
 
 
 func anunciar_ataque(texto: String) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	subtitulo_alterado.emit(texto)
 	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
 		_receber_aviso_ataque.rpc(texto)
@@ -446,7 +450,7 @@ func iniciar_investida_solar() -> void:
 
 
 func _ativar_investida_depois(token: int, fase_esperada: int) -> void:
-	await get_tree().create_timer(0.72).timeout
+	await get_tree().create_timer(0.72, false).timeout
 	if morto or token != token_acao or fase_atual != fase_esperada or estado == Estado.TRANSICAO:
 		return
 	estado = Estado.INVESTINDO
@@ -523,7 +527,7 @@ func iniciar_totalidade(frenesi: bool) -> void:
 
 
 func criar_raio_totalidade_atrasado(fase_esperada: int, atraso: float) -> void:
-	await get_tree().create_timer(atraso).timeout
+	await get_tree().create_timer(atraso, false).timeout
 	if morto or fase_atual != fase_esperada or estado == Estado.TRANSICAO:
 		return
 	criar_raio_solar(true)
@@ -560,7 +564,7 @@ func _transicao_para_sol(token: int) -> void:
 		return
 	if token != token_transicao:
 		return
-	await get_tree().create_timer(0.22).timeout
+	await get_tree().create_timer(0.22, false).timeout
 	if morto:
 		ocultar_visuais_transicao()
 		return
@@ -587,7 +591,6 @@ func concluir_transicao_para_sol() -> void:
 	VidaMaxima = vidas_fases[1]
 	Vida = VidaMaxima
 	Velocidade = 118.0
-	atualizar_colisao(68.0)
 	estado = Estado.MOVENDO
 	tempo_ataque = 1.35
 	ultimo_ataque = -1
@@ -608,7 +611,7 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 	var posicao_sol_inicial := global_position
 	global_position = CENTRO_FUSAO
 	preparar_fusao(posicao_sol_inicial)
-	await get_tree().create_timer(0.42).timeout
+	await get_tree().create_timer(0.42, false).timeout
 	if morto:
 		ocultar_visuais_transicao()
 		return
@@ -629,7 +632,7 @@ func iniciar_cinematica_eclipse(token: int) -> void:
 		return
 	if token != token_transicao:
 		return
-	await get_tree().create_timer(0.48).timeout
+	await get_tree().create_timer(0.48, false).timeout
 	if morto:
 		ocultar_visuais_transicao()
 		return
@@ -703,7 +706,6 @@ func preparar_dados_fase_eclipse() -> void:
 	VidaMaxima = vidas_fases[2]
 	Vida = VidaMaxima
 	Velocidade = 128.0
-	atualizar_colisao(70.0)
 	atualizar_visual_fase()
 	# O corpo definitivo já nasce luminoso sob a tela escura; a onda de choque
 	# não é mais responsável por "ligar" o neon depois.
@@ -826,16 +828,25 @@ func limpar_ataques_astrais() -> void:
 				node.queue_free()
 
 
-func atualizar_colisao(raio: float) -> void:
-	var forma := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if not is_instance_valid(forma):
-		return
-	var circulo := forma.shape as CircleShape2D
-	if is_instance_valid(circulo):
-		circulo.radius = raio
+func _process(delta: float) -> void:
+	super._process(delta)
+	if Rede.modo_multiplayer and not multiplayer.is_server() and not morto:
+		atualizar_colisao_visual()
+
+
+func atualizar_colisao_visual() -> void:
+	var circulo := $CollisionShape2D.shape as CircleShape2D
+	var raio_textura := 108.0
+	if visual_fase.texture == TEXTURA_SOL:
+		raio_textura = 124.0
+	elif visual_fase.texture == TEXTURA_ECLIPSE:
+		raio_textura = 126.0
+	circulo.radius = raio_textura * visual_fase.scale.x
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if Vida > 0.0:
 		return
 	set_meta("som_morte_personalizado", true)
@@ -892,6 +903,7 @@ func atualizar_visual_fase() -> void:
 			visual_fase.texture = TEXTURA_ECLIPSE
 			visual_fase.scale = Vector2.ONE * 0.53
 	visual_fase.visible = true
+	atualizar_colisao_visual()
 	visual_fase.self_modulate = (
 		Color(1.92, 1.58, 2.14, 1.0)
 		if fase_atual == Fase.ECLIPSE
@@ -908,6 +920,7 @@ func atualizar_animacao_visual(delta: float) -> void:
 	var amplitude_pulso := 0.032 if fase_atual == Fase.SOL else 0.018
 	var pulso := 1.0 + sin(tempo_animacao_visual * velocidade_pulso) * amplitude_pulso
 	visual_fase.scale = Vector2.ONE * escala_base * pulso
+	atualizar_colisao_visual()
 	if fase_atual == Fase.SOL:
 		# O núcleo pontudo novo permanece legível enquanto a coroa externa gira e
 		# pulsa como na versão antiga.
@@ -1043,7 +1056,7 @@ func piscar_eclipse_no_escuro(token: int) -> void:
 	)
 	acomodar.tween_method(atualizar_flash_shader, 0.48, 0.0, 0.42)
 	await acomodar.finished
-	await get_tree().create_timer(0.36).timeout
+	await get_tree().create_timer(0.36, false).timeout
 
 
 func ocultar_visuais_transicao() -> void:

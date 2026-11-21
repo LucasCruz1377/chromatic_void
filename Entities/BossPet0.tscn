@@ -2,10 +2,6 @@
 
 [ext_resource type="Script" uid="uid://dib4t0j7ajfgo" path="res://Scripts/BossPet0.gd" id="1"]
 
-[sub_resource type="CapsuleShape2D" id="Capsule"]
-radius = 36.0
-height = 142.0
-
 [node name="BossPet0" type="CharacterBody2D" unique_id=167804022 groups=["boss", "inimigo"]]
 z_index = 3
 collision_layer = 4
@@ -60,7 +56,3 @@ text = "PET-0"
 points = PackedVector2Array(-39, -22, 25, -22, 41, -13)
 width = 3.0
 default_color = Color(0.82, 1, 1, 0.9)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=189897197]
-rotation = 1.5707964
-shape = SubResource("Capsule")

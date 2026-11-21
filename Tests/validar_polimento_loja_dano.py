@@ -199,11 +199,11 @@ assert 'recompensa_xp * multiplicador_xp' in ENEMY
 assert 'xp_jogador *= float(jogador.call("obter_multiplicador_xp_loja"))' in ASTEROIDE_BONUS
 assert 'float(boss.get("Dano")) * (1.75 if suprema else 1.35)' in SIZIGIA_FINAL
 assert '_encerrar_mecanica(13.0)' in SIZIGIA_FINAL
-assert 'radius = 36.0\nheight = 142.0' in BOSS_PET
-assert 'radius = 110.0' in BOSS_AMPARO
-assert 'radius = 84.0' in BOSS_AMETISTA
-assert 'radius = 82.0' in BOSS_FLOR and 'Dano = 48.0' in BOSS_FLOR
-assert 'radius = 64.0' in BOSS_SIZIGIA and 'Dano = 42.0' in BOSS_SIZIGIA
+assert "vincular_colisao_visual(peca, forma)" in (ROOT / "Scripts/BossPet0.gd").read_text()
+assert 'radius = 32.0' in BOSS_AMPARO
+assert 'radius = 48.0' in BOSS_AMETISTA
+assert 'radius = 40.5' in BOSS_FLOR and 'Dano = 48.0' in BOSS_FLOR
+assert 'radius = 59.4' in BOSS_SIZIGIA and 'Dano = 42.0' in BOSS_SIZIGIA
 assert 'return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)' in ENEMY
 assert '"cor": cor_particulas' in ENEMY
 assert '&"hitflash_inimigo"' in BATALHA

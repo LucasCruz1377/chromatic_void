@@ -109,7 +109,7 @@ func golpear(delta: float) -> void:
 	if not dano_aplicado:
 		for corpo in golpe.get_overlapping_bodies():
 			if corpo.is_in_group("player") and corpo.has_method("tomar_dano"):
-				corpo.tomar_dano(Dano)
+				corpo.tomar_dano(Dano, global_position)
 				dano_aplicado = true
 				break
 

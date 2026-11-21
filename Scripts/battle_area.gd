@@ -1,6 +1,7 @@
 extends Node2D
 
 
+const FinalDoCiclo := preload("res://Scripts/FinalDoCiclo.gd")
 const DadosSetores = preload("res://Scripts/SectorData.gd")
 const PainelDesenvolvedorCena = preload("res://Scripts/PainelDesenvolvedor.gd")
 const ControlesMobileCena = preload("res://Scripts/ControlesMobile.gd")
@@ -89,6 +90,12 @@ const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var world_spawner: MultiplayerSpawner = $WorldSpawner
 
+var final_apresentado := false
+var recorde_antes_da_partida := 0
+var combo_maximo_partida := 0
+var duracao_partida := 0.0
+var conquistas_anteriores: Array[StringName] = []
+
 var pontos: float = 0.0
 var timer: float = TIMER_MAX
 var tutorial_ativo: bool = false
@@ -130,22 +137,61 @@ var aguardando_renascimento_local := false
 var tempo_renascimento_local := 0.0
 var preservar_conexao_ao_sair := false
 var disparos_visuais_rede: Dictionary = {}
+# A fila preserva os impactos recebidos enquanto o spawn do tiro ainda
+# nao chegou ao host. Nunca somamos dano sem validar o alvo existente.
+var impactos_projetil_rede: Dictionary = {}
+var fila_impactos_rede: Array[Dictionary] = []
+var chaves_impactos_pendentes: Dictionary = {}
+var ultimo_numero_disparo_peer: Dictionary = {}
+const LIMITE_FILA_IMPACTOS_REDE := 384
+const PRAZO_FILA_IMPACTOS_MS := 2200
 var tempo_combo_restante := 0.0
 var combo_observado := 0
 var tamanhos_viewport_rede: Dictionary = {}
 var limite_arena_coop: LimiteArenaCoop
 var tempo_posicoes_rede := 0.0
+var sequencia_movimento_local := 0
+var ultima_sequencia_movimento_peer: Dictionary = {}
+var ultimo_movimento_peer_ms: Dictionary = {}
+var sequencia_mundo_rede := 0
+var disparos_autorizados_rede: Dictionary = {}
+var entrada_estado_confirmada := false
+const JANELA_IMPACTO_REDE_MS := 1500
+const DISTANCIA_TOLERANCIA_IMPACTO := 175.0
+const VELOCIDADE_MAXIMA_REDE := 1250.0
+const FOLGA_MOVIMENTO_REDE := 140.0
 var cristais_coop_acumulados := 0
 var cristais_coop_aplicados := 0
 var area_coop_recebida := false
 var tempo_reenvio_viewport := 0.0
 var area_visual_coop := Rect2(Vector2.ZERO, Global.TAMANHO_BASE_JOGO)
+# Reconciliação periódica dos resíduos do Pet-0: elimina cópias órfãs.
+const INTERVALO_RECONCILIACAO_RESIDUOS := 1.0
+var tempo_reconciliacao_residuos := 0.0
+var sequencia_reconciliacao_residuos := 0
+var ultima_sequencia_residuos := -1
+var ausencias_residuos: Dictionary = {}
+var estados_entrada_pendentes: Dictionary = {}
+# Estado autoritativo dos inimigos regulares. Nao remove no cliente os
+# nodes do MultiplayerSpawner (isso causaria ERR_UNAUTHORIZED no despawn).
+const INTERVALO_RECONCILIACAO_INIMIGOS := 1.5
+const AUSENCIAS_PARA_DESATIVAR_INIMIGO := 3
+var tempo_reconciliacao_inimigos := 0.0
+var sequencia_reconciliacao_inimigos := 0
+var ultima_sequencia_reconciliacao_inimigos := -1
+var ausencias_inimigos_rede: Dictionary = {}
+var inimigos_suspensos_rede: Dictionary = {}
+
 
 
 func _ready() -> void:
+	recorde_antes_da_partida = Global.pontos_maximos
+	conquistas_anteriores.assign(Global.conquistas_desbloqueadas)
 	get_tree().paused = false
 	Global.limpar_area_multiplayer()
 	_configurar_spawners_multiplayer()
+	if Rede.modo_multiplayer:
+		set_process(true)
 	_configurar_jogadores_multiplayer()
 	_configurar_area_coop()
 	Global.definir_cursor_interface(false)
@@ -194,7 +240,123 @@ func _ready() -> void:
 		proximo_nivel_boss = 1
 
 
+
+func _atualizar_reconciliacao_inimigos(delta: float) -> void:
+	if not Rede.esta_conectado() or not multiplayer.is_server():
+		return
+	tempo_reconciliacao_inimigos -= delta
+	if tempo_reconciliacao_inimigos > 0.0:
+		return
+	tempo_reconciliacao_inimigos = INTERVALO_RECONCILIACAO_INIMIGOS
+	sequencia_reconciliacao_inimigos += 1
+	var existentes: PackedStringArray = []
+	for candidato in get_tree().get_nodes_in_group("inimigo"):
+		if not is_instance_valid(candidato) or candidato.is_queued_for_deletion():
+			continue
+		if not is_ancestor_of(candidato) or candidato.is_in_group("boss"):
+			continue
+		if candidato is InimigoBase:
+			existentes.append(str(get_path_to(candidato)))
+	_reconciliar_inimigos_regulares.rpc(sequencia_reconciliacao_inimigos, existentes)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _reconciliar_inimigos_regulares(sequencia: int, existentes: PackedStringArray) -> void:
+	if multiplayer.is_server() or sequencia <= ultima_sequencia_reconciliacao_inimigos:
+		return
+	ultima_sequencia_reconciliacao_inimigos = sequencia
+	for candidato in get_tree().get_nodes_in_group("inimigo"):
+		if not (candidato is InimigoBase) or not is_instance_valid(candidato):
+			continue
+		if candidato.is_queued_for_deletion() or candidato.is_in_group("boss"):
+			continue
+		if not is_ancestor_of(candidato):
+			continue
+		var caminho := str(get_path_to(candidato))
+		if existentes.has(caminho):
+			ausencias_inimigos_rede.erase(caminho)
+			if inimigos_suspensos_rede.has(caminho):
+				# Um snapshot posterior pode provar que o objeto nao e orfao.
+				candidato.collision_layer = int(inimigos_suspensos_rede[caminho].get("layer", 0))
+				candidato.collision_mask = int(inimigos_suspensos_rede[caminho].get("mask", 0))
+				candidato.visible = bool(inimigos_suspensos_rede[caminho].get("visible", true))
+				inimigos_suspensos_rede.erase(caminho)
+			continue
+		var ausencias := int(ausencias_inimigos_rede.get(caminho, 0)) + 1
+		ausencias_inimigos_rede[caminho] = ausencias
+		if ausencias < AUSENCIAS_PARA_DESATIVAR_INIMIGO or inimigos_suspensos_rede.has(caminho):
+			continue
+		# Fantasmas perdem renderizacao e colisao, sem competir com a
+		# remocao autoritativa do MultiplayerSpawner.
+		inimigos_suspensos_rede[caminho] = {
+			"layer": candidato.collision_layer,
+			"mask": candidato.collision_mask,
+			"visible": candidato.visible,
+		}
+		candidato.visible = false
+		candidato.collision_layer = 0
+		candidato.collision_mask = 0
+	for caminho in ausencias_inimigos_rede.keys():
+		if not is_instance_valid(get_node_or_null(NodePath(str(caminho)))):
+			ausencias_inimigos_rede.erase(caminho)
+			inimigos_suspensos_rede.erase(caminho)
+
+
+func _atualizar_reconciliacao_residuos(delta: float) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	tempo_reconciliacao_residuos -= delta
+	if tempo_reconciliacao_residuos > 0.0:
+		return
+	tempo_reconciliacao_residuos = INTERVALO_RECONCILIACAO_RESIDUOS
+	sequencia_reconciliacao_residuos += 1
+	var ativos: PackedStringArray = []
+	for grupo in [&"residuo_pet0", &"minion_pet0"]:
+		for node in get_tree().get_nodes_in_group(grupo):
+			if is_instance_valid(node) and not node.is_queued_for_deletion() and node.get_parent() == self:
+				ativos.append(String(grupo) + ":" + String(node.name))
+	_reconciliar_residuos_pet0.rpc(sequencia_reconciliacao_residuos, ativos)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _reconciliar_residuos_pet0(sequencia: int, ativos: PackedStringArray) -> void:
+	if multiplayer.is_server() or sequencia <= ultima_sequencia_residuos:
+		return
+	ultima_sequencia_residuos = sequencia
+	for grupo in [&"residuo_pet0", &"minion_pet0"]:
+		for node in get_tree().get_nodes_in_group(grupo):
+			if not is_instance_valid(node) or node.is_queued_for_deletion() or node.get_parent() != self:
+				continue
+			var chave := String(grupo) + ":" + String(node.name)
+			if ativos.has(chave):
+				ausencias_residuos.erase(chave)
+				continue
+			# Duas confirmações evitam apagar um spawn ainda em trânsito.
+			var faltas := int(ausencias_residuos.get(chave, 0)) + 1
+			ausencias_residuos[chave] = faltas
+			if faltas >= 2:
+				# Nao apagar entidades criadas pelo MultiplayerSpawner no cliente:
+				# somente o host pode emitir o despawn correspondente.
+				ausencias_residuos.erase(chave)
+
+
+func preparar_saida_multiplayer() -> void:
+	_encerrar_audio_arena()
+	# Encerrar o peer enquanto as naves e sincronizadores ainda existem.
+	# Fechar somente em _exit_tree deixa pacotes chegarem a caminhos removidos.
+	if Rede.modo_multiplayer:
+		Rede.encerrar_lobby()
+
+
+func _encerrar_audio_arena() -> void:
+	if is_instance_valid(tocarmusica):
+		tocarmusica.stop()
+		tocarmusica.stream = null
+	musica_partida_padrao = null
+
+
 func _exit_tree() -> void:
+	_encerrar_audio_arena()
 	Global.salvar_conquistas()
 	Global.limpar_controle_toque()
 	Global.definir_cursor_interface(true)
@@ -220,8 +382,50 @@ func _configurar_jogadores_multiplayer() -> void:
 	if multiplayer.is_server():
 		player.call_deferred("aplicar_configuracao_visual_rede")
 	else:
-		_enviar_solicitacao_entrada()
+		Rede.arena_host_disponivel.connect(_enviar_solicitacao_entrada)
+	Rede.anunciar_arena_carregada()
 	call_deferred("_vincular_jogador_local")
+
+
+# O relay evita chamadas RPC diretamente a nodes dinamicos ja removidos.
+func replicar_snapshot_visual_boss(boss: ChefeBase, snapshot: Dictionary) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion() or boss.get_parent() != self:
+		return
+	for pacote in boss.dividir_snapshot_visual(snapshot):
+		_receber_snapshot_visual_boss.rpc(get_path_to(boss), pacote)
+
+
+@rpc("authority", "call_remote", "unreliable", 4)
+func _receber_snapshot_visual_boss(caminho: NodePath, snapshot: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	var boss := get_node_or_null(caminho) as ChefeBase
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion():
+		return
+	boss.receber_parte_snapshot_visual(snapshot)
+
+
+# Os satelites e as amarras existem como dados usados por _draw().
+# Esse pacote e pequeno e confiavel; a replicacao de CanvasItem nao
+# transmite arrays internos dos bosses.
+func replicar_estado_defesas_boss(boss: BossMensal, dados: Dictionary) -> void:
+	if not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion() or boss.get_parent() != self:
+		return
+	_receber_estado_defesas_boss.rpc(get_path_to(boss), dados)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_estado_defesas_boss(caminho: NodePath, dados: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	var boss := get_node_or_null(caminho) as BossMensal
+	if not is_instance_valid(boss) or boss.is_queued_for_deletion():
+		return
+	boss.receber_estado_defesas_rede(dados)
 
 
 func _configurar_spawners_multiplayer() -> void:
@@ -233,8 +437,9 @@ func _configurar_spawners_multiplayer() -> void:
 	for caminho in [
 		"res://Entities/AsteroideBonus.tscn",
 		"res://Entities/ProjetilInimigo.tscn",
+		"res://Entities/FragmentoReciclavel.tscn",
+		"res://Entities/InimigoMinion.tscn",
 		"res://Entities/EspinhoPrimaveril.tscn",
-		"res://Entities/PetalaBumerangue.tscn",
 		"res://Entities/VinhaEspinhosa.tscn",
 	]:
 		if ResourceLoader.exists(caminho):
@@ -285,6 +490,8 @@ func _posicao_inicial_peer(id: int) -> Vector2:
 
 
 func _enviar_solicitacao_entrada() -> void:
+	if not Rede.arena_host_pronta:
+		return
 	tempo_nova_solicitacao_rede = 0.5
 	_solicitar_entrada_partida.rpc_id(
 		1, Rede.nickname_local, Rede.obter_configuracao_nave_local()
@@ -296,7 +503,10 @@ func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> v
 	if not multiplayer.is_server():
 		return
 	var id := multiplayer.get_remote_sender_id()
-	if id <= 1 or is_instance_valid(_obter_jogador_rede(id)):
+	if id <= 1 or not Rede.jogadores.has(id):
+		return
+	if is_instance_valid(_obter_jogador_rede(id)):
+		_enviar_estado_de_entrada_rede(id)
 		return
 	_configurar_player_host.rpc_id(
 		id,
@@ -311,6 +521,100 @@ func _solicitar_entrada_partida(nickname: String, configuracao: Dictionary) -> v
 	}) as Player
 	if is_instance_valid(novo):
 		jogadores_rede[id] = novo
+	_enviar_estado_de_entrada_rede(id)
+
+
+func _enviar_estado_de_entrada_rede(id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var pilotos: Dictionary = {}
+	for chave in jogadores_rede:
+		var piloto := _obter_jogador_rede(int(chave))
+		if not is_instance_valid(piloto):
+			continue
+		pilotos[int(chave)] = {
+			"configuracao": piloto.obter_estado_loadout_rede(),
+			"nivel": piloto.nivel_atual,
+			"xp": piloto.xp_atual,
+			"xp_necessario": piloto.xp_necessario,
+			"melhorias_pendentes": piloto.pontos_upgrade_pendentes,
+			"vida": piloto.vida,
+			"vida_maxima": piloto.VIDA_MAXIMA,
+			"vivo": piloto.vivo,
+			"posicao": piloto.global_position,
+			"rotacao": piloto.rotation,
+			"rerolls": piloto.rerolls_upgrades_restantes,
+			"escudo": piloto.escudo_habilidade,
+			"estrelas": piloto.estrelas_solidarias,
+			"fase_estrelas": piloto.fase_estrelas_solidarias,
+			"propulsao": piloto.direcao_propulsao,
+		}
+	_receber_estado_de_entrada_rede.rpc_id(id, {
+		"pilotos": pilotos,
+		"setor": str(setor_atual),
+		"combo": Global.Combo,
+		"pontos": Global.Pontos,
+		"cristais": cristais_coop_acumulados,
+		"boss_id": str(boss_atual_id),
+		"proximo_nivel_boss": proximo_nivel_boss,
+		"setores_concluidos": setores_concluidos.duplicate(),
+		"game_over": game_over,
+	})
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_estado_de_entrada_rede(dados: Dictionary) -> void:
+	if multiplayer.is_server() or entrada_estado_confirmada:
+		return
+	setor_atual = StringName(str(dados.get("setor", setor_atual)))
+	boss_atual_id = StringName(str(dados.get("boss_id", boss_atual_id)))
+	proximo_nivel_boss = maxi(1, int(dados.get("proximo_nivel_boss", proximo_nivel_boss)))
+	var concluidos_rede: Array[StringName] = []
+	for valor in Array(dados.get("setores_concluidos", [])):
+		concluidos_rede.append(StringName(str(valor)))
+	setores_concluidos = concluidos_rede
+	game_over = bool(dados.get("game_over", false))
+	_receber_combo_rede(
+		int(dados.get("combo", 0)), 0.0, int(dados.get("pontos", 0))
+	)
+	_aplicar_total_cristais_coop(int(dados.get("cristais", 0)))
+	estados_entrada_pendentes = Dictionary(dados.get("pilotos", {})).duplicate(true)
+	_aplicar_estados_entrada_pendentes()
+
+
+func _aplicar_estados_entrada_pendentes() -> void:
+	for chave in estados_entrada_pendentes.keys():
+		var identificador := int(chave)
+		var piloto := _obter_jogador_rede(identificador)
+		if not is_instance_valid(piloto):
+			continue
+		var dados: Dictionary = estados_entrada_pendentes[chave]
+		if identificador == Rede.peer_local():
+			piloto.global_position = Vector2(dados.get("posicao", piloto.global_position))
+			piloto.rotation = float(dados.get("rotacao", piloto.rotation))
+			piloto.vida = clampf(float(dados.get("vida", piloto.vida)), 0.0, maxf(float(dados.get("vida_maxima", piloto.VIDA_MAXIMA)), 1.0))
+			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
+			piloto.escudo_habilidade = maxf(0.0, float(dados.get("escudo", piloto.escudo_habilidade)))
+			piloto.rerolls_upgrades_restantes = maxi(0, int(dados.get("rerolls", piloto.rerolls_upgrades_restantes)))
+			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
+			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
+			piloto.xp_necessario = maxi(1, int(dados.get("xp_necessario", 10)))
+			piloto.pontos_upgrade_pendentes = maxi(
+				0, int(dados.get("melhorias_pendentes", 0))
+			)
+			piloto.pontos_upgrade_alterados.emit(piloto.pontos_upgrade_pendentes)
+		else:
+			piloto.aplicar_estado_loadout_rede(Dictionary(dados.get("configuracao", {})))
+			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
+			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
+			piloto.vida = maxf(0.0, float(dados.get("vida", piloto.vida)))
+			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
+		piloto.estrelas_solidarias = dados.get("estrelas", Vector4.ZERO)
+		piloto.fase_estrelas_solidarias = float(dados.get("fase_estrelas", 0.0))
+		piloto.direcao_propulsao = clampi(int(dados.get("propulsao", 0)), -1, 1)
+		estados_entrada_pendentes.erase(chave)
+	if estados_entrada_pendentes.is_empty() and not entrada_estado_confirmada:
+		entrada_estado_confirmada = true
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -350,13 +654,21 @@ func replicar_disparo_player(dados: Dictionary) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _encaminhar_disparo_visual(dados: Dictionary) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
+	var identificador := str(dados.get("id_disparo", ""))
+	if not identificador.begins_with("%d:" % remetente):
+		return
+	var numero_disparo := str(dados.get("id_disparo", "")).get_slice(":", 1).to_int()
+	if numero_disparo <= int(ultimo_numero_disparo_peer.get(remetente, 0)):
+		return
+	ultimo_numero_disparo_peer[remetente] = numero_disparo
 	dados["peer_id"] = remetente
 	_criar_disparo_visual_rede(dados)
+	_processar_fila_impactos_rede()
 	_enviar_disparo_visual_para_outros(dados, remetente)
 
 
@@ -392,6 +704,16 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	projetil.monitorable = false
 	add_child(projetil, true)
 	disparos_visuais_rede[id_disparo] = projetil
+	if multiplayer.is_server():
+		disparos_autorizados_rede[id_disparo] = {
+			"peer_id": int(dados.get("peer_id", 0)),
+			"origem": Vector2(dados.get("posicao", Vector2.ZERO)),
+			"criado_ms": Global.tempo_combate_ms(),
+			"feixe": str(dados.get("estilo", "")) == "perielio_ray",
+			"velocidade": clampf(float(dados.get("velocidade", 1000.0)), 0.0, 2400.0),
+			"critico": bool(dados.get("critico", false)),
+			"tempo_vida": clampf(float(dados.get("tempo_vida", 5.0)), 0.05, 15.0),
+		}
 	projetil.tree_exiting.connect(_remover_referencia_disparo.bind(id_disparo))
 	projetil.global_position = Vector2(dados.get("posicao", Vector2.ZERO))
 	projetil.global_rotation = float(dados.get("rotacao", 0.0))
@@ -401,15 +723,16 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	projetil.set("eh_fragmento", bool(dados.get("fragmento", false)))
 	projetil.set("eh_critico", bool(dados.get("critico", false)))
 	projetil.set("dono_player", _obter_jogador_rede(int(dados.get("peer_id", 0))))
+	var cor := Color(dados.get("cor", Color.WHITE))
 	if bool(dados.get("fragmento", false)):
+		# A cor deve vir do disparo original, nao de uma constante local.
 		var visual_fragmento := projetil.get_node_or_null("Polygon2D") as Polygon2D
 		var luz_fragmento := projetil.get_node_or_null("PointLight2D") as PointLight2D
 		if is_instance_valid(visual_fragmento):
-			visual_fragmento.color = Color(0.92, 0.20, 1.0, 1.0)
+			visual_fragmento.color = cor
 		if is_instance_valid(luz_fragmento):
-			luz_fragmento.color = Color(0.95, 0.30, 1.0, 1.0)
+			luz_fragmento.color = cor
 	var estilo := StringName(str(dados.get("estilo", "")))
-	var cor := Color(dados.get("cor", Color.WHITE))
 	var config_variant: Variant = dados.get("config", {})
 	var config: Dictionary = config_variant if config_variant is Dictionary else {}
 	if not estilo.is_empty() and projetil.has_method("configurar_estilo_monthly"):
@@ -427,12 +750,14 @@ func replicar_estado_disparo(dados: Dictionary) -> void:
 		_encaminhar_estado_disparo.rpc_id(1, dados)
 
 
-@rpc("any_peer", "call_remote", "unreliable_ordered", 2)
+@rpc("any_peer", "call_remote", "unreliable", 2)
 func _encaminhar_estado_disparo(dados: Dictionary) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	if not str(dados.get("id_disparo", "")).begins_with("%d:" % remetente):
 		return
 	dados["peer_id"] = remetente
 	_aplicar_estado_disparo_visual(dados)
@@ -446,7 +771,7 @@ func _enviar_estado_disparo_para_outros(dados: Dictionary, remetente: int) -> vo
 			_receber_estado_disparo.rpc_id(id, dados)
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 2)
+@rpc("authority", "call_remote", "unreliable", 2)
 func _receber_estado_disparo(dados: Dictionary) -> void:
 	_aplicar_estado_disparo_visual(dados)
 
@@ -463,12 +788,15 @@ func _aplicar_estado_disparo_visual(dados: Dictionary) -> void:
 			float(dados.get("rotacao", projetil.global_rotation)),
 			Vector2(dados.get("escala", projetil.scale)),
 			bool(dados.get("visivel", projetil.visible)),
-			Color(dados.get("cor", Color.TRANSPARENT))
+			Color(dados.get("cor", Color.TRANSPARENT)),
+			int(dados.get("sequencia", 0))
 		)
 
 
 func finalizar_disparo_rede(id_disparo: String) -> void:
-	if id_disparo.is_empty() or not Rede.esta_conectado():
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
+	if id_disparo.is_empty():
 		return
 	var dados := {"id_disparo": id_disparo}
 	if multiplayer.is_server():
@@ -479,16 +807,22 @@ func finalizar_disparo_rede(id_disparo: String) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _encaminhar_fim_disparo(dados: Dictionary) -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
 	if not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	if not str(dados.get("id_disparo", "")).begins_with("%d:" % remetente):
 		return
 	_finalizar_disparo_visual(str(dados.get("id_disparo", "")))
 	_enviar_fim_disparo_para_outros(dados, remetente)
 
 
 func _enviar_fim_disparo_para_outros(dados: Dictionary, remetente: int) -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
 	for chave in Rede.jogadores:
 		var id := int(chave)
 		if id != 1 and id != remetente:
@@ -497,10 +831,14 @@ func _enviar_fim_disparo_para_outros(dados: Dictionary, remetente: int) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _receber_fim_disparo(dados: Dictionary) -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null or not Rede.esta_conectado():
+		return
 	_finalizar_disparo_visual(str(dados.get("id_disparo", "")))
 
 
 func _finalizar_disparo_visual(id_disparo: String) -> void:
+	if disparos_autorizados_rede.has(id_disparo):
+		disparos_autorizados_rede[id_disparo]["expirado_ms"] = Global.tempo_combate_ms()
 	var candidato: Variant = disparos_visuais_rede.get(id_disparo)
 	disparos_visuais_rede.erase(id_disparo)
 	if is_instance_valid(candidato) and candidato is Node:
@@ -518,6 +856,138 @@ func _obter_disparo_visual(id_disparo: String) -> Node2D:
 
 func _remover_referencia_disparo(id_disparo: String) -> void:
 	disparos_visuais_rede.erase(id_disparo)
+
+
+func enviar_impacto_projetil_rede(
+	id_disparo: String, inimigo: Node2D, dano: float,
+	posicao: Vector2, numero_impacto: int
+) -> void:
+	if not Rede.esta_conectado() or multiplayer.is_server():
+		return
+	if id_disparo.is_empty() or numero_impacto <= 0:
+		return
+	if not is_instance_valid(inimigo) or not is_ancestor_of(inimigo):
+		return
+	if not posicao.is_finite():
+		return
+	_solicitar_impacto_projetil_rede.rpc_id(
+		1, id_disparo, get_path_to(inimigo), dano, posicao, numero_impacto
+	)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _solicitar_impacto_projetil_rede(
+	id_disparo: String, caminho_inimigo: NodePath,
+	dano: float, posicao_impacto: Vector2, numero_impacto: int
+) -> void:
+	if Rede.pausa_do_host or not Rede.modo_multiplayer or not multiplayer.is_server():
+		return
+	var remetente := multiplayer.get_remote_sender_id()
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
+		return
+	if not id_disparo.begins_with("%d:" % remetente):
+		return
+	if numero_impacto <= 0 or numero_impacto > 100000:
+		return
+	if is_nan(dano) or is_inf(dano) or dano <= 0.0 or dano > 1500.0:
+		return
+	if not posicao_impacto.is_finite():
+		return
+	var chave := "%s#%d" % [id_disparo, numero_impacto]
+	if impactos_projetil_rede.has(chave) or chaves_impactos_pendentes.has(chave):
+		return
+	if fila_impactos_rede.size() >= LIMITE_FILA_IMPACTOS_REDE:
+		return
+	chaves_impactos_pendentes[chave] = true
+	fila_impactos_rede.append({
+		"chave": chave,
+		"peer_id": remetente,
+		"id_disparo": id_disparo,
+		"caminho": caminho_inimigo,
+		"dano": dano,
+		"posicao": posicao_impacto,
+		"recebido_ms": Global.tempo_combate_ms(),
+	})
+	_processar_fila_impactos_rede()
+
+
+func _processar_fila_impactos_rede() -> void:
+	if not multiplayer.is_server() or fila_impactos_rede.is_empty():
+		return
+	var agora := Global.tempo_combate_ms()
+	var bloqueados: Dictionary = {}
+	var restantes: Array[Dictionary] = []
+	for entrada in fila_impactos_rede:
+		var peer_id := int(entrada.get("peer_id", 0))
+		var chave := str(entrada.get("chave", ""))
+		var recebido := int(entrada.get("recebido_ms", agora))
+		if agora - recebido > PRAZO_FILA_IMPACTOS_MS or not Rede.jogadores.has(peer_id):
+			chaves_impactos_pendentes.erase(chave)
+			continue
+		# Os impactos do mesmo piloto sao processados na ordem recebida.
+		# Outros pilotos nao sao bloqueados por um disparo atrasado.
+		if bloqueados.has(peer_id):
+			restantes.append(entrada)
+			continue
+		var id_disparo := str(entrada.get("id_disparo", ""))
+		if not disparos_autorizados_rede.has(id_disparo):
+			bloqueados[peer_id] = true
+			restantes.append(entrada)
+			continue
+		_aplicar_impacto_aguardando_rede(entrada, agora)
+		chaves_impactos_pendentes.erase(chave)
+	fila_impactos_rede = restantes
+
+
+func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
+	var chave := str(entrada.get("chave", ""))
+	if impactos_projetil_rede.has(chave):
+		return
+	var id_disparo := str(entrada.get("id_disparo", ""))
+	var peer_id := int(entrada.get("peer_id", 0))
+	var disparo: Dictionary = disparos_autorizados_rede.get(id_disparo, {})
+	if disparo.is_empty() or int(disparo.get("peer_id", 0)) != peer_id:
+		return
+	var criado := int(disparo.get("criado_ms", 0))
+	if criado <= 0:
+		return
+	var duracao_ms := roundi(float(disparo.get("tempo_vida", 5.0)) * 1000.0)
+	var feixe := bool(disparo.get("feixe", false))
+	if not feixe and agora - criado > duracao_ms + PRAZO_FILA_IMPACTOS_MS:
+		return
+	var expirado := int(disparo.get("expirado_ms", 0))
+	if expirado > 0 and int(entrada.get("recebido_ms", agora)) > expirado + 600:
+		return
+	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as InimigoBase
+	if not is_instance_valid(inimigo) or inimigo.morto or inimigo.is_queued_for_deletion():
+		return
+	if feixe:
+		var visual := _obter_disparo_visual(id_disparo)
+		if not is_instance_valid(visual) or not visual.call("feixe_intersecta", inimigo):
+			return
+	else:
+		var posicao := Vector2(entrada.get("posicao", Vector2.ZERO))
+		var origem := Vector2(disparo.get("origem", Vector2.ZERO))
+		var velocidade := float(disparo.get("velocidade", 1000.0))
+		var tempo_percorrido := maxf(
+			float(int(entrada.get("recebido_ms", agora)) - criado) / 1000.0, 0.0
+		)
+		var distancia_maxima := velocidade * (tempo_percorrido + 0.35) + DISTANCIA_TOLERANCIA_IMPACTO
+		if origem.distance_to(posicao) > distancia_maxima:
+			return
+		if inimigo.global_position.distance_to(posicao) > DISTANCIA_TOLERANCIA_IMPACTO:
+			return
+	var piloto := _obter_jogador_rede(peer_id)
+	if not is_instance_valid(piloto):
+		return
+	# Registra antes de aplicar: dano letal pode destruir o proprio alvo.
+	impactos_projetil_rede[chave] = agora
+	inimigo.set_meta("impacto_critico", bool(disparo.get("critico", false)))
+	if inimigo is InimigoBase:
+		inimigo.registrar_ataque_lunar(piloto)
+	inimigo.tomarDano(float(entrada.get("dano", 0.0)))
+	if is_instance_valid(inimigo):
+		inimigo.remove_meta("impacto_critico")
 
 
 func _obter_jogador_rede(id: int) -> Player:
@@ -539,7 +1009,7 @@ func replicar_habilidade_player(dados: Dictionary) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _encaminhar_habilidade_visual(dados: Dictionary) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
@@ -603,6 +1073,16 @@ func _encaminhar_loadout(dados: Dictionary) -> void:
 	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
 	dados["peer_id"] = remetente
+	var player_autor := _obter_jogador_rede(remetente)
+	if not is_instance_valid(player_autor):
+		return
+	var configuracao_recebida := Dictionary(dados.get("configuracao", {}))
+	configuracao_recebida["upgrades"] = player_autor.niveis_upgrades.duplicate(true)
+	# O cliente nao pode reescrever os atributos de progressao do servidor.
+	configuracao_recebida["arma"] = str(player_autor.arma_monthly)
+	configuracao_recebida["modulo"] = str(player_autor.modulo_nave)
+	configuracao_recebida["mutacao"] = str(player_autor.mutacao_habilidade)
+	dados["configuracao"] = configuracao_recebida
 	_aplicar_loadout_rede(dados)
 	_enviar_loadout_para_outros(dados, remetente)
 
@@ -759,6 +1239,25 @@ func _configurar_camera_local() -> void:
 
 
 func _on_jogador_rede_desconectado(id: int) -> void:
+	if not is_inside_tree() or multiplayer == null:
+		return
+	ultima_sequencia_movimento_peer.erase(id)
+	ultimo_movimento_peer_ms.erase(id)
+	ultimo_numero_disparo_peer.erase(id)
+	var restantes: Array[Dictionary] = []
+	for entrada in fila_impactos_rede:
+		if int(entrada.get("peer_id", 0)) == id:
+			chaves_impactos_pendentes.erase(str(entrada.get("chave", "")))
+		else:
+			restantes.append(entrada)
+	fila_impactos_rede = restantes
+	for identificador in disparos_autorizados_rede.keys():
+		if int(Dictionary(disparos_autorizados_rede[identificador]).get("peer_id", 0)) == id:
+			disparos_autorizados_rede.erase(identificador)
+	for chave in disparos_visuais_rede.keys():
+		if str(chave).begins_with("%d:" % id):
+			_finalizar_disparo_visual(str(chave))
+	estados_entrada_pendentes.erase(id)
 	if multiplayer.is_server():
 		renascimentos_pendentes.erase(id)
 	if multiplayer.is_server() and tamanhos_viewport_rede.has(id):
@@ -770,7 +1269,9 @@ func _on_jogador_rede_desconectado(id: int) -> void:
 	var nome := "O OUTRO PILOTO"
 	if is_instance_valid(remoto):
 		nome = str((remoto as Node).get("nickname_rede"))
-		(remoto as Node).queue_free()
+		# O PlayerSpawner pertence ao host; clientes aguardam o despawn.
+		if multiplayer.is_server():
+			(remoto as Node).queue_free()
 	jogadores_rede.erase(id)
 	_mostrar_aviso_rede(tr("%s DESCONECTOU • A PARTIDA CONTINUA") % nome.to_upper(), false)
 
@@ -788,14 +1289,23 @@ func _on_desconexao_detectada(mensagem: String, host_perdido: bool) -> void:
 
 
 func _process(delta: float) -> void:
+	_atualizar_reconciliacao_inimigos(delta)
+	if Rede.modo_multiplayer and multiplayer.is_server():
+		_processar_fila_impactos_rede()
+		_limpar_registros_rede()
+	_atualizar_reconciliacao_residuos(delta)
 	_processar_combo(delta)
 	if Rede.modo_multiplayer:
+		if not estados_entrada_pendentes.is_empty():
+			_aplicar_estados_entrada_pendentes()
 		_processar_posicoes_rede(delta)
 		_processar_sincronizacao_area_coop(delta)
 		_atualizar_hud_boss_cliente()
 		_atualizar_estado_morte_multiplayer(delta)
 	if game_over or escolha_setor_ativa or intro_boss_ativa:
 		return
+	duracao_partida += delta
+	combo_maximo_partida = maxi(combo_maximo_partida, Global.Combo)
 	atualizar_pontos(delta)
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		if not is_instance_valid(_obter_jogador_rede(Rede.peer_local())):
@@ -828,6 +1338,19 @@ func _process(delta: float) -> void:
 		timer = calcular_tempo_spawn()
 
 
+func _limpar_registros_rede() -> void:
+	var agora := Global.tempo_combate_ms()
+	for identificador in disparos_autorizados_rede.keys():
+		var disparo: Dictionary = disparos_autorizados_rede[identificador]
+		if disparo.get("feixe", false) and is_instance_valid(_obter_disparo_visual(identificador)):
+			continue
+		if agora - int(disparo.get("criado_ms", 0)) > 6000:
+			disparos_autorizados_rede.erase(identificador)
+	for chave in impactos_projetil_rede.keys():
+		if agora - int(impactos_projetil_rede[chave]) > 20000:
+			impactos_projetil_rede.erase(chave)
+
+
 func _processar_posicoes_rede(delta: float) -> void:
 	if not Rede.esta_conectado():
 		return
@@ -836,32 +1359,69 @@ func _processar_posicoes_rede(delta: float) -> void:
 		return
 	tempo_posicoes_rede = INTERVALO_POSICOES_REDE
 	if multiplayer.is_server():
-		_publicar_posicoes_mundo.rpc(_capturar_posicoes_mundo())
+		for pacote in _dividir_posicoes_mundo(_capturar_posicoes_mundo()):
+			_publicar_posicoes_mundo.rpc(pacote)
 		return
 	var jogador_local := _obter_jogador_rede(Rede.peer_local()) as Player
 	if is_instance_valid(jogador_local):
+		sequencia_movimento_local += 1
 		_receber_posicao_player.rpc_id(
 			1, jogador_local.global_position, jogador_local.rotation,
-			jogador_local.velocity
+			jogador_local.velocity, sequencia_movimento_local
 		)
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 0)
 func _receber_posicao_player(
-	posicao: Vector2, rotacao: float, velocidade: Vector2
+	posicao: Vector2, rotacao: float, velocidade: Vector2, sequencia: int
 ) -> void:
-	if not multiplayer.is_server():
+	if Rede.pausa_do_host or not Rede.modo_multiplayer or not multiplayer.is_server():
 		return
 	var remetente := multiplayer.get_remote_sender_id()
-	var jogador_remoto := _obter_jogador_rede(remetente) as Player
-	if not is_instance_valid(jogador_remoto):
+	if remetente <= 1 or not Rede.jogadores.has(remetente):
 		return
+	if sequencia <= int(ultima_sequencia_movimento_peer.get(remetente, 0)):
+		return
+	if not posicao.is_finite() or not velocidade.is_finite():
+		return
+	if is_nan(rotacao) or is_inf(rotacao):
+		return
+	var jogador_remoto := _obter_jogador_rede(remetente) as Player
+	if not is_instance_valid(jogador_remoto) or not jogador_remoto.vivo:
+		return
+	var area := Global.obter_retangulo_area_visivel()
+	if area.size.x <= 0.0 or area.size.y <= 0.0:
+		return
+	if velocidade.length() > VELOCIDADE_MAXIMA_REDE:
+		return
+	var agora := Time.get_ticks_msec()
+	var anterior := int(ultimo_movimento_peer_ms.get(remetente, 0))
+	var delta_segundos := clampf(float(agora - anterior) / 1000.0, 0.0, 0.5)
+	var salto := posicao.distance_to(jogador_remoto.global_position)
+	# O wrap de Asteroids permite cruzar as extremidades da arena.
+	var dx := absf(posicao.x - jogador_remoto.global_position.x)
+	var dy := absf(posicao.y - jogador_remoto.global_position.y)
+	dx = minf(dx, absf(area.size.x - dx))
+	dy = minf(dy, absf(area.size.y - dy))
+	var deslocamento_wrap := Vector2(dx, dy).length()
+	if anterior > 0 and minf(salto, deslocamento_wrap) > (
+		FOLGA_MOVIMENTO_REDE + VELOCIDADE_MAXIMA_REDE * delta_segundos
+	):
+		return
+	if posicao.x < area.position.x - 30.0 or posicao.x > area.end.x + 30.0:
+		return
+	if posicao.y < area.position.y - 30.0 or posicao.y > area.end.y + 30.0:
+		return
+	ultima_sequencia_movimento_peer[remetente] = sequencia
+	ultimo_movimento_peer_ms[remetente] = agora
 	jogador_remoto.global_position = posicao
-	jogador_remoto.rotation = rotacao
+	jogador_remoto.rotation = wrapf(rotacao, -PI, PI)
 	jogador_remoto.velocity = velocidade
+	jogador_remoto._registrar_amostra_movimento()
 
 
 func _capturar_posicoes_mundo() -> Dictionary:
+	sequencia_mundo_rede += 1
 	var posicoes_players: Dictionary = {}
 	for candidato in get_tree().get_nodes_in_group("player"):
 		if candidato is Player and is_instance_valid(candidato):
@@ -875,6 +1435,8 @@ func _capturar_posicoes_mundo() -> Dictionary:
 	for candidato in get_tree().get_nodes_in_group("inimigo"):
 		if candidato is Node2D and is_ancestor_of(candidato):
 			var inimigo := candidato as Node2D
+			if inimigo is InimigoBase and (inimigo as InimigoBase).movimento_replicado_pelo_sincronizador:
+				continue
 			var velocidade_inimigo := Vector2.ZERO
 			if inimigo is CharacterBody2D:
 				velocidade_inimigo = (inimigo as CharacterBody2D).velocity
@@ -885,16 +1447,40 @@ func _capturar_posicoes_mundo() -> Dictionary:
 				"velocidade": velocidade_inimigo,
 			})
 	return {
+		"sequencia": sequencia_mundo_rede,
 		"players": posicoes_players,
 		"inimigos": posicoes_inimigos,
 		"cristais_coop": cristais_coop_acumulados,
 	}
 
 
-@rpc("authority", "call_remote", "unreliable_ordered", 0)
+func _dividir_posicoes_mundo(snapshot: Dictionary) -> Array[Dictionary]:
+	var partes: Array[Dictionary] = []
+	var pacote := snapshot.duplicate()
+	pacote["inimigos"] = []
+	var tamanho := var_to_bytes(pacote).size()
+	for estado in snapshot["inimigos"]:
+		# No Array de Variants, cada entrada acrescenta seu tamanho serializado.
+		var bytes_estado := var_to_bytes(estado).size()
+		if tamanho + bytes_estado > 1000:
+			partes.append(pacote)
+			pacote = {"sequencia": snapshot["sequencia"], "players": {}, "cristais_coop": snapshot["cristais_coop"], "inimigos": []}
+			tamanho = var_to_bytes(pacote).size()
+		pacote["inimigos"].append(estado)
+		tamanho += bytes_estado
+	partes.append(pacote)
+	return partes
+
+
+@rpc("authority", "call_remote", "unreliable", 3)
 func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 	if multiplayer.is_server():
 		return
+	_aplicar_posicoes_mundo(snapshot)
+
+
+func _aplicar_posicoes_mundo(snapshot: Dictionary) -> void:
+	var numero := int(snapshot.get("sequencia", 0))
 	_aplicar_total_cristais_coop(int(snapshot.get("cristais_coop", 0)))
 	var posicoes_players: Dictionary = snapshot.get("players", {})
 	for peer_variant in posicoes_players:
@@ -905,23 +1491,33 @@ func _publicar_posicoes_mundo(snapshot: Dictionary) -> void:
 		var jogador := _obter_jogador_rede(peer_id) as Player
 		if not is_instance_valid(jogador):
 			continue
+		if jogador.tem_movimento_direto_recente():
+			var anterior := int(jogador.get_meta(&"sequencia_posicao_mundo", -1))
+			jogador.set_meta(&"sequencia_posicao_mundo", maxi(anterior, numero))
+			continue
 		var estado: Dictionary = posicoes_players[peer_variant]
-		jogador.global_position = estado.get("posicao", jogador.global_position)
-		jogador.rotation = float(estado.get("rotacao", jogador.rotation))
-		jogador.velocity = estado.get("velocidade", jogador.velocity)
+		if _aplicar_movimento_mundo(jogador, estado, numero):
+			jogador._registrar_amostra_movimento()
 	for estado_variant in Array(snapshot.get("inimigos", [])):
 		var estado := Dictionary(estado_variant)
 		var inimigo := get_node_or_null(
 			NodePath(str(estado.get("caminho", "")))
 		) as Node2D
-		if not is_instance_valid(inimigo):
-			continue
-		inimigo.global_position = estado.get("posicao", inimigo.global_position)
-		inimigo.rotation = float(estado.get("rotacao", inimigo.rotation))
-		if inimigo is CharacterBody2D:
-			(inimigo as CharacterBody2D).velocity = Vector2(
-				estado.get("velocidade", (inimigo as CharacterBody2D).velocity)
-			)
+		if is_instance_valid(inimigo):
+			_aplicar_movimento_mundo(inimigo, estado, numero)
+
+
+func _aplicar_movimento_mundo(alvo: Node2D, estado: Dictionary, numero: int) -> bool:
+	# Dois fragmentos consecutivos podem trazer entidades diferentes.
+	if numero <= int(alvo.get_meta(&"sequencia_posicao_mundo", -1)):
+		return false
+	alvo.set_meta(&"sequencia_posicao_mundo", numero)
+	alvo.global_position = estado.get("posicao", alvo.global_position)
+	alvo.rotation = float(estado.get("rotacao", alvo.rotation))
+	if alvo is CharacterBody2D:
+		var corpo := alvo as CharacterBody2D
+		corpo.velocity = estado.get("velocidade", corpo.velocity)
+	return true
 
 
 func _atualizar_hud_boss_cliente() -> void:
@@ -1181,6 +1777,7 @@ func solicitar_reinicio_multiplayer() -> void:
 	if not multiplayer.is_server():
 		_mostrar_aviso_rede(tr("APENAS O HOST PODE REINICIAR A PARTIDA"), false)
 		return
+	Rede.definir_pausa_partida(false)
 	_reiniciar_partida_rede.rpc()
 
 
@@ -1228,7 +1825,7 @@ func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
 
 
 func _ocultar_aviso_rede_depois(token: int) -> void:
-	await get_tree().create_timer(4.0).timeout
+	await get_tree().create_timer(4.0, false).timeout
 	if is_instance_valid(aviso_rede) and int(aviso_rede.get_meta("token_aviso", -1)) == token:
 		aviso_rede.visible = false
 
@@ -1325,15 +1922,47 @@ func escolher_tipo_inimigo(nivel: int) -> PackedScene:
 	var composicao: Array = DadosSetores.obter(setor_atual).get("inimigos", [])
 	if composicao.is_empty():
 		return INIMIGOS[&"seguidor"]
+	# Evita acumular unidades de suporte que nao atacam diretamente.
+	# Cada especie tem um limite proprio, sem mudar o tamanho total da onda.
+	var contagem: Dictionary = {}
+	for existente in get_tree().get_nodes_in_group("inimigo"):
+		if not (existente is InimigoBase) or existente.is_queued_for_deletion():
+			continue
+		if not existente.is_in_group("inimigo_setorial") or not is_ancestor_of(existente):
+			continue
+		var tipo_existente := int(existente.get_meta("tipo_setorial", -1))
+		contagem[tipo_existente] = int(contagem.get(tipo_existente, 0)) + 1
+	var elegiveis: Array[Array] = []
 	var peso_total := 0.0
 	for entrada in composicao:
-		peso_total += float(entrada[1])
+		var identificador := StringName(entrada[0])
+		if not INIMIGOS.has(identificador):
+			continue
+		var limite_especie := 2 if identificador in [
+			&"centelha_guia", &"elo_dourado", &"prisma_amparo",
+			&"satelite_berco", &"no_flutuante", &"satelite_coroa"
+		] else 4
+		var cena_inimigo := INIMIGOS[identificador] as PackedScene
+		var preview := cena_inimigo.instantiate() as InimigoBase
+		if not is_instance_valid(preview):
+			continue
+		var tipo := int(preview.get("estilo"))
+		preview.free()
+		if int(contagem.get(tipo, 0)) >= limite_especie:
+			continue
+		var peso := maxf(float(entrada[1]), 0.0)
+		if peso <= 0.0:
+			continue
+		elegiveis.append([cena_inimigo, peso])
+		peso_total += peso
+	if elegiveis.is_empty() or peso_total <= 0.0:
+		return INIMIGOS[&"seguidor"]
 	var alvo := randf() * peso_total
-	for entrada in composicao:
+	for entrada in elegiveis:
 		alvo -= float(entrada[1])
 		if alvo <= 0.0:
-			return INIMIGOS.get(StringName(entrada[0]), INIMIGOS[&"seguidor"])
-	return INIMIGOS[&"seguidor"]
+			return entrada[0] as PackedScene
+	return elegiveis.back()[0] as PackedScene
 
 
 func calcular_limite_inimigos() -> int:
@@ -1533,7 +2162,6 @@ func _mostrar_intro_boss(id: StringName) -> void:
 
 	raiz.modulate.a = 0.0
 	var tween := create_tween()
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(raiz, "modulate:a", 1.0, 0.22)
 	tween.tween_interval(1.45)
 	tween.tween_property(raiz, "modulate:a", 0.0, 0.30)
@@ -1547,6 +2175,8 @@ func _mostrar_intro_boss(id: StringName) -> void:
 
 
 func limpar_inimigos_sem_recompensa() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	for inimigo in get_tree().get_nodes_in_group("inimigo"):
 		if is_instance_valid(inimigo):
 			inimigo.queue_free()
@@ -1612,6 +2242,7 @@ func spawns_teste_estao_pausados() -> bool:
 func pode_abrir_painel_desenvolvedor() -> bool:
 	return (
 		Global.modo_desenvolvedor
+		and (not Rede.modo_multiplayer or multiplayer.is_server())
 		and not game_over
 		and not tutorial_ativo
 		and not escolha_setor_ativa
@@ -1744,7 +2375,7 @@ func _enviar_tamanho_viewport_local() -> void:
 	var tamanho := get_viewport().get_visible_rect().size
 	if multiplayer.is_server():
 		_registrar_tamanho_viewport(1, tamanho)
-	elif Rede.esta_conectado():
+	elif Rede.esta_conectado() and Rede.arena_host_pronta:
 		_registrar_tamanho_viewport_remoto.rpc_id(1, tamanho)
 
 
@@ -1930,7 +2561,7 @@ func _on_boss_morreu(_inimigo: InimigoBase) -> void:
 		tween.tween_interval(0.9)
 		tween.tween_property(boss_hud, "modulate:a", 0.0, 0.35)
 		tween.tween_callback(boss_hud.queue_free)
-	await get_tree().create_timer(1.1).timeout
+	await get_tree().create_timer(1.1, false).timeout
 	if game_over:
 		return
 	var proximo_setor: StringName = DadosSetores.proximo_no_ciclo(setor_atual)
@@ -2047,7 +2678,7 @@ func mostrar_escolha_setor(opcoes: Array[StringName]) -> void:
 
 func iniciar_painel_escolha(titulo: String, subtitulo: String) -> HBoxContainer:
 	escolha_setor_ativa = true
-	get_tree().paused = true
+	Rede.definir_pausa_partida(true)
 	Global.definir_cursor_interface(true)
 	camada_escolha = CanvasLayer.new()
 	camada_escolha.layer = 80
@@ -2131,7 +2762,7 @@ func _on_setor_escolhido(id: StringName) -> void:
 
 func encerrar_escolha_setor() -> void:
 	escolha_setor_ativa = false
-	get_tree().paused = false
+	Rede.definir_pausa_partida(false)
 	Global.definir_cursor_interface(false)
 	if is_instance_valid(camada_escolha):
 		camada_escolha.queue_free()
@@ -2153,27 +2784,45 @@ func _receber_vitoria_rede(pontuacao_final: int) -> void:
 
 
 func _apresentar_vitoria(pontuacao_final: int) -> void:
+	if final_apresentado:
+		return
+	final_apresentado = true
 	game_over = true
 	Global.Pontos = maxi(pontuacao_final, 0)
 	pontos = float(Global.Pontos)
 	if is_instance_valid(contpontos):
 		contpontos.text = str(Global.Pontos).pad_zeros(8)
+	Global.registrar_recordes_partida(combo_maximo_partida,Global.Pontos)
 	Global.registrar_jogo_zerado()
-	var linha := iniciar_painel_escolha(
-		"CICLO DE SETORES CONCLUÍDO",
-		"Todos os cinco bosses foram derrotados sem repetir setores."
-	)
-	var botao := criar_cartao_setor(linha, {
-		"nome": "VOLTAR AO MENU",
-		"subtitulo": tr("PONTUAÇÃO %s") % str(Global.Pontos).pad_zeros(8),
-		"descricao": "A tentativa foi concluída.",
-		"cor_destaque": Color(0.42, 1.0, 0.68)
-	})
-	botao.pressed.connect(_on_vitoria_menu)
-	botao.call_deferred("grab_focus")
+	escolha_setor_ativa = true
+	get_tree().paused = true
+	Global.definir_cursor_interface(true)
+	tocarmusica.stop()
+	$GUI.hide()
+	camada_escolha = CanvasLayer.new()
+	camada_escolha.layer = 400
+	camada_escolha.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(camada_escolha)
+	var final := preload("res://Rooms/FinalDoCiclo.tscn").instantiate() as FinalDoCiclo
+	var fundo := ColorRect.new()
+	fundo.color = final.cor_fundo
+	camada_escolha.add_child(fundo)
+	fundo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	final.capturar_build(player as Player)
+	final.pontuacao = Global.Pontos
+	final.recorde_anterior = recorde_antes_da_partida
+	final.maior_combo = combo_maximo_partida
+	final.nivel = player.nivel_atual if is_instance_valid(player) else 1
+	final.duracao = int(duracao_partida)
+	for id in Global.conquistas_desbloqueadas:
+		if id not in conquistas_anteriores:
+			final.conquistas.append(id)
+	final.voltar_ao_menu.connect(_on_vitoria_menu, CONNECT_ONE_SHOT)
+	camada_escolha.add_child(final)
 
 
 func _on_vitoria_menu() -> void:
+	preparar_saida_multiplayer()
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	Global.definir_cursor_interface(true)

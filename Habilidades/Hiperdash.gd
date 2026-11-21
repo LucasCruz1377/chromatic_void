@@ -12,6 +12,12 @@ class_name HabilidadeHiperdash
 @export var dano_dash: float = 4.0
 
 var ativo := false
+var aplicou_camera_lenta := false
+var escala_anterior := 1.0
+
+
+func em_uso() -> bool:
+	return ativo
 
 
 func pode_ativar(player) -> bool:
@@ -21,17 +27,20 @@ func pode_ativar(player) -> bool:
 func executar(player) -> void:
 	ativo = true
 	player.BloquearControle()
-	Engine.time_scale = desaceleracao_tempo
+	aplicou_camera_lenta = not Rede.modo_multiplayer
+	if aplicou_camera_lenta:
+		escala_anterior = Engine.time_scale
+		Engine.time_scale = desaceleracao_tempo
 	executar_dash(player)
 
 
 func executar_dash(player) -> void:
-	await player.get_tree().create_timer(intervalo_preparo * desaceleracao_tempo).timeout
+	await player.get_tree().create_timer(intervalo_preparo, false, false, true).timeout
 	if not ativo or not is_instance_valid(player):
-		Engine.time_scale = 1.0
+		_restaurar_tempo()
 		ativo = false
 		return
-	Engine.time_scale = 1.0
+	_restaurar_tempo()
 	player.BloquearGiro()
 	preload("res://Scripts/AudioCombate.gd").tocar(player, &"dash")
 	player.IniciarHabilidade(true)
@@ -41,18 +50,24 @@ func executar_dash(player) -> void:
 	if camera and camera.has_method("shake"):
 		camera.shake(5.0)
 	gerar_loop_de_rastros(player)
-	await player.get_tree().create_timer(duracao_dash).timeout
+	await player.get_tree().create_timer(duracao_dash, false).timeout
 	if not ativo or not is_instance_valid(player):
 		return
 	player.velocity *= desaceleracao
 	finalizar(player)
 
 
+func _restaurar_tempo() -> void:
+	if aplicou_camera_lenta:
+		Engine.time_scale = escala_anterior
+		aplicou_camera_lenta = false
+
+
 func gerar_loop_de_rastros(player) -> void:
 	while ativo and is_instance_valid(player) and player.velocity.length() > 100.0:
 		criar_copia_poligono(player, player.get_node_or_null("corpo") as Polygon2D)
 		criar_copia_poligono(player, player.get_node_or_null("corpo2") as Polygon2D)
-		await player.get_tree().create_timer(intervalo_rastro).timeout
+		await player.get_tree().create_timer(intervalo_rastro, false).timeout
 
 
 func criar_copia_poligono(player, poligono_original: Polygon2D) -> void:
@@ -75,7 +90,7 @@ func finalizar(player) -> void:
 	if not ativo:
 		return
 	ativo = false
-	Engine.time_scale = 1.0
+	_restaurar_tempo()
 	if is_instance_valid(player):
 		player.EncerrarHabilidade()
 		player.DesbloquearControle()
@@ -88,6 +103,7 @@ func ao_desequipar(player) -> void:
 
 func reiniciar_estado() -> void:
 	super()
+	_restaurar_tempo()
 	ativo = false
 
 
@@ -95,9 +111,9 @@ func obter_upgrades_especificos() -> Dictionary:
 	var icone := "res://Habilidades/Icones/hiperdash.svg"
 	var cor := Color(0.12, 0.88, 1.0)
 	return {
-		&"hiperdash_impacto": criar_carta_upgrade("IMPACTO CINÉTICO", "+2 de dano ao atravessar inimigos.", icone, cor, Nome, 3, [&"dano"]),
-		&"hiperdash_distancia": criar_carta_upgrade("ROTA ESTENDIDA", "+0,08 s de duração e +8% de velocidade.", icone, cor, Nome, 3, [&"distancia"]),
-		&"hiperdash_recarga": criar_carta_upgrade("VETOR PRONTO", "Recarga 12% mais rápida.", icone, cor, Nome, 3, [&"cooldown"]),
+		&"hiperdash_impacto": criar_carta_upgrade("IMPACTO CINÉTICO", "Seu hiperdash causa mais dano ao atravessar inimigos.", icone, cor, Nome, 3, [&"dano"]),
+		&"hiperdash_distancia": criar_carta_upgrade("ROTA ESTENDIDA", "Seu hiperdash vai mais longe e mais rápido.", icone, cor, Nome, 3, [&"distancia"]),
+		&"hiperdash_recarga": criar_carta_upgrade("VETOR PRONTO", "Seu hiperdash recarrega mais rápido.", icone, cor, Nome, 3, [&"cooldown"]),
 	}
 
 

@@ -98,7 +98,7 @@ func _ready() -> void:
 		var cena_setorial := load(caminho_inimigo) as PackedScene
 		verificar(cena_setorial != null, "inimigo setorial ausente: " + caminho_inimigo)
 		if cena_setorial != null:
-			var inimigo_setorial := cena_setorial.instantiate() as InimigoSetorial
+			var inimigo_setorial: Variant = cena_setorial.instantiate()
 			batalha.add_child(inimigo_setorial)
 			inimigo_setorial.global_position = Vector2(700, 260)
 			await get_tree().physics_frame

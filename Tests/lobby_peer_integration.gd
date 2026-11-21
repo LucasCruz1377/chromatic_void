@@ -18,6 +18,7 @@ func _ready() -> void:
 		print("TESTE IGNORADO: execute host e client em processos separados")
 		get_tree().quit(0)
 		return
+	GerenciadorDeSave.salvar({"tutorialconcluido": true})
 	Rede.configuracao_teste = _configuracao_teste_local()
 	if papel == "host":
 		if Rede.criar_lobby("HOST_TESTE") != OK:
@@ -41,6 +42,13 @@ func _ready() -> void:
 	if not await _esperar_jogadores_reais():
 		_falhar("MultiplayerSpawner não criou os dois Players reais")
 		return
+	if "--boss-only" in OS.get_cmdline_user_args():
+		var passou := await _testar_snapshots_chefes()
+		print("CHEFES ", papel, " ", passou)
+		await get_tree().create_timer(0.5).timeout
+		Rede.encerrar_lobby()
+		get_tree().quit(0 if passou else 1)
+		return
 	var local: Player
 	for candidato in get_tree().get_nodes_in_group("player"):
 		if candidato is Player and candidato.peer_id_dono == Rede.peer_local():
@@ -49,6 +57,11 @@ func _ready() -> void:
 	if not is_instance_valid(local):
 		_falhar("não encontrou a nave controlada pelo peer local")
 		return
+	for piloto in get_tree().get_nodes_in_group("player"):
+		var barra := piloto.get_node("NicknameRede/BarraVidaRede") as ProgressBar
+		if not barra.size.is_equal_approx(Vector2(86.0, 3.0)):
+			_falhar("barra multiplayer perdeu a dimensao de 86 x 3 pixels: %s" % barra.size)
+			return
 	if not _personalizacoes_distintas_corretas():
 		_falhar("modelo, cor, habilidade ou nickname colorido não preservou o loadout individual")
 		return
@@ -146,11 +159,6 @@ func _ready() -> void:
 			{"tempo_vida": 0.08, "velocidade": 0.35}
 		)
 	await get_tree().create_timer(0.8).timeout
-	local.niveis_upgrades[&"dano_calibrado" if papel == "host" else &"cadencia"] = 1
-	local.call("_sincronizar_loadout_rede")
-	if not await _esperar_upgrades_loadout_remoto():
-		_falhar("upgrades individuais não foram publicados no loadout remoto")
-		return
 	var cristais_antes := Global.cristais
 	if papel == "host":
 		inimigo_teste.conceder_recompensa()
@@ -171,6 +179,13 @@ func _ready() -> void:
 		return
 	await get_tree().process_frame
 	menu.call("fechar_menu")
+	# Exercita a compra autorizada; editar o dicionario do cliente e rejeitado pelo host.
+	if not local.comprar_upgrade(&"dano_calibrado" if papel == "host" else &"cadencia"):
+		_falhar("compra individual nao iniciou")
+		return
+	if not await _esperar_upgrades_loadout_remoto():
+		_falhar("upgrade comprado nao foi publicado no loadout remoto")
+		return
 	local.vida = 20.0
 	local.invencibilidade = true
 	local.invencibilidade_cd = 12.0
@@ -208,6 +223,9 @@ func _ready() -> void:
 	if not await _esperar_renascimento_sincronizado(local):
 		_falhar("contagem terminou sem reviver e sincronizar o jogador morto")
 		return
+	if not await _testar_snapshots_chefes():
+		_falhar("quadros visuais dos chefes ou despawn autoritativo falharam")
+		return
 	print("TESTE OK: %s sincronizou posições, partículas, loadouts, XP, menu, morte e renascimento" % papel)
 	await get_tree().create_timer(0.5).timeout
 	Rede.encerrar_lobby()
@@ -224,7 +242,7 @@ func _esperar_jogadores_reais() -> bool:
 				validos = validos and jogador is Player
 				validos = validos and jogador.get_node_or_null("MultiplayerSynchronizer") != null
 				validos = validos and jogador.get_node_or_null("NicknameRede") != null
-			if validos:
+			if validos and (papel == "host" or batalha.entrada_estado_confirmada):
 				return true
 		await get_tree().create_timer(0.05).timeout
 		limite -= 0.05
@@ -543,3 +561,114 @@ func _falhar(mensagem: String) -> void:
 	push_error("LOBBY %s: %s" % [papel, mensagem])
 	Rede.encerrar_lobby()
 	get_tree().quit(1)
+
+
+var etapas_peer: Dictionary = {}
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_etapa_rede(etapa: String) -> void:
+	etapas_peer[etapa] = true
+
+func _barreira_rede(etapa: String) -> bool:
+	_confirmar_etapa_rede.rpc(etapa)
+	var limite := 8.0
+	while limite > 0.0:
+		if etapas_peer.has(etapa):
+			return true
+		await get_tree().create_timer(0.05).timeout
+		limite -= 0.05
+	return false
+
+func _testar_snapshots_chefes() -> bool:
+	get_tree().current_scene = batalha
+	if papel == "host":
+		batalha.limpar_inimigos_sem_recompensa()
+	await get_tree().create_timer(0.3).timeout
+	for nome in ["BossPet0", "BossFlorEquinocio", "BossEclipseColheita", "BossConstelacaoAmparo", "BossNoAmetista"]:
+		if not await _barreira_rede(nome + "_inicio"):
+			return false
+		var boss: ChefeBase
+		if papel == "host":
+			boss = (load("res://Entities/%s.tscn" % nome) as PackedScene).instantiate() as ChefeBase
+			boss.name = "ChefeIntegracao"
+			batalha.add_child(boss, true)
+			await get_tree().physics_frame
+			if boss is BossPet0:
+				boss.iniciar_rolamento()
+			elif boss is BossCaosPrimaveril:
+				boss.iniciar_onda_espinhos()
+			elif boss is BossConstelacaoAmparo:
+				boss.executar_sentinela(0)
+			elif boss is BossNoAmetista:
+				boss.executar_ruptura(0)
+			elif boss is BossSizigiaEterna:
+				boss.iniciar_transicao(BossSizigiaEterna.Fase.SOL)
+		var limite := 8.0
+		var recebeu := papel == "host"
+		var anterior := NAN
+		var avancos := 0
+		var ultima_mudanca := 0
+		var maior_intervalo := 0
+		while not recebeu and limite > 0.0:
+			boss = batalha.get_node_or_null("ChefeIntegracao") as ChefeBase
+			if is_instance_valid(boss) and boss.ultima_sequencia_snapshot_visual_rede > 0:
+				var angulo := NAN
+				if boss is BossMensal:
+					angulo = boss.angulo_visual
+				elif boss is BossPet0 and boss.estado == BossPet0.Estado.ROLANDO:
+					angulo = boss.visual.rotation
+				elif boss is BossCaosPrimaveril:
+					angulo = boss.petalas.rotation
+				elif boss is BossSizigiaEterna:
+					angulo = boss.visual_fase.rotation
+				if is_finite(angulo):
+					var passo := angle_difference(anterior, angulo)
+					if boss is BossMensal and is_finite(passo) and passo < -0.00001:
+						push_error(nome + " retrocedeu durante o giro")
+						return false
+					if is_finite(passo) and absf(passo) > 0.00001:
+						var agora := Time.get_ticks_msec()
+						if ultima_mudanca > 0:
+							maior_intervalo = maxi(maior_intervalo, agora - ultima_mudanca)
+						ultima_mudanca = agora
+						avancos += 1
+						if nome == "BossConstelacaoAmparo" and avancos == 4:
+							print("Amparo amostra 4")
+						elif nome == "BossConstelacaoAmparo" and avancos == 5:
+							print("Amparo amostra 5")
+					anterior = angulo
+					recebeu = avancos >= (20 if boss is BossMensal else 3)
+					if recebeu:
+						print(nome, " intervalo entre movimentos ms=", maior_intervalo)
+			await get_tree().create_timer(0.05).timeout
+			limite -= 0.05
+		if not recebeu:
+			print("DIAGNOSTICO SNAPSHOT %s: %s" % [papel, nome])
+			return false
+		if not await _barreira_rede(nome + "_recebido"):
+			return false
+		if boss is BossCaosPrimaveril:
+			if papel == "host":
+				boss.disparar_anel_espinhos()
+				boss.iniciar_petalas_bumerangue()
+			limite = 1.0
+			var total_petalas := 0
+			while total_petalas < 2 and limite > 0.0:
+				total_petalas = 0
+				for entidade in batalha.get_children():
+					if entidade is PetalaBumerangue:
+						total_petalas += 1
+				await get_tree().create_timer(0.03).timeout
+				limite -= 0.03
+			if total_petalas != 2 or not await _barreira_rede("petalas_visiveis"):
+				return false
+		if papel == "host":
+			boss.Vida = 0
+			boss.morrer()
+		limite = 4.0
+		while is_instance_valid(batalha.get_node_or_null("ChefeIntegracao")) and limite > 0.0:
+			await get_tree().create_timer(0.05).timeout
+			limite -= 0.05
+		if is_instance_valid(batalha.get_node_or_null("ChefeIntegracao")):
+			return false
+	return true

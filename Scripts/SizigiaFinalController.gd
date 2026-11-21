@@ -142,7 +142,7 @@ func _iniciar_sombra_passado() -> void:
 	if multiplayer.has_multiplayer_peer():
 		_mostrar_sombra.rpc(caminho)
 	_mostrar_sombra(caminho)
-	await get_tree().create_timer(1.10).timeout
+	await get_tree().create_timer(1.10, false).timeout
 	if not _boss_valido():
 		return
 	var passos := caminho.size()
@@ -151,7 +151,7 @@ func _iniciar_sombra_passado() -> void:
 		for alvo in _players_vivos():
 			if (alvo as Node2D).global_position.distance_to(posicao) <= 34.0:
 				alvo.call("tomar_dano", float(boss.get("Dano")) * 0.22)
-		await get_tree().create_timer(maxf(1.55 / float(passos), 0.035)).timeout
+		await get_tree().create_timer(maxf(1.55 / float(passos), 0.035), false).timeout
 	_encerrar_mecanica()
 
 
@@ -199,7 +199,7 @@ func _iniciar_roubo_luz() -> void:
 	if multiplayer.has_multiplayer_peer():
 		_mostrar_roubo_luz.rpc()
 	_mostrar_roubo_luz()
-	await get_tree().create_timer(2.15).timeout
+	await get_tree().create_timer(2.15, false).timeout
 	if not _boss_valido():
 		return
 	roubo_luz_ativo = false
@@ -243,7 +243,7 @@ func _iniciar_ocultacao(suprema: bool) -> void:
 	if multiplayer.has_multiplayer_peer():
 		_mostrar_ocultacao.rpc(abrigos, aviso, suprema)
 	_mostrar_ocultacao(abrigos, aviso, suprema)
-	await get_tree().create_timer(aviso).timeout
+	await get_tree().create_timer(aviso, false).timeout
 	if not _boss_valido():
 		return
 	boss.set("gravidade_tempo", 0.0)
@@ -255,12 +255,12 @@ func _iniciar_ocultacao(suprema: bool) -> void:
 				break
 		if not seguro:
 			alvo.call("tomar_dano", float(boss.get("Dano")) * (1.75 if suprema else 1.35))
-	await get_tree().create_timer(0.45).timeout
+	await get_tree().create_timer(0.45, false).timeout
 	if not _boss_valido():
 		return
 	boss.set("multiplicador_dano_recebido", 1.45)
 	boss.set("estado", ESTADO_MOVENDO)
-	await get_tree().create_timer(2.20).timeout
+	await get_tree().create_timer(2.20, false).timeout
 	if not _boss_valido():
 		return
 	boss.set("multiplicador_dano_recebido", 1.0)
@@ -343,7 +343,7 @@ func _iniciar_eclipse_absoluto() -> void:
 	_tocar_eclipse()
 	if boss.has_signal("subtitulo_alterado"):
 		boss.emit_signal("subtitulo_alterado", "ECLIPSE ABSOLUTO — REPITA O PASSADO E BUSQUE A SOMBRA")
-	await get_tree().create_timer(0.55).timeout
+	await get_tree().create_timer(0.55, false).timeout
 	if not _boss_valido():
 		return
 	await _eclipse_memoria()
@@ -354,13 +354,13 @@ func _iniciar_eclipse_absoluto() -> void:
 
 func _eclipse_memoria() -> void:
 	if historico.size() < 8:
-		await get_tree().create_timer(0.4).timeout
+		await get_tree().create_timer(0.4, false).timeout
 		return
 	var caminho := PackedVector2Array(historico)
 	if multiplayer.has_multiplayer_peer():
 		_mostrar_sombra.rpc(caminho)
 	_mostrar_sombra(caminho)
-	await get_tree().create_timer(2.75).timeout
+	await get_tree().create_timer(2.75, false).timeout
 
 
 @rpc("authority", "call_remote", "reliable")

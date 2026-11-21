@@ -49,9 +49,7 @@ const FONTES_SITE: Dictionary = {
 	&"n01_reflexos_rapidos": "Maio Amarelo • prevenção de acidentes",
 	&"n02_luz_vital": "Agosto Dourado • proteção à vida",
 	&"n03_rede_apoio": "Setembro Amarelo • rede de apoio",
-	&"n04_armadura_aco": "Agosto Lilás • proteção",
 	&"n05_reserva_solidaria": "Junho Vermelho • solidariedade",
-	&"n06_scanner_preventivo": "Outubro Rosa • prevenção",
 	&"n07_propulsor_janus": "Janeiro • origem do nome e Janus",
 	&"n08_motor_maia": "Maio • origem do nome e Maia",
 	&"n09_familia_satelites": "Maio • Dia da Família",
@@ -112,7 +110,7 @@ static func armas() -> Array[Dictionary]:
 	_item(&"a03_alcateia_misseis", "FOGOS DO RECOMEÇO", "Três foguetes inteligentes cercam o alvo por ângulos diferentes.", 28000, Color("e7edff"), "JAN • ANO NOVO", [4, 3, 2], &"", "Fogos de Ano Novo representam o encerramento de um ciclo e o começo do próximo."),
 	_item(&"a04_canhao_esturjao", "CANHÃO DO ESTURJÃO", "Segure para carregar um único disparo ondulante, pesado e perfurante.", 5100, Color("54c6ff"), "AGO • LUA DO ESTURJÃO", [5, 3, 1], &"", "A Lua do Esturjão, apresentada no card de agosto, inspira um disparo profundo que avança como correnteza."),
 	_item(&"a05_minas_castor", "SINALIZADORES AMARELOS", "Instala até quatro sinais que explodem após 5 segundos. Melhorias liberam pavio curto, sensor ou comando remoto.", 0, Color("ffd447"), "MAI • MAIO AMARELO", [5, 5, 3], &"constelacao_50", "O Maio Amarelo chama atenção para segurança e prevenção; o sinalizador usa contagem visível antes do perigo."),
-	_item(&"a06_feixe_perielio", "FEIXE DO PERIÉLIO", "Laser contínuo de alcance infinito: cresce de 0,2 até 5 DPS e sobrecarrega após 10 segundos.", 100000, Color("ffd83d"), "JAN • PERIÉLIO", [5, 5, 5], &"sem_upgrades", "A proximidade máxima da Terra ao Sol inspira um feixe que intensifica enquanto permanece ativo."),
+	_item(&"a06_feixe_perielio", "FEIXE DO PERIÉLIO", "Feixe contínuo que cresce exponencialmente de 1 a 10 DPS. Superaquece após 10 s e esfria em 2,2 s.", 100000, Color("ffd83d"), "JAN • PERIÉLIO", [5, 5, 5], &"sem_upgrades", "A proximidade máxima da Terra ao Sol inspira um feixe que intensifica enquanto permanece ativo."),
 	_item(&"a07_foice_colheita", "ARCO DA COLHEITA", "Crescente bumerangue que causa dano na ida e na volta.", 3900, Color("ffb34d"), "SET • COLHEITA", [4, 4, 3]),
 	_item(&"a08_torpedo_subterraneo", "RAIZ DO DIA DA TERRA", "Some no solo e emerge sob o inimigo marcado.", 4400, Color("8ae878"), "ABR • DIA DA TERRA", [5, 3, 2], &"", "O Dia da Terra inspira um ataque que viaja sob o solo antes de reaparecer."),
 	_item(&"a09_morteiro_fogueira", "MORTEIRO DA FOGUEIRA", "Brasas lentas explodem e deixam uma zona curta de fogo.", 4300, Color("ff6f32"), "JUN • FOGUEIRA", [5, 4, 1]),
@@ -124,12 +122,10 @@ static func armas() -> Array[Dictionary]:
 
 static func naves() -> Array[Dictionary]:
 	return [
-	_item(&"n01_reflexos_rapidos", "REFLEXOS RÁPIDOS", "Quase-colisões carregam uma curva evasiva instantânea.", 0, Color("ffe567"), "MAI • AMARELO", [2, 4, 5], &"constelacao_10"),
+	_item(&"n01_reflexos_rapidos", "REFLEXOS RÁPIDOS", "Pressione acelerar duas vezes para dar uma pequena arrancada.", 0, Color("ffe567"), "MAI • AMARELO", [2, 4, 5], &"constelacao_10"),
 	_item(&"n02_luz_vital", "LUZ VITAL", "Experiência enche um halo que cura e concede escudo.", 3000, Color("ffd95d"), "AGO • DOURADO", [3, 5, 3]),
 	_item(&"n03_rede_apoio", "REDE DE APOIO", "Após sofrer dano, alcançar um ponto seguro concede proteção.", 3200, Color("f4d34e"), "SET • CUIDADO", [2, 5, 4]),
-	_item(&"n04_armadura_aco", "ARMADURA DE AÇO", "Placas frontais reduzem dano quando você encara o perigo.", 0, Color("d89bff"), "AGO • LILÁS", [1, 5, 2], &"boss_ruptura"),
-	_item(&"n05_reserva_solidaria", "RESERVA SOLIDÁRIA", "Cura excedente vira células orbitais consumidas ao receber dano.", 0, Color("54f2a6"), "JUN • SOLIDARIEDADE", [2, 5, 3], &"boss_pet0"),
-	_item(&"n06_scanner_preventivo", "SCANNER PREVENTIVO", "Destaca projéteis que seguem rota de colisão com a nave.", 2800, Color("53e8ff"), "OUT • ROSA", [1, 4, 5]),
+	_item(&"n05_reserva_solidaria", "ESTRELAS SOLIDÁRIAS", "Cura excedente alimenta quatro estrelas que atingem inimigos próximos.", 0, Color("54f2a6"), "JUN • SOLIDARIEDADE", [2, 5, 3], &"boss_pet0"),
 	_item(&"n07_propulsor_janus", "PROPULSOR DE DUAS FACES", "Acelerar protege a frente; dar ré protege a traseira.", 3700, Color("f6d374"), "JAN • JANUS", [3, 4, 4]),
 	_item(&"n08_motor_maia", "MOTOR DO CRESCIMENTO", "Viajar sem colidir evolui o motor em três estágios.", 4100, Color("76f187"), "MAI • MAIA", [3, 5, 4]),
 	_item(&"n09_familia_satelites", "FAMÍLIA DE SATÉLITES", "Satélites ligados absorvem impactos e mudam de formação.", 0, Color("ffd45d"), "MAI • FAMÍLIA", [3, 5, 2], &"boss_sentinela"),
@@ -138,18 +134,18 @@ static func naves() -> Array[Dictionary]:
 
 static func upgrades() -> Array[Dictionary]:
 	return [
-	_item(&"u01_alcateia_lunar", "ALCATEIA LUNAR", "A habilidade cria duas cópias menores em direções laterais.", 0, Color("dcecff"), "JAN • LUA DO LOBO", [4, 3, 3], &"boss_sizigia"),
-	_item(&"u02_cobertura_neve", "COBERTURA DE NEVE", "A habilidade deixa uma área que desacelera inimigos.", 0, Color("c9efff"), "FEV • LUA DA NEVE", [2, 5, 3], &"bosses_1"),
+	_item(&"u01_alcateia_lunar", "ALCATEIA LUNAR", "Ao usar o especial, dispara três projéteis por segundo durante três segundos. Eles seguem pilotos e causam metade do dano crítico da arma.", 0, Color("dcecff"), "JAN • LUA DO LOBO", [4, 3, 3], &"boss_sizigia"),
+	_item(&"u02_cobertura_neve", "COBERTURA DE NEVE", "Ao usar o especial, aplica uma camada de gelo a todos os inimigos vivos.", 0, Color("c9efff"), "FEV • LUA DA NEVE", [2, 5, 3], &"bosses_1"),
 	_item(&"u03_retorno_subterraneo", "RETORNO SUBTERRÂNEO", "A habilidade se repete sob o inimigo mais próximo após um atraso.", 0, Color("a7e887"), "MAR • LUA DO VERME", [4, 3, 2], &"constelacao_50"),
 	_item(&"u04_floracao_rosa", "FLORAÇÃO ROSA", "A habilidade termina lançando uma coroa radial de pétalas.", 0, Color("ff89bd"), "ABR • LUA ROSA", [4, 3, 3], &"boss_florescimento"),
-	_item(&"u05_jardim_crescente", "JARDIM CRESCENTE", "Inimigos atingidos recebem flores que desabrocham no fim.", 0, Color("ff79b2"), "MAI • LUA DAS FLORES", [4, 4, 2], &"boss_florescimento"),
+	_item(&"u05_jardim_crescente", "JARDIM CRESCENTE", "O sexto acerto infecta o inimigo. A flor se espalha por contato e causa 20% da vida máxima após cinco segundos.", 0, Color("ff79b2"), "MAI • LUA DAS FLORES", [4, 4, 2], &"boss_florescimento"),
 	_item(&"u06_sementes_vermelhas", "SEMENTES VERMELHAS", "Acertos guardam sementes que fortalecem a próxima ativação.", 0, Color("ff4f66"), "JUN • LUA DE MORANGO", [5, 4, 2], &"bosses_3"),
 	_item(&"u07_galhos_lunares", "GALHOS LUNARES", "A direção principal se ramifica em dois ângulos secundários.", 0, Color("c48c5f"), "JUL • LUA DOS CERVOS", [4, 3, 3], &"constelacao_250"),
 	_item(&"u08_corrente_esturjao", "CORRENTE DO ESTURJÃO", "Projéteis da habilidade ondulam e atravessam um alvo extra.", 0, Color("5ac7ff"), "AGO • LUA DO ESTURJÃO", [5, 3, 2], &"boss_sizigia"),
 	_item(&"u09_colheita_cromatica", "COLHEITA CROMÁTICA", "A ativação puxa experiência e a converte em projéteis orbitais.", 0, Color("ffc35c"), "SET • LUA DA COLHEITA", [3, 5, 3], &"constelacao_250"),
-	_item(&"u10_marca_cacador", "MARCA DO CAÇADOR", "A habilidade procura o inimigo mais resistente e concentra fogo nele.", 0, Color("ff9852"), "OUT • LUA DO CAÇADOR", [5, 2, 3], &"boss_sizigia"),
+	_item(&"u10_marca_cacador", "MARCA DO CAÇADOR", "Inimigos atingidos recebem 20% mais dano de qualquer fonte.", 0, Color("ff9852"), "OUT • LUA DO CAÇADOR", [5, 2, 3], &"boss_sizigia"),
 	_item(&"u11_barragem_castor", "BARRAGEM DO CASTOR", "Ergue uma barreira temporária no lado oposto ao movimento.", 0, Color("d99c63"), "NOV • LUA DO CASTOR", [2, 5, 2], &"constelacao_1000"),
-	_item(&"u12_noite_congelada", "NOITE CONGELADA", "Projéteis inimigos alcançados pela habilidade congelam e se desfazem.", 0, Color("8fc7ff"), "DEZ • LUA FRIA", [3, 5, 2], &"boss_sizigia"),
+	_item(&"u12_noite_congelada", "NOITE CONGELADA", "A cada dois segundos, aplica uma camada de gelo aos inimigos em um raio de 180 px.", 0, Color("8fc7ff"), "DEZ • LUA FRIA", [3, 5, 2], &"boss_sizigia"),
 	_item(&"u13_dupla_experiencia", "DOBRO DE EXPERIÊNCIA", "Enquanto equipado, dobra toda experiência recebida durante a partida.", 30000, Color("7dffbc"), "UPGRADE • EXPERIÊNCIA", [3, 5, 4], &"", "A progressão cromática transforma cada vitória em aprendizado acelerado."),
 	]
 

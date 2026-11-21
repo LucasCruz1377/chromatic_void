@@ -10,7 +10,7 @@ shader_parameter/intensidade = 0.0
 shader_parameter/separacao_cromatica = 1.5
 
 [node name="RetrocessoTela" type="CanvasLayer"]
-process_mode = 3
+process_mode = 1
 layer = 50
 script = ExtResource("1_script")
 

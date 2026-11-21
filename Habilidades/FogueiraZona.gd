@@ -2,6 +2,7 @@ extends Node2D
 class_name FogueiraZona
 
 
+var piloto: Player
 var duracao := 8.0
 var raio := 95.0
 var dano_por_segundo := 3.5
@@ -49,6 +50,8 @@ func queimar_inimigos() -> void:
 		if global_position.distance_to(inimigo.global_position) > raio:
 			continue
 		if inimigo.has_method("tomarDano"):
+			if inimigo is InimigoBase:
+				inimigo.registrar_ataque_lunar(piloto)
 			inimigo.tomarDano(dano_por_segundo * intervalo_dano)
 
 

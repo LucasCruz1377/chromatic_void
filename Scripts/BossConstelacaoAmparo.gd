@@ -25,10 +25,69 @@ var reacoes_executadas := 0
 var pulso_reacao := 0.0
 
 
+func _capturar_estado_defesas_rede() -> Dictionary:
+	return {
+		"tipo": "amparo",
+		"satelites": satelites.duplicate(),
+		"angulos": angulos.duplicate(),
+		"alvo": alvo_satelite,
+		"exposto": exposto,
+		"abraco": abraco,
+		"formacao": int(formacao),
+		"raio_orbita": raio_orbita,
+		"raio_seguro": raio_seguro,
+		"pulso": pulso_reacao,
+		"fase": fase,
+	}
+
+
+func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
+	if str(dados.get("tipo", "")) != "amparo":
+		return
+	var vidas := Array(dados.get("satelites", []))
+	var orientacoes := Array(dados.get("angulos", []))
+	if vidas.size() != satelites.size() or orientacoes.size() != angulos.size():
+		return
+	for indice in range(satelites.size()):
+		satelites[indice] = maxf(0.0, float(vidas[indice]))
+		angulos[indice] = float(orientacoes[indice])
+	alvo_satelite = clampi(int(dados.get("alvo", alvo_satelite)), 0, 2)
+	exposto = bool(dados.get("exposto", exposto))
+	abraco = bool(dados.get("abraco", abraco))
+	formacao = clampi(int(dados.get("formacao", formacao)), 0, Formacao.ABRACO) as Formacao
+	raio_orbita = maxf(0.0, float(dados.get("raio_orbita", raio_orbita)))
+	raio_seguro = maxf(0.0, float(dados.get("raio_seguro", raio_seguro)))
+	pulso_reacao = maxf(0.0, float(dados.get("pulso", pulso_reacao)))
+	fase = maxi(1, int(dados.get("fase", fase)))
+
+
+var colisoes_orbitais: Array[CollisionShape2D] = []
+
+
 func _ready() -> void:
 	super._ready()
+	for indice in satelites.size():
+		var colisao := CollisionShape2D.new()
+		colisao.shape = CircleShape2D.new()
+		add_child(colisao)
+		colisoes_orbitais.append(colisao)
+	_atualizar_colisoes_orbitais()
 	multiplicador_dano_recebido = 0.0
 	tempo_ataque = 0.85
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if not morto:
+		_atualizar_colisoes_orbitais()
+
+
+func _atualizar_colisoes_orbitais() -> void:
+	for indice in colisoes_orbitais.size():
+		var colisao := colisoes_orbitais[indice]
+		colisao.position = obter_posicao_satelite(indice) - global_position
+		colisao.disabled = satelites[indice] <= 0.0
+		(colisao.shape as CircleShape2D).radius = 15.0 if indice == alvo_satelite else 11.0
 
 
 func Mover(delta: float) -> void:
@@ -221,11 +280,17 @@ func _comprimir(delta: float) -> void:
 	raio_seguro = lerpf(inicial, 112.0, ease(progresso, 1.65))
 	raio_orbita_alvo = maxf(126.0, raio_seguro + 24.0)
 	var centro_arena := Global.obter_centro_area_visivel()
-	if is_instance_valid(player):
-		var pulso_atual := int(tempo_abraco * 4.0)
-		var pulso_anterior := int(tempo_anterior * 4.0)
-		if player.global_position.distance_to(centro_arena) > raio_seguro and pulso_atual != pulso_anterior:
-			player.tomar_dano(Dano * 0.23)
+	var pulso_atual := int(tempo_abraco * 4.0)
+	var pulso_anterior := int(tempo_anterior * 4.0)
+	if pulso_atual != pulso_anterior:
+		for candidato in get_tree().get_nodes_in_group("player"):
+			if not is_instance_valid(candidato) or not candidato is Node2D:
+				continue
+			if candidato.is_queued_for_deletion() or candidato.get("vivo") == false:
+				continue
+			if (candidato as Node2D).global_position.distance_to(centro_arena) > raio_seguro:
+				if candidato.has_method("tomar_dano"):
+					candidato.call("tomar_dano", Dano * 0.23)
 	if tempo_abraco > 0.0:
 		return
 	abraco = false
@@ -248,12 +313,15 @@ func _comprimir(delta: float) -> void:
 
 
 func tomarDano(valor: float) -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		_solicitar_dano_ao_host.rpc_id(1, clampf(valor, 0.0, 10000.0))
+		return
 	if morto or valor <= 0.0:
 		return
 	if not exposto and _vivos() > 0:
 		alvo_satelite = _proximo(alvo_satelite)
 		var indice_atingido := alvo_satelite
-		satelites[indice_atingido] = maxf(0.0, satelites[indice_atingido] - valor)
+		satelites[indice_atingido] = maxf(0.0, satelites[indice_atingido] - valor * bonus_marca)
 		var cena := _obter_cena()
 		if is_instance_valid(cena):
 			EfeitoCombateCena.criar(cena, obter_posicao_satelite(indice_atingido), EfeitoCombate.Tipo.ACERTO, cor_principal, 1.0)
@@ -268,6 +336,7 @@ func tomarDano(valor: float) -> void:
 			formacao = Formacao.RESGATE
 			raio_orbita_alvo = 126.0
 		queue_redraw()
+		_enviar_estado_defesas_rede()
 		return
 	super.tomarDano(valor)
 
@@ -336,6 +405,7 @@ func _reformar() -> void:
 	for indice in range(3):
 		satelites[indice] = 28.0 + fase * 7.0
 	alvo_satelite = _proximo(alvo_satelite)
+	_enviar_estado_defesas_rede()
 
 
 func _obter_cena() -> Node:
@@ -345,7 +415,7 @@ func _obter_cena() -> Node:
 
 
 func _draw() -> void:
-	var brilho := 1.0 + sin(Time.get_ticks_msec() * 0.009) * 0.08
+	var brilho := 1.0 + sin(Global.tempo_combate_ms() * 0.009) * 0.08
 	var nucleo := PackedVector2Array()
 	for indice in range(6):
 		nucleo.append(Vector2.from_angle(angulo_visual + indice * TAU / 6.0) * 32.0 * brilho)
@@ -377,6 +447,8 @@ func _draw() -> void:
 
 
 func morrer() -> void:
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
 	if Vida > 0.0:
 		return
 	var cena := _obter_cena()
