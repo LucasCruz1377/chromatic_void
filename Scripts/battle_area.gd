@@ -749,6 +749,11 @@ func _criar_disparo_visual_rede(dados: Dictionary) -> void:
 	add_child(projetil, true)
 	disparos_visuais_rede[id_disparo] = projetil
 	if multiplayer.is_server():
+		var mira: Variant = dados.get("mira_salva")
+		if mira is float and is_finite(mira):
+			var autor := _obter_jogador_rede(int(dados.peer_id))
+			if is_instance_valid(autor) and autor.vivo:
+				get_tree().call_group("memoria_sizigia", "registrar_disparo", autor, mira)
 		disparos_autorizados_rede[id_disparo] = {
 			"peer_id": int(dados.get("peer_id", 0)),
 			"origem": Vector2(dados.get("posicao", Vector2.ZERO)),

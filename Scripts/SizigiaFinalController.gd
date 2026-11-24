@@ -3,22 +3,22 @@ class_name SizigiaFinalController
 
 ## O mesmo relógio e a mesma geometria alimentam o desenho e os acertos.
 ## O host publica a partitura atual, inclusive para quem chega durante um golpe.
-enum Golpe { NENHUM, CRESCENTES, MARE, CRATERAS, SOMBRA, INVESTIDA, RAIO, MANCHAS, ROUBO, RETORNO, REFLEXOS, TOTALIDADE, ABSOLUTO }
+enum Golpe { NENHUM, CRESCENTES, MARE, METEOROS, SOMBRA, INVESTIDA, RAIO, MANCHAS, ROUBO, RETORNO, REFLEXOS, TOTALIDADE, ABSOLUTO }
 
 const LUA := Color("#a5d8ff")
 const SOL := Color("#ffb24c")
 const SOMBRA := Color("#d299ff")
 const SEGURO := Color("#80ffcc")
-const ROTA_LUA := [Golpe.CRESCENTES, Golpe.MARE, Golpe.CRATERAS, Golpe.SOMBRA]
+const ROTA_LUA := [Golpe.CRESCENTES, Golpe.MARE, Golpe.METEOROS, Golpe.SOMBRA]
 const ROTA_SOL := [Golpe.INVESTIDA, Golpe.MANCHAS, Golpe.RAIO, Golpe.INVESTIDA, Golpe.ROUBO]
-const ROTA_ECLIPSE := [Golpe.TOTALIDADE, Golpe.RETORNO, Golpe.REFLEXOS, Golpe.CRATERAS]
-const DURACOES := [0.0, 3.3, 5.6, 3.9, 3.5, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
+const ROTA_ECLIPSE := [Golpe.TOTALIDADE, Golpe.RETORNO, Golpe.REFLEXOS, Golpe.METEOROS]
+const DURACOES := [0.0, 3.3, 5.6, 3.25, 5.4, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
 const NOMES := [
 	"",
 	"CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS",
 	"MARÉ LUNAR — SIGA AS BALIZAS VERDES",
-	"CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS",
-	"SOMBRA DO PASSADO — DEIXE SEU RASTRO PARA TRÁS",
+	"CHUVA DE METEOROS",
+	"CLONE LUNAR — ELE REPETE SEUS DISPAROS",
 	"INVESTIDA SOLAR — SAIA DA LINHA VERMELHA",
 	"RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO",
 	"MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO",
@@ -26,7 +26,7 @@ const NOMES := [
 	"CRESCENTES INCENDIÁRIOS — ELES RETORNAM",
 	"REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS",
 	"TOTALIDADE — ATRAIA O RAIO E CRUZE A PASSAGEM",
-	"ECLIPSE ABSOLUTO — SIGA A SOMBRA ATÉ O ABRIGO",
+	"ECLIPSE ABSOLUTO — BUSQUE O ABRIGO",
 ]
 
 const MEIA_ABERTURA := 0.38
@@ -37,12 +37,22 @@ var tempo := 0.0
 var origem := Vector2.ZERO
 var direcao := Vector2.RIGHT
 var alvo_id := 1
+var vez_clone := 0
 var marca := Vector2.ZERO
 var pontos := PackedVector2Array()
 var abrigos := PackedVector2Array()
 var lacunas := PackedFloat32Array()
 var historicos := {}
+const INTERVALO_POSE := 1.0 / 20.0
+const JANELA_MEMORIA := 2.9
+const MATERIALIZACAO := 0.7
+const VIDA_DARDO := 1.55
+const VELOCIDADE_DARDO := 315.0
+var historicos_tiros := {}
+var relogio := 0.0
 var amostra := 0.0
+var especial := {}
+var clone: CloneLunar
 var energia := 0.0
 var mascara_orbes := 0
 var serie := 0
@@ -56,6 +66,7 @@ var orbes: Array[OrbeAstral] = []
 
 
 func _ready() -> void:
+	add_to_group("memoria_sizigia")
 	top_level = true
 	global_transform = Transform2D.IDENTITY
 	z_index = 4
@@ -71,24 +82,97 @@ func pilotos_vivos() -> Array[Node2D]:
 
 
 func registrar_trajetorias(delta: float) -> void:
+	relogio += delta
 	amostra -= delta
 	if amostra > 0:
 		return
-	amostra = 0.1
+	amostra += INTERVALO_POSE
 	var presentes := {}
 	for p in pilotos_vivos():
 		var id := p.get_instance_id()
 		presentes[id] = true
-		var rastro: PackedVector2Array = historicos.get(id, PackedVector2Array())
-		if not rastro.is_empty() and rastro[-1].distance_to(p.global_position) > 90.0:
-			rastro.clear()
-		rastro.append(p.global_position)
-		if rastro.size() > 30:
-			rastro.remove_at(0)
-		historicos[id] = rastro
+		var poses: PackedVector4Array = historicos.get(id, PackedVector4Array())
+		poses.append(Vector4(p.global_position.x, p.global_position.y, p.global_rotation, relogio))
+		while poses.size() > 1 and poses[0].w < relogio - JANELA_MEMORIA:
+			poses.remove_at(0)
+		historicos[id] = poses
+		var tiros: PackedVector2Array = historicos_tiros.get(id, PackedVector2Array())
+		while not tiros.is_empty() and tiros[0].x < poses[0].w:
+			tiros.remove_at(0)
+		historicos_tiros[id] = tiros
 	for id in historicos.keys():
 		if not presentes.has(id):
 			historicos.erase(id)
+			historicos_tiros.erase(id)
+
+
+func registrar_disparo(piloto: Player, angulo: float) -> void:
+	if boss.destino_fase or not piloto.vivo or not is_finite(angulo):
+		return
+	var id := piloto.get_instance_id()
+	if not historicos.has(id):
+		return
+	var tiros: PackedVector2Array = historicos_tiros.get(id, PackedVector2Array())
+	if tiros.size() >= 96:
+		return
+	tiros.append(Vector2(relogio, angulo))
+	historicos_tiros[id] = tiros
+
+
+func preparar_memoria(alvo: Node2D) -> void:
+	var id := alvo.get_instance_id()
+	var poses: PackedVector4Array = historicos.get(id, PackedVector4Array()).duplicate()
+	var atual := Vector4(alvo.global_position.x, alvo.global_position.y, alvo.global_rotation, relogio)
+	if poses.is_empty() or relogio - poses[-1].w > 0.001:
+		poses.append(atual)
+	var inicio := poses[0].w
+	for i in poses.size():
+		poses[i].w -= inicio
+	var tiros := PackedVector2Array()
+	for tiro in historicos_tiros.get(id, PackedVector2Array()):
+		if tiro.x >= inicio:
+			tiros.append(Vector2(tiro.x - inicio, tiro.y))
+	especial = {"poses": poses, "tiros": tiros}
+	if alvo is Player:
+		especial["modelo"] = CloneLunar.capturar(alvo)
+	materializar_clone()
+
+
+func materializar_clone() -> void:
+	if not especial.has("modelo"):
+		return
+	clone = CloneLunar.new()
+	clone.name = "DuploLunar_%d" % serie
+	add_child(clone)
+	clone.configurar(especial.modelo)
+	atualizar_clone()
+
+
+func pose_em(instante: float) -> Vector4:
+	var poses: PackedVector4Array = especial.poses
+	for i in range(1, poses.size()):
+		var a := poses[i - 1]
+		var b := poses[i]
+		if instante >= b.w:
+			continue
+		# Wrap ou teleporte: o casco reaparece do outro lado sem cruzar a arena.
+		if Vector2(a.x, a.y).distance_squared_to(Vector2(b.x, b.y)) > 100.0 * 100.0:
+			return a
+		var peso := clampf((instante - a.w) / maxf(b.w - a.w, 0.001), 0, 1)
+		return Vector4(lerpf(a.x, b.x, peso), lerpf(a.y, b.y, peso), lerp_angle(a.z, b.z, peso), instante)
+	return poses[-1]
+
+
+func atualizar_clone() -> void:
+	if not is_instance_valid(clone):
+		return
+	var instante := tempo - MATERIALIZACAO
+	var pose := pose_em(instante)
+	clone.position = Vector2(pose.x, pose.y)
+	clone.rotation = pose.z
+	var fim: float = especial.poses[-1].w
+	clone.self_modulate.a = smoothstep(0.0, 0.32, tempo) * (1.0 - smoothstep(fim, fim + 0.32, instante))
+	clone.visible = clone.self_modulate.a > 0.001
 
 
 func escolher() -> void:
@@ -114,6 +198,11 @@ func iniciar(escolha: int) -> void:
 	serie += 1
 	tipo = escolha as Golpe
 	var alvo := pilotos[(serie - 1) % pilotos.size()]
+	if tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO]:
+		pilotos.sort_custom(func(a: Node2D, b: Node2D) -> bool:
+			return a.get_multiplayer_authority() < b.get_multiplayer_authority())
+		alvo = pilotos[vez_clone % pilotos.size()]
+		vez_clone += 1
 	alvo_id = alvo.get_multiplayer_authority()
 	origem = boss.global_position
 	marca = alvo.global_position
@@ -135,11 +224,19 @@ func iniciar(escolha: int) -> void:
 			if not protegido(abrigo, 60.0):
 				abrigos.append(abrigo)
 	if tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO]:
-		pontos = historicos.get(alvo.get_instance_id(), PackedVector2Array([marca])).duplicate()
+		preparar_memoria(alvo)
 	if tipo == Golpe.REFLEXOS:
 		pontos = PackedVector2Array([area.position + area.size * Vector2(0.20, 0.27), area.position + area.size * Vector2(0.80, 0.73)])
-	if tipo == Golpe.CRATERAS:
-		pontos.append(marca)
+	if tipo == Golpe.METEOROS:
+		var quantidade := 4 if boss.fase_atual == 1 or boss.Vida < boss.VidaMaxima * 0.25 else 3
+		var quedas := PackedVector2Array()
+		for i in quantidade:
+			var velocidade: Vector2 = alvo.velocity if alvo is CharacterBody2D else Vector2.ZERO
+			var alvo_previsto: Vector2 = marca + velocidade * (0.18 + i * 0.035)
+			var desvio := Vector2(randf_range(-160, 160), randf_range(-120, 120))
+			pontos.append((alvo_previsto + desvio).clamp(area.position, area.end))
+			quedas.append(Vector2(randf_range(-125, 125), -250))
+		especial = {"quedas": quedas}
 	if tipo == Golpe.MANCHAS:
 		mascara_orbes = 7
 		criar_orbes()
@@ -148,11 +245,11 @@ func iniciar(escolha: int) -> void:
 
 
 func snapshot() -> Array:
-	return [serie, tipo, tempo, origem, direcao, alvo_id, marca, pontos, abrigos, lacunas, energia, mascara_orbes, investida_dupla]
+	return [serie, tipo, tempo, origem, direcao, alvo_id, marca, pontos, abrigos, lacunas, energia, mascara_orbes, investida_dupla, especial]
 
 
 func receber(s: Array) -> void:
-	if s.size() != 13 or int(s[0]) < serie:
+	if s.size() != 14 or int(s[0]) < serie:
 		return
 	var nova := int(s[0]) != serie or int(s[1]) != tipo
 	if nova:
@@ -170,6 +267,10 @@ func receber(s: Array) -> void:
 	energia = s[10]
 	mascara_orbes = s[11]
 	investida_dupla = s[12]
+	especial = s[13]
+	if nova and tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO]:
+		materializar_clone()
+	atualizar_clone()
 	if nova and tipo != Golpe.NENHUM:
 		boss.subtitulo_alterado.emit(tr(NOMES[tipo]))
 		if tipo == Golpe.MANCHAS:
@@ -183,6 +284,7 @@ func _process(delta: float) -> void:
 	# Interpola entre as amostras completas do servidor. Somente ele resolve dano.
 	tempo = minf(tempo + delta, DURACOES[tipo])
 	feedback_local(delta)
+	atualizar_clone()
 	atualizar_orbes()
 	queue_redraw()
 
@@ -192,17 +294,13 @@ func avancar(delta: float) -> void:
 	tempo += delta
 	pilotos = pilotos_vivos()
 	feedback_local(delta)
+	atualizar_clone()
 	if tipo in [Golpe.RAIO, Golpe.TOTALIDADE] and tempo < trava_raio():
 		for p in pilotos:
 			if p.get_multiplayer_authority() == alvo_id:
 				marca = p.global_position
 				direcao = origem.direction_to(marca)
 				break
-	if tipo == Golpe.CRATERAS and pontos.size() < 3 and tempo >= pontos.size() * 0.52:
-		for p in pilotos:
-			if p.get_multiplayer_authority() == alvo_id:
-				marca = p.global_position
-		pontos.append(marca)
 	if tipo == Golpe.INVESTIDA:
 		if tempo < 0.95:
 			boss.estado = boss.Estado.AVISANDO
@@ -231,6 +329,11 @@ func encerrar() -> void:
 	abrigos = PackedVector2Array()
 	lacunas = PackedFloat32Array()
 	impactos.clear()
+	especial = {}
+	if is_instance_valid(clone):
+		clone.hide()
+		clone.queue_free()
+		clone = null
 	for orbe in orbes:
 		if is_instance_valid(orbe):
 			orbe.hide()
@@ -253,15 +356,21 @@ func feedback_local(delta: float) -> void:
 			if p is Player and (not Rede.modo_multiplayer or p.is_multiplayer_authority()):
 				p.velocity += p.global_position.direction_to(origem) * 65.0 * delta
 	var instante := -1.0
-	if tipo == Golpe.INVESTIDA:
+	if tipo == Golpe.SOMBRA:
+		instante = 0.18
+	elif tipo == Golpe.INVESTIDA:
 		instante = 0.95
 	elif tipo in [Golpe.RAIO, Golpe.TOTALIDADE]:
 		instante = trava_raio()
+	elif tipo == Golpe.METEOROS:
+		instante = 1.55
 	elif tipo == Golpe.ABSOLUTO:
 		instante = 5.1
 	if instante >= 0 and tempo >= instante and not som_emitido:
 		som_emitido = true
-		var som := &"explosoes" if tipo == Golpe.ABSOLUTO else &"investida"
+		var som := &"explosoes" if tipo in [Golpe.ABSOLUTO, Golpe.METEOROS] else &"investida"
+		if tipo == Golpe.SOMBRA:
+			som = &"retrocesso"
 		preload("res://Scripts/AudioCombate.gd").tocar(self, som, 0.0, 0.90, 0.90, -12.0)
 		Global.vibrar_controle(0.25, 0.40, 0.10)
 
@@ -350,9 +459,9 @@ func padrao(visual: bool) -> void:
 		Golpe.MARE:
 			onda(visual, 1.25, 0.0, 0)
 			onda(visual, 2.70, 0.16, 1)
-		Golpe.CRATERAS:
+		Golpe.METEOROS:
 			for i in pontos.size():
-				cratera(visual, i)
+				meteoro(visual, i)
 		Golpe.SOMBRA, Golpe.ABSOLUTO:
 			memoria(visual)
 			if tipo == Golpe.ABSOLUTO:
@@ -461,38 +570,74 @@ func raio(visual: bool) -> void:
 				acerto(p, 4, 0.84 if tipo == Golpe.TOTALIDADE else 0.76, origem)
 
 
-func cratera(visual: bool, i: int) -> void:
-	var idade := tempo - (1.55 + i * 0.52)
+func meteoro(visual: bool, i: int) -> void:
+	var queda := 1.55 + i * 0.16
+	var idade := tempo - queda
 	var pos := pontos[i]
-	if visual and idade < 0.42:
-		if idade < 0:
-			draw_circle(pos, 48, Color(LUA, 0.09))
-			draw_arc(pos, 48, 0, TAU, 48, LUA, 2, true)
-			draw_arc(pos, 48, -PI/2, -PI/2 + TAU * clampf(1 + idade / 1.55, 0, 1), 48, Color.WHITE, 4, true)
-			draw_line(pos + Vector2(-26,-70) * -idade, pos + Vector2(-12,-32) * -idade, LUA, 4, true)
-		else:
-			draw_arc(pos, 48 + idade * 75, 0, TAU, 48, Color(LUA, 1 - idade / 0.42), 5, true)
-	elif not visual and idade >= 0 and idade < 0.24:
+	var cor := LUA if boss.fase_atual == 1 else SOMBRA
+	if visual and idade < 0:
+		var progresso := clampf(tempo / queda, 0, 1)
+		var pedra: Vector2 = pos + especial.quedas[i] * (1.0 - progresso * progresso)
+		var tamanho := PerigoAstral.TEXTURA_METEORO.get_size() * lerpf(0.38, 0.72, progresso)
+		draw_set_transform(pos, 0.0, Vector2(1, 0.52))
+		draw_circle(Vector2.ZERO, lerpf(16, 54, progresso), Color(0.06, 0.045, 0.11, 0.12 + progresso * 0.40))
+		draw_set_transform(pedra, tempo * (4.2 + progresso * 2.5))
+		draw_texture_rect(PerigoAstral.TEXTURA_METEORO, Rect2(-tamanho * 0.5, tamanho), false, Color(1.32, 1.32, 1.32))
+		draw_set_transform_matrix(Transform2D.IDENTITY)
+	elif visual and idade <= 0.34:
+		var onda := idade / 0.34
+		draw_circle(pos, lerpf(10, 58, onda), Color(cor, 0.28 * (1 - onda)))
+		draw_arc(pos, lerpf(8, 65, onda), 0, TAU, 48, Color(cor, 1 - onda), 5, true)
+		for k in 6:
+			var eixo := Vector2.from_angle(k * TAU / 6 + i)
+			draw_line(pos + eixo * 36 * onda, pos + eixo * 78 * onda, Color(cor, 1 - onda), 2, true)
+	elif not visual and anterior < queda and tempo >= queda:
 		for p in pilotos:
-			if p.global_position.distance_to(pos) <= 48:
-				acerto(p, i, 0.48, pos)
+			if p.global_position.distance_to(pos) <= 58:
+				acerto(p, i, 0.48 if boss.fase_atual == 1 else 0.30, pos)
 
 
 func memoria(visual: bool) -> void:
-	if pontos.is_empty() or tempo > 2.90:
+	if not especial.has("poses"):
 		return
-	var passo := clampf((tempo - 1.15) / 1.65, 0, 1) * (pontos.size() - 1)
-	var i := floori(passo)
-	var pos := pontos[i].lerp(pontos[mini(i + 1, pontos.size() - 1)], passo - i)
-	if visual:
-		if pontos.size() > 1:
-			draw_polyline(pontos, Color(SOMBRA, 0.36), 4, true)
-		draw_arc(pos, 22, tempo, TAU + tempo - 0.45, 24, SOMBRA, 3, true)
-		draw_circle(pos, 12, Color(SOMBRA, 0.45))
-	elif tempo >= 1.15:
+	var instante := tempo - MATERIALIZACAO
+	var pose := pose_em(instante)
+	var pos := Vector2(pose.x, pose.y)
+	var fim: float = especial.poses[-1].w
+	if visual and instante < 0:
+		var carga := smoothstep(0.0, MATERIALIZACAO, tempo)
+		var fase := tempo * 3.0
+		var brilho := sin(PI * carga)
+		for lado in [0.0, PI]:
+			var arco: float = fase + lado
+			draw_arc(origem, 64.0 + carga * 8.0, arco, arco + 0.9, 18, Color(LUA, brilho), 2, true)
+			draw_arc(pos, lerpf(33, 16, carga), -arco, -arco + 1.7, 20, Color(SOMBRA, brilho), 2, true)
+	elif not visual and instante >= 0 and instante <= fim:
 		for p in pilotos:
-			if p.global_position.distance_to(pos) < 24:
+			if p.global_position.distance_squared_to(pos) <= 18.0 * 18.0:
 				acerto(p, 6, 0.30, pos)
+	for i in especial.tiros.size():
+		var tiro: Vector2 = especial.tiros[i]
+		var idade := instante - tiro.x
+		if idade < 0 or idade > VIDA_DARDO:
+			continue
+		var emissao := pose_em(tiro.x)
+		var rumo := Vector2.from_angle(tiro.y)
+		var boca: Vector2 = especial.get("modelo", {}).get("boca", Vector2(16, 0))
+		var origem_tiro := Vector2(emissao.x, emissao.y) + boca.rotated(tiro.y)
+		var ponta := origem_tiro + rumo * idade * VELOCIDADE_DARDO
+		if visual:
+			var asa := rumo.orthogonal() * 4
+			draw_colored_polygon(PackedVector2Array([ponta + rumo * 8, ponta + asa, ponta - rumo * 9, ponta - asa]), SOMBRA)
+			draw_line(ponta - rumo * 4, ponta + rumo * 6, Color.WHITE, 2, true)
+			if idade < 0.075:
+				draw_circle(origem_tiro, 5 * (1 - idade / 0.075), Color.WHITE)
+		else:
+			var cauda := ponta - rumo * minf(idade, tempo - anterior) * VELOCIDADE_DARDO
+			for p in pilotos:
+				var perto := Geometry2D.get_closest_point_to_segment(p.global_position, cauda, ponta) if cauda != ponta else ponta
+				if perto.distance_squared_to(p.global_position) <= 11.0 * 11.0:
+					acerto(p, 200 + i, 0.26, ponta)
 
 
 func clarao(visual: bool) -> void:
@@ -501,8 +646,6 @@ func clarao(visual: bool) -> void:
 			draw_circle(abrigo, 82, Color(SEGURO, 0.12))
 			draw_arc(abrigo, 82, 0, TAU, 64, SEGURO, 3, true)
 			draw_arc(abrigo, 82 + 16 * (1.0 - clampf(tempo / 5.1, 0, 1)), 0, TAU, 60, Color(SEGURO, 0.60), 2, true)
-			if not pontos.is_empty():
-				draw_dashed_line(pontos[-1], abrigo, Color(SEGURO, 0.55), 2, 14, true)
 		if tempo >= 5.10:
 			var area := Global.obter_retangulo_area_visivel()
 			draw_rect(area, Color(0.98, 0.80, 0.95, 0.48 * (1.0 - (tempo - 5.1) / 0.25)))

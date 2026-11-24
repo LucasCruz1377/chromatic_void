@@ -58,6 +58,7 @@ func _ready() -> void:
 	if not await verificar_sizigia_rede():
 		falhar("golpes ou transições da Sizígia divergiram entre quatro pilotos")
 		return
+	local.velocity = Vector2.ZERO # A prova de movimento começa após a atração da maré.
 	var destino_local := destino_teste(Rede.peer_local())
 	for quadro in 36:
 		local.global_position = local.global_position.move_toward(destino_local, 6.0)
@@ -286,23 +287,52 @@ func verificar_sizigia_rede() -> bool:
 		return false
 	if not await confirmar_sizigia(1):
 		return false
+	var nave := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
+	await get_tree().create_timer(0.20).timeout
+	nave.fire()
+	await get_tree().create_timer(0.24).timeout
+	nave.fire()
+	if host:
+		if not await esperar(func() -> bool:
+			for p in boss.golpes.pilotos_vivos():
+				if boss.golpes.historicos_tiros.get(p.get_instance_id(), []).size() < 2:
+					return false
+			return true
+		):
+			return false
+		boss.golpes.vez_clone = 1 # Copia um cliente e seus disparos recebidos pelo host.
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.SOMBRA)
+	if not await esperar(func() -> bool:
+		return is_instance_valid(boss.golpes.clone) and boss.golpes.alvo_id > 1 and boss.golpes.especial.tiros.size() == 2 and boss.golpes.tempo > 0.75
+	):
+		return false
+	if not await confirmar_sizigia(2):
+		return false
+	if host:
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.METEOROS)
+	if not await esperar(func() -> bool:
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.METEOROS and boss.golpes.especial.quedas.size() == 4
+	):
+		return false
+	if not await confirmar_sizigia(3):
+		return false
 	if host:
 		boss.tomarDano(boss.Vida)
 	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.SOL and boss.destino_fase == 0):
 		return false
-	if not await confirmar_sizigia(2):
+	if not await confirmar_sizigia(4):
 		return false
 	if host:
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.MANCHAS)
 	if not await esperar(func() -> bool: return boss.golpes.orbes.size() == 3):
 		return false
-	if not await confirmar_sizigia(3):
+	if not await confirmar_sizigia(5):
 		return false
 	if papel == "client_a":
 		boss.golpes.orbes[1].tomarDano(3)
 	if not await esperar(func() -> bool: return boss.golpes.mascara_orbes == 5):
 		return false
-	if not await confirmar_sizigia(4):
+	if not await confirmar_sizigia(6):
 		return false
 	if host:
 		boss.tomarDano(boss.Vida)
@@ -312,7 +342,7 @@ func verificar_sizigia_rede() -> bool:
 		return false
 	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.TOTALIDADE and boss.golpes.lacunas.size() == 8):
 		return false
-	if not await confirmar_sizigia(5):
+	if not await confirmar_sizigia(7):
 		return false
 	if host:
 		boss.queue_free()

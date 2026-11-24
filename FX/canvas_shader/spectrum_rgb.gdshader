@@ -3,6 +3,8 @@ shader_type canvas_item;
 uniform float velocidade : hint_range(0.05, 1.0) = 0.18;
 uniform float brilho : hint_range(0.5, 2.0) = 1.25;
 
+uniform bool inverter_cores = false;
+
 void fragment() {
 	vec4 base = texture(TEXTURE, UV);
 	float fase = TIME * velocidade + UV.y * 1.35 + UV.x * 0.35;
@@ -12,4 +14,7 @@ void fragment() {
 	float mascara_cor = smoothstep(0.10, 0.42, max(base.r, max(base.g, base.b)));
 	vec3 resultado = mix(base.rgb, rgb * brilho, mascara_cor);
 	COLOR = vec4(resultado * COLOR.rgb, base.a * COLOR.a);
+	if (inverter_cores) {
+		COLOR.rgb = vec3(1.0) - clamp(COLOR.rgb, vec3(0.0), vec3(1.0));
+	}
 }
