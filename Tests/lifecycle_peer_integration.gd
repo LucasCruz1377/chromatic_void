@@ -29,6 +29,8 @@ func _ready() -> void:
 	if not await esperar(func() -> bool: return Rede.jogadores.size() == 4):
 		falhar("lobby nao chegou a quatro pilotos")
 		return
+	if papel in ["client_a", "client_b"]:
+		Rede.configuracao_teste = {"mutacao": "u13_dupla_experiencia"}
 	if papel == "host" and not Rede.solicitar_inicio_partida():
 		falhar("host nao iniciou pelo lobby")
 		return
@@ -74,6 +76,9 @@ func _ready() -> void:
 	if papel == "host":
 		if not await esperar(func() -> bool: return prontos.size() == 4):
 			falhar("peers nao confirmaram entrada")
+			return
+		if arena.conceder_xp_equipe(5.25) != 10.5:
+			falhar("dois clientes com a passiva devem conceder exatamente 2x XP")
 			return
 		var dash := preload("res://Habilidades/habilidadeHiperdash.tres").duplicate() as HabilidadeHiperdash
 		var tempo_anterior := Engine.time_scale
@@ -134,6 +139,9 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return get_tree().paused):
 			falhar("a pausa do host nao chegou")
 			return
+		if not await esperar(func() -> bool: return progresso_igual(4, 1.5)):
+			falhar("XP ou nível de uma das quatro naves divergiu")
+			return
 		var flor := arena.get_node("FlorCicloVida") as ChefeBase
 		local.HabilidadeEquipada.cooldown_atual = 3.0
 		var posicao := local.global_position
@@ -173,6 +181,16 @@ func _ready() -> void:
 		return
 	if not await esperar(func() -> bool: return Rede.jogadores.size() == 3 and get_tree().get_nodes_in_group("player").size() == 3):
 		falhar("a nave desconectada nao foi removida pelo host")
+		return
+	var aviso := arena.get_node("GUI/AvisoRede") as Label
+	if not await esperar(func() -> bool: return aviso.visible and aviso.text.contains("CLIENT_B")):
+		falhar("o aviso de desconexão não chegou com o nome do piloto")
+		return
+	if papel == "host" and arena.conceder_xp_equipe(1.0) != 2.0:
+		falhar("a passiva do cliente restante não concedeu 2x XP")
+		return
+	if not await esperar(func() -> bool: return progresso_igual(4, 3.5)):
+		falhar("o XP divergiu após a saída de um dos pilotos com a passiva")
 		return
 	if get_tree().get_nodes_in_group("projetil_primaveril").size() != 3:
 		falhar("espinhos foram apagados no cliente")
@@ -245,6 +263,13 @@ func _confirmar_fim() -> void:
 @rpc("authority", "call_remote", "reliable")
 func _liberar_saida() -> void:
 	saida_liberada = true
+
+
+func progresso_igual(nivel: int, xp: float) -> bool:
+	for piloto: Player in get_tree().get_nodes_in_group("player"):
+		if piloto.nivel_atual != nivel or not is_equal_approx(piloto.xp_atual, xp):
+			return false
+	return true
 
 
 func destino_teste(peer: int) -> Vector2:

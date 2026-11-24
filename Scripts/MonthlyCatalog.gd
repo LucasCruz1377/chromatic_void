@@ -146,7 +146,7 @@ static func upgrades() -> Array[Dictionary]:
 	_item(&"u10_marca_cacador", "MARCA DO CAÇADOR", "Inimigos atingidos recebem 20% mais dano de qualquer fonte.", 0, Color("ff9852"), "OUT • LUA DO CAÇADOR", [5, 2, 3], &"boss_sizigia"),
 	_item(&"u11_barragem_castor", "BARRAGEM DO CASTOR", "Ergue uma barreira temporária no lado oposto ao movimento.", 0, Color("d99c63"), "NOV • LUA DO CASTOR", [2, 5, 2], &"constelacao_1000"),
 	_item(&"u12_noite_congelada", "NOITE CONGELADA", "A cada dois segundos, aplica uma camada de gelo aos inimigos em um raio de 180 px.", 0, Color("8fc7ff"), "DEZ • LUA FRIA", [3, 5, 2], &"boss_sizigia"),
-	_item(&"u13_dupla_experiencia", "DOBRO DE EXPERIÊNCIA", "Enquanto equipado, dobra toda experiência recebida durante a partida.", 30000, Color("7dffbc"), "UPGRADE • EXPERIÊNCIA", [3, 5, 4], &"", "A progressão cromática transforma cada vitória em aprendizado acelerado."),
+	_item(&"u13_dupla_experiencia", "DOBRO DE EXPERIÊNCIA", "Dobra o XP recebido. No cooperativo, toda a equipe recebe 2× XP, mesmo com vários pilotos equipados.", 30000, Color("7dffbc"), "UPGRADE • EXPERIÊNCIA", [3, 5, 4], &"", "A progressão cromática transforma cada vitória em aprendizado acelerado."),
 	]
 
 

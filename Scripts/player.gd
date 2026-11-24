@@ -121,6 +121,7 @@ var contador_disparos_rede := 0
 
 # Pontos não interrompem a partida. O jogador abre o menu quando quiser.
 var pontos_upgrade_pendentes := 0
+var pontos_equipe_recebidos := 0
 var niveis_upgrades: Dictionary = {}
 var rerolls_upgrades_restantes := REROLLS_UPGRADES_INICIAIS
 
@@ -859,8 +860,8 @@ func atualizar_ui() -> void:
 		display_skill.texture = null
 	atualizar_barra_cooldown_habilidade()
 
-	barra_xp.value = xp_atual
 	barra_xp.max_value = xp_necessario
+	barra_xp.value = xp_atual
 
 
 func criar_barra_cooldown_habilidade() -> void:
@@ -2357,6 +2358,13 @@ func _desenhar_carga_arma() -> void:
 
 func ganhar_xp(valor: float) -> void:
 	xp_atual += valor
+	aplicar_xp_modulo(valor)
+	while xp_atual >= xp_necessario:
+		xp_atual -= xp_necessario
+		subir_de_nivel()
+
+
+func aplicar_xp_modulo(valor: float) -> void:
 	if modulo_nave == &"n02_luz_vital":
 		progresso_luz_vital += valor
 		if progresso_luz_vital >= 30.0:
@@ -2364,38 +2372,19 @@ func ganhar_xp(valor: float) -> void:
 			curar(12.0)
 			ativar_escudo(16.0, 4.0, Color(1.0, 0.84, 0.28))
 			_criar_feedback_monthly(global_position, Color(1.0, 0.84, 0.28), 1.05, 2.0)
-	while xp_atual >= xp_necessario:
-		xp_atual -= xp_necessario
-		subir_de_nivel()
 
 
-func conceder_xp_rede(valor: float) -> void:
-	var recompensa := clampf(valor, 0.0, 10000.0)
-	if Rede.modo_multiplayer and not is_multiplayer_authority():
-		if multiplayer.is_server() and peer_id_dono > 1 and Rede.jogadores.has(peer_id_dono):
-			# O host mantem a progressao oficial dos pilotos remotos.
-			ganhar_xp(recompensa)
-			_receber_xp_autoritativo.rpc_id(
-				peer_id_dono, recompensa, nivel_atual, xp_atual,
-				xp_necessario, pontos_upgrade_pendentes
-			)
-		return
-	ganhar_xp(recompensa)
-
-
-@rpc("any_peer", "call_remote", "reliable")
-func _receber_xp_autoritativo(
-	valor: float, nivel_servidor: int, xp_servidor: float,
-	proximo_xp_servidor: int, melhorias_servidor: int
-) -> void:
-	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
-		return
-	ganhar_xp(clampf(valor, 0.0, 10000.0))
-	nivel_atual = maxi(nivel_servidor, 1)
-	xp_necessario = maxi(proximo_xp_servidor, 1)
-	xp_atual = clampf(xp_servidor, 0.0, float(xp_necessario))
-	pontos_upgrade_pendentes = maxi(melhorias_servidor, 0)
-	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+func aplicar_progressao_equipe(nivel: int, xp: float, pontos: int) -> void:
+	var nivel_anterior := nivel_atual
+	nivel_atual = nivel
+	xp_necessario = calcular_xp_proximo_nivel(nivel)
+	xp_atual = xp
+	if pontos > pontos_equipe_recebidos:
+		pontos_upgrade_pendentes += pontos - pontos_equipe_recebidos
+		pontos_equipe_recebidos = pontos
+		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+	if nivel > nivel_anterior:
+		subiuDeNivel.emit()
 
 
 func subir_de_nivel() -> void:
@@ -2412,7 +2401,7 @@ func subir_de_nivel() -> void:
 	subiuDeNivel.emit()
 
 
-func calcular_xp_proximo_nivel(nivel: int) -> int:
+static func calcular_xp_proximo_nivel(nivel: int) -> int:
 	var indice := maxi(nivel - 1, 0)
 	if indice < XP_PROGRESSAO_INICIAL.size():
 		return int(XP_PROGRESSAO_INICIAL[indice])

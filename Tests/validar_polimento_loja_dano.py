@@ -195,8 +195,8 @@ assert 'ÁREA SEGURA — MOVA-SE' in SIZIGIA_FINAL
 assert 'Vector2(52, 52) if detalhes else Vector2(56, 56)' in SHOP
 assert '&"u13_dupla_experiencia"' in CATALOGO and '30000' in CATALOGO
 assert 'func obter_multiplicador_xp_loja() -> float:' in PLAYER
-assert 'recompensa_xp * multiplicador_xp' in ENEMY
-assert 'xp_jogador *= float(jogador.call("obter_multiplicador_xp_loja"))' in ASTEROIDE_BONUS
+assert 'conceder_xp_equipe(recompensa_xp)' in ENEMY
+assert 'conceder_xp_equipe(calcular_xp(' in ASTEROIDE_BONUS
 assert 'float(boss.get("Dano")) * (1.75 if suprema else 1.35)' in SIZIGIA_FINAL
 assert '_encerrar_mecanica(13.0)' in SIZIGIA_FINAL
 assert "vincular_colisao_visual(peca, forma)" in (ROOT / "Scripts/BossPet0.gd").read_text()
