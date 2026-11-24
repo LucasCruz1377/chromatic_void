@@ -119,7 +119,7 @@ var estilo_vida_rede: StyleBoxFlat
 var habilidade_rede_path := ""
 var niveis_upgrades_rede: Dictionary = {}
 var contador_disparos_rede := 0
-var primeira_bala_da_salva := false
+var gatilho_pressionado := false
 
 # Pontos não interrompem a partida. O jogador abre o menu quando quiser.
 var pontos_upgrade_pendentes := 0
@@ -1526,6 +1526,11 @@ func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
 
 
 func atualizar_combate(delta: float) -> void:
+	var ativo := vivo and not ctrlblock and Input.is_action_pressed("atirar")
+	if gatilho_pressionado != ativo:
+		gatilho_pressionado = ativo
+		if Rede.esta_conectado() and not multiplayer.is_server():
+			_sincronizar_gatilho.rpc_id(1, ativo)
 	cooldown = maxf(cooldown - delta, 0.0)
 	if arma_monthly == &"a06_feixe_perielio":
 		_atualizar_feixe_perielio(delta)
@@ -1552,13 +1557,13 @@ func atualizar_combate(delta: float) -> void:
 		fire()
 
 
+@rpc("authority", "call_remote", "reliable")
+func _sincronizar_gatilho(ativo: bool) -> void:
+	if multiplayer.is_server():
+		gatilho_pressionado = vivo and ativo
+
+
 func fire() -> void:
-	primeira_bala_da_salva = true
-	_disparar_arma_equipada()
-	primeira_bala_da_salva = false
-
-
-func _disparar_arma_equipada() -> void:
 	if not tiro:
 		return
 	if tipo_poder_temporario == &"imaginacao" and tempo_poder_monthly > 0.0:
@@ -1668,7 +1673,6 @@ func duracao_resfriamento_perielio() -> float:
 func _iniciar_feixe_perielio() -> void:
 	if is_instance_valid(feixe_perielio_ativo) or bloqueio_feixe_perielio > 0.0:
 		return
-	primeira_bala_da_salva = true
 	feixe_perielio_ativo = criar_projetil(
 		rotation, 1.0 / DANO_BASE_NAVE, false, null, 0.0, &"perielio_ray",
 		Color(1.0, 0.78, 0.08), {"tempo_vida": 3600.0}
@@ -1874,11 +1878,6 @@ func criar_projetil(
 	if origem_personalizada is Vector2:
 		projetil.global_position = origem_personalizada
 	projetil.rotation = angulo
-	if primeira_bala_da_salva:
-		primeira_bala_da_salva = false
-		projetil.set_meta("mira_salva", global_rotation)
-		if not Rede.modo_multiplayer or multiplayer.is_server():
-			get_tree().call_group("memoria_sizigia", "registrar_disparo", self, global_rotation)
 	if not eh_nova:
 		historico_disparos.append({"tempo": Global.tempo_combate_ms(), "angulo": angulo})
 		while historico_disparos.size() > 24:
@@ -1959,7 +1958,7 @@ func registrar_projetil_rede(
 	var cena_path := "res://Entities/fireball.tscn"
 	if tiro and not tiro.resource_path.is_empty():
 		cena_path = tiro.resource_path
-	var dados := {
+	batalha.call("replicar_disparo_player", {
 		"peer_id": peer_id_dono,
 		"id_disparo": id_disparo,
 		"cena": cena_path,
@@ -1973,10 +1972,7 @@ func registrar_projetil_rede(
 		"config": config.duplicate(true),
 		"fragmento": bool(projetil.get("eh_fragmento")),
 		"critico": bool(projetil.get("eh_critico")),
-	}
-	if projetil.has_meta("mira_salva"):
-		dados["mira_salva"] = projetil.get_meta("mira_salva")
-	batalha.call("replicar_disparo_player", dados)
+	})
 
 
 func _replicar_habilidade_visual_generica() -> void:

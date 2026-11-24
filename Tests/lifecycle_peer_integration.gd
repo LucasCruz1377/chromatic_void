@@ -289,13 +289,14 @@ func verificar_sizigia_rede() -> bool:
 		return false
 	var nave := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
 	await get_tree().create_timer(0.20).timeout
-	nave.fire()
-	await get_tree().create_timer(0.24).timeout
-	nave.fire()
+	nave.cooldown = 20.0
+	Input.action_press("atirar")
+	await get_tree().create_timer(0.82).timeout
+	Input.action_release("atirar")
 	if host:
 		if not await esperar(func() -> bool:
 			for p in boss.golpes.pilotos_vivos():
-				if boss.golpes.historicos_tiros.get(p.get_instance_id(), []).size() < 2:
+				if boss.golpes.historicos_tiros.get(p.get_instance_id(), []).size() < 3 or p.gatilho_pressionado:
 					return false
 			return true
 		):
@@ -303,7 +304,7 @@ func verificar_sizigia_rede() -> bool:
 		boss.golpes.vez_clone = 1 # Copia um cliente e seus disparos recebidos pelo host.
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.SOMBRA)
 	if not await esperar(func() -> bool:
-		return is_instance_valid(boss.golpes.clone) and boss.golpes.alvo_id > 1 and boss.golpes.especial.tiros.size() == 2 and boss.golpes.tempo > 0.75
+		return is_instance_valid(boss.golpes.clone) and boss.golpes.alvo_id > 1 and boss.golpes.especial.tiros.size() == 3 and boss.golpes.tempo > 0.75
 	):
 		return false
 	if not await confirmar_sizigia(2):
@@ -311,7 +312,7 @@ func verificar_sizigia_rede() -> bool:
 	if host:
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.METEOROS)
 	if not await esperar(func() -> bool:
-		return boss.golpes.tipo == SizigiaFinalController.Golpe.METEOROS and boss.golpes.especial.quedas.size() == 4
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.METEOROS and boss.golpes.especial.quedas.size() == 12
 	):
 		return false
 	if not await confirmar_sizigia(3):

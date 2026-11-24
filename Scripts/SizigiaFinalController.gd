@@ -12,13 +12,13 @@ const SEGURO := Color("#80ffcc")
 const ROTA_LUA := [Golpe.CRESCENTES, Golpe.MARE, Golpe.METEOROS, Golpe.SOMBRA]
 const ROTA_SOL := [Golpe.INVESTIDA, Golpe.MANCHAS, Golpe.RAIO, Golpe.INVESTIDA, Golpe.ROUBO]
 const ROTA_ECLIPSE := [Golpe.TOTALIDADE, Golpe.RETORNO, Golpe.REFLEXOS, Golpe.METEOROS]
-const DURACOES := [0.0, 3.3, 5.6, 3.25, 5.4, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
+const DURACOES := [0.0, 3.3, 5.6, 5.05, 5.4, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
 const NOMES := [
 	"",
 	"CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS",
 	"MARÉ LUNAR — SIGA AS BALIZAS VERDES",
 	"CHUVA DE METEOROS",
-	"CLONE LUNAR — ELE REPETE SEUS DISPAROS",
+	"CLONE LUNAR — ELE COPIA SUA MIRA",
 	"INVESTIDA SOLAR — SAIA DA LINHA VERMELHA",
 	"RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO",
 	"MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO",
@@ -43,12 +43,19 @@ var pontos := PackedVector2Array()
 var abrigos := PackedVector2Array()
 var lacunas := PackedFloat32Array()
 var historicos := {}
-const INTERVALO_POSE := 1.0 / 20.0
+const INTERVALO_POSE := 1.0 / 30.0
 const JANELA_MEMORIA := 2.9
 const MATERIALIZACAO := 0.7
 const VIDA_DARDO := 1.55
 const VELOCIDADE_DARDO := 315.0
+const INTERVALO_TIRO_CLONE := 1.0 / 3.0
+const AVISO_METEORO := 1.35
 var historicos_tiros := {}
+var proximo_tiro := {}
+var gatilhos := {}
+var ritmo_replica := 1.0
+var forma_tiro := PackedVector2Array()
+var cor_tiro := Color.WHITE
 var relogio := 0.0
 var amostra := 0.0
 var especial := {}
@@ -58,6 +65,8 @@ var mascara_orbes := 0
 var serie := 0
 var investida_dupla := false
 var som_emitido := false
+var ultima_leva_sonora := -1
+var ultimo_pulso_sonoro := -1
 var impactos := {}
 var anterior := 0.0
 var pilotos: Array[Node2D] = []
@@ -66,7 +75,12 @@ var orbes: Array[OrbeAstral] = []
 
 
 func _ready() -> void:
-	add_to_group("memoria_sizigia")
+	# Copia somente a geometria do projétil padrão. A colisão continua hostil e autoritativa.
+	var referencia := preload("res://Entities/fireball.tscn").instantiate()
+	var poligono := referencia.get_node("Polygon2D") as Polygon2D
+	forma_tiro = poligono.transform * poligono.polygon
+	cor_tiro = poligono.color.inverted()
+	referencia.free()
 	top_level = true
 	global_transform = Transform2D.IDENTITY
 	z_index = 4
@@ -96,27 +110,26 @@ func registrar_trajetorias(delta: float) -> void:
 		while poses.size() > 1 and poses[0].w < relogio - JANELA_MEMORIA:
 			poses.remove_at(0)
 		historicos[id] = poses
-		var tiros: PackedVector2Array = historicos_tiros.get(id, PackedVector2Array())
-		while not tiros.is_empty() and tiros[0].x < poses[0].w:
+		var tiros: PackedFloat32Array = historicos_tiros.get(id, PackedFloat32Array())
+		var proximo := float(proximo_tiro.get(id, relogio))
+		var pressionado: bool = p is Player and p.gatilho_pressionado
+		if pressionado:
+			if not gatilhos.get(id, false):
+				proximo = maxf(relogio, proximo)
+			if relogio + 0.00001 >= proximo:
+				tiros.append(proximo)
+				proximo += INTERVALO_TIRO_CLONE
+		gatilhos[id] = pressionado
+		proximo_tiro[id] = proximo
+		while not tiros.is_empty() and tiros[0] < poses[0].w:
 			tiros.remove_at(0)
 		historicos_tiros[id] = tiros
 	for id in historicos.keys():
 		if not presentes.has(id):
 			historicos.erase(id)
 			historicos_tiros.erase(id)
-
-
-func registrar_disparo(piloto: Player, angulo: float) -> void:
-	if boss.destino_fase or not piloto.vivo or not is_finite(angulo):
-		return
-	var id := piloto.get_instance_id()
-	if not historicos.has(id):
-		return
-	var tiros: PackedVector2Array = historicos_tiros.get(id, PackedVector2Array())
-	if tiros.size() >= 96:
-		return
-	tiros.append(Vector2(relogio, angulo))
-	historicos_tiros[id] = tiros
+			proximo_tiro.erase(id)
+			gatilhos.erase(id)
 
 
 func preparar_memoria(alvo: Node2D) -> void:
@@ -128,10 +141,10 @@ func preparar_memoria(alvo: Node2D) -> void:
 	var inicio := poses[0].w
 	for i in poses.size():
 		poses[i].w -= inicio
-	var tiros := PackedVector2Array()
-	for tiro in historicos_tiros.get(id, PackedVector2Array()):
-		if tiro.x >= inicio:
-			tiros.append(Vector2(tiro.x - inicio, tiro.y))
+	var tiros := PackedFloat32Array()
+	for t in historicos_tiros.get(id, PackedFloat32Array()):
+		if t >= inicio:
+			tiros.append(t - inicio)
 	especial = {"poses": poses, "tiros": tiros}
 	if alvo is Player:
 		especial["modelo"] = CloneLunar.capturar(alvo)
@@ -228,20 +241,32 @@ func iniciar(escolha: int) -> void:
 	if tipo == Golpe.REFLEXOS:
 		pontos = PackedVector2Array([area.position + area.size * Vector2(0.20, 0.27), area.position + area.size * Vector2(0.80, 0.73)])
 	if tipo == Golpe.METEOROS:
-		var quantidade := 4 if boss.fase_atual == 1 or boss.Vida < boss.VidaMaxima * 0.25 else 3
-		var quedas := PackedVector2Array()
-		for i in quantidade:
-			var velocidade: Vector2 = alvo.velocity if alvo is CharacterBody2D else Vector2.ZERO
-			var alvo_previsto: Vector2 = marca + velocidade * (0.18 + i * 0.035)
-			var desvio := Vector2(randf_range(-160, 160), randf_range(-120, 120))
-			pontos.append((alvo_previsto + desvio).clamp(area.position, area.end))
-			quedas.append(Vector2(randf_range(-125, 125), -250))
-		especial = {"quedas": quedas}
+		preparar_chuva(area)
 	if tipo == Golpe.MANCHAS:
 		mascara_orbes = 7
 		criar_orbes()
 	boss.subtitulo_alterado.emit(tr(NOMES[tipo]))
 	queue_redraw()
+
+
+func preparar_chuva(area: Rect2) -> void:
+	var linhas := 4 if boss.fase_atual == 3 and boss.Vida < boss.VidaMaxima * 0.25 else 3
+	var celula := area.size / Vector2(4, linhas)
+	var ordem := range(4 * linhas)
+	ordem.shuffle()
+	var quedas := PackedVector2Array()
+	var raios := PackedFloat32Array()
+	for indice: int in ordem:
+		var setor := Vector2(indice % 4, floori(indice / 4.0))
+		var dentro := Vector2(randf_range(0.35, 0.65), randf_range(0.35, 0.65))
+		pontos.append(area.position + (setor + dentro) * celula)
+		quedas.append(Vector2(randf_range(-145, 145), -260))
+		raios.append(minf(randf_range(48, 64), minf(celula.x, celula.y) * 0.32))
+	especial = {"quedas": quedas, "raios": raios}
+
+
+func instante_impacto(i: int) -> float:
+	return AVISO_METEORO + floori(i / 4.0) * 0.93 + (i % 4) * 0.13
 
 
 func snapshot() -> Array:
@@ -256,7 +281,14 @@ func receber(s: Array) -> void:
 		encerrar()
 	serie = s[0]
 	tipo = int(s[1]) as Golpe
-	tempo = s[2]
+	var tempo_host := float(s[2])
+	if nova or tipo == Golpe.NENHUM:
+		tempo = tempo_host
+		ritmo_replica = 1.0
+	else:
+		# Corrige a velocidade entre pacotes sem rebobinar a nave ou seus tiros.
+		ritmo_replica = clampf(1.0 + (tempo_host - tempo) * 2.0, 0.85, 1.12)
+		tempo = maxf(tempo, tempo_host)
 	origem = s[3]
 	direcao = s[4]
 	alvo_id = s[5]
@@ -282,7 +314,7 @@ func receber(s: Array) -> void:
 
 func _process(delta: float) -> void:
 	# Interpola entre as amostras completas do servidor. Somente ele resolve dano.
-	tempo = minf(tempo + delta, DURACOES[tipo])
+	tempo = minf(tempo + delta * ritmo_replica, DURACOES[tipo])
 	feedback_local(delta)
 	atualizar_clone()
 	atualizar_orbes()
@@ -324,6 +356,8 @@ func encerrar() -> void:
 	tempo = 0.0
 	anterior = 0.0
 	som_emitido = false
+	ultima_leva_sonora = -1
+	ultimo_pulso_sonoro = -1
 	energia = 0.0
 	pontos = PackedVector2Array()
 	abrigos = PackedVector2Array()
@@ -351,6 +385,15 @@ func gravidade_ativa() -> bool:
 
 
 func feedback_local(delta: float) -> void:
+	if tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO] and especial.has("tiros"):
+		var instante_replay := tempo - MATERIALIZACAO
+		var tiros: PackedFloat32Array = especial.tiros
+		while ultimo_pulso_sonoro + 1 < tiros.size() and tiros[ultimo_pulso_sonoro + 1] <= instante_replay:
+			ultimo_pulso_sonoro += 1
+			var t := tiros[ultimo_pulso_sonoro]
+			if instante_replay - t < 0.12:
+				var pose := pose_em(t)
+				preload("res://Scripts/AudioCombate.gd").tocar_posicional(self, Vector2(pose.x, pose.y), &"pulso_clone", 0.1, 0.70, 0.76, -16.0)
 	if gravidade_ativa():
 		for p in pilotos_vivos():
 			if p is Player and (not Rede.modo_multiplayer or p.is_multiplayer_authority()):
@@ -363,12 +406,17 @@ func feedback_local(delta: float) -> void:
 	elif tipo in [Golpe.RAIO, Golpe.TOTALIDADE]:
 		instante = trava_raio()
 	elif tipo == Golpe.METEOROS:
-		instante = 1.55
+		for leva in range(0, pontos.size(), 4):
+			var t := instante_impacto(leva)
+			if leva > ultima_leva_sonora and tempo >= t and tempo < t + 0.45:
+				ultima_leva_sonora = leva
+				preload("res://Scripts/AudioCombate.gd").tocar_posicional(self, pontos[leva], &"explosoes", 0.15, 0.83, 1.04, -12.0)
+				Global.vibrar_controle(0.14, 0.27, 0.09)
 	elif tipo == Golpe.ABSOLUTO:
 		instante = 5.1
 	if instante >= 0 and tempo >= instante and not som_emitido:
 		som_emitido = true
-		var som := &"explosoes" if tipo in [Golpe.ABSOLUTO, Golpe.METEOROS] else &"investida"
+		var som := &"explosoes" if tipo == Golpe.ABSOLUTO else &"investida"
 		if tipo == Golpe.SOMBRA:
 			som = &"retrocesso"
 		preload("res://Scripts/AudioCombate.gd").tocar(self, som, 0.0, 0.90, 0.90, -12.0)
@@ -571,29 +619,42 @@ func raio(visual: bool) -> void:
 
 
 func meteoro(visual: bool, i: int) -> void:
-	var queda := 1.55 + i * 0.16
+	var queda := instante_impacto(i)
+	var raio: float = especial.raios[i]
 	var idade := tempo - queda
 	var pos := pontos[i]
 	var cor := LUA if boss.fase_atual == 1 else SOMBRA
+	if idade < -AVISO_METEORO:
+		return
 	if visual and idade < 0:
-		var progresso := clampf(tempo / queda, 0, 1)
+		var progresso := 1.0 + idade / AVISO_METEORO
+		var pulso := 0.5 + 0.5 * cos(progresso * TAU * 2.5)
+		var aviso := Color("#81d5ff").lerp(Color.WHITE, pulso)
+		for k in 32:
+			var eixo := Vector2.from_angle(k * TAU / 32.0)
+			draw_circle(pos + eixo * raio, 1.8, aviso, true, -1.0, true)
 		var pedra: Vector2 = pos + especial.quedas[i] * (1.0 - progresso * progresso)
-		var tamanho := PerigoAstral.TEXTURA_METEORO.get_size() * lerpf(0.38, 0.72, progresso)
+		var tamanho := PerigoAstral.TEXTURA_METEORO.get_size() * lerpf(0.38, 0.72, progresso) * (raio / 58.0)
 		draw_set_transform(pos, 0.0, Vector2(1, 0.52))
 		draw_circle(Vector2.ZERO, lerpf(16, 54, progresso), Color(0.06, 0.045, 0.11, 0.12 + progresso * 0.40))
+		draw_set_transform_matrix(Transform2D.IDENTITY)
+		var para_tras: Vector2 = especial.quedas[i].normalized()
+		var lateral := para_tras.orthogonal() * raio * 0.22
+		var cauda := pedra + para_tras * lerpf(15, 78, progresso)
+		draw_colored_polygon(PackedVector2Array([pedra - lateral, cauda, pedra + lateral]), Color(cor, 0.12 + 0.25 * progresso))
 		draw_set_transform(pedra, tempo * (4.2 + progresso * 2.5))
 		draw_texture_rect(PerigoAstral.TEXTURA_METEORO, Rect2(-tamanho * 0.5, tamanho), false, Color(1.32, 1.32, 1.32))
 		draw_set_transform_matrix(Transform2D.IDENTITY)
 	elif visual and idade <= 0.34:
 		var onda := idade / 0.34
-		draw_circle(pos, lerpf(10, 58, onda), Color(cor, 0.28 * (1 - onda)))
-		draw_arc(pos, lerpf(8, 65, onda), 0, TAU, 48, Color(cor, 1 - onda), 5, true)
+		draw_circle(pos, lerpf(10, raio, onda), Color(cor, 0.28 * (1 - onda)))
+		draw_arc(pos, lerpf(8, raio, onda), 0, TAU, 48, Color(cor, 1 - onda), 5, true)
 		for k in 6:
 			var eixo := Vector2.from_angle(k * TAU / 6 + i)
-			draw_line(pos + eixo * 36 * onda, pos + eixo * 78 * onda, Color(cor, 1 - onda), 2, true)
+			draw_line(pos + eixo * raio * 0.65 * onda, pos + eixo * raio * onda, Color(cor, 1 - onda), 2, true)
 	elif not visual and anterior < queda and tempo >= queda:
 		for p in pilotos:
-			if p.global_position.distance_to(pos) <= 58:
+			if p.global_position.distance_to(pos) <= raio:
 				acerto(p, i, 0.48 if boss.fase_atual == 1 else 0.30, pos)
 
 
@@ -604,6 +665,10 @@ func memoria(visual: bool) -> void:
 	var pose := pose_em(instante)
 	var pos := Vector2(pose.x, pose.y)
 	var fim: float = especial.poses[-1].w
+	if visual and is_instance_valid(clone) and clone.visible:
+		var forca := 0.32 * CloneLunar.intensidade_aura() * clone.self_modulate.a
+		var tamanho := 84.0 * clone.scale.x
+		draw_texture_rect(CloneLunar.HALO, Rect2(pos - Vector2.ONE * tamanho * 0.5, Vector2.ONE * tamanho), false, Color(clone.cor_aura, forca))
 	if visual and instante < 0:
 		var carga := smoothstep(0.0, MATERIALIZACAO, tempo)
 		var fase := tempo * 3.0
@@ -617,21 +682,22 @@ func memoria(visual: bool) -> void:
 			if p.global_position.distance_squared_to(pos) <= 18.0 * 18.0:
 				acerto(p, 6, 0.30, pos)
 	for i in especial.tiros.size():
-		var tiro: Vector2 = especial.tiros[i]
-		var idade := instante - tiro.x
+		var disparo: float = especial.tiros[i]
+		var idade := instante - disparo
 		if idade < 0 or idade > VIDA_DARDO:
 			continue
-		var emissao := pose_em(tiro.x)
-		var rumo := Vector2.from_angle(tiro.y)
+		var emissao := pose_em(disparo)
+		var rumo := Vector2.from_angle(emissao.z)
 		var boca: Vector2 = especial.get("modelo", {}).get("boca", Vector2(16, 0))
-		var origem_tiro := Vector2(emissao.x, emissao.y) + boca.rotated(tiro.y)
+		var origem_tiro := Vector2(emissao.x, emissao.y) + boca.rotated(emissao.z)
 		var ponta := origem_tiro + rumo * idade * VELOCIDADE_DARDO
 		if visual:
-			var asa := rumo.orthogonal() * 4
-			draw_colored_polygon(PackedVector2Array([ponta + rumo * 8, ponta + asa, ponta - rumo * 9, ponta - asa]), SOMBRA)
-			draw_line(ponta - rumo * 4, ponta + rumo * 6, Color.WHITE, 2, true)
+			draw_set_transform(ponta, emissao.z)
+			draw_texture_rect(CloneLunar.HALO, Rect2(-18,-8,36,16), false, Color(cor_tiro, 0.35 * CloneLunar.intensidade_aura()))
+			draw_colored_polygon(forma_tiro, Color(cor_tiro.r * 1.4, cor_tiro.g * 1.4, cor_tiro.b * 1.4))
+			draw_set_transform_matrix(Transform2D.IDENTITY)
 			if idade < 0.075:
-				draw_circle(origem_tiro, 5 * (1 - idade / 0.075), Color.WHITE)
+				draw_circle(origem_tiro, 5 * (1 - idade / 0.075), cor_tiro)
 		else:
 			var cauda := ponta - rumo * minf(idade, tempo - anterior) * VELOCIDADE_DARDO
 			for p in pilotos:

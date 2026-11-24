@@ -62,10 +62,20 @@ func _ready() -> void:
 	verificar(is_equal_approx(jogador.vida, vida_inicial), "o corredor verde causou dano")
 	golpes.encerrar()
 	golpes.iniciar(golpes.Golpe.METEOROS)
-	jogador.global_position = golpes.pontos[0]
-	for i in 135:
-		golpes.avancar(1.0 / 60.0)
-	verificar(golpes.pontos.size() == 4 and jogador.vida < vida_inicial, "chuva lunar não produziu quatro meteoros com impacto")
+	var sala := Global.obter_retangulo_area_visivel()
+	var setores := {}
+	for pos in golpes.pontos:
+		var celula := Vector2i((pos - sala.position) / sala.size * Vector2(4, 3))
+		setores[celula] = true
+	verificar(setores.size() == 12, "a chuva deixou parte da sala sem meteoros")
+	var limite: float = golpes.especial.raios[0]
+	jogador.global_position = golpes.pontos[0] + Vector2.RIGHT * (limite + 1)
+	golpes.avancar(golpes.instante_impacto(0) + 0.01)
+	verificar(jogador.vida == vida_inicial, "meteoro causou dano fora do círculo")
+	limite = golpes.especial.raios[1]
+	jogador.global_position = golpes.pontos[1] + Vector2.RIGHT * (limite - 1)
+	golpes.avancar(golpes.instante_impacto(1) - golpes.tempo + 0.01)
+	verificar(jogador.vida < vida_inicial, "meteoro não atingiu o interior do círculo")
 	golpes.encerrar()
 	var vida_lua := boss.Vida
 	boss.tomarDano(vida_lua + 999.0)
@@ -143,19 +153,29 @@ func testar_clone(boss: BossSizigiaEterna, alvo_teste: Node2D) -> void:
 	nave.global_position = Vector2(16, 225)
 	nave.rotation = -3.02
 	golpes.registrar_trajetorias(0.1)
-	nave.projeteis_por_tiro = 3
-	nave.fire()
+	nave.cooldown = 30.0 # Grava o botão mesmo quando a arma equipada não pode disparar.
+	Input.action_press("atirar")
+	nave.atualizar_combate(0.01)
 	nave.global_position = Vector2(38, 235)
-	golpes.registrar_trajetorias(0.1)
+	for i in 60:
+		golpes.registrar_trajetorias(1.0 / 60.0)
+	Input.action_release("atirar")
+	nave.atualizar_combate(0.01)
+	for i in 24:
+		golpes.registrar_trajetorias(1.0 / 60.0)
 	golpes.iniciar(golpes.Golpe.SOMBRA)
-	verificar(golpes.especial.tiros.size() == 1, "uma salva de três projéteis deve gerar um dardo")
+	var tiros: PackedFloat32Array = golpes.especial.tiros
+	verificar(tiros.size() == 3, "um segundo de gatilho segurado deve gerar três disparos")
 	verificar(golpes.pose_em(0.05).x > 900 and golpes.pose_em(0.15).x < 40, "o clone atravessou o centro durante o wrap")
-	var tiro: Vector2 = golpes.especial.tiros[0]
-	verificar(absf(tiro.x - 0.1) < 0.01 and absf(angle_difference(tiro.y, nave.rotation)) < 0.01, "tempo ou direção do disparo gravado divergiu")
-	var pose := golpes.pose_em(tiro.x)
+	if tiros.size() < 3:
+		return
+	for i in range(1, tiros.size()):
+		verificar(absf(tiros[i] - tiros[i - 1] - 1.0 / 3.0) < 0.001, "a cadência divergiu de três disparos por segundo")
+	var tiro := tiros[0]
+	var pose := golpes.pose_em(tiro)
 	var boca: Vector2 = golpes.especial.modelo.boca
-	nave.global_position = Vector2(pose.x, pose.y) + boca.rotated(tiro.y) + Vector2.from_angle(tiro.y) * 32
-	golpes.avancar(golpes.MATERIALIZACAO + tiro.x - 0.02)
+	nave.global_position = Vector2(pose.x, pose.y) + boca.rotated(pose.z) + Vector2.from_angle(pose.z) * 32
+	golpes.avancar(golpes.MATERIALIZACAO + tiro - 0.02)
 	var chave := Vector2i(200, nave.get_multiplayer_authority())
 	verificar(not golpes.impactos.has(chave), "dardo atingiu antes de ser disparado")
 	for i in 8:
@@ -176,6 +196,7 @@ func comparar_pixels_do_clone(nave: Player) -> void:
 	tela.size = Vector2i(192, 96)
 	tela.world_2d = World2D.new()
 	tela.transparent_bg = true
+	tela.use_hdr_2d = get_viewport().use_hdr_2d
 	tela.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(tela)
 	for id in [&"c04_dardo", &"c07_modelo_o", &"c08_modelo_spectrum", &"c09_modelo_fspeed"]:
@@ -205,6 +226,10 @@ func comparar_pixels_do_clone(nave: Player) -> void:
 			for x in 96:
 				var a := imagem.get_pixel(x, y)
 				var b := imagem.get_pixel(x + 96, y)
+				if tela.use_hdr_2d and RenderingServer.get_current_rendering_method() != "gl_compatibility":
+					a = a.linear_to_srgb()
+					b = b.linear_to_srgb()
+				a = a.clamp()
 				if absf(a.a - b.a) > 0.12:
 					silhueta_errada += 1
 				if a.a < 0.97:

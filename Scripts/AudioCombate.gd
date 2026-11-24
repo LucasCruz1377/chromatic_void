@@ -2,6 +2,7 @@ extends RefCounted
 
 
 const SONS := {
+	&"pulso_clone": [preload("res://sounds/somtiro.wav")],
 	&"retrocesso": [preload("res://sounds/SFX/Retrocesso.wav")],
 	&"petalas": [preload("res://sounds/SFX/petalas_boomerang.wav")],
 	&"investida": [preload("res://sounds/SFX/inimigo_investida.wav")],
