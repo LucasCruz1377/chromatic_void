@@ -1003,7 +1003,7 @@ func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
 	if expirado > 0 and int(entrada.get("recebido_ms", agora)) > expirado + 600:
 		return
 	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as Node2D
-	if not (inimigo is InimigoBase or inimigo is OrbeAstral):
+	if not (inimigo is InimigoBase or inimigo is OrbeAstral or inimigo is SombraDaLua):
 		return
 	if inimigo.morto or inimigo.is_queued_for_deletion():
 		return

@@ -77,12 +77,51 @@ func _ready() -> void:
 	golpes.avancar(golpes.instante_impacto(1) - golpes.tempo + 0.01)
 	verificar(jogador.vida < vida_inicial, "meteoro não atingiu o interior do círculo")
 	golpes.encerrar()
+	var nave := preload("res://Entities/player.tscn").instantiate() as Player
+	add_child(nave)
+	jogador.remove_from_group("player")
+	golpes.iniciar(golpes.Golpe.SOMBRA)
+	var sombra := golpes.sombra
+	verificar(is_equal_approx(sombra.vida, boss.VidaMaxima * 0.1), "vida inicial da sombra")
+	sombra.tomarDano(5)
+	var restante := sombra.vida
+	golpes.iniciar(golpes.Golpe.CRESCENTES)
+	golpes.iniciar(golpes.Golpe.SOMBRA)
+	verificar(sombra == golpes.sombra and sombra.vida == restante, "reiniciar ataque duplicou ou curou a sombra")
+	for i in 290:
+		sombra._physics_process(1.0 / 60.0)
+	verificar(sombra.disparos == 2, "a sombra não manteve a cadência independente")
+	for i in sombra.BRACOS:
+		var radial := sombra.ponta(i, 0.3) - sombra.origem_tiro
+		var seguinte := sombra.ponta((i + 1) % sombra.BRACOS, 0.3) - sombra.origem_tiro
+		verificar(radial.rotated(PI / 2).is_equal_approx(seguinte), "a salva perdeu a simetria de 90 graus")
+	nave.remove_from_group("player")
+	nave.queue_free()
+	jogador.add_to_group("player")
+	# A mesma ponta desenhada só causa dano ao cruzar o piloto, uma vez por dardo.
+	var idade := sombra.idade_tiro
+	var rumo := Vector2.from_angle(sombra.eixo_tiro)
+	jogador.global_position = sombra.ponta(0, idade + 0.02) + rumo.orthogonal() * 15
+	var dano_antes := jogador.dano_recebido
+	sombra._physics_process(0.02)
+	verificar(jogador.dano_recebido == dano_antes, "tiro da sombra acertou fora da trajetória")
+	jogador.global_position = sombra.ponta(0, sombra.idade_tiro + 0.01)
+	sombra._physics_process(0.02)
+	sombra._physics_process(0.01)
+	verificar(is_equal_approx(jogador.dano_recebido - dano_antes, boss.Dano * 0.26), "o dardo não aplicou exatamente um impacto")
 	var vida_lua := boss.Vida
 	boss.tomarDano(vida_lua + 999.0)
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.LUA, "o dano excedente atravessou a primeira barra")
 	verificar(boss.estado == BossSizigiaEterna.Estado.TRANSICAO, "a Lua não iniciou a transição")
 
+	var tempo_congelado := sombra.tempo
+	sombra._physics_process(0.6)
+	sombra.tomarDano(2)
+	verificar(sombra.tempo == tempo_congelado and sombra.vida == restante, "a sombra continuou atacando ou recebendo dano na cinemática")
 	boss.concluir_transicao_para_sol()
+	verificar(is_instance_valid(sombra) and sombra.vida == restante, "a mudança de fase removeu a sombra")
+	sombra.tomarDano(restante)
+	verificar(sombra.morto and golpes.snapshot_sombra().is_empty(), "a morte não removeu a sombra e sua salva")
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.SOL, "a segunda fase não é o Sol")
 	verificar(boss.visual_fase.texture == boss.TEXTURA_SOL, "o Sol 5 pontudo não foi aplicado ao boss")
 	verificar(is_equal_approx(boss.Vida, boss.obter_vida_maxima_atual()), "o Sol não recebeu uma barra cheia independente")
@@ -163,7 +202,7 @@ func testar_clone(boss: BossSizigiaEterna, alvo_teste: Node2D) -> void:
 	nave.atualizar_combate(0.01)
 	for i in 24:
 		golpes.registrar_trajetorias(1.0 / 60.0)
-	golpes.iniciar(golpes.Golpe.SOMBRA)
+	golpes.iniciar(golpes.Golpe.ABSOLUTO)
 	var tiros: PackedFloat32Array = golpes.especial.tiros
 	verificar(tiros.size() == 3, "um segundo de gatilho segurado deve gerar três disparos")
 	verificar(golpes.pose_em(0.05).x > 900 and golpes.pose_em(0.15).x < 40, "o clone atravessou o centro durante o wrap")
@@ -183,7 +222,7 @@ func testar_clone(boss: BossSizigiaEterna, alvo_teste: Node2D) -> void:
 	verificar(golpes.impactos.has(chave), "o dardo visível não atingiu a nave")
 	golpes.encerrar()
 	golpes.registrar_trajetorias(3.2)
-	golpes.iniciar(golpes.Golpe.SOMBRA)
+	golpes.iniciar(golpes.Golpe.ABSOLUTO)
 	verificar(golpes.especial.tiros.is_empty(), "a gravação silenciosa inventou um disparo")
 	golpes.encerrar()
 	if DisplayServer.get_name() != "headless":

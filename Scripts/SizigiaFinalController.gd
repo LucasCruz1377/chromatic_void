@@ -12,13 +12,13 @@ const SEGURO := Color("#80ffcc")
 const ROTA_LUA := [Golpe.CRESCENTES, Golpe.MARE, Golpe.METEOROS, Golpe.SOMBRA]
 const ROTA_SOL := [Golpe.INVESTIDA, Golpe.MANCHAS, Golpe.RAIO, Golpe.INVESTIDA, Golpe.ROUBO]
 const ROTA_ECLIPSE := [Golpe.TOTALIDADE, Golpe.RETORNO, Golpe.REFLEXOS, Golpe.METEOROS]
-const DURACOES := [0.0, 3.3, 5.6, 5.05, 5.4, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
+const DURACOES := [0.0, 3.3, 5.6, 5.05, 1.45, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
 const NOMES := [
 	"",
 	"CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS",
 	"MARÉ LUNAR — SIGA AS BALIZAS VERDES",
 	"CHUVA DE METEOROS",
-	"CLONE LUNAR — ELE COPIA SUA MIRA",
+	"SOMBRA LUNAR — DESVIE DA CRUZ",
 	"INVESTIDA SOLAR — SAIA DA LINHA VERMELHA",
 	"RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO",
 	"MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO",
@@ -59,6 +59,9 @@ var cor_tiro := Color.WHITE
 var relogio := 0.0
 var amostra := 0.0
 var especial := {}
+var sombra: SombraDaLua
+var sombra_invocada := false
+var dano_sombra_por_peer := {}
 var clone: CloneLunar
 var energia := 0.0
 var mascara_orbes := 0
@@ -200,6 +203,9 @@ func escolher() -> void:
 			return
 	var escolha: int = rota[boss.passo_rotacao % rota.size()]
 	boss.passo_rotacao += 1
+	if escolha == Golpe.SOMBRA and sombra_invocada:
+		escolha = rota[boss.passo_rotacao % rota.size()]
+		boss.passo_rotacao += 1
 	iniciar(escolha)
 
 
@@ -236,7 +242,14 @@ func iniciar(escolha: int) -> void:
 			var abrigo := p.global_position.move_toward(area.get_center(), 108.0)
 			if not protegido(abrigo, 60.0):
 				abrigos.append(abrigo)
-	if tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO]:
+	if tipo == Golpe.SOMBRA and alvo is Player and not sombra_invocada and boss.fase_atual == boss.Fase.LUA:
+		var modelo := CloneLunar.capturar(alvo)
+		var colisao := alvo.get_node("colisao") as CollisionShape2D
+		modelo["raio"] = (colisao.shape as CircleShape2D).radius * absf(colisao.global_scale.x)
+		var limite := area.grow(-24)
+		var pos := (origem - direcao * 68.0).clamp(limite.position, limite.end)
+		criar_sombra(modelo, boss.obter_vida_maxima_atual() * 0.10, pos)
+	elif tipo == Golpe.ABSOLUTO:
 		preparar_memoria(alvo)
 	if tipo == Golpe.REFLEXOS:
 		pontos = PackedVector2Array([area.position + area.size * Vector2(0.20, 0.27), area.position + area.size * Vector2(0.80, 0.73)])
@@ -300,7 +313,7 @@ func receber(s: Array) -> void:
 	mascara_orbes = s[11]
 	investida_dupla = s[12]
 	especial = s[13]
-	if nova and tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO]:
+	if nova and tipo == Golpe.ABSOLUTO:
 		materializar_clone()
 	atualizar_clone()
 	if nova and tipo != Golpe.NENHUM:
@@ -385,7 +398,7 @@ func gravidade_ativa() -> bool:
 
 
 func feedback_local(delta: float) -> void:
-	if tipo in [Golpe.SOMBRA, Golpe.ABSOLUTO] and especial.has("tiros"):
+	if tipo == Golpe.ABSOLUTO and especial.has("tiros"):
 		var instante_replay := tempo - MATERIALIZACAO
 		var tiros: PackedFloat32Array = especial.tiros
 		while ultimo_pulso_sonoro + 1 < tiros.size() and tiros[ultimo_pulso_sonoro + 1] <= instante_replay:
@@ -457,6 +470,52 @@ func acerto(p: Node2D, indice: int, fator: float, fonte: Vector2) -> void:
 		p.aplicar_queimadura(boss.Dano * 0.18, 2.4)
 
 
+func criar_sombra(modelo: Dictionary, vida: float, pos: Vector2) -> void:
+	sombra_invocada = true
+	sombra = SombraDaLua.new()
+	sombra.name = "SombraDaLua"
+	add_child(sombra)
+	sombra.configurar(modelo, vida, pos)
+
+
+func snapshot_sombra() -> Array:
+	if is_instance_valid(sombra) and not sombra.morto:
+		return sombra.snapshot()
+	return []
+
+
+func receber_sombra(s: Array) -> void:
+	if s.is_empty():
+		if is_instance_valid(sombra):
+			sombra.dissolver()
+		return
+	var nova := not is_instance_valid(sombra)
+	if nova:
+		criar_sombra(s[0], s[1], s[3])
+	sombra.receber(s, nova)
+
+
+# Habilidades de área e contato usam o controlador estável mesmo após a morte da sombra.
+@rpc("any_peer", "call_remote", "reliable")
+func solicitar_impacto_sombra(valor: float) -> void:
+	if not multiplayer.is_server() or Rede.pausa_do_host or not is_instance_valid(sombra) or sombra.morto:
+		return
+	var peer := multiplayer.get_remote_sender_id()
+	if not Rede.jogadores.has(peer) or not is_finite(valor) or valor <= 0 or valor > 1500.0:
+		return
+	for p in pilotos_vivos():
+		if p.get_multiplayer_authority() != peer or p.global_position.distance_to(sombra.global_position) > 2400:
+			continue
+		var agora := Global.tempo_combate_ms()
+		var janela: Vector2 = dano_sombra_por_peer.get(peer, Vector2(agora, 0))
+		if agora - janela.x >= 1000:
+			janela = Vector2(agora, 0)
+		if janela.y + valor <= 5000.0:
+			dano_sombra_por_peer[peer] = janela + Vector2(0, valor)
+			sombra.tomarDano(valor)
+		return
+
+
 func criar_orbes() -> void:
 	for i in 3:
 		var orbe := OrbeAstral.new()
@@ -510,10 +569,9 @@ func padrao(visual: bool) -> void:
 		Golpe.METEOROS:
 			for i in pontos.size():
 				meteoro(visual, i)
-		Golpe.SOMBRA, Golpe.ABSOLUTO:
+		Golpe.ABSOLUTO:
 			memoria(visual)
-			if tipo == Golpe.ABSOLUTO:
-				clarao(visual)
+			clarao(visual)
 		Golpe.INVESTIDA:
 			if visual:
 				investida()

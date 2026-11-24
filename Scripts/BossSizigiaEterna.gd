@@ -190,6 +190,7 @@ func ao_colidir_com_player(piloto: Node) -> void:
 func _capturar_snapshot_visual_boss(seq: int = 0) -> Dictionary:
 	var pacote := super._capturar_snapshot_visual_boss(seq)
 	pacote["golpe"] = golpes.snapshot()
+	pacote["sombra"] = golpes.snapshot_sombra()
 	pacote["cinema"] = [destino_fase, tempo_cinema, inicio_cinema, centro_cinema]
 	return pacote
 
@@ -201,6 +202,8 @@ func _aplicar_snapshot_visual_boss(pacote: Dictionary) -> void:
 	super._aplicar_snapshot_visual_boss(pacote)
 	if pacote.has("golpe"):
 		golpes.receber(pacote.golpe)
+	if pacote.has("sombra"):
+		golpes.receber_sombra(pacote.sombra)
 	if pacote.has("cinema"):
 		var dados: Array = pacote.cinema
 		var anterior := destino_fase
