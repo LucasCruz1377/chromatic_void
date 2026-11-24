@@ -49,10 +49,10 @@ func _tocar_tiro_do_inimigo(projetil: Node2D) -> void:
 
 
 func _processar_gravidade() -> void:
-	var sizigia := get_tree().get_first_node_in_group("boss_sizigia")
+	var sizigia := get_tree().get_first_node_in_group("boss_sizigia") as BossSizigiaEterna
 	var ativa := (
 		is_instance_valid(sizigia)
-		and float(sizigia.get("gravidade_tempo")) > 0.05
+		and sizigia.golpes.gravidade_ativa()
 	)
 	if ativa and not gravidade_ativa_anterior:
 		if multiplayer.has_multiplayer_peer():

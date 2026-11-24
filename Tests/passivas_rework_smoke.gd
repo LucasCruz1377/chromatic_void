@@ -203,7 +203,7 @@ func _ready() -> void:
 	passivas._process(0.01)
 	verificar(jogador.estrelas_solidarias == Vector4.ZERO, "morte manteve estrelas ativas")
 	batalha.queue_free()
-	await get_tree().process_frame
+	await get_tree().create_timer(0.25, true, false, true).timeout
 	print("TESTE %s: limites de brilho, duplo toque, quatro estrelas, protecao direcional e remocao de passivas" % ("OK" if falhas.is_empty() else "FALHOU"))
 	get_tree().quit(0 if falhas.is_empty() else 1)
 
@@ -216,7 +216,7 @@ func testar_manchas_solares(nave: Player) -> void:
 	boss.concluir_transicao_para_sol()
 	nave.modulo_nave = &"n05_reserva_solidaria"
 	nave.estrelas_solidarias = Vector4(1.0, 0.0, 0.0, 0.0)
-	boss.criar_manchas_solares(1)
+	boss.golpes.iniciar(SizigiaFinalController.Golpe.MANCHAS)
 	var orbe := get_tree().get_first_node_in_group("mancha_solar") as OrbeAstral
 	verificar(is_instance_valid(orbe), "o Sol não criou a mancha solar")
 	if is_instance_valid(orbe):
@@ -228,8 +228,10 @@ func testar_manchas_solares(nave: Player) -> void:
 		nave.UsandoHabilidade = true
 		nave.dano_colisao_habilidade = orbe.vida
 		nave._on_hitbox_body_entered(orbe)
-		verificar(orbe.is_queued_for_deletion(), "o impacto da habilidade não destruiu a mancha")
-		var disparos := get_tree().get_nodes_in_group("projetil_astral").size()
-		orbe.explodir()
-		verificar(get_tree().get_nodes_in_group("projetil_astral").size() == disparos, "a mancha destruída ainda disparou")
+		verificar(orbe.morto and not orbe.visible, "o impacto da habilidade não destruiu a mancha")
+		boss.golpes.tempo = 3.19
+		nave.global_position = boss.golpes.pos_orbe(orbe.indice, 3.2) + Vector2.RIGHT * 22
+		boss.golpes.avancar(0.02)
+		var chave := Vector2i(50 + 10 * orbe.indice, nave.get_multiplayer_authority())
+		verificar(not boss.golpes.impactos.has(chave), "a mancha destruída ainda disparou")
 	boss.queue_free()

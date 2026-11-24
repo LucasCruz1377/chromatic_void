@@ -1,7 +1,6 @@
 extends Node
 class_name BossIntroThemeController
 
-const CONTROLADOR_SIZIGIA = preload("res://Scripts/SizigiaFinalController.gd")
 const CONTROLADOR_FLOR = preload("res://Scripts/FlowerPhaseController.gd")
 const CONTROLADOR_AUDIO = preload("res://Scripts/CombatAudioController.gd")
 
@@ -75,11 +74,6 @@ func _tocar_som(id: StringName) -> void:
 
 
 func _acoplar_controladores() -> void:
-	for alvo in get_tree().get_nodes_in_group("boss_sizigia"):
-		if is_instance_valid(alvo) and not alvo.has_node("SizigiaFinalController"):
-			var controlador := CONTROLADOR_SIZIGIA.new()
-			controlador.name = "SizigiaFinalController"
-			alvo.add_child(controlador)
 	for alvo in get_tree().get_nodes_in_group("boss"):
 		if (
 			is_instance_valid(alvo)

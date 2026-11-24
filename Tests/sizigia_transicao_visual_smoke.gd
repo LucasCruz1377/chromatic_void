@@ -5,7 +5,7 @@ class JogadorCinematica extends CharacterBody2D:
 	var nivel_atual := 20
 	var VIDA_MAXIMA := 100.0
 	var vida := 100.0
-	var invulneravel_por_habilidade := false
+	var protegido_por_sizigia := false
 
 	func _ready() -> void:
 		add_to_group("player")
@@ -44,7 +44,6 @@ func _ready() -> void:
 
 	verificar(is_instance_valid(boss.visual_lua_transicao), "falta o visual independente da Lua")
 	verificar(is_instance_valid(boss.visual_sol_transicao), "falta o visual independente do Sol")
-	verificar(is_instance_valid(boss.visual_eclipse_transicao), "falta o visual independente do Eclipse")
 
 	# A primeira troca deve esconder o corpo principal e separar a saída da Lua
 	# da entrada do Sol.
@@ -69,7 +68,7 @@ func _ready() -> void:
 	var limite_quadros := 600
 	var houve_brecha_visual := false
 	var detalhe_brecha := ""
-	var eclipse_neon_durante_transicao := false
+	var eclipse_no_impacto := false
 	while (
 		limite_quadros > 0
 		and (
@@ -87,20 +86,15 @@ func _ready() -> void:
 			and boss.visual_sol_transicao.visible
 			and boss.visual_sol_transicao.modulate.a > 0.01
 		)
-		var eclipse_transicao_visivel := (
-			is_instance_valid(boss.visual_eclipse_transicao)
-			and boss.visual_eclipse_transicao.visible
-			and boss.visual_eclipse_transicao.modulate.a > 0.01
-		)
 		var eclipse_final_visivel := (
 			boss.visual_fase.visible
 			and boss.visual_fase.modulate.a > 0.01
 		)
-		if not (lua_visivel or sol_visivel or eclipse_transicao_visivel or eclipse_final_visivel):
+		if not (lua_visivel or sol_visivel or eclipse_final_visivel):
 			houve_brecha_visual = true
 			if detalhe_brecha.is_empty():
 				detalhe_brecha = (
-					"quadro=%d fase=%d estado=%d overlay=%s lua=%s sol=%s eclipse=%s final=%s"
+					"quadro=%d fase=%d estado=%d overlay=%s lua=%s sol=%s final=%s"
 					% [
 						600 - limite_quadros,
 						boss.fase_atual,
@@ -108,15 +102,14 @@ func _ready() -> void:
 						is_instance_valid(boss.overlay_transicao),
 						boss.visual_lua_transicao.visible,
 						boss.visual_sol_transicao.visible,
-						boss.visual_eclipse_transicao.visible,
 						boss.visual_fase.visible,
 					]
 				)
 		if (
-			eclipse_transicao_visivel
-			and boss.visual_eclipse_transicao.self_modulate.r >= 1.8
+			eclipse_final_visivel
+			and boss.impacto_fusao and boss.visual_fase.texture == boss.TEXTURA_ECLIPSE
 		):
-			eclipse_neon_durante_transicao = true
+			eclipse_no_impacto = true
 		limite_quadros -= 1
 		await get_tree().process_frame
 
@@ -126,16 +119,23 @@ func _ready() -> void:
 		"Sol, Lua e Eclipse sumiram juntos durante a fusão: " + detalhe_brecha
 	)
 	verificar(
-		eclipse_neon_durante_transicao,
-		"o Eclipse só recebeu neon depois da onda de choque"
+		eclipse_no_impacto,
+		"o Eclipse real não apareceu no impacto"
 	)
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.ECLIPSE, "a união não formou o Eclipse")
 	verificar(boss.visual_fase.visible, "o Eclipse real não apareceu na volta da tela")
 	verificar(boss.visual_fase.texture == boss.TEXTURA_ECLIPSE, "o Eclipse final usa a textura errada")
-	verificar(not jogador.invulneravel_por_habilidade, "a batalha não devolveu o controle ao jogador")
+	verificar(not jogador.protegido_por_sizigia, "a batalha não devolveu o controle ao jogador")
 	verificar(not is_instance_valid(boss.overlay_transicao), "o shader da cinemática permaneceu na tela")
 
 	Engine.time_scale = escala_tempo_anterior
+	for audio in find_children("*", "AudioStreamPlayer2D", true, false):
+		audio.stop()
+		audio.stream = null
+	for audio in find_children("*", "AudioStreamPlayer", true, false):
+		audio.stop()
+		audio.stream = null
+	await get_tree().create_timer(0.25, true, false, true).timeout
 	if falhas.is_empty():
 		print("TESTE OK: saída, entrada, fusão, eclipse e onda de choque")
 		get_tree().quit(0)

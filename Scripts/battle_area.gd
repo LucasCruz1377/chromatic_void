@@ -1002,8 +1002,10 @@ func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
 	var expirado := int(disparo.get("expirado_ms", 0))
 	if expirado > 0 and int(entrada.get("recebido_ms", agora)) > expirado + 600:
 		return
-	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as InimigoBase
-	if not is_instance_valid(inimigo) or inimigo.morto or inimigo.is_queued_for_deletion():
+	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as Node2D
+	if not (inimigo is InimigoBase or inimigo is OrbeAstral):
+		return
+	if inimigo.morto or inimigo.is_queued_for_deletion():
 		return
 	if feixe:
 		var visual := _obter_disparo_visual(id_disparo)
@@ -1598,6 +1600,8 @@ func _atualizar_hud_boss_cliente() -> void:
 	var fase_rede := 1
 	if encontrado._possui_propriedade_rede(&"fase"):
 		fase_rede = int(encontrado.get("fase"))
+	elif encontrado is BossSizigiaEterna:
+		fase_rede = encontrado.fase_atual
 	elif encontrado._possui_propriedade_rede(&"fase_atual"):
 		fase_rede = int(encontrado.get("fase_atual")) + 1
 	_on_boss_fase_alterada(fase_rede)

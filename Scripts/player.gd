@@ -73,6 +73,7 @@ var giroblock := false
 var ctrlblock := false
 var UsandoHabilidade := false
 var invulneravel_por_habilidade := false
+var protegido_por_sizigia := false
 var invulneravel_desenvolvedor := false
 var multiplicador_dano_recebido := 1.0
 var multiplicador_cura_recebida := 1.0
@@ -2062,6 +2063,7 @@ func tomar_dano(valor: float, origem_dano := Vector2.INF) -> void:
 	if (
 		invencibilidade
 		or invulneravel_por_habilidade
+		or protegido_por_sizigia
 		or invulneravel_desenvolvedor
 		or not vivo
 	):
@@ -2196,8 +2198,18 @@ func aplicar_resistencia_temporaria(multiplicador: float, duracao: float) -> voi
 	tempo_resistencia_temporaria = maxf(duracao, 0.0)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_queimadura_rede(dano_total: float, duracao: float) -> void:
+	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
+		aplicar_queimadura(dano_total, duracao)
+
+
 func aplicar_queimadura(dano_total: float, duracao: float) -> void:
-	if not vivo or dano_total <= 0.0 or duracao <= 0.0:
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		if multiplayer.is_server() and peer_id_dono > 1:
+			_receber_queimadura_rede.rpc_id(peer_id_dono, dano_total, duracao)
+		return
+	if protegido_por_sizigia or invulneravel_por_habilidade or not vivo or dano_total <= 0.0 or duracao <= 0.0:
 		return
 	# Uma nova fonte renova a duração e conserva apenas o pulso mais forte.
 	# Assim a queimadura permanece perigosa sem acumular infinitamente.
@@ -2250,6 +2262,8 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 		if tempo_resistencia_temporaria <= 0.0:
 			resistencia_temporaria_multiplicador = 1.0
 
+	if protegido_por_sizigia and tempo_queimadura > 0.0:
+		return
 	if tempo_queimadura > 0.0 and pulsos_queimadura_restantes > 0:
 		tempo_queimadura = maxf(tempo_queimadura - delta, 0.0)
 		contador_pulso_queimadura -= delta

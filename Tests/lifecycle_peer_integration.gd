@@ -3,6 +3,7 @@ extends Node
 var papel := ""
 var arena: Node2D
 var prontos: Dictionary = {}
+var sizigia_confirmada: Dictionary = {}
 var pausas_confirmadas: Dictionary = {}
 var iniciar_saida := false
 var concluido := false
@@ -54,6 +55,9 @@ func _ready() -> void:
 	# Cada processo move somente a nave que controla. Os quatro precisam
 	# observar a posição final dos três colegas antes de iniciar o combate.
 	var local := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
+	if not await verificar_sizigia_rede():
+		falhar("golpes ou transições da Sizígia divergiram entre quatro pilotos")
+		return
 	var destino_local := destino_teste(Rede.peer_local())
 	for quadro in 36:
 		local.global_position = local.global_position.move_toward(destino_local, 6.0)
@@ -221,10 +225,12 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return confirmacoes_fim.size() == 2):
 			falhar("cliente nao confirmou recebimento do fim")
 			return
-		_liberar_saida.rpc()
-		if not await esperar(func() -> bool: return Rede.jogadores.size() == 1):
-			falhar("clientes nao encerraram apos a liberacao")
-			return
+		# Cada cliente pode receber o despawn do outro antes de fechar ENet.
+		for id in multiplayer.get_peers():
+			_liberar_saida.rpc_id(id)
+			if not await esperar(func() -> bool: return not Rede.jogadores.has(id)):
+				falhar("cliente nao encerrou apos a liberacao")
+				return
 	await sair()
 	print("TESTE OK: %s preservou replicas e recebeu despawns apos saida de outro cliente" % papel)
 	get_tree().quit(0)
@@ -263,6 +269,71 @@ func _confirmar_fim() -> void:
 @rpc("authority", "call_remote", "reliable")
 func _liberar_saida() -> void:
 	saida_liberada = true
+
+
+func verificar_sizigia_rede() -> bool:
+	var host := papel == "host"
+	if host:
+		var chefe := preload("res://Entities/BossEclipseColheita.tscn").instantiate() as BossSizigiaEterna
+		chefe.name = "SizigiaCoop"
+		arena.add_child(chefe)
+		chefe.global_position = Vector2(480, 150)
+		chefe.golpes.iniciar(SizigiaFinalController.Golpe.MARE)
+	if not await esperar(func() -> bool: return arena.has_node("SizigiaCoop")):
+		return false
+	var boss := arena.get_node("SizigiaCoop") as BossSizigiaEterna
+	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.MARE and boss.golpes.lacunas.size() == 4):
+		return false
+	if not await confirmar_sizigia(1):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida)
+	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.SOL and boss.destino_fase == 0):
+		return false
+	if not await confirmar_sizigia(2):
+		return false
+	if host:
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.MANCHAS)
+	if not await esperar(func() -> bool: return boss.golpes.orbes.size() == 3):
+		return false
+	if not await confirmar_sizigia(3):
+		return false
+	if papel == "client_a":
+		boss.golpes.orbes[1].tomarDano(3)
+	if not await esperar(func() -> bool: return boss.golpes.mascara_orbes == 5):
+		return false
+	if not await confirmar_sizigia(4):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida)
+	if not await esperar(func() -> bool: return boss.impacto_fusao):
+		return false
+	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.ECLIPSE and boss.destino_fase == 0):
+		return false
+	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.TOTALIDADE and boss.golpes.lacunas.size() == 8):
+		return false
+	if not await confirmar_sizigia(5):
+		return false
+	if host:
+		boss.queue_free()
+	return await esperar(func() -> bool: return not arena.has_node("SizigiaCoop"))
+
+
+func confirmar_sizigia(etapa: int) -> bool:
+	if papel != "host":
+		_confirmar_sizigia.rpc_id(1, etapa)
+		return true
+	return await esperar(func() -> bool:
+		for peer in multiplayer.get_peers():
+			if int(sizigia_confirmada.get(peer, 0)) < etapa:
+				return false
+		return multiplayer.get_peers().size() == 3
+	)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_sizigia(etapa: int) -> void:
+	sizigia_confirmada[multiplayer.get_remote_sender_id()] = etapa
 
 
 func progresso_igual(nivel: int, xp: float) -> bool:

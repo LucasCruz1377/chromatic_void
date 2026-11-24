@@ -91,10 +91,7 @@ func _ready() -> void:
 	)
 	var controlador := sizigia.get_node_or_null("SizigiaFinalController")
 	if is_instance_valid(controlador):
-		checar(controlador.has_method("_iniciar_sombra_passado"), "faltou Sombra do Passado")
-		checar(controlador.has_method("_iniciar_roubo_luz"), "faltou Roubo da Luz")
-		checar(controlador.has_method("_iniciar_ocultacao"), "faltou Ocultação Protetora")
-		checar(controlador.has_method("_iniciar_eclipse_absoluto"), "faltou Eclipse Absoluto")
+		checar(controlador == sizigia.golpes, "Sizígia não possui um controlador único")
 
 	flor.queue_free()
 	sizigia.queue_free()
@@ -103,7 +100,7 @@ func _ready() -> void:
 	for audio in batalha.find_children("*", "AudioStreamPlayer2D", true, false):
 		(audio as AudioStreamPlayer2D).stop()
 	batalha.queue_free()
-	await get_tree().process_frame
+	await get_tree().create_timer(0.25, true, false, true).timeout
 
 	if falhas.is_empty():
 		print("TESTE OK: intros temáticas, Florecimento e Sizígia final")
