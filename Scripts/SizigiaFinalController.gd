@@ -246,9 +246,8 @@ func iniciar(escolha: int) -> void:
 		var modelo := CloneLunar.capturar(alvo)
 		var colisao := alvo.get_node("colisao") as CollisionShape2D
 		modelo["raio"] = (colisao.shape as CircleShape2D).radius * absf(colisao.global_scale.x)
-		var limite := area.grow(-24)
-		var pos := (origem - direcao * 68.0).clamp(limite.position, limite.end)
-		criar_sombra(modelo, boss.obter_vida_maxima_atual() * 0.10, pos)
+		var pos := posicao_invocacao_sombra(area)
+		criar_sombra(modelo, boss.obter_vida_maxima_atual() * 0.20, pos)
 	elif tipo == Golpe.ABSOLUTO:
 		preparar_memoria(alvo)
 	if tipo == Golpe.REFLEXOS:
@@ -468,6 +467,22 @@ func acerto(p: Node2D, indice: int, fator: float, fonte: Vector2) -> void:
 	ferir(p, boss.Dano * fator, fonte)
 	if tipo in [Golpe.RETORNO, Golpe.RAIO] and p.has_method("aplicar_queimadura"):
 		p.aplicar_queimadura(boss.Dano * 0.18, 2.4)
+
+
+func posicao_invocacao_sombra(area: Rect2) -> Vector2:
+	var limite := area.grow(-42)
+	var melhor := -INF
+	var pos := origem
+	for i in 8:
+		var rumo := direcao.rotated((i + 2) * TAU / 8.0)
+		var candidato := (origem + rumo * 112.0).clamp(limite.position, limite.end)
+		var espaco := candidato.distance_to(origem) - 64.0
+		for piloto in pilotos:
+			espaco = minf(espaco, candidato.distance_to(piloto.global_position) - 96.0)
+		if espaco > melhor + 0.01:
+			melhor = espaco
+			pos = candidato
+	return pos
 
 
 func criar_sombra(modelo: Dictionary, vida: float, pos: Vector2) -> void:

@@ -82,15 +82,35 @@ func _ready() -> void:
 	jogador.remove_from_group("player")
 	golpes.iniciar(golpes.Golpe.SOMBRA)
 	var sombra := golpes.sombra
-	verificar(is_equal_approx(sombra.vida, boss.VidaMaxima * 0.1), "vida inicial da sombra")
+	verificar(is_equal_approx(sombra.vida, boss.VidaMaxima * 0.2), "vida inicial da sombra")
+	var nascendo := sombra.global_position
+	sombra._physics_process(0.45)
+	sombra.tomarDano(5)
+	verificar(sombra.collision_layer == 0 and sombra.vida == sombra.vida_maxima and sombra.disparos == 0, "a silhueta em formação entrou em combate")
+	verificar(sombra.casco.modulate.a > 0 and sombra.casco.modulate.a < 1, "a invocação não revelou o casco gradualmente")
+	sombra._physics_process(0.51)
+	verificar(sombra.collision_layer == 4 and sombra.global_position == nascendo, "a invocação não materializou o colisor junto da nave")
 	sombra.tomarDano(5)
 	var restante := sombra.vida
 	golpes.iniciar(golpes.Golpe.CRESCENTES)
 	golpes.iniciar(golpes.Golpe.SOMBRA)
 	verificar(sombra == golpes.sombra and sombra.vida == restante, "reiniciar ataque duplicou ou curou a sombra")
-	for i in 290:
+	nave.global_position = Vector2(400, 300)
+	nave.velocity = Vector2(0, 220)
+	for i in 36:
 		sombra._physics_process(1.0 / 60.0)
-	verificar(sombra.disparos == 2, "a sombra não manteve a cadência independente")
+	var mira_travada := sombra.mira
+	var rumo := Vector2.from_angle(mira_travada)
+	verificar(sombra.global_position.distance_to(nascendo) >= 75.0, "a sombra não flanqueou o piloto")
+	verificar(absf(angle_difference(mira_travada, sombra.global_position.angle_to_point(nave.global_position))) > 0.07, "a mira não antecipou o deslocamento lateral")
+	nave.global_position += Vector2(0, -70)
+	nave.velocity = Vector2.ZERO
+	for i in 18:
+		sombra._physics_process(1.0 / 60.0)
+	verificar(sombra.disparos == 1 and is_equal_approx(sombra.eixo_tiro, mira_travada), "a primeira salva corrigiu a mira depois do aviso")
+	for i in 82:
+		sombra._physics_process(1.0 / 60.0)
+	verificar(sombra.disparos == 2 and sombra.duracao_ciclo() == sombra.CICLO_LONGO, "a sombra não manteve a cadência independente")
 	for i in sombra.BRACOS:
 		var radial := sombra.ponta(i, 0.3) - sombra.origem_tiro
 		var seguinte := sombra.ponta((i + 1) % sombra.BRACOS, 0.3) - sombra.origem_tiro
@@ -100,7 +120,7 @@ func _ready() -> void:
 	jogador.add_to_group("player")
 	# A mesma ponta desenhada só causa dano ao cruzar o piloto, uma vez por dardo.
 	var idade := sombra.idade_tiro
-	var rumo := Vector2.from_angle(sombra.eixo_tiro)
+	rumo = Vector2.from_angle(sombra.eixo_tiro)
 	jogador.global_position = sombra.ponta(0, idade + 0.02) + rumo.orthogonal() * 15
 	var dano_antes := jogador.dano_recebido
 	sombra._physics_process(0.02)
@@ -108,7 +128,7 @@ func _ready() -> void:
 	jogador.global_position = sombra.ponta(0, sombra.idade_tiro + 0.01)
 	sombra._physics_process(0.02)
 	sombra._physics_process(0.01)
-	verificar(is_equal_approx(jogador.dano_recebido - dano_antes, boss.Dano * 0.26), "o dardo não aplicou exatamente um impacto")
+	verificar(is_equal_approx(jogador.dano_recebido - dano_antes, boss.Dano * sombra.FATOR_DANO), "o dardo não aplicou exatamente um impacto")
 	var vida_lua := boss.Vida
 	boss.tomarDano(vida_lua + 999.0)
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.LUA, "o dano excedente atravessou a primeira barra")
