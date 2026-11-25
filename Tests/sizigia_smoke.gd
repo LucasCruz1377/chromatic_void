@@ -62,6 +62,26 @@ func _ready() -> void:
 	for i in 280:
 		golpes.avancar(1.0 / 60.0)
 	verificar(is_equal_approx(jogador.vida, vida_inicial), "o corredor verde causou dano")
+	for astro in [boss.Fase.LUA, boss.Fase.SOL, boss.Fase.ECLIPSE]:
+		boss.fase_atual = astro
+		for fase in range(1, 4):
+			boss.Vida = boss.VidaMaxima * (4 - fase) / 3.0
+			verificar(boss.fase_da_barra() == fase, "limiar de fase por astro")
+			var golpe: int = [golpes.Golpe.MARE, golpes.Golpe.MANCHAS, golpes.Golpe.TOTALIDADE][astro - 1]
+			golpes.iniciar(golpe)
+			verificar(golpes.etapa == fase, "fase do golpe não corresponde à barra")
+			if astro == boss.Fase.LUA:
+				verificar(golpes.quantidade_aneis() == [2, 5, 10][fase - 1], "quantidade de anéis da Lua")
+				if fase > 1:
+					verificar(not golpes.livre(direcao, golpes.desvio_anel(0), 0.05), "fresta avançada alinhada")
+					verificar(golpes.duracao_golpe() > golpes.fim_dos_aneis(), "maré terminou antes da última onda")
+			boss.Vida = boss.VidaMaxima * 0.1
+			verificar(golpes.etapa == fase, "mudou um ataque já anunciado")
+	boss.fase_atual = boss.Fase.LUA
+	golpes.iniciar(golpes.Golpe.MARE)
+	testar_travessia(golpes, jogador, golpes.origem, direcao)
+	jogador.vida = vida_inicial
+	boss.Vida = boss.VidaMaxima
 	golpes.encerrar()
 	golpes.iniciar(golpes.Golpe.METEOROS)
 	var sala := Global.obter_retangulo_area_visivel()
@@ -183,7 +203,6 @@ func _ready() -> void:
 	verificar(not jogador.protegido_por_sizigia, "a proteção da cinemática não terminou")
 	verificar(is_equal_approx(boss.Vida, boss.obter_vida_maxima_atual()), "o Eclipse não recebeu sua barra independente")
 	verificar(is_equal_approx(boss.Dano, dano_lua * 1.35), "dano da Eclipse fora da curva")
-	var vida_eclipse := boss.Vida
 	boss.Vida = boss.VidaMaxima * 0.24
 	golpes.iniciar(golpes.Golpe.METEOROS)
 	for leva in 5:
@@ -192,37 +211,20 @@ func _ready() -> void:
 		verificar(is_equal_approx(golpes.instante_impacto(ultimo) - golpes.tempo, 0.93), "aviso da Eclipse foi encurtado")
 	verificar(golpes.pontos.size() == 24, "faltou a sexta leva da Eclipse")
 	golpes.encerrar()
-	boss.Vida = vida_eclipse
+	boss.global_position = Vector2(690, 230)
 	golpes.iniciar(golpes.Golpe.TOTALIDADE)
-	var centro: Vector2 = golpes.especial.centro
+	var centro := golpes.origem
+	verificar(centro == boss.global_position, "anel deslocado do Eclipse")
 	var eixo_inicial := centro.angle_to_point(jogador.global_position)
-	verificar(golpes.ANEIS_ECLIPSE == 10 and golpes.lacunas.size() == 1, "contagem de anéis ou frestas solo")
-	var raio_teste := 180.0
-	var meio_vao := 2.0 * golpes.raio_piloto(jogador)
-	for i in golpes.ANEIS_ECLIPSE:
-		var desvio := golpes.desvio_anel(i)
-		if i == 0:
-			verificar(absf(desvio) >= deg_to_rad(15), "primeira fresta apontou para o piloto")
-		else:
-			var passo := absf(desvio - golpes.desvio_anel(i - 1))
-			verificar(passo >= deg_to_rad(15) and passo <= deg_to_rad(30), "giro do corredor fora da faixa")
-		var instante := golpes.PRIMEIRO_ANEL + i * golpes.INTERVALO_ANEIS + raio_teste / golpes.VELOCIDADE_ANEL
-		var rumo_fresta := Vector2.from_angle(eixo_inicial + desvio)
-		# Anéis pares cruzam pelo centro da fresta. Ímpares acertam a parede ao lado.
-		jogador.global_position = centro + rumo_fresta * raio_teste
-		if i % 2 == 1:
-			jogador.global_position += rumo_fresta.orthogonal() * (meio_vao + 3.0)
-		while golpes.tempo < instante + 0.08:
-			golpes.avancar(1.0 / 60.0)
-		var chave := Vector2i(300 + i, jogador.get_multiplayer_authority())
-		verificar(golpes.impactos.has(chave) == (i % 2 == 1), "colisão da passagem no anel %d" % i)
+	verificar(golpes.quantidade_aneis() == 10 and golpes.lacunas.size() == 2 and is_equal_approx(golpes.lacunas[1] - golpes.lacunas[0], PI), "contagem de anéis ou frestas solo")
+	testar_travessia(golpes, jogador, centro, eixo_inicial)
 	verificar(not golpes.exposto(), "o núcleo abriu antes do último anel sair")
 	var fim_aneis := golpes.fim_dos_aneis()
 	while golpes.tempo < fim_aneis + 0.05:
 		golpes.avancar(1.0 / 60.0)
 	verificar(golpes.exposto() and boss.multiplicador_dano_recebido == 1.45, "núcleo não abriu depois do combo")
 	golpes.encerrar()
-	boss.Vida = boss.VidaMaxima * 0.35
+	boss.Vida = boss.VidaMaxima / 3.0
 	golpes.escolher()
 	verificar(golpes.tipo == golpes.Golpe.ABSOLUTO and golpes.abrigos.size() > 0, "faltou o abrigo do Eclipse Absoluto")
 
@@ -245,6 +247,28 @@ func _ready() -> void:
 	else:
 		print("TESTE FALHOU: %d problema(s) na Sizígia Eterna" % falhas.size())
 		get_tree().quit(1)
+
+func testar_travessia(golpes: SizigiaFinalController, jogador: JogadorTeste, centro: Vector2, eixo_inicial: float) -> void:
+	var raio_teste := 180.0
+	var meio_vao := 2.0 * golpes.raio_piloto(jogador)
+	for i in golpes.quantidade_aneis():
+		var desvio := golpes.desvio_anel(i)
+		if i == 0:
+			verificar(absf(desvio) >= deg_to_rad(15), "primeira fresta apontou para o piloto")
+		else:
+			var passo := absf(desvio - golpes.desvio_anel(i - 1))
+			verificar(passo >= deg_to_rad(15) and passo <= deg_to_rad(30), "giro do corredor fora da faixa")
+		var instante := golpes.inicio_aneis() + i * golpes.intervalo_aneis() + raio_teste / golpes.velocidade_anel()
+		var rumo_fresta := Vector2.from_angle(eixo_inicial + desvio)
+		# Anéis pares cruzam pelo centro da fresta. Ímpares acertam a parede ao lado.
+		jogador.global_position = centro + rumo_fresta * raio_teste
+		if i % 2 == 1:
+			jogador.global_position += rumo_fresta.orthogonal() * (meio_vao + 3.0)
+		while golpes.tempo < instante + 0.08:
+			golpes.avancar(1.0 / 60.0)
+		var chave := Vector2i(300 + i, jogador.get_multiplayer_authority())
+		verificar(golpes.impactos.has(chave) == (i % 2 == 1), "colisão da passagem no anel %d" % i)
+
 
 func testar_clone(boss: BossSizigiaEterna, alvo_teste: Node2D) -> void:
 	boss.golpes.encerrar()

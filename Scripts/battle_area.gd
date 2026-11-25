@@ -1601,7 +1601,7 @@ func _atualizar_hud_boss_cliente() -> void:
 	if encontrado._possui_propriedade_rede(&"fase"):
 		fase_rede = int(encontrado.get("fase"))
 	elif encontrado is BossSizigiaEterna:
-		fase_rede = encontrado.fase_atual
+		fase_rede = encontrado.fase_da_barra()
 	elif encontrado._possui_propriedade_rede(&"fase_atual"):
 		fase_rede = int(encontrado.get("fase_atual")) + 1
 	_on_boss_fase_alterada(fase_rede)

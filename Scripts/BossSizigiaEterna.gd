@@ -90,6 +90,14 @@ func configurar_dificuldade(nivel_dificuldade: int) -> void:
 	vida_alterada.emit(Vida, VidaMaxima)
 
 
+func fase_da_barra() -> int:
+	if Vida * 3.0 <= VidaMaxima:
+		return 3
+	if Vida * 3.0 <= VidaMaxima * 2.0:
+		return 2
+	return 1
+
+
 func obter_vida_maxima_atual() -> float:
 	return VidaMaxima
 
@@ -130,10 +138,13 @@ func tomarDano(valor: float) -> void:
 		golpes.energia = minf(golpes.energia + valor, 40.0)
 		return
 	var dano_final := maxf(valor * bonus_marca * multiplicador_dano_recebido, 0.0)
+	var fase_anterior := fase_da_barra()
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
 	if Vida > 0.0:
+		if fase_da_barra() != fase_anterior:
+			fase_alterada.emit(fase_da_barra())
 		return
 	if fase_atual < Fase.ECLIPSE:
 		iniciar_transicao(fase_atual + 1)
@@ -141,8 +152,12 @@ func tomarDano(valor: float) -> void:
 		morrer()
 
 
+func velocidade_investida() -> float:
+	return 560.0 + 50.0 * (golpes.etapa - 1)
+
+
 func obter_velocidade_maxima() -> float:
-	return 560.0 if estado == Estado.INVESTINDO else Velocidade
+	return velocidade_investida() if estado == Estado.INVESTINDO else Velocidade
 
 
 func Mover(delta: float) -> void:
@@ -157,7 +172,7 @@ func Mover(delta: float) -> void:
 		velocity = Vector2.ZERO
 		if estado == Estado.INVESTINDO:
 			var limite := Global.obter_retangulo_area_visivel().grow(-2.0)
-			var proxima := global_position + direcao_investida * 560.0 * delta
+			var proxima := global_position + direcao_investida * velocidade_investida() * delta
 			velocity = (proxima.clamp(limite.position, limite.end) - global_position) / maxf(delta, 0.0001)
 	else:
 		estado = Estado.MOVENDO
@@ -168,6 +183,7 @@ func Mover(delta: float) -> void:
 		tempo_ataque -= delta
 		if tempo_ataque <= 0 and is_instance_valid(player):
 			golpes.escolher()
+			velocity = Vector2.ZERO
 	for piloto in golpes.pilotos_vivos():
 		var chave := piloto.get_instance_id()
 		contato[chave] = maxf(float(contato.get(chave, 0.0)) - delta, 0.0)
@@ -183,7 +199,7 @@ func ao_colidir_com_player(piloto: Node) -> void:
 	var chave := piloto.get_instance_id()
 	if float(contato.get(chave, 0.0)) <= 0.0:
 		contato[chave] = 0.85
-		golpes.ferir(piloto, Dano * 0.64, global_position)
+		golpes.ferir(piloto, Dano * 0.64 * golpes.fator_dano(fase_da_barra()), global_position)
 
 
 func _capturar_snapshot_visual_boss(seq: int = 0) -> Dictionary:
@@ -348,7 +364,7 @@ func finalizar_fase(fase: int) -> void:
 	tempo_ataque = 1.25
 	proteger_player(false)
 	atualizar_visual_fase()
-	fase_alterada.emit(fase)
+	fase_alterada.emit(fase_da_barra())
 	subtitulo_alterado.emit(obter_subtitulo_boss())
 	vida_alterada.emit(Vida, VidaMaxima)
 
@@ -570,4 +586,3 @@ func ocultar_visuais_transicao() -> void:
 		if is_instance_valid(sprite):
 			sprite.visible = false
 	queue_redraw()
-

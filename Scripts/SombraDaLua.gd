@@ -16,6 +16,8 @@ var casco := CloneLunar.new()
 var vida_maxima := 0.0
 var vida := 0.0
 var morto := false
+var etapa_passo := 1
+var etapa_salva := 1
 var passo := 0
 var alvo: Node2D
 var rumo_passo := Vector2.RIGHT
@@ -55,7 +57,7 @@ func configurar(modelo: Dictionary, total: float, pos: Vector2) -> void:
 
 
 func duracao_ciclo() -> float:
-	return CICLO_LONGO if passo % 2 == 0 else CICLO_CURTO
+	return (CICLO_LONGO if passo % 2 == 0 else CICLO_CURTO) - 0.12 * (etapa_passo - 1)
 
 
 func atualizar_invocacao(instante: float) -> void:
@@ -69,6 +71,8 @@ func atualizar_invocacao(instante: float) -> void:
 
 
 func escolher_passo(pilotos: Array[Node2D]) -> void:
+	if combate.boss.fase_atual == BossSizigiaEterna.Fase.LUA:
+		etapa_passo = combate.boss.fase_da_barra()
 	# Um duelo de duas salvas por piloto. A segunda tem uma recuperação maior.
 	if passo % 2 == 0 or not pilotos.has(alvo):
 		alvo = pilotos[(passo >> 1) % pilotos.size()]
@@ -101,9 +105,10 @@ func apontar() -> void:
 		# Inclui o tempo do aviso travado e o voo até a posição de interceptação.
 		var v := (alvo as CharacterBody2D).velocity
 		var relativo := pos + v * (DISPARO - TRAVA_MIRA) - destino
-		var a := VELOCIDADE_TIRO * VELOCIDADE_TIRO - v.length_squared()
+		var velocidade := velocidade_salva(etapa_passo)
+		var a := velocidade * velocidade - v.length_squared()
 		var b := relativo.dot(v)
-		var voo := relativo.length() / VELOCIDADE_TIRO
+		var voo := relativo.length() / velocidade
 		if a > 1.0:
 			voo = (b + sqrt(b * b + a * relativo.length_squared())) / a
 		pos += (v * (DISPARO - TRAVA_MIRA + voo)).limit_length(155.0)
@@ -142,6 +147,7 @@ func _physics_process(delta: float) -> void:
 		apontar()
 	casco.rotation = rotate_toward(casco.rotation, mira, delta * 14.0)
 	if anterior < DISPARO and tempo >= DISPARO:
+		etapa_salva = etapa_passo
 		disparos += 1
 		origem_tiro = global_position
 		eixo_tiro = mira
@@ -157,7 +163,7 @@ func avancar_dardos(delta: float, pilotos: Array[Node2D]) -> void:
 	idade_tiro = minf(idade_tiro + delta, VIDA_TIRO)
 	if disparos == 0 or idade_tiro <= anterior:
 		return
-	for i in BRACOS:
+	for i in bracos_salva(etapa_salva):
 		var cauda := ponta(i, anterior)
 		var frente := ponta(i, idade_tiro)
 		for p in pilotos:
@@ -167,11 +173,19 @@ func avancar_dardos(delta: float, pilotos: Array[Node2D]) -> void:
 			var perto := Geometry2D.get_closest_point_to_segment(p.global_position, cauda, frente)
 			if perto.distance_squared_to(p.global_position) <= 121.0:
 				atingidos[chave] = true
-				combate.ferir(p, combate.boss.Dano * FATOR_DANO, frente)
+				combate.ferir(p, combate.boss.Dano * FATOR_DANO * combate.fator_dano(etapa_salva), frente)
+
+
+func bracos_salva(fase: int) -> int:
+	return BRACOS * 2 if fase == 3 else BRACOS
+
+
+func velocidade_salva(fase: int) -> float:
+	return VELOCIDADE_TIRO + 60.0 * (fase - 1)
 
 
 func ponta(indice: int, idade: float) -> Vector2:
-	return origem_tiro + Vector2.from_angle(eixo_tiro + indice * TAU / BRACOS) * (15.0 + idade * VELOCIDADE_TIRO)
+	return origem_tiro + Vector2.from_angle(eixo_tiro + indice * TAU / bracos_salva(etapa_salva)) * (15.0 + idade * velocidade_salva(etapa_salva))
 
 
 func som_salva() -> void:
@@ -208,7 +222,7 @@ func dissolver() -> void:
 
 
 func snapshot() -> Array:
-	return [casco.modelo, vida_maxima, vida, global_position, casco.rotation, tempo, mira, disparos, origem_tiro, eixo_tiro, idade_tiro, invocacao, passo, partida, destino]
+	return [casco.modelo, vida_maxima, vida, global_position, casco.rotation, tempo, mira, disparos, origem_tiro, eixo_tiro, idade_tiro, invocacao, passo, partida, destino, etapa_passo, etapa_salva]
 
 
 func receber(s: Array, nova: bool) -> void:
@@ -225,6 +239,8 @@ func receber(s: Array, nova: bool) -> void:
 	eixo_tiro = s[9]
 	if invocacao < INVOCACAO:
 		atualizar_invocacao(maxf(invocacao, s[11]))
+	etapa_passo = s[15]
+	etapa_salva = s[16]
 	passo = s[12]
 	partida = s[13]
 	destino = s[14]
@@ -262,14 +278,14 @@ func _draw() -> void:
 	draw_rect(Rect2(-13, -21, 26 * vida / vida_maxima, 3), cor.lerp(Color.WHITE, impacto * 4))
 	if tempo >= FIM_PASSO and tempo < DISPARO:
 		var carga := smoothstep(FIM_PASSO, DISPARO, tempo)
-		for i in BRACOS:
-			var rumo := Vector2.from_angle(mira + i * TAU / BRACOS)
+		for i in bracos_salva(etapa_passo):
+			var rumo := Vector2.from_angle(mira + i * TAU / bracos_salva(etapa_passo))
 			draw_line(rumo * 16, rumo * (24 + 12 * carga), Color(cor, 0.45 + carga * 0.55), 1.5, true)
 			if i == 0 and tempo >= TRAVA_MIRA:
 				draw_line(rumo * 38, rumo * (51 + 8 * carga), Color.WHITE, 1.5, true)
 	if idade_tiro < VIDA_TIRO:
-		for i in BRACOS:
-			draw_set_transform(to_local(ponta(i, idade_tiro)), eixo_tiro + i * TAU / BRACOS)
+		for i in bracos_salva(etapa_salva):
+			draw_set_transform(to_local(ponta(i, idade_tiro)), eixo_tiro + i * TAU / bracos_salva(etapa_salva))
 			draw_texture_rect(CloneLunar.HALO, Rect2(-18,-8,36,16), false, Color(combate.cor_tiro, 0.35 * brilho))
 			draw_colored_polygon(combate.forma_tiro, combate.cor_tiro)
 			draw_line(Vector2(-13, 0), Vector2(4, 0), Color(combate.cor_tiro.lerp(Color.WHITE, 0.7), 0.86), 1.4, true)
