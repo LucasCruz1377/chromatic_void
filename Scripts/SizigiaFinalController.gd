@@ -264,7 +264,7 @@ func iniciar(escolha: int) -> void:
 		var colisao := alvo.get_node("colisao") as CollisionShape2D
 		modelo["raio"] = (colisao.shape as CircleShape2D).radius * absf(colisao.global_scale.x)
 		var pos := posicao_invocacao_sombra(area)
-		criar_sombra(modelo, boss.obter_vida_maxima_atual() * 0.20, pos)
+		criar_sombra(modelo, boss.obter_vida_maxima_atual() * 0.10, pos)
 	elif tipo == Golpe.ABSOLUTO:
 		preparar_memoria(alvo)
 	if tipo == Golpe.REFLEXOS:

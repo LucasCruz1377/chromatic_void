@@ -130,7 +130,7 @@ func _ready() -> void:
 	golpes.escolher()
 	verificar(boss.obter_subtitulo_boss() == subtitulo, "o subtítulo revelou o golpe")
 	var sombra := golpes.sombra
-	verificar(is_equal_approx(sombra.vida, boss.VidaMaxima * 0.2), "vida inicial da sombra")
+	verificar(is_equal_approx(sombra.vida, boss.VidaMaxima * 0.10), "vida inicial da sombra")
 	var nascendo := sombra.global_position
 	sombra._physics_process(0.45)
 	sombra.tomarDano(5)

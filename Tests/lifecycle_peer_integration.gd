@@ -325,7 +325,7 @@ func verificar_sizigia_rede() -> bool:
 		return false
 	if not await esperar(func() -> bool:
 		var sombra := boss.golpes.sombra
-		return is_instance_valid(sombra) and sombra.disparos >= 1 and sombra.collision_layer == 4 and is_equal_approx(sombra.vida, boss.VidaMaxima * 0.2)
+		return is_instance_valid(sombra) and sombra.disparos >= 1 and sombra.collision_layer == 4 and is_equal_approx(sombra.vida, boss.VidaMaxima * 0.10)
 	):
 		return false
 	if not await confirmar_sizigia(3):
@@ -348,7 +348,7 @@ func verificar_sizigia_rede() -> bool:
 		arena.add_child(tiro)
 		nave.registrar_projetil_rede(tiro, &"", Color.WHITE, {})
 	if not await esperar(func() -> bool:
-		return is_instance_valid(boss.golpes.sombra) and is_equal_approx(boss.golpes.sombra.vida, boss.VidaMaxima * 0.2 - 3.0)
+		return is_instance_valid(boss.golpes.sombra) and is_equal_approx(boss.golpes.sombra.vida, boss.VidaMaxima * 0.10 - 3.0)
 	):
 		return false
 	if not await confirmar_sizigia(4, assinatura):
