@@ -854,17 +854,17 @@ func atualizar_ui() -> void:
 	# os controles do jogador local com nível, XP ou habilidade de outro peer.
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		return
-	if _nivel_exibido != nivel_atual:
-		_nivel_exibido = nivel_atual
-		lvl_text.text = "LVL: " + str(nivel_atual)
+	if not Rede.modo_multiplayer:
+		if _nivel_exibido != nivel_atual:
+			_nivel_exibido = nivel_atual
+			lvl_text.text = "LVL: " + str(nivel_atual)
+		barra_xp.max_value = xp_necessario
+		barra_xp.value = xp_atual
 	if HabilidadeEquipada:
 		display_skill.texture = HabilidadeEquipada.Icone
 	else:
 		display_skill.texture = null
 	atualizar_barra_cooldown_habilidade()
-
-	barra_xp.max_value = xp_necessario
-	barra_xp.value = xp_atual
 
 
 func criar_barra_cooldown_habilidade() -> void:
@@ -2401,6 +2401,8 @@ func _desenhar_carga_arma() -> void:
 
 
 func ganhar_xp(valor: float) -> void:
+	if Rede.modo_multiplayer:
+		return
 	xp_atual += valor
 	aplicar_xp_modulo(valor)
 	while xp_atual >= xp_necessario:
@@ -2432,16 +2434,12 @@ func aplicar_progressao_equipe(nivel: int, xp: float, pontos: int) -> void:
 
 
 func subir_de_nivel() -> void:
+	if Rede.modo_multiplayer:
+		return
 	nivel_atual += 1
 	xp_necessario = calcular_xp_proximo_nivel(nivel_atual)
-	# A frequência acompanha o tamanho atual da equipe: solo/1, dupla/2,
-	# trio/3 e quarteto/4. Todos continuam recebendo a mesma quantidade.
-	var intervalo_melhoria := 1
-	if Rede.modo_multiplayer:
-		intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)
-	if nivel_atual % intervalo_melhoria == 0:
-		pontos_upgrade_pendentes += 1
-		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+	pontos_upgrade_pendentes += 1
+	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()
 
 

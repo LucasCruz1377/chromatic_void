@@ -119,22 +119,11 @@ func _ready() -> void:
 	jogador_solo.free()
 
 	Rede.modo_multiplayer = true
-	for quantidade in [3, 4]:
-		Rede.jogadores.clear()
-		for indice in range(quantidade):
-			Rede.jogadores[indice + 1] = "PILOTO_%d" % indice
-		var jogador_equipe := Player.new()
-		for _nivel in range(quantidade - 1):
-			jogador_equipe.subir_de_nivel()
-		verificar(
-			jogador_equipe.nivel_atual == quantidade
-				and jogador_equipe.pontos_upgrade_pendentes == 1,
-			"equipe de %d jogadores não recebeu uma melhoria a cada %d níveis"
-			% [quantidade, quantidade]
-		)
-		jogador_equipe.free()
-
-	Rede.modo_multiplayer = true
+	var isolado := Player.new()
+	isolado.ganhar_xp(50.0)
+	isolado.subir_de_nivel()
+	verificar(isolado.nivel_atual == 1 and isolado.xp_atual == 0.0, "a nave alterou sua progressão online por conta própria")
+	isolado.free()
 	Rede.jogadores = {1: "HOST_TESTE", 2: "CLIENTE_TESTE"}
 	var batalha := (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate()
 	add_child(batalha)
@@ -275,6 +264,20 @@ func _ready() -> void:
 	await get_tree().process_frame
 	verificar(jogador.nivel_atual == 3, "segundo level up não chegou ao nível 3")
 	verificar(jogador.pontos_upgrade_pendentes == pontos_iniciais + 1, "nível ímpar concedeu melhoria indevida")
+
+	var revisao: int = batalha.revisao_progressao
+	var pontos := tardio.pontos_upgrade_pendentes
+	for antiga in [revisao, revisao - 1]:
+		batalha._receber_progressao_equipe(antiga, 1, 0.0, 99, 7.0)
+	tardio.reviver_multiplayer(Vector2(300, 200))
+	verificar(tardio.nivel_atual == 3 and tardio.xp_atual == 0.5 and tardio.pontos_upgrade_pendentes == pontos, "reentrada ou atualização antiga alterou o XP ou duplicou melhorias")
+
+	Rede.jogadores = {1: "P1", 2: "P2", 3: "P3"}
+	batalha._avancar_progressao_equipe(18.0, 0.0)
+	verificar(jogador.nivel_atual == 6 and jogador.pontos_upgrade_pendentes == pontos_iniciais + 2, "o trio não ganhou uma melhoria ao chegar ao nível 6")
+	Rede.jogadores = {1: "P1", 2: "P2", 3: "P3", 4: "P4"}
+	batalha._avancar_progressao_equipe(25.0, 0.0)
+	verificar(jogador.nivel_atual == 8 and jogador.pontos_upgrade_pendentes == pontos_iniciais + 3, "o quarteto não ganhou uma melhoria ao chegar ao nível 8")
 
 	for caminho_boss in [
 		"res://Entities/BossPet0.tscn",

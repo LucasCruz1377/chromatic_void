@@ -23,6 +23,7 @@ var gameover_anterior := false
 
 
 func _ready() -> void:
+	barra_xp.step = 0.0
 	definir_player_local(player)
 	gameover_anterior = caixa_gameover.visible
 	botao_tentar_novamente.focus_neighbor_bottom = (
@@ -68,6 +69,12 @@ func definir_player_local(novo_player: Player) -> void:
 	player = novo_player
 	if is_instance_valid(player) and not player.subiuDeNivel.is_connected(_on_player_subiu_de_nivel):
 		player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
+
+
+func mostrar_progressao_equipe(nivel: int, xp: float) -> void:
+	texto_nivel.text = "LVL: %d" % nivel
+	barra_xp.max_value = Player.calcular_xp_proximo_nivel(nivel)
+	barra_xp.value = xp
 
 
 func _ajustar_hud_responsivo() -> void:
@@ -170,9 +177,12 @@ func _process(_delta: float) -> void:
 	if caixa_pause.visible != mostrar_pausa:
 		caixa_pause.visible = mostrar_pausa
 		if not pode_pausar:
-			Global.definir_cursor_interface(mostrar_pausa or escolhendo_setor or tela_upgrades.call("esta_aberta"))
 			if mostrar_pausa:
+				tela_upgrades.call("fechar_menu")
+				Global.definir_cursor_interface(true)
 				botao_voltar_pause.grab_focus()
+			else:
+				Global.definir_cursor_interface(escolhendo_setor or tela_upgrades.call("esta_aberta"))
 	if caixa_gameover.visible and not gameover_anterior:
 		botao_tentar_novamente.call_deferred("grab_focus")
 	gameover_anterior = caixa_gameover.visible

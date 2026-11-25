@@ -32,7 +32,10 @@ func _ready() -> void:
 		falhar("lobby nao chegou a quatro pilotos")
 		return
 	if papel in ["client_a", "client_b"]:
-		Rede.configuracao_teste = {"mutacao": "u13_dupla_experiencia"}
+		GerenciadorDeSave.salvar({
+			"equipamentos_loja": {"3": "u13_dupla_experiencia"},
+			"itens_desbloqueados": ["u13_dupla_experiencia"],
+		})
 	if papel == "host" and not Rede.solicitar_inicio_partida():
 		falhar("host nao iniciou pelo lobby")
 		return
@@ -88,8 +91,13 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return prontos.size() == 4):
 			falhar("peers nao confirmaram entrada")
 			return
-		if arena.conceder_xp_equipe(5.25) != 10.5:
-			falhar("dois clientes com a passiva devem conceder exatamente 2x XP")
+		var asteroide := preload("res://Entities/AsteroideBonus.tscn").instantiate()
+		asteroide.xp_base = 5.25
+		arena.add_child(asteroide, true)
+		asteroide.conceder_recompensa()
+		asteroide.queue_free()
+		if not progresso_igual(4, 1.5):
+			falhar("o asteroide não concedeu 2x XP à equipe e ao HUD do host")
 			return
 		var dash := preload("res://Habilidades/habilidadeHiperdash.tres").duplicate() as HabilidadeHiperdash
 		var tempo_anterior := Engine.time_scale
@@ -185,6 +193,15 @@ func _ready() -> void:
 			falhar("cliente moveu, disparou, retomou ou perdeu recarga durante a pausa")
 			return
 		_confirmar_pausa.rpc_id(1)
+		if papel == "client_b":
+			if not await esperar(func() -> bool: return not get_tree().paused):
+				falhar("o host não retomou antes da segunda pausa")
+				return
+			var melhorias := arena.get_node("GUI/TelaUpgrades")
+			melhorias.abrir_menu()
+			if not melhorias.esta_aberta():
+				falhar("não abriu as melhorias para testar a troca de foco")
+				return
 	if not await esperar(func() -> bool: return iniciar_saida):
 		falhar("ordem de saida nao chegou")
 		return
@@ -485,7 +502,11 @@ func progresso_igual(nivel: int, xp: float) -> bool:
 	for piloto: Player in get_tree().get_nodes_in_group("player"):
 		if piloto.nivel_atual != nivel or not is_equal_approx(piloto.xp_atual, xp):
 			return false
-	return true
+	var barra := arena.get_node("GUI/Barra_xp") as TextureProgressBar
+	var rotulo := arena.get_node("GUI/LvlText") as Label
+	return (is_equal_approx(barra.value, xp)
+		and is_equal_approx(barra.max_value, Player.calcular_xp_proximo_nivel(nivel))
+		and rotulo.text == "LVL: %d" % nivel)
 
 
 func destino_teste(peer: int) -> Vector2:

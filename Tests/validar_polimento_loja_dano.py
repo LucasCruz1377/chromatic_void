@@ -141,7 +141,7 @@ assert '_receber_cristais_coop.rpc(cristais_coop_acumulados)' in BATALHA
 assert 'func _aplicar_total_cristais_coop(total_sessao: int)' in BATALHA
 assert '"cristais_coop": cristais_coop_acumulados' in BATALHA
 assert 'func configurar_alvo(' in CAMERA
-assert 'intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in PLAYER
+assert 'intervalo := clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in BATALHA
 assert 'particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o' in PLAYER
 assert 'spectrum.scale = Vector2(0.40, 0.40)' in PLAYER
 assert 'fspeed.scale = Vector2(0.40, 0.40)' in PLAYER

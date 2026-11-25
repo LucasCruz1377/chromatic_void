@@ -129,6 +129,7 @@ var escala_fundo_original := Vector2.ONE
 var estado_visual_boss_pausa: Array[Dictionary] = []
 var jogadores_rede: Dictionary = {}
 var tempo_nova_solicitacao_rede := 0.0
+var revisao_progressao := 0
 var nivel_equipe := 1
 var xp_equipe := 0.0
 var pontos_concedidos_equipe := 0
@@ -382,6 +383,7 @@ func _configurar_jogadores_multiplayer() -> void:
 	)
 	player.global_position = _posicao_inicial_peer(1)
 	jogadores_rede[1] = player
+	$GUI.mostrar_progressao_equipe(nivel_equipe, xp_equipe)
 	if multiplayer.is_server():
 		player.call_deferred("aplicar_configuracao_visual_rede")
 	else:
@@ -469,6 +471,8 @@ func conceder_xp_equipe(valor_base: float) -> float:
 
 
 func _avancar_progressao_equipe(xp: float, xp_para_modulos: float) -> void:
+	if not multiplayer.is_server() or xp <= 0.0:
+		return
 	var restante := xp_equipe + xp
 	var nivel := nivel_equipe
 	var pontos := pontos_concedidos_equipe
@@ -480,17 +484,22 @@ func _avancar_progressao_equipe(xp: float, xp_para_modulos: float) -> void:
 		if nivel % intervalo == 0:
 			pontos += 1
 		necessario = Player.calcular_xp_proximo_nivel(nivel)
-	_receber_progressao_equipe(nivel, restante, pontos, xp_para_modulos)
+	var revisao := revisao_progressao + 1
+	_receber_progressao_equipe(revisao, nivel, restante, pontos, xp_para_modulos)
 	for id in multiplayer.get_peers():
 		if jogadores_rede.has(id):
-			_receber_progressao_equipe.rpc_id(id, nivel, restante, pontos, xp_para_modulos)
+			_receber_progressao_equipe.rpc_id(id, revisao, nivel, restante, pontos, xp_para_modulos)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receber_progressao_equipe(nivel: int, xp: float, pontos: int, recompensa: float) -> void:
+func _receber_progressao_equipe(revisao: int, nivel: int, xp: float, pontos: int, recompensa: float) -> void:
+	if revisao <= revisao_progressao:
+		return
+	revisao_progressao = revisao
 	nivel_equipe = nivel
 	xp_equipe = xp
 	pontos_concedidos_equipe = pontos
+	$GUI.mostrar_progressao_equipe(nivel, xp)
 	for piloto: Player in jogadores_rede.values():
 		if is_instance_valid(piloto):
 			piloto.aplicar_progressao_equipe(nivel, xp, pontos)
@@ -599,6 +608,7 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 		}
 	_receber_estado_de_entrada_rede.rpc_id(id, {
 		"pilotos": pilotos,
+		"revisao_progressao": revisao_progressao,
 		"nivel_equipe": nivel_equipe,
 		"xp_equipe": xp_equipe,
 		"pontos_equipe": pontos_concedidos_equipe,
@@ -629,7 +639,7 @@ func _receber_estado_de_entrada_rede(dados: Dictionary) -> void:
 		int(dados.get("combo", 0)), 0.0, int(dados.get("pontos", 0))
 	)
 	_aplicar_total_cristais_coop(int(dados.get("cristais", 0)))
-	_receber_progressao_equipe(dados["nivel_equipe"], dados["xp_equipe"], dados["pontos_equipe"], 0.0)
+	_receber_progressao_equipe(dados["revisao_progressao"], dados["nivel_equipe"], dados["xp_equipe"], dados["pontos_equipe"], 0.0)
 	estados_entrada_pendentes = Dictionary(dados.get("pilotos", {})).duplicate(true)
 	_aplicar_estados_entrada_pendentes()
 
@@ -662,8 +672,9 @@ func _aplicar_estados_entrada_pendentes() -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _configurar_player_host(nickname: String, configuracao: Dictionary) -> void:
-	player.configurar_jogador_multiplayer(1, nickname, configuracao)
-	player.aplicar_configuracao_visual_rede()
+	var anfitriao := _obter_jogador_rede(1)
+	if is_instance_valid(anfitriao):
+		anfitriao.configurar_jogador_multiplayer(1, nickname, configuracao)
 
 
 func _instanciar_jogador_rede(dados: Variant) -> Node:
