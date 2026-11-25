@@ -3,7 +3,7 @@ extends Node
 var papel := ""
 var arena: Node2D
 var prontos: Dictionary = {}
-var assinaturas_chuva := {}
+var assinaturas_sizigia := {}
 var sizigia_confirmada: Dictionary = {}
 var pausas_confirmadas: Dictionary = {}
 var iniciar_saida := false
@@ -292,12 +292,11 @@ func verificar_sizigia_rede() -> bool:
 	await get_tree().create_timer(0.20).timeout
 	nave.cooldown = 20.0
 	Input.action_press("atirar")
-	await get_tree().create_timer(0.82).timeout
-	Input.action_release("atirar")
+	# Mantém o botão até o host registrar todos, mesmo com latência diferente por peer.
 	if host:
 		if not await esperar(func() -> bool:
 			for p in boss.golpes.pilotos_vivos():
-				if boss.golpes.historicos_tiros.get(p.get_instance_id(), []).size() < 3 or p.gatilho_pressionado:
+				if boss.golpes.historicos_tiros.get(p.get_instance_id(), []).size() < 3:
 					return false
 			return true
 		):
@@ -305,10 +304,11 @@ func verificar_sizigia_rede() -> bool:
 		boss.golpes.vez_clone = 1 # Copia um cliente e seus disparos recebidos pelo host.
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.ABSOLUTO)
 	if not await esperar(func() -> bool:
-		return is_instance_valid(boss.golpes.clone) and boss.golpes.alvo_id > 1 and boss.golpes.especial.tiros.size() == 3 and boss.golpes.tempo > 0.75
+		return is_instance_valid(boss.golpes.clone) and boss.golpes.alvo_id > 1 and boss.golpes.especial.tiros.size() >= 3 and boss.golpes.tempo > 0.75
 	):
 		return false
-	if not await confirmar_sizigia(2):
+	Input.action_release("atirar")
+	if not await confirmar_sizigia(2, hash(boss.golpes.especial.tiros)):
 		return false
 	if host:
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.SOMBRA)
@@ -360,7 +360,11 @@ func verificar_sizigia_rede() -> bool:
 	if not await esperar(func() -> bool: return boss.golpes.orbes.size() == 3):
 		return false
 	if papel == "client_b":
-		boss.golpes.sombra.tomarDano(boss.golpes.sombra.vida)
+		var restante := boss.golpes.sombra.vida
+		while restante > 0:
+			var parcela := minf(restante, 1400.0)
+			boss.golpes.sombra.tomarDano(parcela)
+			restante -= parcela
 	if not await esperar(func() -> bool: return not is_instance_valid(boss.golpes.sombra)):
 		return false
 	if not await confirmar_sizigia(6):
@@ -377,9 +381,10 @@ func verificar_sizigia_rede() -> bool:
 		return false
 	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.ECLIPSE and boss.destino_fase == 0):
 		return false
-	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.TOTALIDADE and boss.golpes.lacunas.size() == 8):
+	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.TOTALIDADE and boss.golpes.lacunas.size() == 4):
 		return false
-	if not await confirmar_sizigia(8):
+	var aneis := boss.golpes
+	if not await confirmar_sizigia(8, hash([aneis.lacunas, aneis.especial, aneis.serie])):
 		return false
 	if host:
 		boss.queue_free()
@@ -392,7 +397,7 @@ func confirmar_sizigia(etapa: int, assinatura: int = 0) -> bool:
 		return true
 	return await esperar(func() -> bool:
 		for peer in multiplayer.get_peers():
-			if etapa == 4 and assinaturas_chuva.get(peer) != assinatura:
+			if etapa in [2, 4, 8] and assinaturas_sizigia.get(peer) != assinatura:
 				return false
 			if int(sizigia_confirmada.get(peer, 0)) < etapa:
 				return false
@@ -402,8 +407,8 @@ func confirmar_sizigia(etapa: int, assinatura: int = 0) -> bool:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _confirmar_sizigia(etapa: int, assinatura: int) -> void:
-	if etapa == 4:
-		assinaturas_chuva[multiplayer.get_remote_sender_id()] = assinatura
+	if etapa in [2, 4, 8]:
+		assinaturas_sizigia[multiplayer.get_remote_sender_id()] = assinatura
 	sizigia_confirmada[multiplayer.get_remote_sender_id()] = etapa
 
 

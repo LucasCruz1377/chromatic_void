@@ -51,7 +51,9 @@ func _ready() -> void:
 
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.LUA, "a luta não começou na Lua")
 	verificar(boss.visual_fase.texture == boss.TEXTURA_LUA, "a Lua 2 não foi aplicada ao boss")
-	verificar(boss.obter_vida_maxima_atual() >= 330.0, "a vida da Lua está abaixo da meta")
+	boss.configurar_dificuldade(5)
+	verificar(is_equal_approx(boss.obter_vida_maxima_atual(), 3936.0), "vida da Lua no quinto setor")
+	var dano_lua := boss.Dano
 	var golpes := boss.golpes
 	golpes.iniciar(golpes.Golpe.MARE)
 	var direcao := boss.global_position.angle_to_point(jogador.global_position)
@@ -166,6 +168,7 @@ func _ready() -> void:
 	verificar(percurso > 420 and percurso < 475, "investida percorreu apenas %.1f px" % percurso)
 	verificar(golpes.exposto(), "faltou a recuperação da investida")
 	golpes.iniciar(golpes.Golpe.ROUBO)
+	verificar(is_equal_approx(boss.Dano, dano_lua * 1.15), "dano do Sol fora da curva")
 	var vida_sol := boss.Vida
 	boss.tomarDano(12)
 	verificar(golpes.energia == 12 and boss.Vida == vida_sol, "absorção não contabilizou o dano")
@@ -179,18 +182,43 @@ func _ready() -> void:
 	verificar(boss.visual_fase.texture == boss.TEXTURA_ECLIPSE, "o Eclipse 01 não foi aplicado ao boss")
 	verificar(not jogador.protegido_por_sizigia, "a proteção da cinemática não terminou")
 	verificar(is_equal_approx(boss.Vida, boss.obter_vida_maxima_atual()), "o Eclipse não recebeu sua barra independente")
+	verificar(is_equal_approx(boss.Dano, dano_lua * 1.35), "dano da Eclipse fora da curva")
 	var vida_eclipse := boss.Vida
 	boss.Vida = boss.VidaMaxima * 0.24
 	golpes.iniciar(golpes.Golpe.METEOROS)
-	for leva in 4:
+	for leva in 5:
 		golpes.avancar(1.2) # Um quadro atrasado não deve encurtar os avisos seguintes.
 		var ultimo := golpes.pontos.size() - 4
 		verificar(is_equal_approx(golpes.instante_impacto(ultimo) - golpes.tempo, 0.93), "aviso da Eclipse foi encurtado")
-	verificar(golpes.pontos.size() == 20, "faltou a quinta leva da Eclipse")
+	verificar(golpes.pontos.size() == 24, "faltou a sexta leva da Eclipse")
 	golpes.encerrar()
 	boss.Vida = vida_eclipse
 	golpes.iniciar(golpes.Golpe.TOTALIDADE)
-	for i in 340:
+	var centro: Vector2 = golpes.especial.centro
+	var eixo_inicial := centro.angle_to_point(jogador.global_position)
+	verificar(golpes.ANEIS_ECLIPSE == 10 and golpes.lacunas.size() == 1, "contagem de anéis ou frestas solo")
+	var raio_teste := 180.0
+	var meio_vao := 2.0 * golpes.raio_piloto(jogador)
+	for i in golpes.ANEIS_ECLIPSE:
+		var desvio := golpes.desvio_anel(i)
+		if i == 0:
+			verificar(absf(desvio) >= deg_to_rad(15), "primeira fresta apontou para o piloto")
+		else:
+			var passo := absf(desvio - golpes.desvio_anel(i - 1))
+			verificar(passo >= deg_to_rad(15) and passo <= deg_to_rad(30), "giro do corredor fora da faixa")
+		var instante := golpes.PRIMEIRO_ANEL + i * golpes.INTERVALO_ANEIS + raio_teste / golpes.VELOCIDADE_ANEL
+		var rumo_fresta := Vector2.from_angle(eixo_inicial + desvio)
+		# Anéis pares cruzam pelo centro da fresta. Ímpares acertam a parede ao lado.
+		jogador.global_position = centro + rumo_fresta * raio_teste
+		if i % 2 == 1:
+			jogador.global_position += rumo_fresta.orthogonal() * (meio_vao + 3.0)
+		while golpes.tempo < instante + 0.08:
+			golpes.avancar(1.0 / 60.0)
+		var chave := Vector2i(300 + i, jogador.get_multiplayer_authority())
+		verificar(golpes.impactos.has(chave) == (i % 2 == 1), "colisão da passagem no anel %d" % i)
+	verificar(not golpes.exposto(), "o núcleo abriu antes do último anel sair")
+	var fim_aneis := golpes.fim_dos_aneis()
+	while golpes.tempo < fim_aneis + 0.05:
 		golpes.avancar(1.0 / 60.0)
 	verificar(golpes.exposto() and boss.multiplicador_dano_recebido == 1.45, "núcleo não abriu depois do combo")
 	golpes.encerrar()

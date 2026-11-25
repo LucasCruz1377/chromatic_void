@@ -30,6 +30,12 @@ const NOMES := [
 ]
 
 const MEIA_ABERTURA := 0.38
+const ANEIS_ECLIPSE := 10
+const PRIMEIRO_ANEL := 3.2
+const INTERVALO_ANEIS := 1.5
+const PASSO_ANGULAR := PI / 8.0
+const VELOCIDADE_ANEL := 510.0
+const RAIO_NAVE_PADRAO := 13.5
 const DISTANCIA_ONDA := 960.0
 
 var tipo := Golpe.NENHUM
@@ -47,7 +53,7 @@ const INTERVALO_POSE := 1.0 / 30.0
 const JANELA_MEMORIA := 2.9
 const MATERIALIZACAO := 0.7
 const VIDA_DARDO := 1.55
-const VELOCIDADE_DARDO := 315.0
+const VELOCIDADE_DARDO := 385.0
 const INTERVALO_TIRO_CLONE := 1.0 / 3.0
 const ALVO_METEORO := preload("res://FX/AlvoMeteoro.svg")
 const INTERVALO_CHUVA := 0.87
@@ -237,17 +243,20 @@ func iniciar(escolha: int) -> void:
 	boss.direcao_investida = direcao
 	investida_dupla = tipo == Golpe.INVESTIDA and boss.passo_rotacao >= 4
 	var area := Global.obter_retangulo_area_visivel()
+	var centro_onda := origem
+	if tipo == Golpe.TOTALIDADE:
+		centro_onda = area.get_center()
+		especial = {"centro": centro_onda, "alcance": area.size.length() * 0.5 + 32.0, "raio_nave": 0.0}
 	for p in pilotos:
-		var angulo := origem.angle_to_point(p.global_position)
+		var angulo := centro_onda.angle_to_point(p.global_position)
+		lacunas.append(fposmod(angulo, TAU))
 		if tipo == Golpe.TOTALIDADE:
-			lacunas.append(angulo - 0.43)
-			lacunas.append(angulo + 0.43)
-		else:
-			lacunas.append(angulo)
+			especial.raio_nave = maxf(especial.raio_nave, raio_piloto(p))
 		if tipo == Golpe.ABSOLUTO:
 			var abrigo := p.global_position.move_toward(area.get_center(), 108.0)
 			if not protegido(abrigo, 60.0):
 				abrigos.append(abrigo)
+	lacunas.sort()
 	if tipo == Golpe.SOMBRA and alvo is Player and not sombra_invocada and boss.fase_atual == boss.Fase.LUA:
 		var modelo := CloneLunar.capturar(alvo)
 		var colisao := alvo.get_node("colisao") as CollisionShape2D
@@ -267,10 +276,19 @@ func iniciar(escolha: int) -> void:
 	queue_redraw()
 
 
+func raio_piloto(p: Node2D) -> float:
+	var forma := p.get_node_or_null("colisao") as CollisionShape2D
+	if forma != null and forma.shape is CircleShape2D:
+		return (forma.shape as CircleShape2D).radius * absf(forma.global_scale.x)
+	return RAIO_NAVE_PADRAO
+
+
 func preparar_chuva(area: Rect2) -> void:
 	area_chuva = area
 	var eclipse: bool = boss.fase_atual == 3
-	var levas := 5 if eclipse and boss.Vida < boss.VidaMaxima * 0.25 else 4
+	var levas := 4
+	if eclipse:
+		levas = 6 if boss.Vida < boss.VidaMaxima * 0.25 else 5
 	especial = {"raios": PackedFloat32Array(), "quedas": PackedVector2Array(),
 		"avisos": PackedFloat32Array(), "antecedencia": 0.93 if eclipse else 1.10, "levas": levas}
 	# Em cada leva cai uma pedra em cada coluna. Todas as células recebem uma queda.
@@ -303,14 +321,20 @@ func marcar_leva() -> void:
 	for i in 4:
 		especial.quedas.append(Vector2(randf_range(-145, 145), -260))
 		var raio := 49.0 if i == 0 else randf_range(47, 58)
-		especial.raios.append(minf(raio, minf(celula.x, celula.y) * 0.43))
+		especial.raios.append(minf(raio, minf(celula.x, area_chuva.size.y / 4.0) * 0.43))
 
 
 func instante_impacto(i: int) -> float:
 	return especial.avisos[i >> 2] + especial.antecedencia + (i % 4) * INTERVALO_IMPACTOS
 
 
+func fim_dos_aneis() -> float:
+	return PRIMEIRO_ANEL + (ANEIS_ECLIPSE - 1) * INTERVALO_ANEIS + float(especial.alcance) / VELOCIDADE_ANEL
+
+
 func duracao_golpe() -> float:
+	if tipo == Golpe.TOTALIDADE:
+		return fim_dos_aneis() + 1.4
 	if tipo == Golpe.METEOROS:
 		# Se o host atrasar um quadro, nunca cortar o aviso ou a última explosão.
 		return maxf(DURACOES[tipo], instante_impacto(pontos.size() - 1) + ONDA_IMPACTO)
@@ -397,7 +421,11 @@ func avancar(delta: float) -> void:
 		encerrar()
 		boss.estado = boss.Estado.MOVENDO
 		boss.subtitulo_alterado.emit(boss.obter_subtitulo_boss())
-		boss.tempo_ataque = 0.60 if boss.fase_atual == 3 and boss.Vida < boss.VidaMaxima * 0.25 else 1.05
+		boss.tempo_ataque = 1.05
+		if boss.fase_atual == 2:
+			boss.tempo_ataque = 0.90
+		elif boss.fase_atual == 3:
+			boss.tempo_ataque = 0.60 if boss.Vida < boss.VidaMaxima * 0.25 else 0.78
 	queue_redraw()
 
 
@@ -479,7 +507,7 @@ func absorvendo() -> bool:
 
 func exposto() -> bool:
 	match tipo:
-		Golpe.TOTALIDADE: return tempo >= 5.5
+		Golpe.TOTALIDADE: return tempo >= fim_dos_aneis()
 		Golpe.ABSOLUTO: return tempo >= 5.4
 		Golpe.INVESTIDA: return tempo >= 1.77
 	return false
@@ -615,7 +643,7 @@ func _draw() -> void:
 func padrao(visual: bool) -> void:
 	match tipo:
 		Golpe.CRESCENTES, Golpe.RETORNO:
-			leque(visual, origem, direcao, 4, 0.72, tipo == Golpe.RETORNO, 10)
+			leque(visual, origem, direcao, 7 if tipo == Golpe.RETORNO else 4, 0.72, tipo == Golpe.RETORNO, 10)
 		Golpe.MARE:
 			onda(visual, 1.25, 0.0, 0)
 			onda(visual, 2.70, 0.16, 1)
@@ -644,18 +672,19 @@ func padrao(visual: bool) -> void:
 		Golpe.MANCHAS:
 			for i in 3:
 				if mascara_orbes & (1 << i):
-					erupcao(visual, pos_orbe(i, tempo), 3.2, 8, 50 + i * 10)
+					erupcao(visual, pos_orbe(i, tempo), 3.2, 10, 50 + i * 10)
 		Golpe.ROUBO:
 			if visual and tempo < 2.15:
 				draw_arc(origem, 80, -PI / 2, 1.5 * PI, 64, Color(SOL, 0.45), 3, true)
 				draw_arc(origem, 80, -PI / 2, -PI / 2 + TAU * energia / 40.0, 48, SOL, 7, true)
-			erupcao(visual, origem, 2.45, 5 + floori(energia / 8.0), 100)
+			erupcao(visual, origem, 2.45, 7 + floori(energia / 8.0), 100)
 		Golpe.REFLEXOS:
 			if pontos.size() == 2:
 				for i in 2:
-					leque(visual, pontos[i], pontos[i].direction_to(marca), 3, 0.9 + i * 0.70, false, 120 + i * 5)
+					leque(visual, pontos[i], pontos[i].direction_to(marca), 5, 0.9 + i * 0.70, false, 120 + i * 5)
 		Golpe.TOTALIDADE:
-			onda(visual, 2.8, 0.0, 2)
+			for i in ANEIS_ECLIPSE:
+				onda(visual, PRIMEIRO_ANEL + i * INTERVALO_ANEIS, desvio_anel(i), 300 + i)
 			raio(visual)
 	if visual and exposto():
 		var centro: Vector2 = boss.global_position
@@ -664,43 +693,67 @@ func padrao(visual: bool) -> void:
 			draw_arc(centro, 76 + sin(tempo * 5) * 2, a, a + 0.68, 12, SEGURO, 3, true)
 
 
-func livre(angulo: float, desvio: float) -> bool:
+func desvio_anel(i: int) -> float:
+	# Alterna o sentido após duas mudanças. O corredor inicial fica fora da mira.
+	var passo := 3 - absi(2 - (i % 4))
+	return passo * PASSO_ANGULAR * (1.0 if serie % 2 == 0 else -1.0)
+
+
+func livre(angulo: float, desvio: float, meia: float = MEIA_ABERTURA) -> bool:
 	for abertura in lacunas:
-		if absf(angle_difference(angulo, abertura + desvio)) <= MEIA_ABERTURA:
+		if absf(angle_difference(angulo, abertura + desvio)) <= meia:
 			return true
 	return false
 
 
 func onda(visual: bool, partida: float, desvio: float, indice: int) -> void:
+	var totalidade := tipo == Golpe.TOTALIDADE
+	var centro: Vector2 = especial.centro if totalidade else origem
+	var alcance := float(especial.alcance) if totalidade else DISTANCIA_ONDA
+	var inicial := 0.0 if totalidade else 45.0
+	var velocidade := VELOCIDADE_ANEL if totalidade else (alcance - inicial) / 2.4
 	var idade := tempo - partida
-	if idade > 2.4 or (indice == 1 and idade < -1.1):
+	if idade < -1.2 or (anterior - partida if not visual else idade) > (alcance - inicial) / velocidade:
 		return
-	var raio_atual := lerpf(45, DISTANCIA_ONDA, clampf(idade / 2.4, 0, 1))
+	var raio := clampf(inicial + maxf(0, idade) * velocidade, inicial, alcance)
+	var meio_vao := 2.0 * float(especial.raio_nave) if totalidade else 0.0
+	var meia := asin(minf(meio_vao / maxf(raio, 1.0), 1.0)) if totalidade else MEIA_ABERTURA
 	if visual:
-		var cor := SOMBRA if tipo == Golpe.TOTALIDADE else LUA
-		var arco := PackedVector2Array()
-		for i in 145:
-			var a := TAU * i / 144.0
-			if livre(a, desvio):
-				if arco.size() > 1:
-					draw_polyline(arco, cor, 3.5, true)
-				arco.clear()
+		var cor := SOMBRA if totalidade else LUA
+		for i in lacunas.size():
+			var eixo := lacunas[i] + desvio
+			var proximo := lacunas[(i + 1) % lacunas.size()] + desvio
+			if i == lacunas.size() - 1:
+				proximo += TAU
+			if raio > 1.0 and proximo - eixo > 2.0 * meia:
+				var segmentos := maxi(3, ceili((proximo - eixo - 2.0 * meia) * raio / 9.0))
+				draw_arc(centro, raio, eixo + meia, proximo - meia, segmentos, cor, 3.0, true)
+			if idade < 0 and totalidade:
+				var rumo := Vector2.from_angle(eixo)
+				for lado in [-1.0, 1.0]:
+					var borda: Vector2 = centro + rumo.orthogonal() * meio_vao * lado
+					draw_dashed_line(borda, borda + rumo * alcance, Color(SEGURO, 0.48), 1.5, 12, true)
 			else:
-				arco.append(origem + Vector2.from_angle(a) * raio_atual)
-		if arco.size() > 1:
-			draw_polyline(arco, cor, 3.5, true)
-		for abertura in lacunas:
-			for lado in [-1, 1]:
-				var eixo := Vector2.from_angle(abertura + desvio + MEIA_ABERTURA * lado)
-				var ponta := origem + eixo * raio_atual
-				draw_circle(ponta, 4, SEGURO)
-				if idade < 0:
-					draw_dashed_line(ponta, origem + eixo * 460.0, Color(SEGURO, 0.43), 1.5, 12, true)
+				for lado in [-1.0, 1.0]:
+					var rumo := Vector2.from_angle(eixo + meia * lado)
+					var ponta := centro + rumo * raio
+					draw_circle(ponta, 2.5, SEGURO)
+					if idade < 0:
+						draw_dashed_line(ponta, centro + rumo * 460.0, Color(SEGURO, 0.43), 1.5, 12, true)
 	elif idade >= 0:
+		var raio_anterior := clampf(inicial + (anterior - partida) * velocidade, inicial, alcance)
 		for p in pilotos:
-			var v := p.global_position - origem
-			if absf(v.length() - raio_atual) <= 15 and not livre(v.angle(), desvio):
-				acerto(p, indice, 0.46, origem)
+			var v := p.global_position - centro
+			var distancia := v.length()
+			var margem := raio_piloto(p) + 1.5 if totalidade else 15.0
+			if distancia < raio_anterior - margem or distancia > raio + margem:
+				continue
+			var passagem := MEIA_ABERTURA
+			if totalidade:
+				# Usa a largura real no ponto de travessia, descontando a borda da nave.
+				passagem = asin(clampf((meio_vao - margem) / maxf(distancia, 1.0), 0.0, 1.0))
+			if not livre(v.angle(), desvio, passagem):
+				acerto(p, indice, 0.46, centro)
 
 
 func trava_raio() -> float:
@@ -737,7 +790,7 @@ func meteoro(visual: bool, i: int) -> void:
 			var raio: float = especial.raios[i]
 			for p in pilotos:
 				if p.global_position.distance_squared_to(pontos[i]) <= raio * raio:
-					acerto(p, i, 0.48 if boss.fase_atual == 1 else 0.30, pontos[i])
+					acerto(p, i, 0.48, pontos[i])
 		return
 	var aviso: float = especial.antecedencia
 	if idade < -aviso or idade >= ONDA_IMPACTO:
@@ -751,11 +804,12 @@ func meteoro(visual: bool, i: int) -> void:
 		var metade := Vector2.ONE * (raio * 64.0 / 62.0)
 		draw_texture_rect(ALVO_METEORO, Rect2(pos - metade, metade * 2), false, Color("#81d5ff").lerp(Color.WHITE, pulso))
 		# O aviso aparece primeiro. A aproximação da sombra e a queda acelerada sinalizam o impacto.
-		var voo := smoothstep(0.36, 1.0, progresso)
+		var inicio_queda := 0.46 if boss.fase_atual == 3 else 0.36
+		var voo := smoothstep(inicio_queda, 1.0, progresso)
 		draw_set_transform(pos, 0, Vector2(1, 0.5))
 		draw_circle(Vector2.ZERO, raio * lerpf(0.18, 0.85, voo), Color(0.06, 0.045, 0.11, 0.15 + voo * 0.35))
 		draw_set_transform_matrix(Transform2D.IDENTITY)
-		if progresso < 0.36:
+		if progresso < inicio_queda:
 			return
 		var vetor: Vector2 = especial.quedas[i]
 		var pedra := pos + vetor * (1.0 - voo * voo)
@@ -804,20 +858,22 @@ func memoria(visual: bool) -> void:
 		var rumo := Vector2.from_angle(emissao.z)
 		var boca: Vector2 = especial.get("modelo", {}).get("boca", Vector2(16, 0))
 		var origem_tiro := Vector2(emissao.x, emissao.y) + boca.rotated(emissao.z)
-		var ponta := origem_tiro + rumo * idade * VELOCIDADE_DARDO
-		if visual:
-			draw_set_transform(ponta, emissao.z)
-			draw_texture_rect(CloneLunar.HALO, Rect2(-18,-8,36,16), false, Color(cor_tiro, 0.35 * CloneLunar.intensidade_aura()))
-			draw_colored_polygon(forma_tiro, Color(cor_tiro.r * 1.4, cor_tiro.g * 1.4, cor_tiro.b * 1.4))
-			draw_set_transform_matrix(Transform2D.IDENTITY)
-			if idade < 0.075:
-				draw_circle(origem_tiro, 5 * (1 - idade / 0.075), cor_tiro)
-		else:
-			var cauda := ponta - rumo * minf(idade, tempo - anterior) * VELOCIDADE_DARDO
-			for p in pilotos:
-				var perto := Geometry2D.get_closest_point_to_segment(p.global_position, cauda, ponta) if cauda != ponta else ponta
-				if perto.distance_squared_to(p.global_position) <= 11.0 * 11.0:
-					acerto(p, 200 + i, 0.26, ponta)
+		for lado in 2:
+			var rumo_tiro := rumo.rotated(0.0 if lado == 0 else (0.22 if i % 2 == 0 else -0.22))
+			var ponta := origem_tiro + rumo_tiro * idade * VELOCIDADE_DARDO
+			if visual:
+				draw_set_transform(ponta, rumo_tiro.angle())
+				draw_texture_rect(CloneLunar.HALO, Rect2(-18,-8,36,16), false, Color(cor_tiro, 0.35 * CloneLunar.intensidade_aura()))
+				draw_colored_polygon(forma_tiro, Color(cor_tiro.r * 1.4, cor_tiro.g * 1.4, cor_tiro.b * 1.4))
+				draw_set_transform_matrix(Transform2D.IDENTITY)
+				if idade < 0.075:
+					draw_circle(origem_tiro, 5 * (1 - idade / 0.075), cor_tiro)
+			else:
+				var cauda := ponta - rumo_tiro * minf(idade, tempo - anterior) * VELOCIDADE_DARDO
+				for p in pilotos:
+					var perto := Geometry2D.get_closest_point_to_segment(p.global_position, cauda, ponta) if cauda != ponta else ponta
+					if perto.distance_squared_to(p.global_position) <= 11.0 * 11.0:
+						acerto(p, 200 + i + lado * 64, 0.26, ponta)
 
 
 func clarao(visual: bool) -> void:
@@ -859,9 +915,11 @@ func leque(visual: bool, centro: Vector2, eixo: Vector2, n: int, partida: float,
 				var textura: Texture2D = boss.TEXTURA_SOL if indice >= 125 else boss.TEXTURA_LUA
 				var tamanho := Vector2.ONE * 52
 				draw_texture_rect(textura, Rect2(centro - tamanho * 0.5, tamanho), false, Color(1,1,1,0.68))
-			draw_arc(centro, 32, eixo.angle()-0.64, eixo.angle()+0.64, 20, SOL if indice >= 125 else LUA, 4, true)
+			var meia_mira := (n - 1) * 0.13 + 0.12
+			draw_arc(centro, 32, eixo.angle() - meia_mira, eixo.angle() + meia_mira, 20, SOL if indice >= 125 else LUA, 4, true)
 		return
-	var distancia := idade * 260.0
+	var velocidade := 350.0 if tipo in [Golpe.RETORNO, Golpe.REFLEXOS] else 260.0
+	var distancia := idade * velocidade
 	if retorna:
 		distancia = 360.0 - absf(360.0 - distancia)
 	if distancia < 0:
@@ -872,7 +930,7 @@ func leque(visual: bool, centro: Vector2, eixo: Vector2, n: int, partida: float,
 		if visual:
 			var cor := SOL if retorna else (SOMBRA if tipo == Golpe.REFLEXOS else LUA)
 			draw_arc(pos, 11, rumo.angle()-1.35, rumo.angle()+1.35, 12, cor, 4, true)
-			if retorna and absf(idade * 260.0 - 360) < 32:
+			if retorna and absf(idade * velocidade - 360) < 32:
 				draw_arc(pos, 17, 0, TAU, 14, Color.WHITE, 2, true)
 		else:
 			for p in pilotos:
@@ -884,7 +942,7 @@ func erupcao(visual: bool, centro: Vector2, partida: float, n: int, indice: int)
 	var idade := tempo - partida
 	for i in n:
 		var rumo := Vector2.from_angle(i * TAU / n)
-		var pos := centro + rumo * (20 + maxf(0, idade) * 210)
+		var pos := centro + rumo * (20 + maxf(0, idade) * 245)
 		if visual:
 			if idade < 0:
 				draw_line(pos, pos + rumo * 28, Color(SOL, 0.58), 2, true)

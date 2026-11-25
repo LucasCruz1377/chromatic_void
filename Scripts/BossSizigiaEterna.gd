@@ -27,8 +27,9 @@ enum Estado {
 }
 
 
-const VIDA_BASE_FASES := [330.0, 390.0, 520.0]
-const MULTIPLICADOR_VIDA_BOSS := 1.75
+# No quinto setor (×1,64), uma nave com ~24 DPS efetivos leva 164 / 179 / 195 s.
+const VIDA_BASE_FASES := [2400.0, 2625.0, 2850.0]
+const DANO_RELATIVO_FASE := [1.0, 1.15, 1.35]
 const MARGEM_FORA_TELA := 150.0
 const CORES_FASES := [
 	Color(0.58, 0.72, 1.0),
@@ -67,14 +68,10 @@ var impacto_fusao := false
 func _ready() -> void:
 	super._ready()
 	add_to_group("boss_sizigia")
-	for indice in vidas_fases.size():
-		vidas_fases[indice] = float(vidas_fases[indice]) * MULTIPLICADOR_VIDA_BOSS
-	VidaMaxima = vidas_fases[0]
-	Vida = VidaMaxima
+	configurar_dificuldade(dificuldade_atual)
 	escala_base_impacto = scale
 	criar_visuais_transicao()
 	atualizar_visual_fase()
-	vida_alterada.emit(Vida, VidaMaxima)
 	queue_redraw()
 
 
@@ -82,17 +79,19 @@ func configurar_dificuldade(nivel_dificuldade: int) -> void:
 	dificuldade_atual = maxi(nivel_dificuldade, 1)
 	var fator_vida := 1.0 + float(dificuldade_atual - 1) * 0.16
 	var fator_dano := 1.0 + float(dificuldade_atual - 1) * 0.09
+	# Fixa o orçamento de vida no início. Morte e renascimento não recarregam a barra.
+	var participantes := clampi(golpes.pilotos_vivos().size(), 1, 4) if Rede.modo_multiplayer else 1
 	vidas_fases = []
 	for vida_base in VIDA_BASE_FASES:
-		vidas_fases.append(float(vida_base) * MULTIPLICADOR_VIDA_BOSS * fator_vida)
-	Dano = 42.0 * fator_dano
+		vidas_fases.append(roundf(float(vida_base) * fator_vida * participantes))
+	Dano = 42.0 * fator_dano * float(DANO_RELATIVO_FASE[fase_atual - 1])
 	VidaMaxima = vidas_fases[fase_atual - 1]
 	Vida = VidaMaxima
 	vida_alterada.emit(Vida, VidaMaxima)
 
 
 func obter_vida_maxima_atual() -> float:
-	return vidas_fases[fase_atual - 1]
+	return VidaMaxima
 
 
 func obter_nome_boss() -> String:
@@ -338,6 +337,8 @@ func concluir_transicao_para_eclipse() -> void:
 func finalizar_fase(fase: int) -> void:
 	destino_fase = 0
 	remover_overlay_transicao()
+	# Preserva os multiplicadores de setor e da arena aplicados ao chefe na criação.
+	Dano *= float(DANO_RELATIVO_FASE[fase - 1]) / float(DANO_RELATIVO_FASE[fase_atual - 1])
 	fase_atual = fase
 	VidaMaxima = vidas_fases[fase - 1]
 	Vida = VidaMaxima
