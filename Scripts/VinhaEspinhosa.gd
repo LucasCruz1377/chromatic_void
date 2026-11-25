@@ -2,6 +2,9 @@ extends Area2D
 class_name VinhaEspinhosa
 
 
+const TRECHOS := 8
+var trechos: Array[CollisionShape2D] = []
+
 signal crescimento_concluido
 
 const TEXTURA_ESPINHO := preload(
@@ -34,22 +37,54 @@ func _ready() -> void:
 func configurar(novo_comprimento: float, novo_dano: float) -> void:
 	comprimento = maxf(novo_comprimento, 40.0)
 	dano = novo_dano
-	corpo.polygon = PackedVector2Array([
-		Vector2(0.0, -7.0),
-		Vector2(comprimento, -7.0),
-		Vector2(comprimento, 7.0),
-		Vector2(0.0, 7.0),
-	])
-	brilho.points = PackedVector2Array([
-		Vector2.ZERO, Vector2(comprimento, 0.0)
-	])
 	var forma := RectangleShape2D.new()
-	forma.size = Vector2(comprimento, 18.0)
-	colisao.shape = forma
-	colisao.position = Vector2(comprimento * 0.5, 0.0)
+	forma.size = Vector2(comprimento / TRECHOS + 0.8, 18.0)
+	for i in TRECHOS:
+		var trecho := colisao if i == 0 else CollisionShape2D.new()
+		trecho.disabled = true
+		trecho.shape = forma
+		if i > 0:
+			add_child(trecho)
+		trechos.append(trecho)
 	atualizar_area_particulas()
 	criar_espinhos()
 	aplicar_glow()
+	aplicar_curva(0.0)
+	# Toda a geometria segue um único ângulo e uma curvatura enviados pelo host.
+	add_to_group("visual_boss_local")
+	for item in find_children("*", "CanvasItem", true, false):
+		item.add_to_group("visual_boss_local")
+
+
+func aplicar_curva(flexao: float) -> void:
+	var eixo := PackedVector2Array([Vector2.ZERO])
+	var contorno := PackedVector2Array()
+	contorno.resize(2 * (TRECHOS + 1))
+	var passo := comprimento / TRECHOS
+	for i in TRECHOS + 1:
+		var t := float(i) / TRECHOS
+		var tangente := Vector2.from_angle(flexao * t)
+		var borda := tangente.orthogonal() * lerpf(7.0, 5.0, t)
+		contorno[i] = eixo[i] + borda
+		contorno[contorno.size() - 1 - i] = eixo[i] - borda
+		if i < TRECHOS:
+			var angulo := flexao * (i + 0.5) / TRECHOS
+			var proximo := eixo[i] + Vector2.from_angle(angulo) * passo
+			trechos[i].position = (eixo[i] + proximo) * 0.5
+			trechos[i].rotation = angulo
+			eixo.append(proximo)
+	corpo.polygon = contorno
+	brilho.points = eixo
+	particulas.position = eixo[TRECHOS >> 1]
+	particulas.rotation = flexao * 0.5
+	for i in espinhos.get_child_count():
+		var espinho := espinhos.get_child(i) as Sprite2D
+		var distancia := minf(34.0 * (i + 1), comprimento - 8.0)
+		var indice := mini(floori(distancia / passo), TRECHOS - 1)
+		var angulo := trechos[indice].rotation
+		var lado := -1.0 if (i + 1) % 2 == 0 else 1.0
+		espinho.position = eixo[indice] + Vector2(distancia - indice * passo, 10.0 * lado).rotated(angulo)
+		espinho.rotation = angulo + (-0.45 if lado < 0 else PI + 0.45)
 
 
 func criar_particulas_vinha() -> void:
@@ -145,12 +180,14 @@ func _physics_process(delta: float) -> void:
 
 func ativar_dano() -> void:
 	dano_ativo = true
-	colisao.set_deferred("disabled", false)
+	for trecho in trechos:
+		trecho.set_deferred("disabled", false)
 
 
 func desativar_dano() -> void:
 	dano_ativo = false
-	colisao.set_deferred("disabled", true)
+	for trecho in trechos:
+		trecho.set_deferred("disabled", true)
 	if is_instance_valid(particulas):
 		particulas.emitting = false
 

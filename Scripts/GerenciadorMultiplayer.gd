@@ -5,7 +5,7 @@ signal arena_host_disponivel
 signal lobby_alterado(jogadores: Dictionary)
 signal status_alterado(mensagem: String, erro: bool)
 signal conexao_alterada(conectado: bool)
-signal jogador_desconectado(peer_id: int)
+signal jogador_desconectado(peer_id: int, nickname: String)
 signal desconexao_detectada(mensagem: String, host_perdido: bool)
 signal lobbies_lan_alterados(lobbies: Array)
 
@@ -432,6 +432,7 @@ func _on_peer_conectado(_id: int) -> void:
 
 
 func _on_peer_desconectado(id: int) -> void:
+	var nickname := str(jogadores.get(id, NICK_PADRAO))
 	if jogadores.has(id):
 		jogadores.erase(id)
 	clientes_na_arena.erase(id)
@@ -440,7 +441,7 @@ func _on_peer_desconectado(id: int) -> void:
 		_iniciar_host_quando_prontos()
 	status_alterado.emit(tr("Um jogador saiu da sala."), true)
 	lobby_alterado.emit(jogadores.duplicate())
-	jogador_desconectado.emit(id)
+	jogador_desconectado.emit(id, nickname)
 
 
 func _on_conectado_ao_servidor() -> void:

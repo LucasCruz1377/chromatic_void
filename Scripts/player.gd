@@ -73,6 +73,7 @@ var giroblock := false
 var ctrlblock := false
 var UsandoHabilidade := false
 var invulneravel_por_habilidade := false
+var protegido_por_sizigia := false
 var invulneravel_desenvolvedor := false
 var multiplicador_dano_recebido := 1.0
 var multiplicador_cura_recebida := 1.0
@@ -105,6 +106,7 @@ const LIMITE_PREVISAO_REDE := 0.15
 const LIMIAR_SALTO_REDE := 96.0
 var tempo_previsao_rede := 0.0
 var ultima_amostra_direta_ms := -1
+var recuo_boss_restante := 0.0
 var posicao_exibida_rede := Vector2.ZERO
 var correcao_visual_rede := Vector2.ZERO
 var tem_amostra_movimento := false
@@ -118,9 +120,11 @@ var estilo_vida_rede: StyleBoxFlat
 var habilidade_rede_path := ""
 var niveis_upgrades_rede: Dictionary = {}
 var contador_disparos_rede := 0
+var gatilho_pressionado := false
 
 # Pontos não interrompem a partida. O jogador abre o menu quando quiser.
 var pontos_upgrade_pendentes := 0
+var pontos_equipe_recebidos := 0
 var niveis_upgrades: Dictionary = {}
 var rerolls_upgrades_restantes := REROLLS_UPGRADES_INICIAIS
 
@@ -850,17 +854,17 @@ func atualizar_ui() -> void:
 	# os controles do jogador local com nível, XP ou habilidade de outro peer.
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		return
-	if _nivel_exibido != nivel_atual:
-		_nivel_exibido = nivel_atual
-		lvl_text.text = "LVL: " + str(nivel_atual)
+	if not Rede.modo_multiplayer:
+		if _nivel_exibido != nivel_atual:
+			_nivel_exibido = nivel_atual
+			lvl_text.text = "LVL: " + str(nivel_atual)
+		barra_xp.max_value = xp_necessario
+		barra_xp.value = xp_atual
 	if HabilidadeEquipada:
 		display_skill.texture = HabilidadeEquipada.Icone
 	else:
 		display_skill.texture = null
 	atualizar_barra_cooldown_habilidade()
-
-	barra_xp.value = xp_atual
-	barra_xp.max_value = xp_necessario
 
 
 func criar_barra_cooldown_habilidade() -> void:
@@ -1460,7 +1464,24 @@ func atualizar_movimento(delta: float) -> void:
 	if not UsandoHabilidade:
 		velocity = velocity.limit_length(MAX_VELOCIDADE * fator_movimento)
 
+	var entrada := velocity
+	recuo_boss_restante = maxf(recuo_boss_restante - delta, 0.0)
 	move_and_slide()
+	for i in get_slide_collision_count():
+		var contato := get_slide_collision(i)
+		var chefe := contato.get_collider() as ChefeBase
+		if is_instance_valid(chefe) and not chefe.morto:
+			recuar_do_chefe(contato.get_normal(), entrada, chefe.velocity)
+			break
+
+
+func recuar_do_chefe(normal: Vector2, entrada: Vector2, movimento_chefe: Vector2) -> void:
+	if recuo_boss_restante > 0 or protegido_por_sizigia or not vivo or normal.is_zero_approx():
+		return
+	var aproximacao := maxf(0.0, (movimento_chefe - entrada).dot(normal))
+	var impulso := clampf(190.0 + aproximacao * 0.50, 190.0, 460.0)
+	velocity = entrada.slide(normal) + normal * maxf(entrada.dot(normal), impulso)
+	recuo_boss_restante = 0.18
 
 
 func _obter_controle_ativo() -> int:
@@ -1523,6 +1544,11 @@ func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
 
 
 func atualizar_combate(delta: float) -> void:
+	var ativo := vivo and not ctrlblock and Input.is_action_pressed("atirar")
+	if gatilho_pressionado != ativo:
+		gatilho_pressionado = ativo
+		if Rede.esta_conectado() and not multiplayer.is_server():
+			_sincronizar_gatilho.rpc_id(1, ativo)
 	cooldown = maxf(cooldown - delta, 0.0)
 	if arma_monthly == &"a06_feixe_perielio":
 		_atualizar_feixe_perielio(delta)
@@ -1547,6 +1573,12 @@ func atualizar_combate(delta: float) -> void:
 
 	if vivo and Input.is_action_pressed("atirar") and cooldown <= 0.0:
 		fire()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _sincronizar_gatilho(ativo: bool) -> void:
+	if multiplayer.is_server():
+		gatilho_pressionado = vivo and ativo
 
 
 func fire() -> void:
@@ -2061,6 +2093,7 @@ func tomar_dano(valor: float, origem_dano := Vector2.INF) -> void:
 	if (
 		invencibilidade
 		or invulneravel_por_habilidade
+		or protegido_por_sizigia
 		or invulneravel_desenvolvedor
 		or not vivo
 	):
@@ -2195,8 +2228,18 @@ func aplicar_resistencia_temporaria(multiplicador: float, duracao: float) -> voi
 	tempo_resistencia_temporaria = maxf(duracao, 0.0)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_queimadura_rede(dano_total: float, duracao: float) -> void:
+	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
+		aplicar_queimadura(dano_total, duracao)
+
+
 func aplicar_queimadura(dano_total: float, duracao: float) -> void:
-	if not vivo or dano_total <= 0.0 or duracao <= 0.0:
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		if multiplayer.is_server() and peer_id_dono > 1:
+			_receber_queimadura_rede.rpc_id(peer_id_dono, dano_total, duracao)
+		return
+	if protegido_por_sizigia or invulneravel_por_habilidade or not vivo or dano_total <= 0.0 or duracao <= 0.0:
 		return
 	# Uma nova fonte renova a duração e conserva apenas o pulso mais forte.
 	# Assim a queimadura permanece perigosa sem acumular infinitamente.
@@ -2249,6 +2292,8 @@ func atualizar_efeitos_temporarios(delta: float) -> void:
 		if tempo_resistencia_temporaria <= 0.0:
 			resistencia_temporaria_multiplicador = 1.0
 
+	if protegido_por_sizigia and tempo_queimadura > 0.0:
+		return
 	if tempo_queimadura > 0.0 and pulsos_queimadura_restantes > 0:
 		tempo_queimadura = maxf(tempo_queimadura - delta, 0.0)
 		contador_pulso_queimadura -= delta
@@ -2356,7 +2401,16 @@ func _desenhar_carga_arma() -> void:
 
 
 func ganhar_xp(valor: float) -> void:
+	if Rede.modo_multiplayer:
+		return
 	xp_atual += valor
+	aplicar_xp_modulo(valor)
+	while xp_atual >= xp_necessario:
+		xp_atual -= xp_necessario
+		subir_de_nivel()
+
+
+func aplicar_xp_modulo(valor: float) -> void:
 	if modulo_nave == &"n02_luz_vital":
 		progresso_luz_vital += valor
 		if progresso_luz_vital >= 30.0:
@@ -2364,55 +2418,32 @@ func ganhar_xp(valor: float) -> void:
 			curar(12.0)
 			ativar_escudo(16.0, 4.0, Color(1.0, 0.84, 0.28))
 			_criar_feedback_monthly(global_position, Color(1.0, 0.84, 0.28), 1.05, 2.0)
-	while xp_atual >= xp_necessario:
-		xp_atual -= xp_necessario
-		subir_de_nivel()
 
 
-func conceder_xp_rede(valor: float) -> void:
-	var recompensa := clampf(valor, 0.0, 10000.0)
-	if Rede.modo_multiplayer and not is_multiplayer_authority():
-		if multiplayer.is_server() and peer_id_dono > 1 and Rede.jogadores.has(peer_id_dono):
-			# O host mantem a progressao oficial dos pilotos remotos.
-			ganhar_xp(recompensa)
-			_receber_xp_autoritativo.rpc_id(
-				peer_id_dono, recompensa, nivel_atual, xp_atual,
-				xp_necessario, pontos_upgrade_pendentes
-			)
-		return
-	ganhar_xp(recompensa)
-
-
-@rpc("any_peer", "call_remote", "reliable")
-func _receber_xp_autoritativo(
-	valor: float, nivel_servidor: int, xp_servidor: float,
-	proximo_xp_servidor: int, melhorias_servidor: int
-) -> void:
-	if multiplayer.get_remote_sender_id() != 1 or not is_multiplayer_authority():
-		return
-	ganhar_xp(clampf(valor, 0.0, 10000.0))
-	nivel_atual = maxi(nivel_servidor, 1)
-	xp_necessario = maxi(proximo_xp_servidor, 1)
-	xp_atual = clampf(xp_servidor, 0.0, float(xp_necessario))
-	pontos_upgrade_pendentes = maxi(melhorias_servidor, 0)
-	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+func aplicar_progressao_equipe(nivel: int, xp: float, pontos: int) -> void:
+	var nivel_anterior := nivel_atual
+	nivel_atual = nivel
+	xp_necessario = calcular_xp_proximo_nivel(nivel)
+	xp_atual = xp
+	if pontos > pontos_equipe_recebidos:
+		pontos_upgrade_pendentes += pontos - pontos_equipe_recebidos
+		pontos_equipe_recebidos = pontos
+		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+	if nivel > nivel_anterior:
+		subiuDeNivel.emit()
 
 
 func subir_de_nivel() -> void:
+	if Rede.modo_multiplayer:
+		return
 	nivel_atual += 1
 	xp_necessario = calcular_xp_proximo_nivel(nivel_atual)
-	# A frequência acompanha o tamanho atual da equipe: solo/1, dupla/2,
-	# trio/3 e quarteto/4. Todos continuam recebendo a mesma quantidade.
-	var intervalo_melhoria := 1
-	if Rede.modo_multiplayer:
-		intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)
-	if nivel_atual % intervalo_melhoria == 0:
-		pontos_upgrade_pendentes += 1
-		pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
+	pontos_upgrade_pendentes += 1
+	pontos_upgrade_alterados.emit(pontos_upgrade_pendentes)
 	subiuDeNivel.emit()
 
 
-func calcular_xp_proximo_nivel(nivel: int) -> int:
+static func calcular_xp_proximo_nivel(nivel: int) -> int:
 	var indice := maxi(nivel - 1, 0)
 	if indice < XP_PROGRESSAO_INICIAL.size():
 		return int(XP_PROGRESSAO_INICIAL[indice])
@@ -2765,6 +2796,10 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 		or bool(body.get("morto"))
 	):
 		return
+	# Inclui o caso em que um chefe móvel alcança uma nave parada.
+	if body is ChefeBase and velocity.is_zero_approx() and (not Rede.modo_multiplayer or is_multiplayer_authority()):
+		var normal := body.global_position.direction_to(global_position)
+		recuar_do_chefe(normal if not normal.is_zero_approx() else -transform.x.normalized(), velocity, body.velocity)
 	if UsandoHabilidade and dano_colisao_habilidade > 0.0:
 		if body.has_method("tomarDano"):
 			if body is InimigoBase:

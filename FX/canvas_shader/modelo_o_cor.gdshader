@@ -2,6 +2,8 @@ shader_type canvas_item;
 
 uniform vec4 cor_estrela : source_color = vec4(0.545, 1.0, 0.165, 1.0);
 
+#include "res://FX/canvas_shader/inversao_lunar.gdshaderinc"
+
 void fragment() {
 	vec4 pixel = texture(TEXTURE, UV) * COLOR;
 	if (pixel.a > 0.01) {
@@ -9,4 +11,7 @@ void fragment() {
 		pixel.rgb = cor_estrela.rgb * mix(0.72, 1.18, luz);
 	}
 	COLOR = pixel;
+	if (inverter_cores) {
+		COLOR.rgb = negativo_lunar(COLOR.rgb);
+	}
 }

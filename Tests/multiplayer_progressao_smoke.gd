@@ -119,22 +119,11 @@ func _ready() -> void:
 	jogador_solo.free()
 
 	Rede.modo_multiplayer = true
-	for quantidade in [3, 4]:
-		Rede.jogadores.clear()
-		for indice in range(quantidade):
-			Rede.jogadores[indice + 1] = "PILOTO_%d" % indice
-		var jogador_equipe := Player.new()
-		for _nivel in range(quantidade - 1):
-			jogador_equipe.subir_de_nivel()
-		verificar(
-			jogador_equipe.nivel_atual == quantidade
-				and jogador_equipe.pontos_upgrade_pendentes == 1,
-			"equipe de %d jogadores não recebeu uma melhoria a cada %d níveis"
-			% [quantidade, quantidade]
-		)
-		jogador_equipe.free()
-
-	Rede.modo_multiplayer = true
+	var isolado := Player.new()
+	isolado.ganhar_xp(50.0)
+	isolado.subir_de_nivel()
+	verificar(isolado.nivel_atual == 1 and isolado.xp_atual == 0.0, "a nave alterou sua progressão online por conta própria")
+	isolado.free()
 	Rede.jogadores = {1: "HOST_TESTE", 2: "CLIENTE_TESTE"}
 	var batalha := (load("res://Rooms/Battle_area.tscn") as PackedScene).instantiate()
 	add_child(batalha)
@@ -214,13 +203,41 @@ func _ready() -> void:
 	var area_quarteto: Rect2 = batalha.calcular_area_jogo(area_comum, 4)
 	verificar(area_dupla.size.x > area_comum.size.x, "arena não cresce para uma dupla")
 	verificar(area_quarteto.size.x > area_dupla.size.x, "arena não cresce até quatro jogadores")
-	batalha._on_jogador_rede_desconectado(2)
-	var aviso_rede := batalha.get_node("GUI/AvisoRede") as Label
+	batalha._on_jogador_rede_desconectado(2, "CLIENTE_TESTE")
+	var aviso_rede := batalha.get_node("GUI/TopoHUD/AvisoRede") as Label
 	verificar(
 		aviso_rede.visible
 			and aviso_rede.text == tr("%s DESCONECTOU • A PARTIDA CONTINUA") % "CLIENTE_TESTE",
 		"desconexão não mostra aviso durante a partida"
 	)
+	var janela := get_window()
+	var escala_original := janela.content_scale_size
+	var aspecto_original := janela.content_scale_aspect
+	janela.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_IGNORE
+	batalha._anunciar_saida_piloto("WWWWWWWWWWWWWWWW")
+	batalha.criar_hud_boss()
+	batalha._on_boss_fase_alterada(3)
+	batalha._on_boss_subtitulo_alterado("RECICLE OS FRAGMENTOS: 0/6")
+	batalha.contpontos.text = "00009355"
+	for resolucao in [Vector2i(1600, 720), Vector2i(960, 540), Vector2i(320, 240), Vector2i(390, 844), Vector2i(1920, 1080)]:
+		janela.content_scale_size = resolucao
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var largura := aviso_rede.get_viewport_rect().size.x
+		var caixa := aviso_rede.get_global_rect()
+		var placar: Rect2 = batalha.contpontos.get_global_rect()
+		var titulo: Rect2 = batalha.boss_nome.get_global_rect()
+		verificar(placar.end.x <= largura - 10 and placar.end.y <= caixa.position.y, "placar cortado ou sobreposto ao aviso")
+		verificar(titulo.position.y >= caixa.end.y and titulo.position.x >= 10 and titulo.end.x <= largura - 10, "texto do chefe fora da tela ou coberto pelo aviso")
+		verificar(batalha.boss_nome.get_visible_line_count() == batalha.boss_nome.get_line_count(), "título do chefe cortado")
+		verificar(is_equal_approx(largura, float(resolucao.x)), "o teste não redimensionou o HUD")
+		verificar(absf(caixa.get_center().x - largura * 0.5) <= 1.0, "aviso fora do centro")
+		verificar(caixa.position.x >= 10 and caixa.end.x <= largura - 10, "aviso fora da tela")
+		verificar(aviso_rede.get_visible_line_count() == aviso_rede.get_line_count(), "aviso cortado")
+		if largura >= 960.0:
+			verificar(aviso_rede.get_line_count() == 1, "aviso partiu uma linha que cabia na tela")
+	janela.content_scale_size = escala_original
+	janela.content_scale_aspect = aspecto_original
 	var disparo_liberado := Node2D.new()
 	batalha.add_child(disparo_liberado)
 	batalha.disparos_visuais_rede["2:liberado"] = disparo_liberado
@@ -236,7 +253,7 @@ func _ready() -> void:
 	var jogador := batalha.get_node("Player") as Player
 	var menu_upgrades := batalha.get_node("GUI/TelaUpgrades") as Control
 	var pontos_iniciais := jogador.pontos_upgrade_pendentes
-	jogador.subir_de_nivel()
+	verificar(batalha.conceder_xp_equipe(2.0) == 2.0, "XP sem a passiva deve ser 1×")
 	await get_tree().process_frame
 	verificar(jogador.nivel_atual == 2, "primeiro level up não chegou ao nível 2")
 	verificar(jogador.pontos_upgrade_pendentes == pontos_iniciais + 1, "nível 2 não concedeu a melhoria")
@@ -245,10 +262,31 @@ func _ready() -> void:
 	verificar(bool(menu_upgrades.call("esta_aberta")), "jogador não conseguiu abrir seu menu individual")
 	verificar(is_equal_approx(Engine.time_scale, 1.0), "menu individual pausou a partida multiplayer")
 	menu_upgrades.call("fechar_menu")
-	jogador.subir_de_nivel()
+	var tardio := batalha._instanciar_jogador_rede({
+		"peer_id": 3, "nickname": "TARDIO", "configuracao": {"mutacao": "u13_dupla_experiencia"},
+	}) as Player
+	batalha.add_child(tardio)
+	verificar(tardio.nivel_atual == 2 and tardio.pontos_upgrade_pendentes == 1, "piloto entrou sem a progressão atual")
+	tardio.vivo = false
+	verificar(batalha.conceder_xp_equipe(1.75) == 3.5, "uma passiva deve dobrar o XP de todos")
+	verificar(tardio.nivel_atual == 3 and is_equal_approx(tardio.xp_atual, 0.5), "piloto aguardando renascimento perdeu XP")
 	await get_tree().process_frame
 	verificar(jogador.nivel_atual == 3, "segundo level up não chegou ao nível 3")
 	verificar(jogador.pontos_upgrade_pendentes == pontos_iniciais + 1, "nível ímpar concedeu melhoria indevida")
+
+	var revisao: int = batalha.revisao_progressao
+	var pontos := tardio.pontos_upgrade_pendentes
+	for antiga in [revisao, revisao - 1]:
+		batalha._receber_progressao_equipe(antiga, 1, 0.0, 99, 7.0)
+	tardio.reviver_multiplayer(Vector2(300, 200))
+	verificar(tardio.nivel_atual == 3 and tardio.xp_atual == 0.5 and tardio.pontos_upgrade_pendentes == pontos, "reentrada ou atualização antiga alterou o XP ou duplicou melhorias")
+
+	Rede.jogadores = {1: "P1", 2: "P2", 3: "P3"}
+	batalha._avancar_progressao_equipe(18.0, 0.0)
+	verificar(jogador.nivel_atual == 6 and jogador.pontos_upgrade_pendentes == pontos_iniciais + 2, "o trio não ganhou uma melhoria ao chegar ao nível 6")
+	Rede.jogadores = {1: "P1", 2: "P2", 3: "P3", 4: "P4"}
+	batalha._avancar_progressao_equipe(25.0, 0.0)
+	verificar(jogador.nivel_atual == 8 and jogador.pontos_upgrade_pendentes == pontos_iniciais + 3, "o quarteto não ganhou uma melhoria ao chegar ao nível 8")
 
 	for caminho_boss in [
 		"res://Entities/BossPet0.tscn",
@@ -285,6 +323,7 @@ func _ready() -> void:
 
 	batalha.queue_free()
 	await get_tree().process_frame
+	await get_tree().create_timer(0.25, true, false, true).timeout
 	if falhas.is_empty():
 		print("TESTE OK: lobby, Player real, spawners, synchronizer, melhoria bianível e bosses")
 	get_tree().quit(0 if falhas.is_empty() else 1)

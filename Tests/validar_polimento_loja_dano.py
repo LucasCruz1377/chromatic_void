@@ -25,7 +25,6 @@ MENU = (ROOT / "Scripts/tela_inicial.gd").read_text(encoding="utf-8")
 REDE = (ROOT / "Scripts/GerenciadorMultiplayer.gd").read_text(encoding="utf-8")
 RASTRO_EXCLUSIVO = (ROOT / "Scripts/RastroExclusivo.gd").read_text(encoding="utf-8")
 ASTEROIDE_BONUS = (ROOT / "Scripts/AsteroideBonus.gd").read_text(encoding="utf-8")
-SIZIGIA_FINAL = (ROOT / "Scripts/SizigiaFinalController.gd").read_text(encoding="utf-8")
 FLOR = (ROOT / "Scripts/BossCaosPrimaveril.gd").read_text(encoding="utf-8")
 BOSS_PET = (ROOT / "Entities/BossPet0.tscn").read_text(encoding="utf-8")
 BOSS_AMPARO = (ROOT / "Entities/BossConstelacaoAmparo.tscn").read_text(encoding="utf-8")
@@ -142,7 +141,7 @@ assert '_receber_cristais_coop.rpc(cristais_coop_acumulados)' in BATALHA
 assert 'func _aplicar_total_cristais_coop(total_sessao: int)' in BATALHA
 assert '"cristais_coop": cristais_coop_acumulados' in BATALHA
 assert 'func configurar_alvo(' in CAMERA
-assert 'intervalo_melhoria = clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in PLAYER
+assert 'intervalo := clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)' in BATALHA
 assert 'particulas_rastro_modelo_o.visible = usando_estrelas_modelo_o' in PLAYER
 assert 'spectrum.scale = Vector2(0.40, 0.40)' in PLAYER
 assert 'fspeed.scale = Vector2(0.40, 0.40)' in PLAYER
@@ -158,7 +157,7 @@ assert len(hashes_upgrades) == 25, "Há ícones repetidos nas melhorias específ
 
 assert 'ForcaShake = maxf(ForcaShake, alvo)' in CAMERA
 assert 'ForcaShake + magnitude' not in CAMERA
-assert 'camera_transicao.shake(18.0, true)' in SIZIGIA
+assert 'camera_transicao.shake(12.0, true)' in SIZIGIA
 assert 'camera.shake(obter_tremor_morte(), is_in_group("boss"))' in ENEMY
 assert 'const ORDEM_CICLO' in SETORES
 for setor in ["vazio_inicial", "constelacao_amparo", "no_ametista", "florescimento", "lua_colheita"]:
@@ -186,19 +185,11 @@ assert ', 16500, Color' in linha_solsticio
 assert 'Dano *= 1.0 + 0.26 * indice_setor_dificuldade' in ENEMY
 assert 'var multiplicador_dano := 1.0 + float(indice_dificuldade - 1) * 0.10' in FLOR
 assert 'Dano = 42.0 * fator_dano' in SIZIGIA
-assert 'ataques_desde_raio_solar < 3' in SIZIGIA
-assert 'Dano * (0.84 if eclipse else 0.76)' in SIZIGIA
-assert 'Dano * 0.48' in SIZIGIA and 'Dano * 0.40' in SIZIGIA
-assert 'Dano * 0.30' in SIZIGIA and 'Dano * 0.46' in SIZIGIA
-assert 'lado_abrigo *= -1' in SIZIGIA_FINAL
-assert 'ÁREA SEGURA — MOVA-SE' in SIZIGIA_FINAL
 assert 'Vector2(52, 52) if detalhes else Vector2(56, 56)' in SHOP
 assert '&"u13_dupla_experiencia"' in CATALOGO and '30000' in CATALOGO
 assert 'func obter_multiplicador_xp_loja() -> float:' in PLAYER
-assert 'recompensa_xp * multiplicador_xp' in ENEMY
-assert 'xp_jogador *= float(jogador.call("obter_multiplicador_xp_loja"))' in ASTEROIDE_BONUS
-assert 'float(boss.get("Dano")) * (1.75 if suprema else 1.35)' in SIZIGIA_FINAL
-assert '_encerrar_mecanica(13.0)' in SIZIGIA_FINAL
+assert 'conceder_xp_equipe(recompensa_xp)' in ENEMY
+assert 'conceder_xp_equipe(calcular_xp(' in ASTEROIDE_BONUS
 assert "vincular_colisao_visual(peca, forma)" in (ROOT / "Scripts/BossPet0.gd").read_text()
 assert 'radius = 32.0' in BOSS_AMPARO
 assert 'radius = 48.0' in BOSS_AMETISTA

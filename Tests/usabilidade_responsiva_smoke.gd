@@ -130,11 +130,12 @@ func testar_menu_upgrades_e_boss() -> void:
 	)
 
 	batalha._criar_boss(&"flor_equinocio", 1, true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var caixa_boss: Rect2 = batalha.boss_hud.get_global_rect()
 	verificar(
-		is_equal_approx(batalha.boss_hud.anchor_left, 0.5)
-		and is_equal_approx(batalha.boss_hud.anchor_right, 0.5)
-		and is_equal_approx(batalha.boss_hud.offset_left, -220.0)
-		and is_equal_approx(batalha.boss_hud.offset_right, 220.0),
+		is_equal_approx(caixa_boss.get_center().x, centro_tela.x)
+		and is_equal_approx(caixa_boss.size.x, 440.0),
 		"a barra do boss não está ancorada no centro do viewport"
 	)
 	var boss := batalha.boss_ativo as InimigoBase

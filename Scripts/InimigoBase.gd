@@ -70,6 +70,9 @@ var abaixo_zero_ativo := false
 func _ready() -> void:
 	_configurar_sincronizador_multiplayer()
 	if is_in_group("boss"):
+		# Só a nave resolve o contato físico com o chefe. A hitbox ainda detecta dano.
+		set_collision_mask_value(2, false)
+		resistencia_empurrao = 1.0
 		# Bosses preservam todo o balanceamento existente e recebem 175% da
 		# vida que possuíam antes deste ajuste.
 		VidaMaxima *= 1.75
@@ -877,19 +880,14 @@ func conceder_recompensa() -> void:
 	var recompensa_xp := ValorXP * 1.12 * calcular_fator_xp_combo(
 		combo_apos_abate, indice_setor_dificuldade
 	)
-	for jogador in get_tree().get_nodes_in_group("player"):
-		if not is_instance_valid(jogador) or not jogador.has_method("conceder_xp_rede"):
-			continue
-		var multiplicador_xp := 1.0
-		if jogador.has_method("obter_multiplicador_xp_loja"):
-			multiplicador_xp = float(jogador.call("obter_multiplicador_xp_loja"))
-		jogador.call("conceder_xp_rede", recompensa_xp * multiplicador_xp)
+	var cena_combate := _obter_cena_combate()
+	if is_instance_valid(cena_combate) and cena_combate.has_method("conceder_xp_equipe"):
+		cena_combate.conceder_xp_equipe(recompensa_xp)
 
 	Global.registrar_kill()
 	Global.Combo += 1
 	Global.Pontos += pontos_base + (pontos_base * (Global.Combo - 1))
 	Global.registrar_recordes_partida(Global.Combo, Global.Pontos)
-	var cena_combate := _obter_cena_combate()
 	if (
 		Rede.modo_multiplayer
 		and multiplayer.is_server()

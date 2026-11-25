@@ -109,32 +109,20 @@ properties/11/replication_mode = 2
 properties/12/path = NodePath(".:rastro_ativo_rede")
 properties/12/spawn = true
 properties/12/replication_mode = 2
-properties/13/path = NodePath(".:nivel_atual")
+properties/13/path = NodePath(".:habilidade_rede_path")
 properties/13/spawn = true
 properties/13/replication_mode = 2
-properties/14/path = NodePath(".:xp_atual")
+
+properties/14/path = NodePath(".:estrelas_solidarias")
 properties/14/spawn = true
 properties/14/replication_mode = 2
-properties/15/path = NodePath(".:xp_necessario")
+properties/15/path = NodePath(".:direcao_propulsao")
 properties/15/spawn = true
 properties/15/replication_mode = 2
-properties/16/path = NodePath(".:pontos_upgrade_pendentes")
+
+properties/16/path = NodePath(".:fase_estrelas_solidarias")
 properties/16/spawn = true
-properties/16/replication_mode = 2
-properties/17/path = NodePath(".:habilidade_rede_path")
-properties/17/spawn = true
-properties/17/replication_mode = 2
-
-properties/18/path = NodePath(".:estrelas_solidarias")
-properties/18/spawn = true
-properties/18/replication_mode = 2
-properties/19/path = NodePath(".:direcao_propulsao")
-properties/19/spawn = true
-properties/19/replication_mode = 2
-
-properties/20/path = NodePath(".:fase_estrelas_solidarias")
-properties/20/spawn = true
-properties/20/replication_mode = 1
+properties/16/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1, 0.99607843, 1, 1)

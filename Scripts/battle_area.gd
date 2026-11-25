@@ -80,7 +80,7 @@ const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 @export var ativar_bosses: bool = true
 @export var testar_boss_ao_iniciar: bool = false
 
-@onready var contpontos: Label = $GUI/Pontos
+@onready var contpontos: Label = $GUI/TopoHUD/Cabecalho/Pontos
 @onready var player: CharacterBody2D = $Player
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
@@ -129,6 +129,10 @@ var escala_fundo_original := Vector2.ONE
 var estado_visual_boss_pausa: Array[Dictionary] = []
 var jogadores_rede: Dictionary = {}
 var tempo_nova_solicitacao_rede := 0.0
+var revisao_progressao := 0
+var nivel_equipe := 1
+var xp_equipe := 0.0
+var pontos_concedidos_equipe := 0
 var aviso_rede: Label
 var texto_aguardando_morte: Label
 var painel_morte_local_exibido := false
@@ -379,6 +383,7 @@ func _configurar_jogadores_multiplayer() -> void:
 	)
 	player.global_position = _posicao_inicial_peer(1)
 	jogadores_rede[1] = player
+	$GUI.mostrar_progressao_equipe(nivel_equipe, xp_equipe)
 	if multiplayer.is_server():
 		player.call_deferred("aplicar_configuracao_visual_rede")
 	else:
@@ -444,6 +449,62 @@ func _configurar_spawners_multiplayer() -> void:
 	]:
 		if ResourceLoader.exists(caminho):
 			world_spawner.add_spawnable_scene(caminho)
+
+
+func conceder_xp_equipe(valor_base: float) -> float:
+	if not is_instance_valid(player) or valor_base <= 0.0:
+		return 0.0
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return 0.0
+	var multiplicador: float = player.obter_multiplicador_xp_loja()
+	if Rede.modo_multiplayer:
+		for piloto: Player in jogadores_rede.values():
+			if is_instance_valid(piloto) and piloto.obter_multiplicador_xp_loja() == 2.0:
+				multiplicador = 2.0
+				break
+	var recompensa := clampf(valor_base * multiplicador, 0.0, 10000.0)
+	if Rede.modo_multiplayer:
+		_avancar_progressao_equipe(recompensa, recompensa)
+	else:
+		player.ganhar_xp(recompensa)
+	return recompensa
+
+
+func _avancar_progressao_equipe(xp: float, xp_para_modulos: float) -> void:
+	if not multiplayer.is_server() or xp <= 0.0:
+		return
+	var restante := xp_equipe + xp
+	var nivel := nivel_equipe
+	var pontos := pontos_concedidos_equipe
+	var intervalo := clampi(Rede.jogadores.size(), 1, Rede.MAX_JOGADORES)
+	var necessario := Player.calcular_xp_proximo_nivel(nivel)
+	while restante >= necessario:
+		restante -= necessario
+		nivel += 1
+		if nivel % intervalo == 0:
+			pontos += 1
+		necessario = Player.calcular_xp_proximo_nivel(nivel)
+	var revisao := revisao_progressao + 1
+	_receber_progressao_equipe(revisao, nivel, restante, pontos, xp_para_modulos)
+	for id in multiplayer.get_peers():
+		if jogadores_rede.has(id):
+			_receber_progressao_equipe.rpc_id(id, revisao, nivel, restante, pontos, xp_para_modulos)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receber_progressao_equipe(revisao: int, nivel: int, xp: float, pontos: int, recompensa: float) -> void:
+	if revisao <= revisao_progressao:
+		return
+	revisao_progressao = revisao
+	nivel_equipe = nivel
+	xp_equipe = xp
+	pontos_concedidos_equipe = pontos
+	$GUI.mostrar_progressao_equipe(nivel, xp)
+	for piloto: Player in jogadores_rede.values():
+		if is_instance_valid(piloto):
+			piloto.aplicar_progressao_equipe(nivel, xp, pontos)
+			if recompensa > 0.0 and (multiplayer.is_server() or piloto.is_multiplayer_authority()):
+				piloto.aplicar_xp_modulo(recompensa)
 
 
 func conceder_cristais_coop(quantidade: int) -> void:
@@ -534,10 +595,6 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 			continue
 		pilotos[int(chave)] = {
 			"configuracao": piloto.obter_estado_loadout_rede(),
-			"nivel": piloto.nivel_atual,
-			"xp": piloto.xp_atual,
-			"xp_necessario": piloto.xp_necessario,
-			"melhorias_pendentes": piloto.pontos_upgrade_pendentes,
 			"vida": piloto.vida,
 			"vida_maxima": piloto.VIDA_MAXIMA,
 			"vivo": piloto.vivo,
@@ -551,6 +608,10 @@ func _enviar_estado_de_entrada_rede(id: int) -> void:
 		}
 	_receber_estado_de_entrada_rede.rpc_id(id, {
 		"pilotos": pilotos,
+		"revisao_progressao": revisao_progressao,
+		"nivel_equipe": nivel_equipe,
+		"xp_equipe": xp_equipe,
+		"pontos_equipe": pontos_concedidos_equipe,
 		"setor": str(setor_atual),
 		"combo": Global.Combo,
 		"pontos": Global.Pontos,
@@ -578,6 +639,7 @@ func _receber_estado_de_entrada_rede(dados: Dictionary) -> void:
 		int(dados.get("combo", 0)), 0.0, int(dados.get("pontos", 0))
 	)
 	_aplicar_total_cristais_coop(int(dados.get("cristais", 0)))
+	_receber_progressao_equipe(dados["revisao_progressao"], dados["nivel_equipe"], dados["xp_equipe"], dados["pontos_equipe"], 0.0)
 	estados_entrada_pendentes = Dictionary(dados.get("pilotos", {})).duplicate(true)
 	_aplicar_estados_entrada_pendentes()
 
@@ -596,17 +658,8 @@ func _aplicar_estados_entrada_pendentes() -> void:
 			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
 			piloto.escudo_habilidade = maxf(0.0, float(dados.get("escudo", piloto.escudo_habilidade)))
 			piloto.rerolls_upgrades_restantes = maxi(0, int(dados.get("rerolls", piloto.rerolls_upgrades_restantes)))
-			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
-			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
-			piloto.xp_necessario = maxi(1, int(dados.get("xp_necessario", 10)))
-			piloto.pontos_upgrade_pendentes = maxi(
-				0, int(dados.get("melhorias_pendentes", 0))
-			)
-			piloto.pontos_upgrade_alterados.emit(piloto.pontos_upgrade_pendentes)
 		else:
 			piloto.aplicar_estado_loadout_rede(Dictionary(dados.get("configuracao", {})))
-			piloto.nivel_atual = maxi(1, int(dados.get("nivel", 1)))
-			piloto.xp_atual = maxf(0.0, float(dados.get("xp", 0.0)))
 			piloto.vida = maxf(0.0, float(dados.get("vida", piloto.vida)))
 			piloto.vivo = bool(dados.get("vivo", piloto.vivo))
 		piloto.estrelas_solidarias = dados.get("estrelas", Vector4.ZERO)
@@ -619,8 +672,9 @@ func _aplicar_estados_entrada_pendentes() -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _configurar_player_host(nickname: String, configuracao: Dictionary) -> void:
-	player.configurar_jogador_multiplayer(1, nickname, configuracao)
-	player.aplicar_configuracao_visual_rede()
+	var anfitriao := _obter_jogador_rede(1)
+	if is_instance_valid(anfitriao):
+		anfitriao.configurar_jogador_multiplayer(1, nickname, configuracao)
 
 
 func _instanciar_jogador_rede(dados: Variant) -> Node:
@@ -639,6 +693,7 @@ func _instanciar_jogador_rede(dados: Variant) -> Node:
 	novo.position = Vector2(dados.get("posicao_spawn", _posicao_inicial_peer(id)))
 	novo.set_multiplayer_authority(id, true)
 	jogadores_rede[id] = novo
+	novo.aplicar_progressao_equipe(nivel_equipe, xp_equipe, pontos_concedidos_equipe)
 	call_deferred("_vincular_jogador_local")
 	return novo
 
@@ -958,8 +1013,10 @@ func _aplicar_impacto_aguardando_rede(entrada: Dictionary, agora: int) -> void:
 	var expirado := int(disparo.get("expirado_ms", 0))
 	if expirado > 0 and int(entrada.get("recebido_ms", agora)) > expirado + 600:
 		return
-	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as InimigoBase
-	if not is_instance_valid(inimigo) or inimigo.morto or inimigo.is_queued_for_deletion():
+	var inimigo := get_node_or_null(NodePath(entrada.get("caminho", NodePath()))) as Node2D
+	if not (inimigo is InimigoBase or inimigo is OrbeAstral or inimigo is SombraDaLua):
+		return
+	if inimigo.morto or inimigo.is_queued_for_deletion():
 		return
 	if feixe:
 		var visual := _obter_disparo_visual(id_disparo)
@@ -1238,7 +1295,7 @@ func _configurar_camera_local() -> void:
 		)
 
 
-func _on_jogador_rede_desconectado(id: int) -> void:
+func _on_jogador_rede_desconectado(id: int, nickname: String) -> void:
 	if not is_inside_tree() or multiplayer == null:
 		return
 	ultima_sequencia_movimento_peer.erase(id)
@@ -1266,13 +1323,22 @@ func _on_jogador_rede_desconectado(id: int) -> void:
 	if not jogadores_rede.has(id):
 		return
 	var remoto: Variant = jogadores_rede[id]
-	var nome := "O OUTRO PILOTO"
+	var nome := nickname
 	if is_instance_valid(remoto):
 		nome = str((remoto as Node).get("nickname_rede"))
 		# O PlayerSpawner pertence ao host; clientes aguardam o despawn.
 		if multiplayer.is_server():
 			(remoto as Node).queue_free()
 	jogadores_rede.erase(id)
+	if multiplayer.is_server():
+		_anunciar_saida_piloto(nome)
+		for peer_id in multiplayer.get_peers():
+			if peer_id != id and jogadores_rede.has(peer_id):
+				_anunciar_saida_piloto.rpc_id(peer_id, nome)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _anunciar_saida_piloto(nome: String) -> void:
 	_mostrar_aviso_rede(tr("%s DESCONECTOU • A PARTIDA CONTINUA") % nome.to_upper(), false)
 
 
@@ -1545,6 +1611,8 @@ func _atualizar_hud_boss_cliente() -> void:
 	var fase_rede := 1
 	if encontrado._possui_propriedade_rede(&"fase"):
 		fase_rede = int(encontrado.get("fase"))
+	elif encontrado is BossSizigiaEterna:
+		fase_rede = encontrado.fase_da_barra()
 	elif encontrado._possui_propriedade_rede(&"fase_atual"):
 		fase_rede = int(encontrado.get("fase_atual")) + 1
 	_on_boss_fase_alterada(fase_rede)
@@ -1756,6 +1824,7 @@ func _mostrar_painel_morte_local() -> void:
 	if not is_instance_valid(texto_aguardando_morte):
 		texto_aguardando_morte = Label.new()
 		texto_aguardando_morte.name = "AguardandoOutroPiloto"
+		texto_aguardando_morte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texto_aguardando_morte.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		texto_aguardando_morte.add_theme_font_size_override("font_size", 15)
 		texto_aguardando_morte.add_theme_color_override(
@@ -1806,10 +1875,32 @@ func _criar_aviso_rede() -> void:
 	fundo.set_border_width_all(2)
 	fundo.set_corner_radius_all(9)
 	aviso_rede.add_theme_stylebox_override("normal", fundo)
-	$GUI.add_child(aviso_rede)
-	aviso_rede.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	aviso_rede.position = Vector2((float(get_window().size.x) / 2.0) - 520.0 / 2.0, 24.0)
-	aviso_rede.size = Vector2(520.0, 48.0)
+	aviso_rede.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	$GUI/TopoHUD.add_child(aviso_rede)
+	aviso_rede.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	aviso_rede.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fundo.content_margin_left = 12
+	fundo.content_margin_right = 12
+	fundo.content_margin_top = 6
+	fundo.content_margin_bottom = 6
+	get_viewport().size_changed.connect(_ajustar_topo_hud)
+	_ajustar_topo_hud()
+
+
+func _ajustar_topo_hud() -> void:
+	var tela := get_viewport_rect().size
+	var largura_util := maxf(1.0, tela.x - 24.0)
+	var reserva: Control = $GUI/TopoHUD/Cabecalho/ReservaToque
+	reserva.visible = Global.deve_exibir_controles_toque() and (not Rede.modo_multiplayer or multiplayer.is_server())
+	if reserva.visible:
+		reserva.custom_minimum_size.x = tela.x * 0.06 + minf(tela.x, tela.y) * 0.052
+	var fonte := aviso_rede.get_theme_font("font")
+	var texto := fonte.get_string_size(
+		aviso_rede.text, HORIZONTAL_ALIGNMENT_LEFT, -1, aviso_rede.get_theme_font_size("font_size")
+	)
+	aviso_rede.custom_minimum_size.x = minf(ceilf(texto.x) + 28.0, largura_util)
+	if is_instance_valid(boss_hud):
+		boss_hud.custom_minimum_size.x = minf(440.0, largura_util)
 
 
 func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
@@ -1817,10 +1908,11 @@ func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
 		return
 	aviso_rede.text = mensagem
 	aviso_rede.visible = true
+	_ajustar_topo_hud()
+	var token := int(aviso_rede.get_meta("token_aviso", 0)) + 1
+	aviso_rede.set_meta("token_aviso", token)
 	if persistente:
 		return
-	var token := Time.get_ticks_msec()
-	aviso_rede.set_meta("token_aviso", token)
 	_ocultar_aviso_rede_depois(token)
 
 
@@ -2265,35 +2357,34 @@ func criar_hud_boss() -> void:
 	boss_hud = VBoxContainer.new()
 	boss_hud.name = "HUD_Boss"
 	boss_hud.add_theme_constant_override("separation", 3)
-	$GUI.add_child(boss_hud)
-	boss_hud.anchor_left = 0.5
-	boss_hud.anchor_right = 0.5
-	boss_hud.offset_left = -220.0
-	boss_hud.offset_top = 66.0
-	boss_hud.offset_right = 220.0
-	boss_hud.offset_bottom = 154.0
+	boss_hud.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	boss_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$GUI/TopoHUD.add_child(boss_hud)
+	_ajustar_topo_hud()
 	boss_hud.visible = not (
 		tela_upgrades.has_method("esta_aberta")
 		and bool(tela_upgrades.call("esta_aberta"))
 	)
 
 	boss_nome = Label.new()
+	boss_nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	boss_nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_nome.add_theme_color_override("font_color", cor)
 	boss_nome.add_theme_font_size_override("font_size", 17)
 	boss_hud.add_child(boss_nome)
 	boss_vida = ProgressBar.new()
-	boss_vida.custom_minimum_size = Vector2(440.0, 18.0)
+	boss_vida.custom_minimum_size = Vector2(0.0, 18.0)
 	boss_vida.show_percentage = false
 	boss_vida.modulate = cor
 	boss_hud.add_child(boss_vida)
 	boss_detalhe_texto = Label.new()
 	boss_detalhe_texto.text = tr(str(dados_setor.get("subtitulo", "")))
+	boss_detalhe_texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	boss_detalhe_texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_detalhe_texto.add_theme_font_size_override("font_size", 11)
 	boss_hud.add_child(boss_detalhe_texto)
 	boss_detalhe = ProgressBar.new()
-	boss_detalhe.custom_minimum_size = Vector2(440.0, 10.0)
+	boss_detalhe.custom_minimum_size = Vector2(0.0, 10.0)
 	boss_detalhe.show_percentage = false
 	boss_detalhe.visible = boss_atual_id == &"pet0"
 	boss_detalhe.modulate = Color(1.0, 0.82, 0.18, 1.0)
@@ -2641,10 +2732,12 @@ func criar_visual_setor() -> void:
 	fundo_setor.visible = false
 	camada.add_child(fundo_setor)
 	rotulo_setor = Label.new()
-	rotulo_setor.position = Vector2(24.0, 76.0)
+	rotulo_setor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rotulo_setor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rotulo_setor.add_theme_font_size_override("font_size", 11)
 	rotulo_setor.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	$GUI.add_child(rotulo_setor)
+	$GUI/TopoHUD/Cabecalho.add_child(rotulo_setor)
+	$GUI/TopoHUD/Cabecalho.move_child(rotulo_setor, 0)
 
 
 func aplicar_setor(id: StringName) -> void:

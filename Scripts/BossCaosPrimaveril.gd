@@ -58,6 +58,12 @@ var vinhas_ativas: Array[VinhaEspinhosa] = []
 var tween_escudo: Tween
 var velocidade_vinhas_atual := 0.0
 var velocidade_vinhas_alvo := 0.0
+var velocidade_inicio_giro := 0.0
+var progresso_giro := 0.0
+var flexao_vinhas := 0.0
+var angulo_replica := 0.0
+var flexao_replica := 0.0
+var previsao_vinhas := 0.0
 var tempo_mudar_sentido_vinhas := 0.0
 var sentido_vinhas := 1.0
 var inversao_vinhas_pendente := false
@@ -333,6 +339,9 @@ func iniciar_danca_caules() -> void:
 	sentido_rotacao = -1.0 if randf() < 0.5 else 1.0
 	sentido_vinhas = sentido_rotacao
 	velocidade_vinhas_atual = 0.0
+	velocidade_inicio_giro = 0.0
+	progresso_giro = 0.0
+	flexao_vinhas = 0.0
 	velocidade_vinhas_alvo = _velocidade_base_vinhas() * randf_range(0.88, 1.15) * sentido_vinhas
 	_agendar_intervalo_vinhas()
 	inversao_vinhas_pendente = false
@@ -378,8 +387,7 @@ func criar_vinhas() -> void:
 		vinha.configurar(COMPRIMENTO_VINHA, Dano * 0.58)
 		vinha.iniciar_crescimento(0.70)
 		vinhas_ativas.append(vinha)
-		if Rede.modo_multiplayer and multiplayer.is_server():
-			_replicar_vinhas_boss.rpc()
+
 
 @rpc("authority", "call_remote", "reliable")
 func _replicar_petala_boss(
@@ -407,22 +415,48 @@ func _replicar_petala_boss(
 	petala.retornou.connect(_on_petala_retornou)
 
 
-@rpc("authority", "call_remote", "reliable")
-func _replicar_vinhas_boss() -> void:
-	if multiplayer.is_server():
-		return
-	if not vinhas_ativas.is_empty():
-		return
-	vinhas_ativas.clear()
-	for indice in 4:
-		var vinha := VINHA.instantiate() as VinhaEspinhosa
-		vinha.name = "VinhaRede%d" % indice
-		vinhas_pivot.add_child(vinha)
-		vinha.rotation = float(indice) * PI * 0.5
-		vinha.configurar(COMPRIMENTO_VINHA, Dano * 0.58)
-		vinha.iniciar_crescimento(0.70)
-		vinhas_ativas.append(vinha)
+func _capturar_snapshot_visual_boss(seq: int = 0) -> Dictionary:
+	var pacote := super._capturar_snapshot_visual_boss(seq)
+	if not vinhas_ativas.is_empty() and is_instance_valid(vinhas_ativas[0]):
+		pacote["vinhas"] = [vinhas_pivot.rotation, velocidade_vinhas_atual, flexao_vinhas, vinhas_ativas[0].progresso_crescimento]
+	return pacote
 
+
+@rpc("authority", "call_remote", "unreliable_ordered", 0)
+func _aplicar_snapshot_visual_boss(pacote: Dictionary) -> void:
+	if multiplayer.is_server() or int(pacote.get("sequencia", 0)) <= ultima_sequencia_snapshot_visual_rede:
+		return
+	var angulo_anterior := vinhas_pivot.rotation
+	super._aplicar_snapshot_visual_boss(pacote)
+	if not pacote.has("vinhas"):
+		if not vinhas_ativas.is_empty():
+			encerrar_vinhas()
+		return
+	var dados: Array = pacote.vinhas
+	var nova := vinhas_ativas.is_empty()
+	if nova:
+		criar_vinhas()
+	angulo_replica = dados[0]
+	velocidade_vinhas_atual = dados[1]
+	flexao_replica = dados[2]
+	if nova:
+		flexao_vinhas = flexao_replica
+	previsao_vinhas = 0.0
+	vinhas_pivot.rotation = angulo_replica if nova else angulo_anterior
+	for vinha in vinhas_ativas:
+		vinha.progresso_crescimento = maxf(vinha.progresso_crescimento, dados[3])
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if Rede.modo_multiplayer and not multiplayer.is_server() and not vinhas_ativas.is_empty():
+		previsao_vinhas = minf(previsao_vinhas + delta, 0.12)
+		var previsto := angulo_replica + velocidade_vinhas_atual * previsao_vinhas
+		var peso := 1.0 - exp(-30.0 * delta)
+		vinhas_pivot.rotation = lerp_angle(vinhas_pivot.rotation, previsto, peso)
+		flexao_vinhas = lerpf(flexao_vinhas, flexao_replica, peso)
+		for vinha in vinhas_ativas:
+			vinha.aplicar_curva(flexao_vinhas)
 
 
 func crescer_vinhas(delta: float) -> void:
@@ -443,15 +477,13 @@ func processar_danca_vinhas(delta: float) -> void:
 	tempo_mudar_sentido_vinhas -= delta
 	if tempo_mudar_sentido_vinhas <= 0.0:
 		_sortear_proximo_movimento_vinhas()
-	# Interpolação exponencial: desacelera, cruza o zero e acelera na direção
-	# oposta. Fases altas convergem mais rápido para o novo sentido.
-	var rapidez_lerp := 2.2 + fase * 1.1
-	var peso_lerp := 1.0 - exp(-rapidez_lerp * delta)
-	velocidade_vinhas_atual = lerpf(
-		velocidade_vinhas_atual,
-		velocidade_vinhas_alvo,
-		peso_lerp
-	)
+	# A base freia antes de inverter. A ponta conserva a curva do giro anterior.
+	progresso_giro = minf(progresso_giro + delta / (1.12 - fase * 0.09), 1.0)
+	velocidade_vinhas_atual = lerpf(velocidade_inicio_giro, velocidade_vinhas_alvo, smoothstep(0.0, 1.0, progresso_giro))
+	var flexao_alvo := -velocidade_vinhas_atual * 0.36
+	flexao_vinhas = lerpf(flexao_vinhas, flexao_alvo, 1.0 - exp(-4.0 * delta))
+	for vinha in vinhas_ativas:
+		vinha.aplicar_curva(flexao_vinhas)
 	visual.rotation += velocidade_vinhas_atual * delta
 	vinhas_pivot.rotation += velocidade_vinhas_atual * delta
 	tempo_estado -= delta
@@ -471,6 +503,8 @@ func _agendar_intervalo_vinhas() -> void:
 
 
 func _sortear_proximo_movimento_vinhas(forcar_inversao: bool = false) -> void:
+	velocidade_inicio_giro = velocidade_vinhas_atual
+	progresso_giro = 0.0
 	var velocidade_base := _velocidade_base_vinhas()
 	# Em alguns momentos a vinha apenas desacelera, criando uma finta curta.
 	# A próxima mudança obrigatoriamente completa a inversão prometida.

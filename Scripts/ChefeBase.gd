@@ -74,6 +74,8 @@ func _capturar_snapshot_visual_boss(sequencia: int = 0) -> Dictionary:
 		var item := candidato as CanvasItem
 		if not is_instance_valid(item) or item is CollisionShape2D or item is RemoteTransform2D:
 			continue
+		if item.is_in_group("visual_boss_local"):
+			continue # A pose e o material do clone são reconstruídos no renderizador local.
 		var dados: Dictionary = {
 			"caminho": get_path_to(item),
 			"visible": item.visible,

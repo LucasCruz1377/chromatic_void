@@ -4,3 +4,14 @@
 
 [node name="SizigiaSmoke" type="Node"]
 script = ExtResource("1")
+
+[node name="GUI" type="Control" parent="."]
+visible = false
+
+[node name="Barra_vida" type="TextureProgressBar" parent="GUI"]
+
+[node name="Barra_xp" type="TextureProgressBar" parent="GUI"]
+
+[node name="DisplaySkill" type="TextureRect" parent="GUI"]
+
+[node name="LvlText" type="Label" parent="GUI"]

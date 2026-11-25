@@ -28,6 +28,10 @@ void fragment() {
 	vec3 cor_final = mix(tela.rgb, tela.rgb * vec3(0.07, 0.075, 0.13), escuridao);
 	vec3 cor_onda = mix(vec3(1.0, 0.34, 0.08), vec3(0.66, 0.40, 1.0), smoothstep(-0.03, 0.03, delta_corrigido.y));
 	cor_final += cor_onda * borda_interna * onda_forca * envelope * 0.30;
-	cor_final = mix(cor_final, vec3(1.0, 0.88, 1.0), flash);
+	// O disco continua legível no instante curto de máxima luz.
+	float limbo = smoothstep(0.067, 0.078, distancia);
+	vec3 tinta = mix(vec3(0.035, 0.022, 0.06), vec3(1.0, 0.89, 0.96), limbo);
+	float contorno = exp(-abs(distancia - 0.077) * 180.0);
+	cor_final = mix(cor_final, tinta + cor_onda * contorno * 0.5, flash);
 	COLOR = vec4(cor_final, 1.0);
 }

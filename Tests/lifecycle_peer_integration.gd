@@ -3,6 +3,8 @@ extends Node
 var papel := ""
 var arena: Node2D
 var prontos: Dictionary = {}
+var assinaturas_sizigia := {}
+var sizigia_confirmada: Dictionary = {}
 var pausas_confirmadas: Dictionary = {}
 var iniciar_saida := false
 var concluido := false
@@ -29,6 +31,11 @@ func _ready() -> void:
 	if not await esperar(func() -> bool: return Rede.jogadores.size() == 4):
 		falhar("lobby nao chegou a quatro pilotos")
 		return
+	if papel in ["client_a", "client_b"]:
+		GerenciadorDeSave.salvar({
+			"equipamentos_loja": {"3": "u13_dupla_experiencia"},
+			"itens_desbloqueados": ["u13_dupla_experiencia"],
+		})
 	if papel == "host" and not Rede.solicitar_inicio_partida():
 		falhar("host nao iniciou pelo lobby")
 		return
@@ -52,8 +59,17 @@ func _ready() -> void:
 	# Cada processo move somente a nave que controla. Os quatro precisam
 	# observar a posição final dos três colegas antes de iniciar o combate.
 	var local := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
+	if not await verificar_sizigia_rede():
+		falhar("golpes ou transições da Sizígia divergiram entre quatro pilotos")
+		return
+	local.velocity = Vector2.ZERO # A prova de movimento começa após a atração da maré.
 	var destino_local := destino_teste(Rede.peer_local())
-	for quadro in 36:
+	# O ponto de partida depende de quanto tempo a maré atraiu esta nave.
+	var prazo_movimento := Time.get_ticks_msec() + 5000
+	while local.global_position.distance_to(destino_local) > 0.1:
+		if Time.get_ticks_msec() >= prazo_movimento:
+			falhar("a nave local não alcançou o destino após a maré")
+			return
 		local.global_position = local.global_position.move_toward(destino_local, 6.0)
 		await get_tree().physics_frame
 	if not await esperar(todos_chegaram):
@@ -75,14 +91,29 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return prontos.size() == 4):
 			falhar("peers nao confirmaram entrada")
 			return
+		var asteroide := preload("res://Entities/AsteroideBonus.tscn").instantiate()
+		asteroide.xp_base = 5.25
+		arena.add_child(asteroide, true)
+		asteroide.conceder_recompensa()
+		asteroide.queue_free()
+		if not progresso_igual(4, 1.5):
+			falhar("o asteroide não concedeu 2x XP à equipe e ao HUD do host")
+			return
 		var dash := preload("res://Habilidades/habilidadeHiperdash.tres").duplicate() as HabilidadeHiperdash
 		var tempo_anterior := Engine.time_scale
-		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as ChefeBase
+		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as BossCaosPrimaveril
 		flor.name = "FlorCicloVida"
 		arena.add_child(flor, true)
 		flor.set_physics_process(false)
+		flor.iniciar_danca_caules()
+		flor.criar_vinhas()
+		flor.estado = BossCaosPrimaveril.Estado.DANCA_VINHAS
+		flor.tempo_estado = 10.0
+		for i in 45:
+			flor.processar_danca_vinhas(1.0 / 60.0)
 		for indice in 3:
 			var tiro := (load("res://Entities/EspinhoPrimaveril.tscn") as PackedScene).instantiate() as ProjetilInimigo
+			tiro.name = "EspinhoCiclo%d" % indice
 			tiro.position = Vector2(450 + indice * 30, 100)
 			tiro.tempo_vida = 15.0
 			tiro.velocidade = 0.01
@@ -103,7 +134,7 @@ func _ready() -> void:
 		if not get_tree().paused:
 			falhar("botao do host nao pausou")
 			return
-		var espinho := get_tree().get_first_node_in_group("projetil_primaveril") as ProjetilInimigo
+		var espinho := arena.get_node("EspinhoCiclo0") as ProjetilInimigo
 		var tempo_ataque := float(flor.get("tempo_ataque"))
 		var vida_do_tiro := espinho.tempo_vida
 		var posicao_do_tiro := espinho.position
@@ -121,6 +152,7 @@ func _ready() -> void:
 			falhar("preparo do hiperdash avancou durante a pausa")
 			return
 		arena.get_node("GUI/caixa pause/despause").pressed.emit()
+		flor.encerrar_vinhas()
 		flor.set_physics_process(false)
 		if not await esperar(func() -> bool: return local.UsandoHabilidade):
 			falhar("o hiperdash nao executou ao retomar")
@@ -128,13 +160,24 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return not dash.em_uso()):
 			falhar("o hiperdash nao terminou")
 			return
+		Rede.definir_pausa_partida(true)
 		_ordenar_saida.rpc()
 		iniciar_saida = true
 	else:
 		if not await esperar(func() -> bool: return get_tree().paused):
 			falhar("a pausa do host nao chegou")
 			return
-		var flor := arena.get_node("FlorCicloVida") as ChefeBase
+		if not await esperar(func() -> bool: return progresso_igual(4, 1.5)):
+			falhar("XP ou nível de uma das quatro naves divergiu")
+			return
+		var flor := arena.get_node("FlorCicloVida") as BossCaosPrimaveril
+		if not await esperar(func() -> bool: return flor.vinhas_ativas.size() == 4):
+			falhar("as quatro vinhas da flor não chegaram ao cliente")
+			return
+		var vinha := flor.vinhas_ativas[0]
+		if vinha.dano_ativo or absf(vinha.brilho.points[-1].y) < 2.0:
+			falhar("a vinha remota não reproduziu a curvatura como réplica visual")
+			return
 		local.HabilidadeEquipada.cooldown_atual = 3.0
 		var posicao := local.global_position
 		var tiros_antes := local.contador_disparos_rede
@@ -150,6 +193,15 @@ func _ready() -> void:
 			falhar("cliente moveu, disparou, retomou ou perdeu recarga durante a pausa")
 			return
 		_confirmar_pausa.rpc_id(1)
+		if papel == "client_b":
+			if not await esperar(func() -> bool: return not get_tree().paused):
+				falhar("o host não retomou antes da segunda pausa")
+				return
+			var melhorias := arena.get_node("GUI/TelaUpgrades")
+			melhorias.abrir_menu()
+			if not melhorias.esta_aberta():
+				falhar("não abriu as melhorias para testar a troca de foco")
+				return
 	if not await esperar(func() -> bool: return iniciar_saida):
 		falhar("ordem de saida nao chegou")
 		return
@@ -166,13 +218,46 @@ func _ready() -> void:
 				falhar("morte local apagou espinho do spawner")
 				return
 	if papel == "client_b":
+		var botao := arena.get_node("GUI/caixa pause/voltarmenu") as Button
+		if not await esperar(func() -> bool: return get_tree().paused and botao.is_visible_in_tree() and botao.has_focus()):
+			falhar("o botão de saída não ficou acessível durante a pausa")
+			return
+		if arena.get_node("GUI/caixa pause/despause").is_visible_in_tree():
+			falhar("o cliente pode retomar a partida")
+			return
+		botao.pressed.emit()
+		if not await esperar(func() -> bool:
+			var cena := get_tree().current_scene
+			return cena != null and cena.scene_file_path == "res://Rooms/TelaInicial.tscn" and not Rede.modo_multiplayer
+		):
+			falhar("o botão não desconectou o cliente e voltou ao menu")
+			return
+		get_tree().current_scene.queue_free()
+		await get_tree().process_frame
 		await get_tree().create_timer(0.3).timeout
-		await sair()
-		print("TESTE OK: client_b saiu da arena")
+		print("TESTE OK: client_b saiu pelo botão da pausa")
 		get_tree().quit(0)
 		return
 	if not await esperar(func() -> bool: return Rede.jogadores.size() == 3 and get_tree().get_nodes_in_group("player").size() == 3):
 		falhar("a nave desconectada nao foi removida pelo host")
+		return
+	if papel == "host":
+		if not get_tree().paused or not Rede.pausa_do_host:
+			falhar("a saída de um cliente despausou a partida")
+			return
+		Rede.definir_pausa_partida(false)
+	if not await esperar(func() -> bool: return not get_tree().paused):
+		falhar("a partida não retomou pelo host após a saída")
+		return
+	var aviso := arena.get_node("GUI/TopoHUD/AvisoRede") as Label
+	if not await esperar(func() -> bool: return aviso.visible and aviso.text.contains("CLIENT_B")):
+		falhar("o aviso de desconexão não chegou com o nome do piloto")
+		return
+	if papel == "host" and arena.conceder_xp_equipe(1.0) != 2.0:
+		falhar("a passiva do cliente restante não concedeu 2x XP")
+		return
+	if not await esperar(func() -> bool: return progresso_igual(4, 3.5)):
+		falhar("o XP divergiu após a saída de um dos pilotos com a passiva")
 		return
 	if get_tree().get_nodes_in_group("projetil_primaveril").size() != 3:
 		falhar("espinhos foram apagados no cliente")
@@ -203,10 +288,12 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return confirmacoes_fim.size() == 2):
 			falhar("cliente nao confirmou recebimento do fim")
 			return
-		_liberar_saida.rpc()
-		if not await esperar(func() -> bool: return Rede.jogadores.size() == 1):
-			falhar("clientes nao encerraram apos a liberacao")
-			return
+		# Cada cliente pode receber o despawn do outro antes de fechar ENet.
+		for id in multiplayer.get_peers():
+			_liberar_saida.rpc_id(id)
+			if not await esperar(func() -> bool: return not Rede.jogadores.has(id)):
+				falhar("cliente nao encerrou apos a liberacao")
+				return
 	await sair()
 	print("TESTE OK: %s preservou replicas e recebeu despawns apos saida de outro cliente" % papel)
 	get_tree().quit(0)
@@ -245,6 +332,181 @@ func _confirmar_fim() -> void:
 @rpc("authority", "call_remote", "reliable")
 func _liberar_saida() -> void:
 	saida_liberada = true
+
+
+func verificar_sizigia_rede() -> bool:
+	var host := papel == "host"
+	if host:
+		var chefe := preload("res://Entities/BossEclipseColheita.tscn").instantiate() as BossSizigiaEterna
+		chefe.name = "SizigiaCoop"
+		arena.add_child(chefe)
+		chefe.global_position = Vector2(480, 150)
+		chefe.golpes.iniciar(SizigiaFinalController.Golpe.MARE)
+	if not await esperar(func() -> bool: return arena.has_node("SizigiaCoop")):
+		return false
+	var boss := arena.get_node("SizigiaCoop") as BossSizigiaEterna
+	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.MARE and boss.golpes.lacunas.size() == 4):
+		return false
+	if not await confirmar_sizigia(1):
+		return false
+	var nave := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
+	await get_tree().create_timer(0.20).timeout
+	nave.cooldown = 20.0
+	Input.action_press("atirar")
+	# Mantém o botão até o host registrar todos, mesmo com latência diferente por peer.
+	if host:
+		if not await esperar(func() -> bool:
+			for p in boss.golpes.pilotos_vivos():
+				if boss.golpes.historicos_tiros.get(p.get_instance_id(), []).size() < 3:
+					return false
+			return true
+		):
+			return false
+		boss.golpes.vez_clone = 1 # Copia um cliente e seus disparos recebidos pelo host.
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.ABSOLUTO)
+	if not await esperar(func() -> bool:
+		return is_instance_valid(boss.golpes.clone) and boss.golpes.alvo_id > 1 and boss.golpes.especial.tiros.size() >= 3 and boss.golpes.tempo > 0.75
+	):
+		return false
+	Input.action_release("atirar")
+	if not await confirmar_sizigia(2, hash(boss.golpes.especial.tiros)):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida * 0.5)
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.SOMBRA)
+	if not await esperar(func() -> bool:
+		var sombra := boss.golpes.sombra
+		return is_instance_valid(sombra) and sombra.invocacao > 0 and sombra.invocacao < sombra.INVOCACAO and sombra.collision_layer == 0
+	):
+		return false
+	if not await esperar(func() -> bool:
+		var sombra := boss.golpes.sombra
+		return is_instance_valid(sombra) and sombra.disparos >= 1 and sombra.collision_layer == 4 and is_equal_approx(sombra.vida, boss.VidaMaxima * 0.10)
+	):
+		return false
+	if not await confirmar_sizigia(3):
+		return false
+	if host:
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.METEOROS)
+	if not await esperar(func() -> bool:
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.METEOROS and boss.golpes.especial.quedas.size() >= 12
+	):
+		return false
+	# As três primeiras levas já estão fixas nos quatro peers, mesmo que a próxima chegue durante a barreira.
+	var assinatura := hash([boss.golpes.pontos.slice(0, 12), boss.golpes.especial.raios.slice(0, 12),
+		boss.golpes.especial.quedas.slice(0, 12), boss.golpes.especial.avisos.slice(0, 3)])
+	if papel == "client_a":
+		var tiro = preload("res://Entities/fireball.tscn").instantiate()
+		tiro.position = boss.golpes.sombra.global_position
+		tiro.dono_player = nave
+		tiro.dmg = 3.0
+		tiro.velocidade = 0.0
+		arena.add_child(tiro)
+		nave.registrar_projetil_rede(tiro, &"", Color.WHITE, {})
+	if not await esperar(func() -> bool:
+		return is_instance_valid(boss.golpes.sombra) and is_equal_approx(boss.golpes.sombra.vida, boss.VidaMaxima * 0.10 - 3.0)
+	):
+		return false
+	if not await confirmar_sizigia(4, assinatura):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida * 0.5)
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.MARE)
+	if not await esperar(func() -> bool:
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.MARE and boss.golpes.etapa == 3
+	):
+		return false
+	var frestas := boss.golpes.lacunas
+	if frestas.size() != 2 or not is_equal_approx(frestas[1] - frestas[0], PI):
+		return false
+	if not await confirmar_sizigia(5, hash(frestas)):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida)
+	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.SOL and boss.destino_fase == 0):
+		return false
+	if not await confirmar_sizigia(6):
+		return false
+	if not is_instance_valid(boss.golpes.sombra):
+		return false
+	if host:
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.MANCHAS)
+	if not await esperar(func() -> bool: return boss.golpes.orbes.size() == 3):
+		return false
+	if papel == "client_b":
+		var restante := boss.golpes.sombra.vida
+		while restante > 0:
+			var parcela := minf(restante, 1400.0)
+			boss.golpes.sombra.tomarDano(parcela)
+			restante -= parcela
+	if not await esperar(func() -> bool: return not is_instance_valid(boss.golpes.sombra)):
+		return false
+	if not await confirmar_sizigia(7):
+		return false
+	if papel == "client_a":
+		boss.golpes.orbes[1].tomarDano(3)
+	if not await esperar(func() -> bool: return boss.golpes.mascara_orbes == 5):
+		return false
+	if not await confirmar_sizigia(8):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida)
+	if not await esperar(func() -> bool: return boss.impacto_fusao):
+		return false
+	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.ECLIPSE and boss.destino_fase == 0):
+		return false
+	if not await esperar(func() -> bool: return boss.golpes.tipo == SizigiaFinalController.Golpe.TOTALIDADE and boss.golpes.lacunas.size() == 4):
+		return false
+	var aneis := boss.golpes
+	for i in 4:
+		if not is_equal_approx(fposmod(aneis.lacunas[(i + 1) % 4] - aneis.lacunas[i], TAU), PI / 2):
+			return false
+	if not await confirmar_sizigia(9, hash([aneis.origem, aneis.lacunas, aneis.especial, aneis.serie, aneis.etapa])):
+		return false
+	if host:
+		boss.tomarDano(boss.Vida * 0.75)
+		aneis.iniciar(SizigiaFinalController.Golpe.TOTALIDADE)
+	if not await esperar(func() -> bool:
+		return boss.fase_da_barra() == 3 and aneis.etapa == 3 and aneis.quantidade_aneis() == 10
+	):
+		return false
+	if not await confirmar_sizigia(10, hash([aneis.origem, aneis.lacunas, aneis.especial, aneis.serie, aneis.etapa])):
+		return false
+	if host:
+		boss.queue_free()
+	return await esperar(func() -> bool: return not arena.has_node("SizigiaCoop"))
+
+
+func confirmar_sizigia(etapa: int, assinatura: int = 0) -> bool:
+	if papel != "host":
+		_confirmar_sizigia.rpc_id(1, etapa, assinatura)
+		return true
+	return await esperar(func() -> bool:
+		for peer in multiplayer.get_peers():
+			if etapa in [2, 4, 5, 9, 10] and assinaturas_sizigia.get(peer) != assinatura:
+				return false
+			if int(sizigia_confirmada.get(peer, 0)) < etapa:
+				return false
+		return multiplayer.get_peers().size() == 3
+	)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_sizigia(etapa: int, assinatura: int) -> void:
+	if etapa in [2, 4, 5, 9, 10]:
+		assinaturas_sizigia[multiplayer.get_remote_sender_id()] = assinatura
+	sizigia_confirmada[multiplayer.get_remote_sender_id()] = etapa
+
+
+func progresso_igual(nivel: int, xp: float) -> bool:
+	for piloto: Player in get_tree().get_nodes_in_group("player"):
+		if piloto.nivel_atual != nivel or not is_equal_approx(piloto.xp_atual, xp):
+			return false
+	var barra := arena.get_node("GUI/Barra_xp") as TextureProgressBar
+	var rotulo := arena.get_node("GUI/LvlText") as Label
+	return (is_equal_approx(barra.value, xp)
+		and is_equal_approx(barra.max_value, Player.calcular_xp_proximo_nivel(nivel))
+		and rotulo.text == "LVL: %d" % nivel)
 
 
 func destino_teste(peer: int) -> Vector2:

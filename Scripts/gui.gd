@@ -23,6 +23,7 @@ var gameover_anterior := false
 
 
 func _ready() -> void:
+	barra_xp.step = 0.0
 	definir_player_local(player)
 	gameover_anterior = caixa_gameover.visible
 	botao_tentar_novamente.focus_neighbor_bottom = (
@@ -57,7 +58,9 @@ func _ready() -> void:
 	call_deferred("_ajustar_hud_responsivo")
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		botao_despause.hide()
-		botao_voltar_pause.hide()
+		botao_voltar_pause.text = tr("SAIR DA PARTIDA")
+		botao_voltar_pause.focus_neighbor_top = NodePath(".")
+		botao_voltar_pause.focus_neighbor_bottom = NodePath(".")
 
 
 func definir_player_local(novo_player: Player) -> void:
@@ -68,6 +71,12 @@ func definir_player_local(novo_player: Player) -> void:
 		player.subiuDeNivel.connect(_on_player_subiu_de_nivel)
 
 
+func mostrar_progressao_equipe(nivel: int, xp: float) -> void:
+	texto_nivel.text = "LVL: %d" % nivel
+	barra_xp.max_value = Player.calcular_xp_proximo_nivel(nivel)
+	barra_xp.value = xp
+
+
 func _ajustar_hud_responsivo() -> void:
 	_aplicar_layout_hud(get_viewport().get_visible_rect().size)
 
@@ -76,6 +85,10 @@ func _aplicar_layout_hud(tamanho: Vector2) -> void:
 	if tamanho.x <= 0.0 or tamanho.y <= 0.0:
 		return
 	var margem := minf(18.0, tamanho.x * 0.05)
+	var meia_largura_menu := minf(284.0, tamanho.x * 0.5 - margem)
+	for painel in [caixa_pause, caixa_gameover]:
+		painel.offset_left = -meia_largura_menu
+		painel.offset_right = meia_largura_menu
 	var largura_barra := minf(630.0, tamanho.x - margem * 2.0)
 	largura_barra = minf(largura_barra, tamanho.x * 0.70)
 	var centro_x := tamanho.x * 0.5
@@ -164,7 +177,16 @@ func _process(_delta: float) -> void:
 				):
 					batalha.call("limpar_estado_visual_boss_pausa")
 
-	caixa_pause.visible = not escolhendo_setor and get_tree().paused and (pode_pausar or Rede.pausa_do_host)
+	var mostrar_pausa := not escolhendo_setor and get_tree().paused and (pode_pausar or Rede.pausa_do_host)
+	if caixa_pause.visible != mostrar_pausa:
+		caixa_pause.visible = mostrar_pausa
+		if not pode_pausar:
+			if mostrar_pausa:
+				tela_upgrades.call("fechar_menu")
+				Global.definir_cursor_interface(true)
+				botao_voltar_pause.grab_focus()
+			else:
+				Global.definir_cursor_interface(escolhendo_setor or tela_upgrades.call("esta_aberta"))
 	if caixa_gameover.visible and not gameover_anterior:
 		botao_tentar_novamente.call_deferred("grab_focus")
 	gameover_anterior = caixa_gameover.visible

@@ -2,11 +2,6 @@ extends "res://Scripts/ChefeBase.gd"
 class_name BossSizigiaEterna
 
 
-const ProjetilAstralCena = preload("res://Scripts/ProjetilAstral.gd")
-const RaioAstralCena = preload("res://Scripts/RaioAstral.gd")
-const PerigoAstralCena = preload("res://Scripts/PerigoAstral.gd")
-const OrbeAstralCena = preload("res://Scripts/OrbeAstral.gd")
-const IndicadorGravitacionalCena = preload("res://Scripts/IndicadorGravitacional.gd")
 const SHADER_TRANSICAO = preload("res://FX/eclipse_transicao.gdshader")
 const TEXTURA_LUA = preload("res://Assets/Bosses/SizigiaEterna/lua.svg")
 const TEXTURA_SOL = preload("res://Assets/Bosses/SizigiaEterna/sol.svg")
@@ -32,11 +27,9 @@ enum Estado {
 }
 
 
-const VIDA_BASE_FASES := [330.0, 390.0, 520.0]
-const MULTIPLICADOR_VIDA_BOSS := 1.75
-const CENTRO_FUSAO := Vector2(480.0, 188.0)
-const POSICAO_LUA_FUSAO := CENTRO_FUSAO + Vector2(-108.0, 0.0)
-const POSICAO_SOL_FUSAO := CENTRO_FUSAO + Vector2(108.0, 0.0)
+# No quinto setor (×1,64), uma nave com ~24 DPS efetivos leva 164 / 179 / 195 s.
+const VIDA_BASE_FASES := [2400.0, 2625.0, 2850.0]
+const DANO_RELATIVO_FASE := [1.0, 1.15, 1.35]
 const MARGEM_FORA_TELA := 150.0
 const CORES_FASES := [
 	Color(0.58, 0.72, 1.0),
@@ -49,41 +42,36 @@ var fase_atual := Fase.LUA
 var estado := Estado.MOVENDO
 var vidas_fases := VIDA_BASE_FASES.duplicate()
 var dificuldade_atual := 1
-var tempo_ataque := 1.8
-var tempo_estado := 0.0
-var tempo_contato := 0.0
-var ultimo_ataque := -1
-# O raio direto é decisivo, mas não deve dominar a rotação de ataques.
-var ataques_desde_raio_solar := 3
-var gravidade_tempo := 0.0
-var gravidade_sinal := 1.0
-var direcao_investida := Vector2.LEFT
-var token_acao := 0
-var token_transicao := 0
+var tempo_ataque := 1.2
+var tempo_animacao_visual := 0.0
+var passo_rotacao := 0
+var absoluto_usado := false
+var direcao_investida := Vector2.RIGHT
+var tempo_cinema := 0.0
+var destino_fase := 0
+var inicio_cinema := Vector2.ZERO
+var centro_cinema := Vector2.ZERO
 var progresso_fusao := 0.0
-var overlay_transicao: CanvasLayer
-var material_transicao: ShaderMaterial
-var invulnerabilidade_anterior := false
 var visual_lua_transicao: Sprite2D
 var visual_sol_transicao: Sprite2D
-var visual_eclipse_transicao: Sprite2D
-var tempo_animacao_visual := 0.0
 var desenhar_corona_transicao := false
+var overlay_transicao: CanvasLayer
+var material_transicao: ShaderMaterial
+var protegidos: Array[Node2D] = []
+var contato: Dictionary = {}
+var impacto_fusao := false
 
 @onready var visual_fase: Sprite2D = $VisualFase
+@onready var golpes: SizigiaFinalController = $SizigiaFinalController
 
 
 func _ready() -> void:
 	super._ready()
 	add_to_group("boss_sizigia")
-	for indice in vidas_fases.size():
-		vidas_fases[indice] = float(vidas_fases[indice]) * MULTIPLICADOR_VIDA_BOSS
-	VidaMaxima = vidas_fases[0]
-	Vida = VidaMaxima
+	configurar_dificuldade(dificuldade_atual)
 	escala_base_impacto = scale
 	criar_visuais_transicao()
 	atualizar_visual_fase()
-	vida_alterada.emit(Vida, VidaMaxima)
 	queue_redraw()
 
 
@@ -91,17 +79,27 @@ func configurar_dificuldade(nivel_dificuldade: int) -> void:
 	dificuldade_atual = maxi(nivel_dificuldade, 1)
 	var fator_vida := 1.0 + float(dificuldade_atual - 1) * 0.16
 	var fator_dano := 1.0 + float(dificuldade_atual - 1) * 0.09
+	# Fixa o orçamento de vida no início. Morte e renascimento não recarregam a barra.
+	var participantes := clampi(golpes.pilotos_vivos().size(), 1, 4) if Rede.modo_multiplayer else 1
 	vidas_fases = []
 	for vida_base in VIDA_BASE_FASES:
-		vidas_fases.append(float(vida_base) * MULTIPLICADOR_VIDA_BOSS * fator_vida)
-	Dano = 42.0 * fator_dano
+		vidas_fases.append(roundf(float(vida_base) * fator_vida * participantes))
+	Dano = 42.0 * fator_dano * float(DANO_RELATIVO_FASE[fase_atual - 1])
 	VidaMaxima = vidas_fases[fase_atual - 1]
 	Vida = VidaMaxima
 	vida_alterada.emit(Vida, VidaMaxima)
 
 
+func fase_da_barra() -> int:
+	if Vida * 3.0 <= VidaMaxima:
+		return 3
+	if Vida * 3.0 <= VidaMaxima * 2.0:
+		return 2
+	return 1
+
+
 func obter_vida_maxima_atual() -> float:
-	return vidas_fases[fase_atual - 1]
+	return VidaMaxima
 
 
 func obter_nome_boss() -> String:
@@ -134,614 +132,239 @@ func tomarDano(valor: float) -> void:
 		return
 	if morto or estado == Estado.TRANSICAO or valor <= 0.0:
 		return
+	if golpes.absorvendo():
+		golpes.energia = minf(golpes.energia + valor, 40.0)
+		return
 	var dano_final := maxf(valor * bonus_marca * multiplicador_dano_recebido, 0.0)
+	var fase_anterior := fase_da_barra()
 	Vida = maxf(Vida - dano_final, 0.0)
 	vida_alterada.emit(Vida, obter_vida_maxima_atual())
 	reproduzir_impacto(dano_final)
 	if Vida > 0.0:
+		if fase_da_barra() != fase_anterior:
+			fase_alterada.emit(fase_da_barra())
 		return
 	if fase_atual < Fase.ECLIPSE:
 		iniciar_transicao(fase_atual + 1)
 	else:
-		limpar_ataques_astrais()
-		remover_overlay_transicao()
-		super.morrer()
+		morrer()
+
+
+func velocidade_investida() -> float:
+	return 560.0 + 50.0 * (golpes.etapa - 1)
+
+
+func obter_velocidade_maxima() -> float:
+	return velocidade_investida() if estado == Estado.INVESTINDO else Velocidade
 
 
 func Mover(delta: float) -> void:
 	tempo_animacao_visual += delta
+	if destino_fase != 0:
+		velocity = Vector2.ZERO
+		return
 	atualizar_animacao_visual(delta)
-	atualizar_contato(delta)
-	atualizar_gravidade(delta)
-	if estado == Estado.TRANSICAO:
-		velocity = velocity.move_toward(Vector2.ZERO, 520.0 * delta)
-		queue_redraw()
-		return
-	if estado == Estado.AVISANDO:
-		velocity = velocity.move_toward(Vector2.ZERO, 450.0 * delta)
-		tempo_estado -= delta
-		queue_redraw()
-		return
-	if estado == Estado.INVESTINDO:
-		velocity = direcao_investida * (560.0 if fase_atual == Fase.SOL else 620.0)
-		criar_rastro_investida(delta)
-		tempo_estado -= delta
-		if tempo_estado <= 0.0:
-			estado = Estado.RECUPERANDO
-			tempo_estado = 0.55
-		queue_redraw()
-		return
-	if estado == Estado.RECUPERANDO:
-		velocity = velocity.move_toward(Vector2.ZERO, 720.0 * delta)
-		tempo_estado -= delta
-		if tempo_estado <= 0.0:
-			estado = Estado.MOVENDO
-		queue_redraw()
-		return
-
-	if is_instance_valid(player):
-		var direcao_player := global_position.direction_to(player.global_position)
-		var distancia := global_position.distance_to(player.global_position)
-		var alvo_distancia := 280.0 if fase_atual == Fase.LUA else 235.0
-		var fator := 1.0 if distancia > alvo_distancia else -0.58
-		var tangente := direcao_player.rotated(PI * 0.5) * sin(Global.tempo_combate_ms() * 0.0016)
-		velocity = (direcao_player * fator + tangente * 0.52).normalized() * Velocidade
+	golpes.registrar_trajetorias(delta)
+	if golpes.tipo != golpes.Golpe.NENHUM:
+		golpes.avancar(delta)
+		velocity = Vector2.ZERO
+		if estado == Estado.INVESTINDO:
+			var limite := Global.obter_retangulo_area_visivel().grow(-2.0)
+			var proxima := global_position + direcao_investida * velocidade_investida() * delta
+			velocity = (proxima.clamp(limite.position, limite.end) - global_position) / maxf(delta, 0.0001)
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, Velocidade * delta)
-
-	tempo_ataque -= delta
-	if tempo_ataque <= 0.0:
-		escolher_ataque()
+		estado = Estado.MOVENDO
+		if is_instance_valid(player):
+			var radial := global_position.direction_to(player.global_position)
+			var distancia := global_position.distance_to(player.global_position)
+			velocity = (radial * clampf((distancia - 270.0) / 90.0, -1, 1) + radial.orthogonal() * 0.45).normalized() * Velocidade
+		tempo_ataque -= delta
+		if tempo_ataque <= 0 and is_instance_valid(player):
+			golpes.escolher()
+			velocity = Vector2.ZERO
+	for piloto in golpes.pilotos_vivos():
+		var chave := piloto.get_instance_id()
+		contato[chave] = maxf(float(contato.get(chave, 0.0)) - delta, 0.0)
+		var raio := 74.0 if fase_atual == Fase.ECLIPSE else 62.0
+		if piloto.global_position.distance_to(global_position) <= raio:
+			ao_colidir_com_player(piloto)
 	queue_redraw()
 
 
-func atualizar_contato(delta: float) -> void:
-	tempo_contato = maxf(tempo_contato - delta, 0.0)
-	if not is_instance_valid(player) or tempo_contato > 0.0:
+func ao_colidir_com_player(piloto: Node) -> void:
+	if not piloto is Node2D or destino_fase or morto or golpes.exposto() or (Rede.modo_multiplayer and not multiplayer.is_server()):
 		return
-	var raio_contato := 76.0 if fase_atual == Fase.ECLIPSE else 67.0
-	if global_position.distance_to(player.global_position) <= raio_contato:
-		tempo_contato = 0.85
-		if player.has_method("tomar_dano"):
-			player.tomar_dano(Dano * 0.64, global_position)
-		if fase_atual >= Fase.SOL and player.has_method("aplicar_queimadura"):
-			player.aplicar_queimadura(Dano * 0.24, 2.7)
+	var chave := piloto.get_instance_id()
+	if float(contato.get(chave, 0.0)) <= 0.0:
+		contato[chave] = 0.85
+		golpes.ferir(piloto, Dano * 0.64 * golpes.fator_dano(fase_da_barra()), global_position)
 
 
-func atualizar_gravidade(delta: float) -> void:
-	gravidade_tempo = maxf(gravidade_tempo - delta, 0.0)
-	if gravidade_tempo <= 0.0 or not is_instance_valid(player):
+func _capturar_snapshot_visual_boss(seq: int = 0) -> Dictionary:
+	var pacote := super._capturar_snapshot_visual_boss(seq)
+	pacote["golpe"] = golpes.snapshot()
+	pacote["sombra"] = golpes.snapshot_sombra()
+	pacote["cinema"] = [destino_fase, tempo_cinema, inicio_cinema, centro_cinema]
+	return pacote
+
+
+@rpc("authority", "call_remote", "unreliable_ordered", 0)
+func _aplicar_snapshot_visual_boss(pacote: Dictionary) -> void:
+	if multiplayer.is_server() or int(pacote.get("sequencia", 0)) <= ultima_sequencia_snapshot_visual_rede:
 		return
-	var direcao: Vector2 = player.global_position.direction_to(global_position) * gravidade_sinal
-	var impulso := 150.0 if fase_atual == Fase.LUA else 205.0
-	player.velocity += direcao * impulso * delta
-	player.velocity = player.velocity.limit_length(720.0)
-
-
-func escolher_ataque() -> void:
-	var opcoes: Array[int] = [0, 1, 2, 3, 4]
-	if fase_atual == Fase.LUA: opcoes.erase(3)
-	elif fase_atual == Fase.ECLIPSE: opcoes = [0, 1, 2, 4, 5]
-	if fase_atual != Fase.LUA and ataques_desde_raio_solar < 3:
-		opcoes.erase(1)
-	opcoes.erase(ultimo_ataque)
-	var escolha: int = opcoes.pick_random()
-	ultimo_ataque = escolha
-	if escolha == 1:
-		ataques_desde_raio_solar = 0
-	elif fase_atual != Fase.LUA:
-		ataques_desde_raio_solar = mini(ataques_desde_raio_solar + 1, 3)
-	var frenesi := fase_atual == Fase.ECLIPSE and Vida <= obter_vida_maxima_atual() * 0.25
-	tempo_ataque = (1.65 if frenesi else 2.05) + randf_range(0.18, 0.52)
-	var semente_ataque := randi()
-	seed(semente_ataque)
-	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
-		_replicar_ataque_sizigia.rpc(fase_atual, escolha, frenesi, semente_ataque)
-	_executar_ataque_escolhido(escolha, frenesi)
-
-
-func _executar_ataque_escolhido(escolha: int, frenesi: bool) -> void:
-	if fase_atual == Fase.LUA:
-		executar_ataque_lua(escolha)
-	elif fase_atual == Fase.SOL:
-		executar_ataque_sol(escolha)
-	else:
-		executar_ataque_eclipse(escolha, frenesi)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _replicar_ataque_sizigia(fase_rede: int, escolha: int, frenesi: bool, semente_ataque: int) -> void:
-	if multiplayer.is_server() or morto or estado == Estado.TRANSICAO:
-		return
-	fase_atual = fase_rede
-	seed(semente_ataque)
-	_executar_ataque_escolhido(escolha, frenesi)
-
-
-func executar_ataque_lua(indice: int) -> void:
-	match indice:
-		0:
-			anunciar_ataque("CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS")
-			lancar_crescentes(4, 0.21, false, false)
-		1:
-			ativar_mare_gravitacional()
-		2:
-			anunciar_ataque("CHUVA DE CRATERAS — SAIA DOS ALVOS MARCADOS")
-			criar_chuva_meteoros(4, Color(0.52, 0.68, 1.0), Dano * 0.48)
-		3:
-			lancar_crescentes(4, 0.21, false, false)
-		_:
-			anunciar_ataque("ONDA LUNAR — ATRAVESSE A LACUNA VERDE")
-			criar_corona(2, false)
-
-
-func executar_ataque_sol(indice: int) -> void:
-	match indice:
-		0:
-			anunciar_ataque("INVESTIDA SOLAR — SAIA DA LINHA VERMELHA")
-			iniciar_investida_solar()
-		1:
-			anunciar_ataque("RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO")
-			criar_raio_solar(false)
-		2:
-			anunciar_ataque("PROMINÊNCIAS — CHAMAS CURVAS EM ALTERNÂNCIA")
-			lancar_prominencias(10)
-		3:
-			anunciar_ataque("CORONA — ATRAVESSE SOMENTE PELA LACUNA")
-			criar_corona(3, false)
-		_:
-			anunciar_ataque("MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO")
-			criar_manchas_solares(3)
-
-
-func executar_ataque_eclipse(indice: int, frenesi: bool) -> void:
-	match indice:
-		0:
-			anunciar_ataque("CRESCENTES INCENDIÁRIOS — ELES RETORNAM")
-			lancar_crescentes(5 if frenesi else 4, 0.20, true, true)
-		1:
-			anunciar_ataque("RAIO DA TOTALIDADE — A MIRA TRAVA ANTES DO DISPARO")
-			criar_raio_solar(true)
-		2:
-			anunciar_ataque("CHUVA DA TOTALIDADE — FUJA DAS MIRAS")
-			criar_chuva_meteoros(4 if frenesi else 3, Color(0.80, 0.32, 1.0), Dano * 0.30)
-		3:
-			criar_reflexos_astrais(frenesi)
-		4:
-			anunciar_ataque("REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS")
-			criar_reflexos_astrais(frenesi)
-		_:
-			anunciar_ataque("TOTALIDADE — SOBREVIVA E LEIA OS MARCADORES")
-			iniciar_totalidade(frenesi)
-
-
-func anunciar_ataque(texto: String) -> void:
-	if Rede.modo_multiplayer and not multiplayer.is_server():
-		return
-	subtitulo_alterado.emit(texto)
-	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
-		_receber_aviso_ataque.rpc(texto)
-	if multiplayer.has_multiplayer_peer():
-		_reproduzir_impacto_ataque.rpc()
-	_reproduzir_impacto_ataque()
-
-
-@rpc("authority", "call_remote", "reliable")
-func _receber_aviso_ataque(texto: String) -> void:
-	if multiplayer.is_server():
-		return
-	subtitulo_alterado.emit(texto)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _reproduzir_impacto_ataque() -> void:
-	var cena := get_tree().current_scene
-	if is_instance_valid(cena):
-		EfeitoCombateCena.criar(
-			cena,
-			global_position,
-			EfeitoCombate.Tipo.AVISO,
-			obter_cor_fase(),
-			1.72 if fase_atual == Fase.ECLIPSE else 1.45
-		)
-	var camera := get_viewport().get_camera_2d()
-	if is_instance_valid(camera) and camera.has_method("shake"):
-		camera.shake(5.5 if fase_atual == Fase.ECLIPSE else 3.5, true)
-	Global.vibrar_controle(0.48 if fase_atual == Fase.ECLIPSE else 0.34, 0.82, 0.12)
-
-
-func lancar_crescentes(quantidade: int, abertura: float, em_chamas: bool, boomerang: bool) -> void:
-	if not is_instance_valid(player):
-		return
-	tempo_ataque = maxf(tempo_ataque, 2.45 if boomerang else 2.05)
-	var base := global_position.direction_to(player.global_position).angle()
-	for indice in quantidade:
-		var desloc := (float(indice) - float(quantidade - 1) * 0.5) * abertura
-		var proj := ProjetilAstralCena.new() as ProjetilAstral
-		get_tree().current_scene.add_child(proj)
-		proj.configurar(
-			global_position,
-			Vector2.from_angle(base + desloc),
-			Dano * (0.30 if quantidade >= 5 else 0.34),
-			285.0 if em_chamas else 245.0,
-			Color(1.0, 0.42, 0.12) if em_chamas else Color(0.62, 0.78, 1.0),
-			ProjetilAstral.Tipo.CRESCENTE,
-			desloc * 0.18,
-			self,
-			boomerang,
-			Dano * 0.18 if em_chamas else 0.0,
-			2.4
-		)
-
-
-func ativar_mare_gravitacional() -> void:
-	gravidade_tempo = 3.8
-	gravidade_sinal *= -1.0
-	tempo_ataque = maxf(tempo_ataque, 4.45)
-	anunciar_ataque(
-		"MARÉ GRAVITACIONAL — PUXÃO PARA O CENTRO"
-		if gravidade_sinal > 0.0
-		else "MARÉ GRAVITACIONAL — REPULSÃO PARA FORA"
-	)
-	criar_campo_gravitacional(gravidade_tempo)
-	criar_corona(2, gravidade_sinal < 0.0)
-	criar_chuva_meteoros(2, Color(0.48, 0.66, 1.0), Dano * 0.40)
-
-
-func ativar_gravidade_eclipse() -> void:
-	gravidade_tempo = 3.35
-	gravidade_sinal = 1.0
-	tempo_ataque = maxf(tempo_ataque, 4.2)
-	anunciar_ataque("SINGULARIDADE SOLAR — O CAMPO PUXA E O RAIO TRAVA")
-	criar_campo_gravitacional(gravidade_tempo)
-
-
-func criar_campo_gravitacional(duracao: float) -> void:
-	var campo := IndicadorGravitacionalCena.new() as IndicadorGravitacional
-	get_tree().current_scene.add_child(campo)
-	campo.configurar(self, gravidade_sinal, duracao)
-
-
-func criar_chuva_meteoros(quantidade: int, nova_cor: Color, novo_dano: float) -> void:
-	if not is_instance_valid(player):
-		return
-	tempo_ataque = maxf(tempo_ataque, 3.25)
-	for indice in quantidade:
-		var perigo := PerigoAstralCena.new() as PerigoAstral
-		get_tree().current_scene.add_child(perigo, true)
-		var antecipacao: Vector2 = player.velocity * (0.18 + indice * 0.035)
-		var desloc := Vector2(randf_range(-160.0, 160.0), randf_range(-120.0, 120.0))
-		perigo.configurar_meteoro(player.global_position + antecipacao + desloc, novo_dano, nova_cor, 1.55 + indice * 0.16, 58.0)
-
-
-func criar_prisao_crescente() -> void:
-	tempo_ataque = maxf(tempo_ataque, 3.15)
-	var centro: Vector2 = (
-		player.global_position
-		if is_instance_valid(player)
-		else Global.obter_centro_area_visivel()
-	)
-	for indice in 3:
-		var onda := PerigoAstralCena.new() as PerigoAstral
-		get_tree().current_scene.add_child(onda)
-		onda.configurar_onda(centro, Dano * 0.34, Color(0.58, 0.74, 1.0), 250.0 + indice * 55.0, 35.0, 1.45 + indice * 0.18, randf_range(-PI, PI), 0.72)
-
-
-func criar_umbra(duracao: float, novo_dano: float, velocidade: float) -> void:
-	tempo_ataque = maxf(tempo_ataque, duracao + 0.45)
-	var umbra := PerigoAstralCena.new() as PerigoAstral
-	get_tree().current_scene.add_child(umbra)
-	umbra.configurar_umbra(
-		Global.obter_centro_area_visivel(), novo_dano, duracao,
-		randf_range(-PI, PI), velocidade
-	)
-
-
-func iniciar_investida_solar() -> void:
-	if not is_instance_valid(player):
-		return
-	token_acao += 1
-	var token := token_acao
-	direcao_investida = global_position.direction_to(player.global_position)
-	tempo_ataque = maxf(tempo_ataque, 2.65)
-	estado = Estado.AVISANDO
-	tempo_estado = 0.72
-	_ativar_investida_depois(token, fase_atual)
-
-
-func _ativar_investida_depois(token: int, fase_esperada: int) -> void:
-	await get_tree().create_timer(0.72, false).timeout
-	if morto or token != token_acao or fase_atual != fase_esperada or estado == Estado.TRANSICAO:
-		return
-	estado = Estado.INVESTINDO
-	tempo_estado = 0.82
-	Global.vibrar_controle(0.5, 0.85, 0.13)
-
-
-func criar_rastro_investida(delta: float) -> void:
-	if randf() > delta * 22.0:
-		return
-	EfeitoCombateCena.criar(get_tree().current_scene, global_position - direcao_investida * 42.0, EfeitoCombate.Tipo.RASTRO, Color(1.0, 0.36, 0.08), 1.0, -direcao_investida)
-
-
-func criar_raio_solar(eclipse: bool) -> void:
-	if not is_instance_valid(player):
-		return
-	var raio := RaioAstralCena.new() as RaioAstral
-	var tempo_carga := 2.35 if eclipse else 2.70
-	tempo_ataque = maxf(tempo_ataque, tempo_carga + 1.05)
-	get_tree().current_scene.add_child(raio, true)
-	raio.configurar(self, global_position.direction_to(player.global_position), Dano * (0.84 if eclipse else 0.76), Color(1.0, 0.34, 0.12) if eclipse else Color(1.0, 0.74, 0.18), tempo_carga, 0.10, 44.0 if eclipse else 38.0, true, 0.0, Dano * 0.23, 2.7)
-
-
-func lancar_prominencias(quantidade: int) -> void:
-	tempo_ataque = maxf(tempo_ataque, 2.35)
-	var base := global_position.direction_to(player.global_position).angle() if is_instance_valid(player) else 0.0
-	for indice in quantidade:
-		var proj := ProjetilAstralCena.new() as ProjetilAstral
-		get_tree().current_scene.add_child(proj)
-		var lateral := -1.0 if indice % 2 == 0 else 1.0
-		var angulo := base + (float(indice) - quantidade * 0.5) * 0.14
-		proj.configurar(global_position, Vector2.from_angle(angulo), Dano * 0.30, 250.0, Color(1.0, 0.43, 0.08), ProjetilAstral.Tipo.FOGO, lateral * 0.62, self, false, Dano * 0.20, 2.4)
-
-
-func criar_corona(quantidade: int, alternar_sentido: bool) -> void:
-	tempo_ataque = maxf(tempo_ataque, 2.8 + quantidade * 0.38)
-	for indice in quantidade:
-		var onda := PerigoAstralCena.new() as PerigoAstral
-		get_tree().current_scene.add_child(onda)
-		var contrair := alternar_sentido and indice % 2 == 1
-		var inicio := 720.0 if contrair else 40.0
-		var fim := 40.0 if contrair else 720.0
-		onda.configurar_onda(global_position, Dano * 0.46, obter_cor_fase(), inicio, fim, 1.52 + indice * 0.26, randf_range(-PI, PI), 0.82)
-
-
-func criar_manchas_solares(quantidade: int) -> void:
-	tempo_ataque = maxf(tempo_ataque, 4.0)
-	for indice in quantidade:
-		var orbe := OrbeAstralCena.new() as OrbeAstral
-		get_tree().current_scene.add_child(orbe, true)
-		orbe.configurar(self, TAU * indice / quantidade, Dano * 0.34)
-
-
-func criar_reflexos_astrais(frenesi: bool) -> void:
-	tempo_ataque = maxf(tempo_ataque, 3.2)
-	var origens: Array[Vector2] = [Vector2(155.0, 110.0), Vector2(805.0, 430.0)]
-	var quantidade := 4 if frenesi else 3
-	for origem in origens:
-		var direcao_base: Vector2 = origem.direction_to(player.global_position) if is_instance_valid(player) else Vector2.RIGHT
-		for indice in quantidade:
-			var proj := ProjetilAstralCena.new() as ProjetilAstral
-			get_tree().current_scene.add_child(proj)
-			var desloc := (indice - (quantidade - 1) * 0.5) * 0.18
-			proj.configurar(origem, direcao_base.rotated(desloc), Dano * 0.24, 255.0, Color(0.88, 0.38, 1.0), ProjetilAstral.Tipo.CORONA, desloc * 0.16, self)
-
-
-func iniciar_totalidade(frenesi: bool) -> void:
-	tempo_ataque = maxf(tempo_ataque, 7.25)
-	criar_chuva_meteoros(4 if frenesi else 3, Color(0.8, 0.32, 1.0), Dano * 0.36)
-	# O segundo raio aparece apenas no frenesi e respeita o intervalo global.
-	if frenesi and ataques_desde_raio_solar >= 3:
-		ataques_desde_raio_solar = 0
-		criar_raio_totalidade_atrasado(fase_atual, 2.45)
-
-
-func criar_raio_totalidade_atrasado(fase_esperada: int, atraso: float) -> void:
-	await get_tree().create_timer(atraso, false).timeout
-	if morto or fase_atual != fase_esperada or estado == Estado.TRANSICAO:
-		return
-	criar_raio_solar(true)
+	super._aplicar_snapshot_visual_boss(pacote)
+	if pacote.has("golpe"):
+		golpes.receber(pacote.golpe)
+	if pacote.has("sombra"):
+		golpes.receber_sombra(pacote.sombra)
+	if pacote.has("cinema"):
+		var dados: Array = pacote.cinema
+		var anterior := destino_fase
+		destino_fase = dados[0]
+		tempo_cinema = dados[1]
+		inicio_cinema = dados[2]
+		centro_cinema = dados[3]
+		if anterior != destino_fase:
+			impacto_fusao = false
+			proteger_player(destino_fase != 0)
+		if destino_fase:
+			desenhar_cinema()
+		elif anterior:
+			visual_fase.position = Vector2.ZERO
+			remover_overlay_transicao()
+			atualizar_visual_fase()
+	queue_redraw()
 
 
 func iniciar_transicao(proxima_fase: int) -> void:
-	token_transicao += 1
-	token_acao += 1
+	golpes.encerrar()
+	impacto_fusao = false
+	destino_fase = proxima_fase
+	tempo_cinema = 0
 	estado = Estado.TRANSICAO
 	velocity = Vector2.ZERO
-	limpar_ataques_astrais()
-	curar_player_na_transicao()
-	if proxima_fase == Fase.SOL:
-		_transicao_para_sol(token_transicao)
-	else:
-		iniciar_cinematica_eclipse(token_transicao)
-
-
-func _transicao_para_sol(token: int) -> void:
-	progresso_fusao = 0.0
-	preparar_troca_lua_sol()
-	# A Lua abandona a arena por completo antes de o Sol entrar. Assim a troca
-	# parece a chegada de outro astro, e não uma simples substituição de textura.
-	var saida_lua := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	saida_lua.tween_property(
-		visual_lua_transicao,
-		"global_position",
-		Vector2(-MARGEM_FORA_TELA, global_position.y),
-		0.82
-	)
-	await saida_lua.finished
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-	await get_tree().create_timer(0.22, false).timeout
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-	desenhar_corona_transicao = true
-	var entrada_sol := create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	entrada_sol.set_parallel(true)
-	entrada_sol.tween_property(visual_sol_transicao, "global_position", global_position, 1.05)
-	entrada_sol.tween_property(visual_sol_transicao, "rotation", 0.0, 1.05)
-	entrada_sol.tween_property(visual_sol_transicao, "scale", Vector2.ONE * 0.51, 1.05)
-	await entrada_sol.finished
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-	concluir_transicao_para_sol()
-
-
-func concluir_transicao_para_sol() -> void:
-	token_transicao += 1
-	fase_atual = Fase.SOL
-	VidaMaxima = vidas_fases[1]
-	Vida = VidaMaxima
-	Velocidade = 118.0
-	estado = Estado.MOVENDO
-	tempo_ataque = 1.35
-	ultimo_ataque = -1
-	ocultar_visuais_transicao()
-	atualizar_visual_fase()
-	fase_alterada.emit(fase_atual)
-	subtitulo_alterado.emit(obter_subtitulo_boss())
-	vida_alterada.emit(Vida, VidaMaxima)
-	queue_redraw()
-
-
-func iniciar_cinematica_eclipse(token: int) -> void:
-	progresso_fusao = 0.0
+	inicio_cinema = global_position
+	var area := Global.obter_retangulo_area_visivel()
+	centro_cinema = area.position + area.size * Vector2(0.5, 188.0 / 540.0)
+	for piloto in golpes.pilotos_vivos():
+		if piloto.has_method("conceder_cura_rede"):
+			piloto.conceder_cura_rede(float(piloto.VIDA_MAXIMA) * 0.10)
+		elif piloto.has_method("curar"):
+			piloto.curar(float(piloto.VIDA_MAXIMA) * 0.10)
 	proteger_player(true)
-	velocity = Vector2.ZERO
-	# O Sol para onde está. O nó do boss é reposicionado sem alterar a imagem,
-	# pois a cópia solar conserva a posição global anterior durante a cinemática.
-	var posicao_sol_inicial := global_position
-	global_position = CENTRO_FUSAO
-	preparar_fusao(posicao_sol_inicial)
-	await get_tree().create_timer(0.42, false).timeout
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-
-	# A Lua que saiu na troca anterior retorna pela esquerda. Só depois os dois
-	# astros ocupam posições lado a lado, deixando a união fácil de acompanhar.
-	var encontro := create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	encontro.set_parallel(true)
-	encontro.tween_property(visual_lua_transicao, "global_position", POSICAO_LUA_FUSAO, 1.25)
-	encontro.tween_property(visual_sol_transicao, "global_position", POSICAO_SOL_FUSAO, 1.25)
-	encontro.tween_property(visual_lua_transicao, "rotation", -0.08, 1.25)
-	encontro.tween_property(visual_sol_transicao, "rotation", 0.08, 1.25)
-	await encontro.finished
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-	await get_tree().create_timer(0.48, false).timeout
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-
-	criar_overlay_transicao()
-	# A Lua fica à frente do Sol, como o corpo que encobre o disco solar em um
-	# eclipse real. Nenhum dos dois some durante a aproximação.
-	visual_sol_transicao.z_index = 6
-	visual_lua_transicao.z_index = 7
-	var uniao := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	uniao.set_parallel(true)
-	uniao.tween_property(visual_lua_transicao, "global_position", CENTRO_FUSAO, 2.65)
-	uniao.tween_property(visual_sol_transicao, "global_position", CENTRO_FUSAO, 2.65)
-	uniao.tween_property(visual_lua_transicao, "scale", Vector2.ONE * 0.47, 2.65)
-	uniao.tween_property(visual_sol_transicao, "scale", Vector2.ONE * 0.47, 2.65)
-	uniao.tween_property(visual_lua_transicao, "rotation", -0.32, 2.65)
-	uniao.tween_property(visual_sol_transicao, "rotation", 0.32, 2.65)
-	# A escuridão agora é derivada do mesmo progresso que sobrepõe os astros.
-	# Assim a tela escurece conforme a Lua cobre o Sol, não por um fade separado.
-	uniao.tween_method(atualizar_fusao_e_escuridao, 0.0, 1.0, 2.65)
-	await uniao.finished
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-
-	# O Eclipse aparece sobre os dois discos antes que eles desapareçam. A troca
-	# ocorre por sobreposição e nunca produz um quadro vazio.
-	await piscar_eclipse_no_escuro(token)
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-
-	# O Eclipse real aparece ainda sob a escuridão. A volta da imagem e a onda
-	# de choque distorcida acontecem juntas; a luta só é liberada ao final.
-	preparar_dados_fase_eclipse()
-	var retorno := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	retorno.set_parallel(true)
-	retorno.tween_method(atualizar_escuridao_shader, 0.97, 0.0, 0.92)
-	retorno.tween_method(atualizar_onda_shader, 0.015, 1.0, 0.92)
-	retorno.tween_method(atualizar_forca_onda_shader, 1.0, 0.0, 0.92)
-	retorno.tween_method(atualizar_flash_shader, 0.72, 0.0, 0.34)
-	Global.vibrar_controle(0.95, 1.0, 0.42)
-	var camera_transicao := get_tree().get_first_node_in_group("camera") as Camera2D
-	if is_instance_valid(camera_transicao) and camera_transicao.has_method("shake"):
-		camera_transicao.shake(18.0, true)
-	await retorno.finished
-	if morto:
-		ocultar_visuais_transicao()
-		return
-	if token != token_transicao:
-		return
-	finalizar_dados_fase_eclipse()
-	remover_overlay_transicao()
-
-
-func concluir_transicao_para_eclipse() -> void:
-	token_transicao += 1
-	preparar_dados_fase_eclipse()
-	finalizar_dados_fase_eclipse()
-	remover_overlay_transicao_gradual()
-
-
-func preparar_dados_fase_eclipse() -> void:
-	fase_atual = Fase.ECLIPSE
-	VidaMaxima = vidas_fases[2]
-	Vida = VidaMaxima
-	Velocidade = 128.0
-	atualizar_visual_fase()
-	# O corpo definitivo já nasce luminoso sob a tela escura; a onda de choque
-	# não é mais responsável por "ligar" o neon depois.
-	visual_fase.self_modulate = Color(1.92, 1.58, 2.14, 1.0)
-	estado = Estado.TRANSICAO
-	velocity = Vector2.ZERO
-
-
-func finalizar_dados_fase_eclipse() -> void:
-	token_transicao += 1
-	estado = Estado.MOVENDO
-	tempo_ataque = 1.15
-	ultimo_ataque = -1
-	proteger_player(false)
-	fase_alterada.emit(fase_atual)
-	subtitulo_alterado.emit(obter_subtitulo_boss())
-	vida_alterada.emit(Vida, VidaMaxima)
-	queue_redraw()
-
-
-func curar_player_na_transicao() -> void:
-	if not is_instance_valid(player) or not player.has_method("curar"):
-		return
-	var vida_maxima = player.get("VIDA_MAXIMA")
-	if vida_maxima != null:
-		player.curar(float(vida_maxima) * 0.10)
+	desenhar_cinema()
 
 
 func proteger_player(ativar: bool) -> void:
-	if not is_instance_valid(player):
-		return
 	if ativar:
-		invulnerabilidade_anterior = bool(player.get("invulneravel_por_habilidade"))
-		player.set("invulneravel_por_habilidade", true)
+		for piloto in golpes.pilotos_vivos():
+			if Rede.modo_multiplayer and not piloto.is_multiplayer_authority():
+				continue
+			if "protegido_por_sizigia" in piloto and not protegidos.has(piloto):
+				protegidos.append(piloto)
+				piloto.protegido_por_sizigia = true
 	else:
-		player.set("invulneravel_por_habilidade", invulnerabilidade_anterior)
+		for piloto in protegidos:
+			if is_instance_valid(piloto):
+				piloto.protegido_por_sizigia = false
+		protegidos.clear()
+
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if destino_fase == 0:
+		return
+	tempo_cinema += delta
+	desenhar_cinema()
+	if Rede.modo_multiplayer and not multiplayer.is_server():
+		return
+	if destino_fase == Fase.SOL and tempo_cinema >= 2.65:
+		concluir_transicao_para_sol()
+	elif destino_fase == Fase.ECLIPSE and tempo_cinema >= 4.9:
+		concluir_transicao_para_eclipse()
+
+
+func desenhar_cinema() -> void:
+	var area := Global.obter_retangulo_area_visivel()
+	var esquerda := Vector2(area.position.x - MARGEM_FORA_TELA, centro_cinema.y)
+	var direita := Vector2(area.end.x + MARGEM_FORA_TELA, centro_cinema.y)
+	var t := tempo_cinema
+	visual_fase.visible = false
+	visual_lua_transicao.visible = true
+	visual_sol_transicao.visible = true
+	desenhar_corona_transicao = true
+	var lua := visual_lua_transicao
+	var sol := visual_sol_transicao
+	if destino_fase == Fase.SOL:
+		var partida := smoothstep(0.25, 1.2, t)
+		lua.global_position = inicio_cinema.lerp(esquerda, partida) + Vector2.UP * sin(PI * partida) * 54.0
+		lua.scale = Vector2(0.55 + partida * 0.20, 0.55 - partida * 0.26)
+		lua.rotation = -partida * 0.45
+		sol.global_position = direita.lerp(inicio_cinema, smoothstep(1.25, 2.6, t))
+	else:
+		if not is_instance_valid(overlay_transicao):
+			criar_overlay_transicao()
+		var recuo := smoothstep(0.08, 0.9, t)
+		var encontro := smoothstep(0.95, 2.2, t)
+		var uniao := smoothstep(2.25, 3.85, t)
+		var asa := minf(area.size.x * 0.18, 145.0)
+		var lateral := Vector2(asa * (1.0 - uniao), -sin(PI * uniao) * 42.0)
+		sol.global_position = inicio_cinema.lerp(direita, recuo).lerp(centro_cinema + lateral, encontro)
+		lua.global_position = esquerda.lerp(centro_cinema - lateral, encontro)
+		lua.scale = Vector2.ONE * 0.51
+		lua.rotation = -uniao * 0.28
+		sol.rotation = recuo * (1.0 - encontro) * 0.8
+		progresso_fusao = uniao
+		material_transicao.set_shader_parameter("centro", (get_canvas_transform() * centro_cinema) / get_viewport_rect().size)
+		var retorno := smoothstep(3.96, 4.9, t)
+		atualizar_escuridao_shader(uniao * 0.89 * (1.0 - retorno))
+		atualizar_flash_shader(0.74 * (1.0 - smoothstep(3.89, 4.10, t)) if t >= 3.85 else 0.0)
+		atualizar_onda_shader(retorno)
+		atualizar_forca_onda_shader(1.0 - retorno)
+		if t >= 3.85 and not impacto_fusao:
+			impacto_fusao = true
+			preload("res://Scripts/AudioCombate.gd").tocar(self, &"explosoes", 0.0, 0.68, 0.68, -7.0)
+			Global.vibrar_controle(0.65, 0.85, 0.20)
+			var camera_transicao := get_viewport().get_camera_2d()
+			if is_instance_valid(camera_transicao) and camera_transicao.has_method("shake"):
+				camera_transicao.shake(12.0, true)
+		if t >= 3.89:
+			lua.hide()
+			sol.hide()
+			visual_fase.texture = TEXTURA_ECLIPSE
+			visual_fase.scale = Vector2.ONE * (0.53 + 0.045 * (1.0 - retorno))
+			visual_fase.global_position = centro_cinema
+			visual_fase.show()
+	queue_redraw()
+
+
+func concluir_transicao_para_sol() -> void:
+	finalizar_fase(Fase.SOL)
+
+
+func concluir_transicao_para_eclipse() -> void:
+	global_position = centro_cinema
+	visual_fase.position = Vector2.ZERO
+	finalizar_fase(Fase.ECLIPSE)
+
+
+func finalizar_fase(fase: int) -> void:
+	destino_fase = 0
+	remover_overlay_transicao()
+	# Preserva os multiplicadores de setor e da arena aplicados ao chefe na criação.
+	Dano *= float(DANO_RELATIVO_FASE[fase - 1]) / float(DANO_RELATIVO_FASE[fase_atual - 1])
+	fase_atual = fase
+	VidaMaxima = vidas_fases[fase - 1]
+	Vida = VidaMaxima
+	Velocidade = 118.0 if fase == Fase.SOL else 128.0
+	estado = Estado.MOVENDO
+	passo_rotacao = 0
+	tempo_ataque = 1.25
+	proteger_player(false)
+	atualizar_visual_fase()
+	fase_alterada.emit(fase_da_barra())
+	subtitulo_alterado.emit(obter_subtitulo_boss())
+	vida_alterada.emit(Vida, VidaMaxima)
 
 
 func criar_overlay_transicao() -> void:
@@ -759,7 +382,7 @@ func criar_overlay_transicao() -> void:
 	tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	material_transicao = ShaderMaterial.new()
 	material_transicao.shader = SHADER_TRANSICAO
-	material_transicao.set_shader_parameter("centro", Vector2(0.5, 188.0 / 540.0))
+
 	tela.material = material_transicao
 	overlay_transicao.add_child(tela)
 	tela.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -779,14 +402,6 @@ func atualizar_escuridao_shader(valor: float) -> void:
 		material_transicao.set_shader_parameter("escuridao", valor)
 
 
-func atualizar_fusao_e_escuridao(valor: float) -> void:
-	progresso_fusao = clampf(valor, 0.0, 1.0)
-	# Pouca sombra enquanto ainda estão lado a lado; a totalidade cresce rápido
-	# quando os discos realmente começam a se sobrepor.
-	var cobertura := smoothstep(0.06, 0.96, progresso_fusao)
-	atualizar_escuridao_shader(cobertura * 0.97)
-
-
 func atualizar_forca_onda_shader(valor: float) -> void:
 	if is_instance_valid(material_transicao):
 		material_transicao.set_shader_parameter("onda_forca", valor)
@@ -797,41 +412,12 @@ func atualizar_flash_shader(valor: float) -> void:
 		material_transicao.set_shader_parameter("flash", valor)
 
 
-func remover_overlay_transicao_gradual() -> void:
-	if not is_instance_valid(overlay_transicao):
-		return
-	var camada := overlay_transicao
-	var tela := camada.get_child(0) as ColorRect
-	var tween := create_tween()
-	if is_instance_valid(tela):
-		tween.tween_property(tela, "modulate:a", 0.0, 0.7)
-	tween.tween_callback(camada.queue_free)
-	overlay_transicao = null
-	material_transicao = null
-
-
 func remover_overlay_transicao() -> void:
 	if is_instance_valid(overlay_transicao):
 		overlay_transicao.queue_free()
 	overlay_transicao = null
 	material_transicao = null
 	ocultar_visuais_transicao()
-
-
-func limpar_ataques_astrais() -> void:
-	for grupo in [
-		&"projetil_astral", &"raio_astral", &"perigo_astral",
-		&"mancha_solar", &"campo_gravitacional"
-	]:
-		for node in get_tree().get_nodes_in_group(grupo):
-			if is_instance_valid(node):
-				node.queue_free()
-
-
-func _process(delta: float) -> void:
-	super._process(delta)
-	if Rede.modo_multiplayer and not multiplayer.is_server() and not morto:
-		atualizar_colisao_visual()
 
 
 func atualizar_colisao_visual() -> void:
@@ -859,24 +445,24 @@ func morrer() -> void:
 		1.04,
 		0.0
 	)
-	limpar_ataques_astrais()
+	golpes.encerrar()
 	proteger_player(false)
 	remover_overlay_transicao()
 	super.morrer()
 
 
 func _exit_tree() -> void:
-	limpar_ataques_astrais()
+	golpes.encerrar()
 	if fase_atual == Fase.ECLIPSE or estado == Estado.TRANSICAO:
 		proteger_player(false)
 	remover_overlay_transicao()
-	for sprite in [visual_lua_transicao, visual_sol_transicao, visual_eclipse_transicao]:
+	for sprite in [visual_lua_transicao, visual_sol_transicao]:
 		if is_instance_valid(sprite):
 			sprite.queue_free()
 
 
 func _draw() -> void:
-	if fase_atual == Fase.SOL and visual_fase.visible:
+	if destino_fase == 0 and fase_atual == Fase.SOL and visual_fase.visible:
 		desenhar_corona_sol(Vector2.ZERO, 1.0, 1.0)
 	if (
 		desenhar_corona_transicao
@@ -884,9 +470,22 @@ func _draw() -> void:
 		and visual_sol_transicao.visible
 	):
 		desenhar_corona_sol(to_local(visual_sol_transicao.global_position), 0.96, 0.82)
-	if estado == Estado.AVISANDO:
-		var aviso := Color(1.0, 0.32, 0.08, 0.82)
-		draw_dashed_line(Vector2.ZERO, direcao_investida * 850.0, aviso, 3.0, 14.0, true)
+	if destino_fase:
+		var t := tempo_cinema
+		var solar := destino_fase == Fase.ECLIPSE
+		var centro := to_local(inicio_cinema)
+		var partida := clampf(t / 1.05, 0, 1)
+		for i in 12:
+			var eixo := Vector2.from_angle(TAU * i / 12.0 + partida * 0.45)
+			var ponta := centro + eixo * (52 + partida * 98)
+			var cor := Color(1, 0.62, 0.20, 1.0 - partida) if solar else Color(0.64, 0.85, 1, 1.0 - partida)
+			draw_line(ponta - eixo * (4 + partida * 15), ponta, cor, 2.5, true)
+		if solar and t >= 2.2 and t < 4.4:
+			var uniao := smoothstep(2.2, 3.85, t)
+			var cor := Color(1, 0.80, 0.51, uniao * (1.0 - smoothstep(3.85, 4.4, t)))
+			for i in 3:
+				var a := i * TAU / 3 + uniao * 2.8
+				draw_arc(to_local(centro_cinema), 106 - uniao * 43 + i * 3, a, a + 1.8, 32, cor, 2, true)
 
 
 func atualizar_visual_fase() -> void:
@@ -929,16 +528,6 @@ func atualizar_animacao_visual(delta: float) -> void:
 		visual_fase.rotation -= 0.10 * delta
 
 
-func desenhar_textura_centralizada(
-	textura: Texture2D,
-	posicao: Vector2,
-	escala: float,
-	cor: Color = Color.WHITE
-) -> void:
-	var tamanho := textura.get_size() * escala
-	draw_texture_rect(textura, Rect2(posicao - tamanho * 0.5, tamanho), false, cor)
-
-
 func desenhar_corona_sol(posicao: Vector2, escala: float, alpha: float) -> void:
 	# Recupera a animação geométrica antiga: raios independentes, tamanhos
 	# oscilantes, dois sentidos de rotação e halo pulsante. O centro é o SVG novo.
@@ -974,7 +563,7 @@ func desenhar_corona_sol(posicao: Vector2, escala: float, alpha: float) -> void:
 func criar_visuais_transicao() -> void:
 	visual_lua_transicao = criar_sprite_transicao(TEXTURA_LUA, 0.55)
 	visual_sol_transicao = criar_sprite_transicao(TEXTURA_SOL, 0.51)
-	visual_eclipse_transicao = criar_sprite_transicao(TEXTURA_ECLIPSE, 0.53)
+	visual_lua_transicao.z_index = 7
 
 
 func criar_sprite_transicao(textura: Texture2D, escala: float) -> Sprite2D:
@@ -989,80 +578,9 @@ func criar_sprite_transicao(textura: Texture2D, escala: float) -> Sprite2D:
 	return sprite
 
 
-func preparar_troca_lua_sol() -> void:
-	visual_fase.visible = false
-	ocultar_visuais_transicao()
-	visual_lua_transicao.global_position = global_position
-	visual_lua_transicao.scale = Vector2.ONE * 0.55
-	visual_lua_transicao.rotation = 0.0
-	visual_lua_transicao.visible = true
-	visual_sol_transicao.global_position = Vector2(
-		Global.obter_retangulo_area_visivel().end.x + MARGEM_FORA_TELA,
-		global_position.y
-	)
-	visual_sol_transicao.scale = Vector2.ONE * 0.44
-	visual_sol_transicao.rotation = 0.34
-	visual_sol_transicao.visible = true
-
-
-func preparar_fusao(posicao_sol_inicial: Vector2) -> void:
-	visual_fase.visible = false
-	ocultar_visuais_transicao()
-	visual_sol_transicao.global_position = posicao_sol_inicial
-	visual_sol_transicao.scale = Vector2.ONE * 0.51
-	visual_sol_transicao.rotation = 0.0
-	visual_sol_transicao.modulate = Color.WHITE
-	visual_sol_transicao.z_index = 6
-	visual_sol_transicao.visible = true
-	visual_lua_transicao.global_position = Vector2(-MARGEM_FORA_TELA, CENTRO_FUSAO.y)
-	visual_lua_transicao.scale = Vector2.ONE * 0.55
-	visual_lua_transicao.rotation = -0.30
-	visual_lua_transicao.modulate = Color.WHITE
-	visual_lua_transicao.z_index = 7
-	visual_lua_transicao.visible = true
-	desenhar_corona_transicao = true
-
-
-func piscar_eclipse_no_escuro(token: int) -> void:
-	if is_instance_valid(overlay_transicao) and visual_eclipse_transicao.get_parent() != overlay_transicao:
-		visual_eclipse_transicao.reparent(overlay_transicao)
-	visual_eclipse_transicao.global_position = CENTRO_FUSAO
-	visual_eclipse_transicao.scale = Vector2.ONE * 0.45
-	visual_eclipse_transicao.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	visual_eclipse_transicao.self_modulate = Color(2.15, 1.62, 2.35, 1.0)
-	visual_eclipse_transicao.z_index = 8
-	visual_eclipse_transicao.visible = true
-	var brilho := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	brilho.set_parallel(true)
-	brilho.tween_property(visual_eclipse_transicao, "scale", Vector2.ONE * 0.61, 0.30)
-	brilho.tween_property(visual_eclipse_transicao, "modulate:a", 1.0, 0.10)
-	brilho.tween_property(visual_lua_transicao, "modulate:a", 0.0, 0.14)
-	brilho.tween_property(visual_sol_transicao, "modulate:a", 0.0, 0.14)
-	brilho.tween_method(atualizar_flash_shader, 0.0, 0.48, 0.10)
-	await brilho.finished
-	if morto or token != token_transicao:
-		return
-	visual_lua_transicao.visible = false
-	visual_sol_transicao.visible = false
-	desenhar_corona_transicao = false
-	var acomodar := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	acomodar.set_parallel(true)
-	acomodar.tween_property(visual_eclipse_transicao, "scale", Vector2.ONE * 0.53, 0.42)
-	acomodar.tween_property(
-		visual_eclipse_transicao,
-		"self_modulate",
-		Color(1.86, 1.52, 2.08, 1.0),
-		0.42
-	)
-	acomodar.tween_method(atualizar_flash_shader, 0.48, 0.0, 0.42)
-	await acomodar.finished
-	await get_tree().create_timer(0.36, false).timeout
-
-
 func ocultar_visuais_transicao() -> void:
 	desenhar_corona_transicao = false
-	for sprite in [visual_lua_transicao, visual_sol_transicao, visual_eclipse_transicao]:
+	for sprite in [visual_lua_transicao, visual_sol_transicao]:
 		if is_instance_valid(sprite):
 			sprite.visible = false
 	queue_redraw()
-

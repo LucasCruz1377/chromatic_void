@@ -271,7 +271,10 @@ func _dar_ponto() -> void:
 
 func _subir_niveis(quantidade: int) -> void:
 	for _indice in range(maxi(quantidade, 0)):
-		player.subir_de_nivel()
+		if Rede.modo_multiplayer:
+			batalha.call("_avancar_progressao_equipe", player.xp_necessario, 0.0)
+		else:
+			player.subir_de_nivel()
 	atualizar_status("Nível ajustado")
 
 
