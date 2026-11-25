@@ -63,19 +63,30 @@ func _ready() -> void:
 	golpes.encerrar()
 	golpes.iniciar(golpes.Golpe.METEOROS)
 	var sala := Global.obter_retangulo_area_visivel()
-	var setores := {}
-	for pos in golpes.pontos:
-		var celula := Vector2i((pos - sala.position) / sala.size * Vector2(4, 3))
-		setores[celula] = true
-	verificar(setores.size() == 12, "a chuva deixou parte da sala sem meteoros")
+	var primeira_mira := golpes.pontos[0]
+	verificar(primeira_mira == jogador.global_position and golpes.pontos.size() == 4, "a primeira leva não mirou o piloto")
+	golpes.avancar(0.50)
+	verificar(jogador.vida == vida_inicial, "o aviso causou dano antes do impacto")
 	var limite: float = golpes.especial.raios[0]
 	jogador.global_position = golpes.pontos[0] + Vector2.RIGHT * (limite + 1)
-	golpes.avancar(golpes.instante_impacto(0) + 0.01)
+	golpes.avancar(golpes.instante_impacto(0) - golpes.tempo + 0.01)
 	verificar(jogador.vida == vida_inicial, "meteoro causou dano fora do círculo")
 	limite = golpes.especial.raios[1]
 	jogador.global_position = golpes.pontos[1] + Vector2.RIGHT * (limite - 1)
 	golpes.avancar(golpes.instante_impacto(1) - golpes.tempo + 0.01)
 	verificar(jogador.vida < vida_inicial, "meteoro não atingiu o interior do círculo")
+	verificar(golpes.pontos[0] == primeira_mira and golpes.pontos[4] != primeira_mira, "o alvo se moveu com o aviso já visível")
+	var vida_apos := jogador.vida
+	golpes.avancar(0.03)
+	verificar(jogador.vida == vida_apos, "uma explosão aplicou dano duas vezes")
+	for i in 108:
+		golpes.avancar(1.0 / 60.0)
+	var setores := {}
+	for i in golpes.pontos.size():
+		if i % 4 != 0:
+			var celula := Vector2i((golpes.pontos[i] - sala.position) / sala.size * Vector2(3, 4))
+			setores[celula] = true
+	verificar(golpes.pontos.size() == 16 and setores.size() == 12, "a chuva deixou setores sem cobertura")
 	golpes.encerrar()
 	var nave := preload("res://Entities/player.tscn").instantiate() as Player
 	add_child(nave)
@@ -168,6 +179,16 @@ func _ready() -> void:
 	verificar(boss.visual_fase.texture == boss.TEXTURA_ECLIPSE, "o Eclipse 01 não foi aplicado ao boss")
 	verificar(not jogador.protegido_por_sizigia, "a proteção da cinemática não terminou")
 	verificar(is_equal_approx(boss.Vida, boss.obter_vida_maxima_atual()), "o Eclipse não recebeu sua barra independente")
+	var vida_eclipse := boss.Vida
+	boss.Vida = boss.VidaMaxima * 0.24
+	golpes.iniciar(golpes.Golpe.METEOROS)
+	for leva in 4:
+		golpes.avancar(1.2) # Um quadro atrasado não deve encurtar os avisos seguintes.
+		var ultimo := golpes.pontos.size() - 4
+		verificar(is_equal_approx(golpes.instante_impacto(ultimo) - golpes.tempo, 0.93), "aviso da Eclipse foi encurtado")
+	verificar(golpes.pontos.size() == 20, "faltou a quinta leva da Eclipse")
+	golpes.encerrar()
+	boss.Vida = vida_eclipse
 	golpes.iniciar(golpes.Golpe.TOTALIDADE)
 	for i in 340:
 		golpes.avancar(1.0 / 60.0)

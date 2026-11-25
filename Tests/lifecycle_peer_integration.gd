@@ -3,6 +3,7 @@ extends Node
 var papel := ""
 var arena: Node2D
 var prontos: Dictionary = {}
+var assinaturas_chuva := {}
 var sizigia_confirmada: Dictionary = {}
 var pausas_confirmadas: Dictionary = {}
 var iniciar_saida := false
@@ -326,9 +327,12 @@ func verificar_sizigia_rede() -> bool:
 	if host:
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.METEOROS)
 	if not await esperar(func() -> bool:
-		return boss.golpes.tipo == SizigiaFinalController.Golpe.METEOROS and boss.golpes.especial.quedas.size() == 12
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.METEOROS and boss.golpes.especial.quedas.size() >= 12
 	):
 		return false
+	# As três primeiras levas já estão fixas nos quatro peers, mesmo que a próxima chegue durante a barreira.
+	var assinatura := hash([boss.golpes.pontos.slice(0, 12), boss.golpes.especial.raios.slice(0, 12),
+		boss.golpes.especial.quedas.slice(0, 12), boss.golpes.especial.avisos.slice(0, 3)])
 	if papel == "client_a":
 		var tiro = preload("res://Entities/fireball.tscn").instantiate()
 		tiro.position = boss.golpes.sombra.global_position
@@ -341,7 +345,7 @@ func verificar_sizigia_rede() -> bool:
 		return is_instance_valid(boss.golpes.sombra) and is_equal_approx(boss.golpes.sombra.vida, boss.VidaMaxima * 0.2 - 3.0)
 	):
 		return false
-	if not await confirmar_sizigia(4):
+	if not await confirmar_sizigia(4, assinatura):
 		return false
 	if host:
 		boss.tomarDano(boss.Vida)
@@ -382,12 +386,14 @@ func verificar_sizigia_rede() -> bool:
 	return await esperar(func() -> bool: return not arena.has_node("SizigiaCoop"))
 
 
-func confirmar_sizigia(etapa: int) -> bool:
+func confirmar_sizigia(etapa: int, assinatura: int = 0) -> bool:
 	if papel != "host":
-		_confirmar_sizigia.rpc_id(1, etapa)
+		_confirmar_sizigia.rpc_id(1, etapa, assinatura)
 		return true
 	return await esperar(func() -> bool:
 		for peer in multiplayer.get_peers():
+			if etapa == 4 and assinaturas_chuva.get(peer) != assinatura:
+				return false
 			if int(sizigia_confirmada.get(peer, 0)) < etapa:
 				return false
 		return multiplayer.get_peers().size() == 3
@@ -395,7 +401,9 @@ func confirmar_sizigia(etapa: int) -> bool:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _confirmar_sizigia(etapa: int) -> void:
+func _confirmar_sizigia(etapa: int, assinatura: int) -> void:
+	if etapa == 4:
+		assinaturas_chuva[multiplayer.get_remote_sender_id()] = assinatura
 	sizigia_confirmada[multiplayer.get_remote_sender_id()] = etapa
 
 

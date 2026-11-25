@@ -49,7 +49,13 @@ const MATERIALIZACAO := 0.7
 const VIDA_DARDO := 1.55
 const VELOCIDADE_DARDO := 315.0
 const INTERVALO_TIRO_CLONE := 1.0 / 3.0
-const AVISO_METEORO := 1.35
+const ALVO_METEORO := preload("res://FX/AlvoMeteoro.svg")
+const INTERVALO_CHUVA := 0.87
+const INTERVALO_IMPACTOS := 0.10
+const ONDA_IMPACTO := 0.30
+var linhas_chuva := PackedInt32Array()
+var area_chuva := Rect2()
+var vez_meteoro := 0
 var historicos_tiros := {}
 var proximo_tiro := {}
 var gatilhos := {}
@@ -262,23 +268,53 @@ func iniciar(escolha: int) -> void:
 
 
 func preparar_chuva(area: Rect2) -> void:
-	var linhas := 4 if boss.fase_atual == 3 and boss.Vida < boss.VidaMaxima * 0.25 else 3
-	var celula := area.size / Vector2(4, linhas)
-	var ordem := range(4 * linhas)
-	ordem.shuffle()
-	var quedas := PackedVector2Array()
-	var raios := PackedFloat32Array()
-	for indice: int in ordem:
-		var setor := Vector2(indice % 4, floori(indice / 4.0))
-		var dentro := Vector2(randf_range(0.35, 0.65), randf_range(0.35, 0.65))
-		pontos.append(area.position + (setor + dentro) * celula)
-		quedas.append(Vector2(randf_range(-145, 145), -260))
-		raios.append(minf(randf_range(48, 64), minf(celula.x, celula.y) * 0.32))
-	especial = {"quedas": quedas, "raios": raios}
+	area_chuva = area
+	var eclipse: bool = boss.fase_atual == 3
+	var levas := 5 if eclipse and boss.Vida < boss.VidaMaxima * 0.25 else 4
+	especial = {"raios": PackedFloat32Array(), "quedas": PackedVector2Array(),
+		"avisos": PackedFloat32Array(), "antecedencia": 0.93 if eclipse else 1.10, "levas": levas}
+	# Em cada leva cai uma pedra em cada coluna. Todas as células recebem uma queda.
+	linhas_chuva.resize(levas * 3)
+	for coluna in 3:
+		var linhas := range(levas)
+		linhas.shuffle()
+		for leva in levas:
+			linhas_chuva[leva * 3 + coluna] = linhas[leva]
+	marcar_leva()
+
+
+func marcar_leva() -> void:
+	var leva: int = especial.avisos.size()
+	especial.avisos.append(tempo)
+	var celula := area_chuva.size / Vector2(3, especial.levas)
+	var alvo := area_chuva.get_center()
+	if not pilotos.is_empty():
+		var piloto := pilotos[vez_meteoro % pilotos.size()]
+		vez_meteoro += 1
+		alvo = piloto.global_position
+		if piloto is CharacterBody2D:
+			alvo += (piloto.velocity * 0.18).limit_length(36.0)
+	# O alvo fica fixo desde o primeiro quadro do aviso. Mesmo um piloto na borda pode sair para dentro.
+	pontos.append(alvo.clamp(area_chuva.position, area_chuva.end))
+	for coluna in 3:
+		var linha := linhas_chuva[leva * 3 + coluna]
+		var deslocamento := Vector2(randf_range(0.3, 0.7), randf_range(0.3, 0.7))
+		pontos.append(area_chuva.position + (Vector2(coluna, linha) + deslocamento) * celula)
+	for i in 4:
+		especial.quedas.append(Vector2(randf_range(-145, 145), -260))
+		var raio := 49.0 if i == 0 else randf_range(47, 58)
+		especial.raios.append(minf(raio, minf(celula.x, celula.y) * 0.43))
 
 
 func instante_impacto(i: int) -> float:
-	return AVISO_METEORO + floori(i / 4.0) * 0.93 + (i % 4) * 0.13
+	return especial.avisos[i >> 2] + especial.antecedencia + (i % 4) * INTERVALO_IMPACTOS
+
+
+func duracao_golpe() -> float:
+	if tipo == Golpe.METEOROS:
+		# Se o host atrasar um quadro, nunca cortar o aviso ou a última explosão.
+		return maxf(DURACOES[tipo], instante_impacto(pontos.size() - 1) + ONDA_IMPACTO)
+	return DURACOES[tipo]
 
 
 func snapshot() -> Array:
@@ -326,7 +362,7 @@ func receber(s: Array) -> void:
 
 func _process(delta: float) -> void:
 	# Interpola entre as amostras completas do servidor. Somente ele resolve dano.
-	tempo = minf(tempo + delta * ritmo_replica, DURACOES[tipo])
+	tempo = minf(tempo + delta * ritmo_replica, duracao_golpe())
 	feedback_local(delta)
 	atualizar_clone()
 	atualizar_orbes()
@@ -337,6 +373,8 @@ func avancar(delta: float) -> void:
 	anterior = tempo
 	tempo += delta
 	pilotos = pilotos_vivos()
+	if tipo == Golpe.METEOROS and especial.avisos.size() < especial.levas and tempo >= float(especial.avisos[-1]) + INTERVALO_CHUVA:
+		marcar_leva()
 	feedback_local(delta)
 	atualizar_clone()
 	if tipo in [Golpe.RAIO, Golpe.TOTALIDADE] and tempo < trava_raio():
@@ -355,7 +393,7 @@ func avancar(delta: float) -> void:
 	boss.multiplicador_dano_recebido = 1.45 if exposto() else 1.0
 	atualizar_orbes()
 	padrao(false)
-	if tempo >= DURACOES[tipo]:
+	if tempo >= duracao_golpe() and (tipo != Golpe.METEOROS or especial.avisos.size() == especial.levas):
 		encerrar()
 		boss.estado = boss.Estado.MOVENDO
 		boss.subtitulo_alterado.emit(boss.obter_subtitulo_boss())
@@ -693,42 +731,45 @@ func raio(visual: bool) -> void:
 
 func meteoro(visual: bool, i: int) -> void:
 	var queda := instante_impacto(i)
-	var raio: float = especial.raios[i]
 	var idade := tempo - queda
-	var pos := pontos[i]
-	var cor := LUA if boss.fase_atual == 1 else SOMBRA
-	if idade < -AVISO_METEORO:
+	if not visual:
+		if anterior < queda and tempo >= queda:
+			var raio: float = especial.raios[i]
+			for p in pilotos:
+				if p.global_position.distance_squared_to(pontos[i]) <= raio * raio:
+					acerto(p, i, 0.48 if boss.fase_atual == 1 else 0.30, pontos[i])
 		return
-	if visual and idade < 0:
-		var progresso := 1.0 + idade / AVISO_METEORO
-		var pulso := 0.5 + 0.5 * cos(progresso * TAU * 2.5)
-		var aviso := Color("#81d5ff").lerp(Color.WHITE, pulso)
-		for k in 32:
-			var eixo := Vector2.from_angle(k * TAU / 32.0)
-			draw_circle(pos + eixo * raio, 1.8, aviso, true, -1.0, true)
-		var pedra: Vector2 = pos + especial.quedas[i] * (1.0 - progresso * progresso)
-		var tamanho := PerigoAstral.TEXTURA_METEORO.get_size() * lerpf(0.38, 0.72, progresso) * (raio / 58.0)
-		draw_set_transform(pos, 0.0, Vector2(1, 0.52))
-		draw_circle(Vector2.ZERO, lerpf(16, 54, progresso), Color(0.06, 0.045, 0.11, 0.12 + progresso * 0.40))
+	var aviso: float = especial.antecedencia
+	if idade < -aviso or idade >= ONDA_IMPACTO:
+		return
+	var pos := pontos[i]
+	var raio: float = especial.raios[i]
+	var cor := LUA if boss.fase_atual == 1 else SOMBRA
+	if idade < 0:
+		var progresso := 1.0 + idade / aviso
+		var pulso := 0.5 - 0.5 * cos(TAU * (progresso + progresso * progresso * 1.5))
+		var metade := Vector2.ONE * (raio * 64.0 / 62.0)
+		draw_texture_rect(ALVO_METEORO, Rect2(pos - metade, metade * 2), false, Color("#81d5ff").lerp(Color.WHITE, pulso))
+		# O aviso aparece primeiro. A aproximação da sombra e a queda acelerada sinalizam o impacto.
+		var voo := smoothstep(0.36, 1.0, progresso)
+		draw_set_transform(pos, 0, Vector2(1, 0.5))
+		draw_circle(Vector2.ZERO, raio * lerpf(0.18, 0.85, voo), Color(0.06, 0.045, 0.11, 0.15 + voo * 0.35))
 		draw_set_transform_matrix(Transform2D.IDENTITY)
-		var para_tras: Vector2 = especial.quedas[i].normalized()
-		var lateral := para_tras.orthogonal() * raio * 0.22
-		var cauda := pedra + para_tras * lerpf(15, 78, progresso)
-		draw_colored_polygon(PackedVector2Array([pedra - lateral, cauda, pedra + lateral]), Color(cor, 0.12 + 0.25 * progresso))
-		draw_set_transform(pedra, tempo * (4.2 + progresso * 2.5))
+		if progresso < 0.36:
+			return
+		var vetor: Vector2 = especial.quedas[i]
+		var pedra := pos + vetor * (1.0 - voo * voo)
+		var tamanho := PerigoAstral.TEXTURA_METEORO.get_size() * lerpf(0.36, 0.72, voo) * (raio / 58.0)
+		var lateral := vetor.normalized().orthogonal() * raio * 0.18
+		var cauda := pedra + vetor * (0.09 + voo * 0.14)
+		draw_colored_polygon(PackedVector2Array([pedra - lateral, cauda, pedra + lateral]), Color(cor, 0.15 + 0.20 * voo))
+		draw_set_transform(pedra, progresso * 5.0 + i)
 		draw_texture_rect(PerigoAstral.TEXTURA_METEORO, Rect2(-tamanho * 0.5, tamanho), false, Color(1.32, 1.32, 1.32))
 		draw_set_transform_matrix(Transform2D.IDENTITY)
-	elif visual and idade <= 0.34:
-		var onda := idade / 0.34
-		draw_circle(pos, lerpf(10, raio, onda), Color(cor, 0.28 * (1 - onda)))
-		draw_arc(pos, lerpf(8, raio, onda), 0, TAU, 48, Color(cor, 1 - onda), 5, true)
-		for k in 6:
-			var eixo := Vector2.from_angle(k * TAU / 6 + i)
-			draw_line(pos + eixo * raio * 0.65 * onda, pos + eixo * raio * onda, Color(cor, 1 - onda), 2, true)
-	elif not visual and anterior < queda and tempo >= queda:
-		for p in pilotos:
-			if p.global_position.distance_to(pos) <= raio:
-				acerto(p, i, 0.48 if boss.fase_atual == 1 else 0.30, pos)
+	else:
+		var onda := idade / ONDA_IMPACTO
+		draw_circle(pos, raio, Color(cor, 0.26 * (1.0 - onda)))
+		draw_arc(pos, raio * lerpf(0.70, 1.0, onda), 0, TAU, 32, Color(cor, 1.0 - onda), 3.5, true)
 
 
 func memoria(visual: bool) -> void:
