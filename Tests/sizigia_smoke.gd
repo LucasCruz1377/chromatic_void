@@ -119,7 +119,16 @@ func _ready() -> void:
 	var nave := preload("res://Entities/player.tscn").instantiate() as Player
 	add_child(nave)
 	jogador.remove_from_group("player")
+	boss.passo_rotacao = golpes.ROTA_LUA.find(golpes.Golpe.SOMBRA)
+	golpes.escolher()
+	verificar(golpes.tipo == golpes.Golpe.CRESCENTES, "a Lua precisa pular a sombra na fase 1")
+	var subtitulo := boss.obter_subtitulo_boss()
 	golpes.iniciar(golpes.Golpe.SOMBRA)
+	verificar(not is_instance_valid(golpes.sombra) and golpes.tipo == golpes.Golpe.CRESCENTES, "invocação direta da sombra na fase 1")
+	boss.tomarDano(boss.VidaMaxima / 2.0)
+	boss.passo_rotacao = golpes.ROTA_LUA.find(golpes.Golpe.SOMBRA)
+	golpes.escolher()
+	verificar(boss.obter_subtitulo_boss() == subtitulo, "o subtítulo revelou o golpe")
 	var sombra := golpes.sombra
 	verificar(is_equal_approx(sombra.vida, boss.VidaMaxima * 0.2), "vida inicial da sombra")
 	var nascendo := sombra.global_position
@@ -149,7 +158,7 @@ func _ready() -> void:
 	verificar(sombra.disparos == 1 and is_equal_approx(sombra.eixo_tiro, mira_travada), "a primeira salva corrigiu a mira depois do aviso")
 	for i in 82:
 		sombra._physics_process(1.0 / 60.0)
-	verificar(sombra.disparos == 2 and sombra.duracao_ciclo() == sombra.CICLO_LONGO, "a sombra não manteve a cadência independente")
+	verificar(sombra.disparos == 2 and is_equal_approx(sombra.duracao_ciclo(), sombra.CICLO_LONGO - 0.12), "a sombra não manteve a cadência independente")
 	for i in sombra.BRACOS:
 		var radial := sombra.ponta(i, 0.3) - sombra.origem_tiro
 		var seguinte := sombra.ponta((i + 1) % sombra.BRACOS, 0.3) - sombra.origem_tiro
@@ -167,7 +176,7 @@ func _ready() -> void:
 	jogador.global_position = sombra.ponta(0, sombra.idade_tiro + 0.01)
 	sombra._physics_process(0.02)
 	sombra._physics_process(0.01)
-	verificar(is_equal_approx(jogador.dano_recebido - dano_antes, boss.Dano * sombra.FATOR_DANO), "o dardo não aplicou exatamente um impacto")
+	verificar(is_equal_approx(jogador.dano_recebido - dano_antes, boss.Dano * sombra.FATOR_DANO * golpes.fator_dano(2)), "o dardo não aplicou exatamente um impacto")
 	var vida_lua := boss.Vida
 	boss.tomarDano(vida_lua + 999.0)
 	verificar(boss.fase_atual == BossSizigiaEterna.Fase.LUA, "o dano excedente atravessou a primeira barra")
@@ -283,7 +292,8 @@ func testar_travessia(golpes: SizigiaFinalController, jogador: JogadorTeste, cen
 			var passo := absf(desvio - golpes.desvio_anel(i - 1))
 			verificar(passo >= deg_to_rad(15) and passo <= deg_to_rad(30), "giro do corredor fora da faixa")
 		var instante := golpes.inicio_aneis() + i * golpes.intervalo_aneis() + raio_teste / golpes.velocidade_anel()
-		var rumo_fresta := Vector2.from_angle(eixo_inicial + desvio)
+		verificar(golpes.lacunas.size() == 2 and is_equal_approx(golpes.lacunas[1] - golpes.lacunas[0], PI), "terceira fase precisa de duas frestas opostas")
+		var rumo_fresta := Vector2.from_angle(eixo_inicial + desvio + (PI if i % 4 >= 2 else 0.0))
 		# Anéis pares cruzam pelo centro da fresta. Ímpares acertam a parede ao lado.
 		jogador.global_position = centro + rumo_fresta * raio_teste
 		if i % 2 == 1:

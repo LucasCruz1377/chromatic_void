@@ -316,6 +316,7 @@ func verificar_sizigia_rede() -> bool:
 	if not await confirmar_sizigia(2, hash(boss.golpes.especial.tiros)):
 		return false
 	if host:
+		boss.tomarDano(boss.Vida * 0.5)
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.SOMBRA)
 	if not await esperar(func() -> bool:
 		var sombra := boss.golpes.sombra
@@ -356,7 +357,7 @@ func verificar_sizigia_rede() -> bool:
 		boss.tomarDano(boss.Vida * 0.5)
 		boss.golpes.iniciar(SizigiaFinalController.Golpe.MARE)
 	if not await esperar(func() -> bool:
-		return boss.golpes.tipo == SizigiaFinalController.Golpe.MARE and boss.golpes.etapa == 2
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.MARE and boss.golpes.etapa == 3
 	):
 		return false
 	var frestas := boss.golpes.lacunas

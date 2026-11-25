@@ -13,22 +13,6 @@ const ROTA_LUA := [Golpe.CRESCENTES, Golpe.MARE, Golpe.METEOROS, Golpe.SOMBRA]
 const ROTA_SOL := [Golpe.INVESTIDA, Golpe.MANCHAS, Golpe.RAIO, Golpe.INVESTIDA, Golpe.ROUBO]
 const ROTA_ECLIPSE := [Golpe.TOTALIDADE, Golpe.RETORNO, Golpe.REFLEXOS, Golpe.METEOROS]
 const DURACOES := [0.0, 3.3, 5.6, 5.05, 1.45, 2.85, 3.65, 5.6, 4.8, 4.1, 4.3, 7.7, 7.6]
-const NOMES := [
-	"",
-	"CRESCENTES LUNARES — ATRAVESSE AS ABERTURAS",
-	"MARÉ LUNAR — SIGA AS BALIZAS VERDES",
-	"CHUVA DE METEOROS",
-	"SOMBRA LUNAR — DESVIE DA CRUZ",
-	"INVESTIDA SOLAR — SAIA DA LINHA VERMELHA",
-	"RAIO SOLAR — A MIRA TRAVA ANTES DO DISPARO",
-	"MANCHAS SOLARES — DESTRUA-AS ANTES DA EXPLOSÃO",
-	"ROUBO DE LUZ — CESSE FOGO ENQUANTO O HALO CARREGA",
-	"CRESCENTES INCENDIÁRIOS — ELES RETORNAM",
-	"REFLEXOS ASTRAIS — ATAQUE VINDO DOS DOIS LADOS",
-	"TOTALIDADE — ATRAIA O RAIO E CRUZE A PASSAGEM",
-	"ECLIPSE ABSOLUTO — BUSQUE O ABRIGO",
-]
-
 const MEIA_ABERTURA := 0.38
 const ANEIS_LUA := [2, 5, 10]
 const ANEIS_ECLIPSE := [4, 7, 10]
@@ -217,13 +201,19 @@ func escolher() -> void:
 			return
 	var escolha: int = rota[boss.passo_rotacao % rota.size()]
 	boss.passo_rotacao += 1
-	if escolha == Golpe.SOMBRA and sombra_invocada:
+	if escolha == Golpe.SOMBRA and not pode_invocar_sombra():
 		escolha = rota[boss.passo_rotacao % rota.size()]
 		boss.passo_rotacao += 1
 	iniciar(escolha)
 
 
+func pode_invocar_sombra() -> bool:
+	return boss.fase_atual == boss.Fase.LUA and boss.fase_da_barra() >= 2 and not sombra_invocada
+
+
 func iniciar(escolha: int) -> void:
+	if escolha == Golpe.SOMBRA and not pode_invocar_sombra():
+		return
 	pilotos = pilotos_vivos()
 	if pilotos.is_empty():
 		return
@@ -255,13 +245,12 @@ func iniciar(escolha: int) -> void:
 			var para_centro := origem.direction_to(area.get_center())
 			sentido = 1.0 if direcao.cross(para_centro) >= 0.0 else -1.0
 		especial = {"alcance": distancia.length() + 32.0, "raio_nave": 0.0, "sentido": sentido}
-	var mare_intermediaria := mare_da_segunda_fase()
-	if tipo == Golpe.TOTALIDADE or mare_intermediaria:
+	if aneis_rotativos():
 		var furos := 4 if tipo == Golpe.TOTALIDADE and Rede.modo_multiplayer else 2
 		for i in furos:
 			lacunas.append(fposmod(direcao.angle() + TAU * i / furos, TAU))
 	for p in pilotos:
-		if tipo == Golpe.MARE and not mare_intermediaria:
+		if tipo == Golpe.MARE and etapa == 1:
 			lacunas.append(fposmod(origem.angle_to_point(p.global_position), TAU))
 		if aneis_rotativos():
 			especial.raio_nave = maxf(especial.raio_nave, raio_piloto(p))
@@ -270,7 +259,7 @@ func iniciar(escolha: int) -> void:
 			if not protegido(abrigo, 60.0):
 				abrigos.append(abrigo)
 	lacunas.sort()
-	if tipo == Golpe.SOMBRA and alvo is Player and not sombra_invocada and boss.fase_atual == boss.Fase.LUA:
+	if tipo == Golpe.SOMBRA and alvo is Player:
 		var modelo := CloneLunar.capturar(alvo)
 		var colisao := alvo.get_node("colisao") as CollisionShape2D
 		modelo["raio"] = (colisao.shape as CircleShape2D).radius * absf(colisao.global_scale.x)
@@ -285,7 +274,6 @@ func iniciar(escolha: int) -> void:
 	if tipo == Golpe.MANCHAS:
 		mascara_orbes = 7
 		criar_orbes()
-	boss.subtitulo_alterado.emit(tr(NOMES[tipo]))
 	queue_redraw()
 
 
@@ -419,10 +407,8 @@ func receber(s: Array) -> void:
 	if nova and tipo == Golpe.ABSOLUTO:
 		materializar_clone()
 	atualizar_clone()
-	if nova and tipo != Golpe.NENHUM:
-		boss.subtitulo_alterado.emit(tr(NOMES[tipo]))
-		if tipo == Golpe.MANCHAS:
-			criar_orbes()
+	if nova and tipo == Golpe.MANCHAS:
+		criar_orbes()
 	atualizar_orbes()
 	set_process(tipo != Golpe.NENHUM)
 	queue_redraw()
@@ -464,7 +450,6 @@ func avancar(delta: float) -> void:
 	if tempo >= duracao_golpe() and (tipo != Golpe.METEOROS or especial.avisos.size() == especial.levas):
 		encerrar()
 		boss.estado = boss.Estado.MOVENDO
-		boss.subtitulo_alterado.emit(boss.obter_subtitulo_boss())
 		boss.tempo_ataque = 1.05
 		if boss.fase_atual == 2:
 			boss.tempo_ataque = 0.90

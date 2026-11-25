@@ -113,8 +113,6 @@ func obter_nome_boss() -> String:
 
 
 func obter_subtitulo_boss() -> String:
-	if is_instance_valid(golpes) and golpes.tipo != golpes.Golpe.NENHUM:
-		return golpes.NOMES[golpes.tipo]
 	match fase_atual:
 		Fase.LUA:
 			return "MARÉS, CRATERAS E A FACE OCULTA"
