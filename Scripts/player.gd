@@ -106,6 +106,7 @@ const LIMITE_PREVISAO_REDE := 0.15
 const LIMIAR_SALTO_REDE := 96.0
 var tempo_previsao_rede := 0.0
 var ultima_amostra_direta_ms := -1
+var recuo_boss_restante := 0.0
 var posicao_exibida_rede := Vector2.ZERO
 var correcao_visual_rede := Vector2.ZERO
 var tem_amostra_movimento := false
@@ -1463,7 +1464,24 @@ func atualizar_movimento(delta: float) -> void:
 	if not UsandoHabilidade:
 		velocity = velocity.limit_length(MAX_VELOCIDADE * fator_movimento)
 
+	var entrada := velocity
+	recuo_boss_restante = maxf(recuo_boss_restante - delta, 0.0)
 	move_and_slide()
+	for i in get_slide_collision_count():
+		var contato := get_slide_collision(i)
+		var chefe := contato.get_collider() as ChefeBase
+		if is_instance_valid(chefe) and not chefe.morto:
+			recuar_do_chefe(contato.get_normal(), entrada, chefe.velocity)
+			break
+
+
+func recuar_do_chefe(normal: Vector2, entrada: Vector2, movimento_chefe: Vector2) -> void:
+	if recuo_boss_restante > 0 or protegido_por_sizigia or not vivo or normal.is_zero_approx():
+		return
+	var aproximacao := maxf(0.0, (movimento_chefe - entrada).dot(normal))
+	var impulso := clampf(190.0 + aproximacao * 0.50, 190.0, 460.0)
+	velocity = entrada.slide(normal) + normal * maxf(entrada.dot(normal), impulso)
+	recuo_boss_restante = 0.18
 
 
 func _obter_controle_ativo() -> int:
@@ -2780,6 +2798,10 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 		or bool(body.get("morto"))
 	):
 		return
+	# Inclui o caso em que um chefe móvel alcança uma nave parada.
+	if body is ChefeBase and velocity.is_zero_approx() and (not Rede.modo_multiplayer or is_multiplayer_authority()):
+		var normal := body.global_position.direction_to(global_position)
+		recuar_do_chefe(normal if not normal.is_zero_approx() else -transform.x.normalized(), velocity, body.velocity)
 	if UsandoHabilidade and dano_colisao_habilidade > 0.0:
 		if body.has_method("tomarDano"):
 			if body is InimigoBase:

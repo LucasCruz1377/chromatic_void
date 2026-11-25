@@ -93,12 +93,19 @@ func _ready() -> void:
 			return
 		var dash := preload("res://Habilidades/habilidadeHiperdash.tres").duplicate() as HabilidadeHiperdash
 		var tempo_anterior := Engine.time_scale
-		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as ChefeBase
+		var flor := (load("res://Entities/BossFlorEquinocio.tscn") as PackedScene).instantiate() as BossCaosPrimaveril
 		flor.name = "FlorCicloVida"
 		arena.add_child(flor, true)
 		flor.set_physics_process(false)
+		flor.iniciar_danca_caules()
+		flor.criar_vinhas()
+		flor.estado = BossCaosPrimaveril.Estado.DANCA_VINHAS
+		flor.tempo_estado = 10.0
+		for i in 45:
+			flor.processar_danca_vinhas(1.0 / 60.0)
 		for indice in 3:
 			var tiro := (load("res://Entities/EspinhoPrimaveril.tscn") as PackedScene).instantiate() as ProjetilInimigo
+			tiro.name = "EspinhoCiclo%d" % indice
 			tiro.position = Vector2(450 + indice * 30, 100)
 			tiro.tempo_vida = 15.0
 			tiro.velocidade = 0.01
@@ -119,7 +126,7 @@ func _ready() -> void:
 		if not get_tree().paused:
 			falhar("botao do host nao pausou")
 			return
-		var espinho := get_tree().get_first_node_in_group("projetil_primaveril") as ProjetilInimigo
+		var espinho := arena.get_node("EspinhoCiclo0") as ProjetilInimigo
 		var tempo_ataque := float(flor.get("tempo_ataque"))
 		var vida_do_tiro := espinho.tempo_vida
 		var posicao_do_tiro := espinho.position
@@ -137,6 +144,7 @@ func _ready() -> void:
 			falhar("preparo do hiperdash avancou durante a pausa")
 			return
 		arena.get_node("GUI/caixa pause/despause").pressed.emit()
+		flor.encerrar_vinhas()
 		flor.set_physics_process(false)
 		if not await esperar(func() -> bool: return local.UsandoHabilidade):
 			falhar("o hiperdash nao executou ao retomar")
@@ -144,6 +152,7 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return not dash.em_uso()):
 			falhar("o hiperdash nao terminou")
 			return
+		Rede.definir_pausa_partida(true)
 		_ordenar_saida.rpc()
 		iniciar_saida = true
 	else:
@@ -153,7 +162,14 @@ func _ready() -> void:
 		if not await esperar(func() -> bool: return progresso_igual(4, 1.5)):
 			falhar("XP ou nível de uma das quatro naves divergiu")
 			return
-		var flor := arena.get_node("FlorCicloVida") as ChefeBase
+		var flor := arena.get_node("FlorCicloVida") as BossCaosPrimaveril
+		if not await esperar(func() -> bool: return flor.vinhas_ativas.size() == 4):
+			falhar("as quatro vinhas da flor não chegaram ao cliente")
+			return
+		var vinha := flor.vinhas_ativas[0]
+		if vinha.dano_ativo or absf(vinha.brilho.points[-1].y) < 2.0:
+			falhar("a vinha remota não reproduziu a curvatura como réplica visual")
+			return
 		local.HabilidadeEquipada.cooldown_atual = 3.0
 		var posicao := local.global_position
 		var tiros_antes := local.contador_disparos_rede
@@ -185,13 +201,36 @@ func _ready() -> void:
 				falhar("morte local apagou espinho do spawner")
 				return
 	if papel == "client_b":
+		var botao := arena.get_node("GUI/caixa pause/voltarmenu") as Button
+		if not await esperar(func() -> bool: return get_tree().paused and botao.is_visible_in_tree() and botao.has_focus()):
+			falhar("o botão de saída não ficou acessível durante a pausa")
+			return
+		if arena.get_node("GUI/caixa pause/despause").is_visible_in_tree():
+			falhar("o cliente pode retomar a partida")
+			return
+		botao.pressed.emit()
+		if not await esperar(func() -> bool:
+			var cena := get_tree().current_scene
+			return cena != null and cena.scene_file_path == "res://Rooms/TelaInicial.tscn" and not Rede.modo_multiplayer
+		):
+			falhar("o botão não desconectou o cliente e voltou ao menu")
+			return
+		get_tree().current_scene.queue_free()
+		await get_tree().process_frame
 		await get_tree().create_timer(0.3).timeout
-		await sair()
-		print("TESTE OK: client_b saiu da arena")
+		print("TESTE OK: client_b saiu pelo botão da pausa")
 		get_tree().quit(0)
 		return
 	if not await esperar(func() -> bool: return Rede.jogadores.size() == 3 and get_tree().get_nodes_in_group("player").size() == 3):
 		falhar("a nave desconectada nao foi removida pelo host")
+		return
+	if papel == "host":
+		if not get_tree().paused or not Rede.pausa_do_host:
+			falhar("a saída de um cliente despausou a partida")
+			return
+		Rede.definir_pausa_partida(false)
+	if not await esperar(func() -> bool: return not get_tree().paused):
+		falhar("a partida não retomou pelo host após a saída")
 		return
 	var aviso := arena.get_node("GUI/AvisoRede") as Label
 	if not await esperar(func() -> bool: return aviso.visible and aviso.text.contains("CLIENT_B")):

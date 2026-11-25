@@ -134,6 +134,7 @@ func _ready() -> void:
 	boss.crescer_vinhas(0.0)
 	verificar(boss.tempo_estado >= 10.5, "a Dança dos Caules não recebeu os cinco segundos extras")
 	verificar(boss.estado == BossCaosPrimaveril.Estado.DANCA_VINHAS, "a dança não iniciou após o crescimento")
+	boss.velocidade_vinhas_atual = 0.9
 	boss.sentido_vinhas = 1.0
 	boss._sortear_proximo_movimento_vinhas(true)
 	verificar(boss.sentido_vinhas < 0.0, "a dança não sorteou uma inversão real de direção")
@@ -145,6 +146,16 @@ func _ready() -> void:
 		boss.tempo_mudar_sentido_vinhas <= 1.60,
 		"a fase final demora demais para mudar novamente a direção das vinhas"
 	)
+	boss.tempo_mudar_sentido_vinhas = 2.0
+	for i in 60:
+		var anterior := boss.velocidade_vinhas_atual
+		boss.processar_danca_vinhas(1.0 / 60.0)
+		verificar(absf(boss.velocidade_vinhas_atual - anterior) < 0.08, "a inversão deu um salto de velocidade")
+	var vinha_curva := boss.vinhas_ativas[0]
+	var eixo := vinha_curva.brilho.points
+	verificar(boss.velocidade_vinhas_atual < 0.0 and absf(eixo[-1].y) > 12.0, "a ponta não acompanhou a inversão")
+	for i in vinha_curva.trechos.size():
+		verificar(vinha_curva.trechos[i].position.is_equal_approx((eixo[i] + eixo[i + 1]) * 0.5), "hitbox fora da vinha")
 	boss.limpar_vinhas()
 
 	await finalizar()

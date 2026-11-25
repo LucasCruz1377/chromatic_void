@@ -70,6 +70,9 @@ var abaixo_zero_ativo := false
 func _ready() -> void:
 	_configurar_sincronizador_multiplayer()
 	if is_in_group("boss"):
+		# Só a nave resolve o contato físico com o chefe. A hitbox ainda detecta dano.
+		set_collision_mask_value(2, false)
+		resistencia_empurrao = 1.0
 		# Bosses preservam todo o balanceamento existente e recebem 175% da
 		# vida que possuíam antes deste ajuste.
 		VidaMaxima *= 1.75

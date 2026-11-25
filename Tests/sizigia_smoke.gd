@@ -354,6 +354,21 @@ func testar_clone(boss: BossSizigiaEterna, alvo_teste: Node2D) -> void:
 	golpes.encerrar()
 	if DisplayServer.get_name() != "headless":
 		await comparar_pixels_do_clone(nave)
+	boss.velocity = Vector2.ZERO
+	var origem := boss.global_position
+	boss.aplicar_empurrao(Vector2(200, 0))
+	verificar(boss.velocity.is_zero_approx(), "o chefe recebeu impulso da nave")
+	nave.global_position = origem - Vector2(115, 0)
+	nave.invencibilidade = true
+	nave.velocity = Vector2(440, 0)
+	for i in 60:
+		await get_tree().physics_frame
+		boss.move_and_slide()
+		nave.atualizar_movimento(1.0 / 60.0)
+		if nave.velocity.x < -150.0:
+			break
+	verificar(nave.velocity.x < -150.0, "a nave não ricocheteou ao tocar o chefe")
+	verificar(boss.global_position.is_equal_approx(origem), "a nave deslocou o chefe")
 	nave.queue_free()
 
 

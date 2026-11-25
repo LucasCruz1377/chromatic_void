@@ -57,7 +57,9 @@ func _ready() -> void:
 	call_deferred("_ajustar_hud_responsivo")
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		botao_despause.hide()
-		botao_voltar_pause.hide()
+		botao_voltar_pause.text = tr("SAIR DA PARTIDA")
+		botao_voltar_pause.focus_neighbor_top = NodePath(".")
+		botao_voltar_pause.focus_neighbor_bottom = NodePath(".")
 
 
 func definir_player_local(novo_player: Player) -> void:
@@ -164,7 +166,13 @@ func _process(_delta: float) -> void:
 				):
 					batalha.call("limpar_estado_visual_boss_pausa")
 
-	caixa_pause.visible = not escolhendo_setor and get_tree().paused and (pode_pausar or Rede.pausa_do_host)
+	var mostrar_pausa := not escolhendo_setor and get_tree().paused and (pode_pausar or Rede.pausa_do_host)
+	if caixa_pause.visible != mostrar_pausa:
+		caixa_pause.visible = mostrar_pausa
+		if not pode_pausar:
+			Global.definir_cursor_interface(mostrar_pausa or escolhendo_setor or tela_upgrades.call("esta_aberta"))
+			if mostrar_pausa:
+				botao_voltar_pause.grab_focus()
 	if caixa_gameover.visible and not gameover_anterior:
 		botao_tentar_novamente.call_deferred("grab_focus")
 	gameover_anterior = caixa_gameover.visible
