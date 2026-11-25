@@ -204,7 +204,7 @@ func _ready() -> void:
 	verificar(area_dupla.size.x > area_comum.size.x, "arena não cresce para uma dupla")
 	verificar(area_quarteto.size.x > area_dupla.size.x, "arena não cresce até quatro jogadores")
 	batalha._on_jogador_rede_desconectado(2, "CLIENTE_TESTE")
-	var aviso_rede := batalha.get_node("GUI/AvisoRede") as Label
+	var aviso_rede := batalha.get_node("GUI/TopoHUD/AvisoRede") as Label
 	verificar(
 		aviso_rede.visible
 			and aviso_rede.text == tr("%s DESCONECTOU • A PARTIDA CONTINUA") % "CLIENTE_TESTE",
@@ -215,12 +215,21 @@ func _ready() -> void:
 	var aspecto_original := janela.content_scale_aspect
 	janela.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_IGNORE
 	batalha._anunciar_saida_piloto("WWWWWWWWWWWWWWWW")
-	for resolucao in [Vector2i(960, 540), Vector2i(320, 240), Vector2i(1920, 1080)]:
+	batalha.criar_hud_boss()
+	batalha._on_boss_fase_alterada(3)
+	batalha._on_boss_subtitulo_alterado("RECICLE OS FRAGMENTOS: 0/6")
+	batalha.contpontos.text = "00009355"
+	for resolucao in [Vector2i(1600, 720), Vector2i(960, 540), Vector2i(320, 240), Vector2i(390, 844), Vector2i(1920, 1080)]:
 		janela.content_scale_size = resolucao
 		await get_tree().process_frame
 		await get_tree().process_frame
 		var largura := aviso_rede.get_viewport_rect().size.x
-		var caixa := aviso_rede.get_rect()
+		var caixa := aviso_rede.get_global_rect()
+		var placar: Rect2 = batalha.contpontos.get_global_rect()
+		var titulo: Rect2 = batalha.boss_nome.get_global_rect()
+		verificar(placar.end.x <= largura - 10 and placar.end.y <= caixa.position.y, "placar cortado ou sobreposto ao aviso")
+		verificar(titulo.position.y >= caixa.end.y and titulo.position.x >= 10 and titulo.end.x <= largura - 10, "texto do chefe fora da tela ou coberto pelo aviso")
+		verificar(batalha.boss_nome.get_visible_line_count() == batalha.boss_nome.get_line_count(), "título do chefe cortado")
 		verificar(is_equal_approx(largura, float(resolucao.x)), "o teste não redimensionou o HUD")
 		verificar(absf(caixa.get_center().x - largura * 0.5) <= 1.0, "aviso fora do centro")
 		verificar(caixa.position.x >= 10 and caixa.end.x <= largura - 10, "aviso fora da tela")

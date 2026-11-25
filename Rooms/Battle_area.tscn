@@ -156,31 +156,36 @@ script = ExtResource("4_bd36c")
 
 [node name="aim" parent="GUI" unique_id=525751855 instance=ExtResource("8_kmw88")]
 
-[node name="ContadorPontos" type="Label" parent="GUI" unique_id=1644039224]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = 207.0
-offset_top = 28.0
-offset_right = 303.0
-offset_bottom = 59.0
-grow_horizontal = 2
+[node name="TopoHUD" type="VBoxContainer" parent="GUI"]
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Cabecalho" type="HBoxContainer" parent="GUI/TopoHUD"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 2
+theme_override_constants/separation = 8
+
+[node name="ContadorPontos" type="Label" parent="GUI/TopoHUD/Cabecalho" unique_id=1644039224]
+layout_mode = 2
 theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 22
 text = "T_SCORE"
 
-[node name="Pontos" type="Label" parent="GUI" unique_id=451615583]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = 338.0
-offset_top = 28.0
-offset_right = 407.0
-offset_bottom = 59.0
-grow_horizontal = 2
+[node name="Pontos" type="Label" parent="GUI/TopoHUD/Cabecalho" unique_id=451615583]
+layout_mode = 2
 theme_override_fonts/font = ExtResource("9_1s1gu")
 theme_override_font_sizes/font_size = 22
 text = "0"
+
+[node name="ReservaToque" type="Control" parent="GUI/TopoHUD/Cabecalho"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
 
 [node name="barra_combo" parent="GUI" unique_id=40295592 instance=ExtResource("6_f80io")]
 process_mode = 1
@@ -223,15 +228,15 @@ layout_mode = 2
 text = "B_TRYAGAIN"
 
 [node name="tryagain" parent="GUI/caixa gameover/Tentar de novo" unique_id=767019499 instance=ExtResource("10_bd36c")]
-scale_amount = Vector2(1.1, 1.1)
-dist = -40
+scale_amount = Vector2(1, 1)
+dist = 0
 
 [node name="Voltarmenu2" parent="GUI/caixa gameover" unique_id=787826253 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
 
 [node name="tryagain2" parent="GUI/caixa gameover/Voltarmenu2" unique_id=1471391804 instance=ExtResource("10_bd36c")]
-scale_amount = Vector2(1.1, 1.1)
-dist = -40
+scale_amount = Vector2(1, 1)
+dist = 0
 
 [node name="caixa pause" type="VBoxContainer" parent="GUI" unique_id=496644049]
 visible = false
@@ -265,16 +270,16 @@ layout_mode = 2
 text = "B_BACKTOMENU"
 
 [node name="tryagain3" parent="GUI/caixa pause/voltarmenu" unique_id=1456527858 instance=ExtResource("10_bd36c")]
-scale_amount = Vector2(1.1, 1.1)
-dist = -40
+scale_amount = Vector2(1, 1)
+dist = 0
 
 [node name="despause" parent="GUI/caixa pause" unique_id=1820316957 instance=ExtResource("7_hv6r0")]
 layout_mode = 2
 text = "B_RESUMEGAME"
 
 [node name="tryagain4" parent="GUI/caixa pause/despause" unique_id=13326222 instance=ExtResource("10_bd36c")]
-scale_amount = Vector2(1.1, 1.1)
-dist = -40
+scale_amount = Vector2(1, 1)
+dist = 0
 
 [node name="trans_rect" type="ColorRect" parent="GUI" unique_id=1849737488]
 modulate = Color(1, 1, 1, 0)

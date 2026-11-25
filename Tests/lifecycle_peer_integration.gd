@@ -249,7 +249,7 @@ func _ready() -> void:
 	if not await esperar(func() -> bool: return not get_tree().paused):
 		falhar("a partida não retomou pelo host após a saída")
 		return
-	var aviso := arena.get_node("GUI/AvisoRede") as Label
+	var aviso := arena.get_node("GUI/TopoHUD/AvisoRede") as Label
 	if not await esperar(func() -> bool: return aviso.visible and aviso.text.contains("CLIENT_B")):
 		falhar("o aviso de desconexão não chegou com o nome do piloto")
 		return

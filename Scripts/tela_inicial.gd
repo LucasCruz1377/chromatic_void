@@ -132,6 +132,8 @@ func _on_start_pressed() -> void:
 
 
 func _on_solo_pressed() -> void:
+	if carregando_cena:
+		return
 	Rede.iniciar_solo()
 	Global.primeira_vez_jogando = false
 	await _carregar_cena(CENA_BATALHA)
@@ -284,6 +286,7 @@ func _limpar_fluxo() -> void:
 func _adicionar_titulo_fluxo(titulo: String, subtitulo: String = "") -> void:
 	var rotulo := Label.new()
 	rotulo.text = tr(titulo)
+	rotulo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rotulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rotulo.add_theme_font_size_override("font_size", 28)
 	rotulo.add_theme_color_override("font_color", Color(0.52, 0.95, 1.0))
@@ -429,6 +432,7 @@ func _atualizar_lista_lobbies_lan(lobbies: Array) -> void:
 	if lobbies.is_empty():
 		mensagem_lobbies_lan = Label.new()
 		mensagem_lobbies_lan.text = tr("PROCURANDO LOBBIES DISPONÍVEIS NO WI-FI...")
+		mensagem_lobbies_lan.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		mensagem_lobbies_lan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		mensagem_lobbies_lan.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		mensagem_lobbies_lan.custom_minimum_size.y = 116.0
@@ -451,6 +455,7 @@ func _atualizar_lista_lobbies_lan(lobbies: Array) -> void:
 		linha.add_child(informacoes)
 		var criador := Label.new()
 		criador.text = tr("HOST: %s") % nick
+		criador.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		criador.add_theme_font_size_override("font_size", 15)
 		criador.add_theme_color_override("font_color", Color(0.56, 1.0, 0.78))
 		informacoes.add_child(criador)
@@ -461,6 +466,7 @@ func _atualizar_lista_lobbies_lan(lobbies: Array) -> void:
 			int(dados.get("jogadores", 1)),
 			int(dados.get("capacidade", Rede.MAX_JOGADORES)),
 		]
+		endereco.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		endereco.add_theme_font_size_override("font_size", 10)
 		endereco.add_theme_color_override("font_color", Color(0.60, 0.70, 0.88))
 		informacoes.add_child(endereco)
@@ -526,6 +532,7 @@ func _mostrar_lobby() -> void:
 	for id in ids:
 		var jogador := Label.new()
 		jogador.text = "◆  %s%s" % [str(Rede.jogadores[id]), tr("  [HOST]") if int(id) == 1 else ""]
+		jogador.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		jogador.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		jogador.add_theme_font_size_override("font_size", 18)
 		jogador.add_theme_color_override("font_color", Color(0.56, 1.0, 0.78))
@@ -541,6 +548,7 @@ func _mostrar_lobby() -> void:
 		if not enderecos.is_empty():
 			var instrucao := Label.new()
 			instrucao.text = tr("SE O LOBBY NÃO APARECER, TOQUE NO IP PARA COPIAR:")
+			instrucao.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			instrucao.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			instrucao.add_theme_font_size_override("font_size", 11)
 			instrucao.add_theme_color_override("font_color", Color(0.60, 0.72, 0.92))
@@ -645,10 +653,21 @@ func _carregar_cena(caminho: String) -> void:
 	for botao in botoes_menu:
 		botao.disabled = true
 
+	var solo := caminho == CENA_BATALHA
+	if solo:
+		fluxo_aberto = false
+		etapa_fluxo = &""
+		camada_fluxo.hide()
+		$CanvasLayer.hide()
+		$CursorLayer.hide()
+		get_viewport().gui_release_focus()
+		tela_carregamento.show()
+
 	var erro: Error = ResourceLoader.load_threaded_request(caminho)
-	transition.play("fade_in")
-	await transition.animation_finished
-	tela_carregamento.show()
+	if not solo:
+		transition.play("fade_in")
+		await transition.animation_finished
+		tela_carregamento.show()
 	await get_tree().process_frame
 
 	if erro != OK:
@@ -702,6 +721,10 @@ func _trocar_cena_direta_ou_recuperar(caminho: String) -> void:
 func _recuperar_falha_carregamento(caminho: String, erro: Error) -> void:
 	push_error("Não foi possível abrir %s (erro %d)." % [caminho, erro])
 	carregando_cena = false
+	if caminho == CENA_BATALHA:
+		$CanvasLayer.show()
+		$CursorLayer.show()
+		campo_nickname.editable = true
 	if is_instance_valid(tela_carregamento):
 		tela_carregamento.hide()
 	if is_instance_valid(transition) and transition.has_animation("fade_out"):
@@ -716,7 +739,7 @@ func _recuperar_falha_carregamento(caminho: String, erro: Error) -> void:
 func _criar_tela_carregamento() -> void:
 	var camada := CanvasLayer.new()
 	camada.name = "CamadaCarregamento"
-	camada.layer = 120
+	camada.layer = 401
 	add_child(camada)
 
 	tela_carregamento = ColorRect.new()
@@ -939,7 +962,7 @@ func _estilo_conquistas(
 
 
 func _on_dispositivo_alterado(tipo: StringName) -> void:
-	if tipo == &"controle":
+	if tipo == &"controle" and _pode_executar_acao_menu():
 		botao_iniciar.grab_focus()
 
 

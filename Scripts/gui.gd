@@ -85,6 +85,10 @@ func _aplicar_layout_hud(tamanho: Vector2) -> void:
 	if tamanho.x <= 0.0 or tamanho.y <= 0.0:
 		return
 	var margem := minf(18.0, tamanho.x * 0.05)
+	var meia_largura_menu := minf(284.0, tamanho.x * 0.5 - margem)
+	for painel in [caixa_pause, caixa_gameover]:
+		painel.offset_left = -meia_largura_menu
+		painel.offset_right = meia_largura_menu
 	var largura_barra := minf(630.0, tamanho.x - margem * 2.0)
 	largura_barra = minf(largura_barra, tamanho.x * 0.70)
 	var centro_x := tamanho.x * 0.5

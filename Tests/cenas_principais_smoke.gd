@@ -58,7 +58,28 @@ func _ready() -> void:
 				curiosidades.any(func(texto: String) -> bool: return "Lua Rosa" in texto),
 				"o Astro não utiliza as curiosidades específicas dos cards do site"
 			)
-		menu.free()
+		menu.get_node("JanelaAtualizacao").verificar_automaticamente = false
+		get_tree().root.add_child.call_deferred(menu)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		get_tree().current_scene = menu
+		menu.botao_iniciar.pressed.emit()
+		var solo := menu.conteudo_fluxo.get_child(2) as Button
+		verificar(solo != null and solo.text == tr("JOGAR SOLO"), "o menu não oferece Jogar Solo")
+		if solo:
+			solo.pressed.emit()
+			verificar(menu.tela_carregamento.is_visible_in_tree(), "o carregamento não apareceu no clique")
+			verificar(not menu.camada_fluxo.visible and not menu.get_node("CanvasLayer").visible and not menu.get_node("CursorLayer").visible, "o menu ou cursor ficou sobre o carregamento")
+			verificar(menu.tela_carregamento.get_global_rect().is_equal_approx(get_viewport().get_visible_rect()), "carregamento não cobre a tela")
+			var prazo := Time.get_ticks_msec() + 10000
+			while is_instance_valid(menu) and Time.get_ticks_msec() < prazo:
+				await get_tree().process_frame
+			var destino := get_tree().current_scene
+			verificar(is_instance_valid(destino) and destino.scene_file_path == "res://Rooms/Battle_area.tscn", "Jogar Solo não abriu a arena")
+			if is_instance_valid(destino):
+				destino.queue_free()
+				await get_tree().process_frame
+				await get_tree().create_timer(0.3).timeout
 
 	if falhas.is_empty():
 		print("TESTE OK: telas principais carregam e podem ser instanciadas")

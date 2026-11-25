@@ -80,7 +80,7 @@ const CAMINHO_BATALHA_BOSS := "res:/" + "/sounds/OST/The Battle True Colors.ogg"
 @export var ativar_bosses: bool = true
 @export var testar_boss_ao_iniciar: bool = false
 
-@onready var contpontos: Label = $GUI/Pontos
+@onready var contpontos: Label = $GUI/TopoHUD/Cabecalho/Pontos
 @onready var player: CharacterBody2D = $Player
 @onready var caixa_gameover: VBoxContainer = $"GUI/caixa gameover"
 @onready var tocarmusica: AudioStreamPlayer2D = $tocarmusica
@@ -1824,6 +1824,7 @@ func _mostrar_painel_morte_local() -> void:
 	if not is_instance_valid(texto_aguardando_morte):
 		texto_aguardando_morte = Label.new()
 		texto_aguardando_morte.name = "AguardandoOutroPiloto"
+		texto_aguardando_morte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texto_aguardando_morte.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		texto_aguardando_morte.add_theme_font_size_override("font_size", 15)
 		texto_aguardando_morte.add_theme_color_override(
@@ -1874,28 +1875,32 @@ func _criar_aviso_rede() -> void:
 	fundo.set_border_width_all(2)
 	fundo.set_corner_radius_all(9)
 	aviso_rede.add_theme_stylebox_override("normal", fundo)
-	$GUI.add_child(aviso_rede)
-	aviso_rede.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	aviso_rede.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	$GUI/TopoHUD.add_child(aviso_rede)
 	aviso_rede.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	aviso_rede.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fundo.content_margin_left = 12
 	fundo.content_margin_right = 12
 	fundo.content_margin_top = 6
 	fundo.content_margin_bottom = 6
-	get_viewport().size_changed.connect(_ajustar_aviso_rede)
+	get_viewport().size_changed.connect(_ajustar_topo_hud)
+	_ajustar_topo_hud()
 
 
-func _ajustar_aviso_rede() -> void:
-	var largura_tela := get_viewport().get_visible_rect().size.x
+func _ajustar_topo_hud() -> void:
+	var tela := get_viewport_rect().size
+	var largura_util := maxf(1.0, tela.x - 24.0)
+	var reserva: Control = $GUI/TopoHUD/Cabecalho/ReservaToque
+	reserva.visible = Global.deve_exibir_controles_toque() and (not Rede.modo_multiplayer or multiplayer.is_server())
+	if reserva.visible:
+		reserva.custom_minimum_size.x = tela.x * 0.06 + minf(tela.x, tela.y) * 0.052
 	var fonte := aviso_rede.get_theme_font("font")
 	var texto := fonte.get_string_size(
 		aviso_rede.text, HORIZONTAL_ALIGNMENT_LEFT, -1, aviso_rede.get_theme_font_size("font_size")
 	)
-	var largura := minf(maxf(520.0, ceilf(texto.x) + 28.0), maxf(1.0, largura_tela - 24.0))
-	aviso_rede.offset_left = -largura * 0.5
-	aviso_rede.offset_right = largura * 0.5
-	aviso_rede.offset_top = 24.0
-	aviso_rede.offset_bottom = 24.0 + maxf(48.0, aviso_rede.get_minimum_size().y)
+	aviso_rede.custom_minimum_size.x = minf(ceilf(texto.x) + 28.0, largura_util)
+	if is_instance_valid(boss_hud):
+		boss_hud.custom_minimum_size.x = minf(440.0, largura_util)
 
 
 func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
@@ -1903,7 +1908,7 @@ func _mostrar_aviso_rede(mensagem: String, persistente: bool) -> void:
 		return
 	aviso_rede.text = mensagem
 	aviso_rede.visible = true
-	_ajustar_aviso_rede()
+	_ajustar_topo_hud()
 	var token := int(aviso_rede.get_meta("token_aviso", 0)) + 1
 	aviso_rede.set_meta("token_aviso", token)
 	if persistente:
@@ -2352,35 +2357,34 @@ func criar_hud_boss() -> void:
 	boss_hud = VBoxContainer.new()
 	boss_hud.name = "HUD_Boss"
 	boss_hud.add_theme_constant_override("separation", 3)
-	$GUI.add_child(boss_hud)
-	boss_hud.anchor_left = 0.5
-	boss_hud.anchor_right = 0.5
-	boss_hud.offset_left = -220.0
-	boss_hud.offset_top = 66.0
-	boss_hud.offset_right = 220.0
-	boss_hud.offset_bottom = 154.0
+	boss_hud.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	boss_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$GUI/TopoHUD.add_child(boss_hud)
+	_ajustar_topo_hud()
 	boss_hud.visible = not (
 		tela_upgrades.has_method("esta_aberta")
 		and bool(tela_upgrades.call("esta_aberta"))
 	)
 
 	boss_nome = Label.new()
+	boss_nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	boss_nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_nome.add_theme_color_override("font_color", cor)
 	boss_nome.add_theme_font_size_override("font_size", 17)
 	boss_hud.add_child(boss_nome)
 	boss_vida = ProgressBar.new()
-	boss_vida.custom_minimum_size = Vector2(440.0, 18.0)
+	boss_vida.custom_minimum_size = Vector2(0.0, 18.0)
 	boss_vida.show_percentage = false
 	boss_vida.modulate = cor
 	boss_hud.add_child(boss_vida)
 	boss_detalhe_texto = Label.new()
 	boss_detalhe_texto.text = tr(str(dados_setor.get("subtitulo", "")))
+	boss_detalhe_texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	boss_detalhe_texto.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boss_detalhe_texto.add_theme_font_size_override("font_size", 11)
 	boss_hud.add_child(boss_detalhe_texto)
 	boss_detalhe = ProgressBar.new()
-	boss_detalhe.custom_minimum_size = Vector2(440.0, 10.0)
+	boss_detalhe.custom_minimum_size = Vector2(0.0, 10.0)
 	boss_detalhe.show_percentage = false
 	boss_detalhe.visible = boss_atual_id == &"pet0"
 	boss_detalhe.modulate = Color(1.0, 0.82, 0.18, 1.0)
@@ -2728,10 +2732,12 @@ func criar_visual_setor() -> void:
 	fundo_setor.visible = false
 	camada.add_child(fundo_setor)
 	rotulo_setor = Label.new()
-	rotulo_setor.position = Vector2(24.0, 76.0)
+	rotulo_setor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rotulo_setor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rotulo_setor.add_theme_font_size_override("font_size", 11)
 	rotulo_setor.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	$GUI.add_child(rotulo_setor)
+	$GUI/TopoHUD/Cabecalho.add_child(rotulo_setor)
+	$GUI/TopoHUD/Cabecalho.move_child(rotulo_setor, 0)
 
 
 func aplicar_setor(id: StringName) -> void:
