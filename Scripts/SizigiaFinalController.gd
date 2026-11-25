@@ -255,12 +255,13 @@ func iniciar(escolha: int) -> void:
 			var para_centro := origem.direction_to(area.get_center())
 			sentido = 1.0 if direcao.cross(para_centro) >= 0.0 else -1.0
 		especial = {"alcance": distancia.length() + 32.0, "raio_nave": 0.0, "sentido": sentido}
-	if tipo == Golpe.TOTALIDADE:
-		var furos := 4 if Rede.modo_multiplayer else 2
+	var mare_intermediaria := mare_da_segunda_fase()
+	if tipo == Golpe.TOTALIDADE or mare_intermediaria:
+		var furos := 4 if tipo == Golpe.TOTALIDADE and Rede.modo_multiplayer else 2
 		for i in furos:
 			lacunas.append(fposmod(direcao.angle() + TAU * i / furos, TAU))
 	for p in pilotos:
-		if tipo == Golpe.MARE:
+		if tipo == Golpe.MARE and not mare_intermediaria:
 			lacunas.append(fposmod(origem.angle_to_point(p.global_position), TAU))
 		if aneis_rotativos():
 			especial.raio_nave = maxf(especial.raio_nave, raio_piloto(p))
@@ -346,11 +347,23 @@ func quantidade_aneis() -> int:
 	return ANEIS_LUA[etapa - 1] if tipo == Golpe.MARE else ANEIS_ECLIPSE[etapa - 1]
 
 
+func mare_da_segunda_fase() -> bool:
+	return tipo == Golpe.MARE and etapa == 2
+
+
+func antecedencia_anel() -> float:
+	return 1.8 if mare_da_segunda_fase() else 1.2
+
+
 func inicio_aneis() -> float:
+	if mare_da_segunda_fase():
+		return antecedencia_anel()
 	return 1.4 if tipo == Golpe.MARE else PRIMEIRO_ANEL
 
 
 func intervalo_aneis() -> float:
+	if mare_da_segunda_fase():
+		return 2.0
 	return INTERVALO_ANEIS + (3 - etapa) * 0.15
 
 
@@ -751,10 +764,11 @@ func onda(visual: bool, partida: float, desvio: float, indice: int) -> void:
 	var inicial := 0.0 if rotativo else 45.0
 	var velocidade := velocidade_anel() if rotativo else (alcance - inicial) / 2.4
 	var idade := tempo - partida
-	if idade < -1.2 or (anterior - partida if not visual else idade) > (alcance - inicial) / velocidade:
+	if idade < -antecedencia_anel() or (anterior - partida if not visual else idade) > (alcance - inicial) / velocidade:
 		return
 	var raio := clampf(inicial + maxf(0, idade) * velocidade, inicial, alcance)
-	var meio_vao := (2.0 + (3 - etapa) * 0.6) * float(especial.raio_nave) if rotativo else 0.0
+	var larguras_de_nave := 3.2 if mare_da_segunda_fase() else 2.0 + (3 - etapa) * 0.6
+	var meio_vao := larguras_de_nave * float(especial.raio_nave) if rotativo else 0.0
 	var meia := asin(minf(meio_vao / maxf(raio, 1.0), 1.0)) if rotativo else MEIA_ABERTURA
 	if visual:
 		var cor := SOMBRA if tipo == Golpe.TOTALIDADE else LUA

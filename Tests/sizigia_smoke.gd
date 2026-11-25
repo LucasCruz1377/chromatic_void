@@ -78,6 +78,12 @@ func _ready() -> void:
 			boss.Vida = boss.VidaMaxima * 0.1
 			verificar(golpes.etapa == fase, "mudou um ataque já anunciado")
 	boss.fase_atual = boss.Fase.LUA
+	boss.Vida = boss.VidaMaxima * 0.5
+	golpes.iniciar(golpes.Golpe.MARE)
+	var posicao_antes := jogador.global_position
+	testar_segunda_mare(golpes, jogador)
+	jogador.global_position = posicao_antes
+	boss.Vida = boss.VidaMaxima * 0.1
 	golpes.iniciar(golpes.Golpe.MARE)
 	testar_travessia(golpes, jogador, golpes.origem, direcao)
 	jogador.vida = vida_inicial
@@ -247,6 +253,24 @@ func _ready() -> void:
 	else:
 		print("TESTE FALHOU: %d problema(s) na Sizígia Eterna" % falhas.size())
 		get_tree().quit(1)
+
+func testar_segunda_mare(golpes: SizigiaFinalController, jogador: JogadorTeste) -> void:
+	verificar(golpes.quantidade_aneis() == 5 and golpes.lacunas.size() == 2, "a segunda maré precisa de duas saídas em cada anel")
+	if golpes.lacunas.size() != 2:
+		return
+	verificar(is_equal_approx(golpes.lacunas[1] - golpes.lacunas[0], PI), "saídas da segunda maré não são opostas")
+	verificar(golpes.inicio_aneis() == 1.8 and golpes.antecedencia_anel() == 1.8 and golpes.intervalo_aneis() == 2.0, "janela de leitura da segunda maré")
+	var raio_nave := golpes.raio_piloto(jogador)
+	for i in golpes.quantidade_aneis():
+		var eixo := Vector2.from_angle(golpes.lacunas[i % 2] + golpes.desvio_anel(i))
+		# Os dois primeiros pares cruzam as duas frestas. O último anel pega o casco na borda.
+		var lateral := raio_nave * (2.5 if i == 4 else 1.9)
+		jogador.global_position = golpes.origem + eixo * 150.0 + eixo.orthogonal() * lateral
+		var chegada := golpes.inicio_aneis() + i * golpes.intervalo_aneis() + 180.0 / golpes.velocidade_anel()
+		while golpes.tempo < chegada:
+			golpes.avancar(1.0 / 60.0)
+		verificar(golpes.impactos.has(Vector2i(300 + i, jogador.get_multiplayer_authority())) == (i == 4), "largura jogável da segunda maré")
+
 
 func testar_travessia(golpes: SizigiaFinalController, jogador: JogadorTeste, centro: Vector2, eixo_inicial: float) -> void:
 	var raio_teste := 180.0

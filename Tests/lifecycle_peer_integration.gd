@@ -348,10 +348,22 @@ func verificar_sizigia_rede() -> bool:
 	if not await confirmar_sizigia(4, assinatura):
 		return false
 	if host:
+		boss.tomarDano(boss.Vida * 0.5)
+		boss.golpes.iniciar(SizigiaFinalController.Golpe.MARE)
+	if not await esperar(func() -> bool:
+		return boss.golpes.tipo == SizigiaFinalController.Golpe.MARE and boss.golpes.etapa == 2
+	):
+		return false
+	var frestas := boss.golpes.lacunas
+	if frestas.size() != 2 or not is_equal_approx(frestas[1] - frestas[0], PI):
+		return false
+	if not await confirmar_sizigia(5, hash(frestas)):
+		return false
+	if host:
 		boss.tomarDano(boss.Vida)
 	if not await esperar(func() -> bool: return boss.fase_atual == boss.Fase.SOL and boss.destino_fase == 0):
 		return false
-	if not await confirmar_sizigia(5):
+	if not await confirmar_sizigia(6):
 		return false
 	if not is_instance_valid(boss.golpes.sombra):
 		return false
@@ -367,13 +379,13 @@ func verificar_sizigia_rede() -> bool:
 			restante -= parcela
 	if not await esperar(func() -> bool: return not is_instance_valid(boss.golpes.sombra)):
 		return false
-	if not await confirmar_sizigia(6):
+	if not await confirmar_sizigia(7):
 		return false
 	if papel == "client_a":
 		boss.golpes.orbes[1].tomarDano(3)
 	if not await esperar(func() -> bool: return boss.golpes.mascara_orbes == 5):
 		return false
-	if not await confirmar_sizigia(7):
+	if not await confirmar_sizigia(8):
 		return false
 	if host:
 		boss.tomarDano(boss.Vida)
@@ -387,7 +399,7 @@ func verificar_sizigia_rede() -> bool:
 	for i in 4:
 		if not is_equal_approx(fposmod(aneis.lacunas[(i + 1) % 4] - aneis.lacunas[i], TAU), PI / 2):
 			return false
-	if not await confirmar_sizigia(8, hash([aneis.origem, aneis.lacunas, aneis.especial, aneis.serie, aneis.etapa])):
+	if not await confirmar_sizigia(9, hash([aneis.origem, aneis.lacunas, aneis.especial, aneis.serie, aneis.etapa])):
 		return false
 	if host:
 		boss.tomarDano(boss.Vida * 0.75)
@@ -396,7 +408,7 @@ func verificar_sizigia_rede() -> bool:
 		return boss.fase_da_barra() == 3 and aneis.etapa == 3 and aneis.quantidade_aneis() == 10
 	):
 		return false
-	if not await confirmar_sizigia(9, hash([aneis.origem, aneis.lacunas, aneis.especial, aneis.serie, aneis.etapa])):
+	if not await confirmar_sizigia(10, hash([aneis.origem, aneis.lacunas, aneis.especial, aneis.serie, aneis.etapa])):
 		return false
 	if host:
 		boss.queue_free()
@@ -409,7 +421,7 @@ func confirmar_sizigia(etapa: int, assinatura: int = 0) -> bool:
 		return true
 	return await esperar(func() -> bool:
 		for peer in multiplayer.get_peers():
-			if etapa in [2, 4, 8, 9] and assinaturas_sizigia.get(peer) != assinatura:
+			if etapa in [2, 4, 5, 9, 10] and assinaturas_sizigia.get(peer) != assinatura:
 				return false
 			if int(sizigia_confirmada.get(peer, 0)) < etapa:
 				return false
@@ -419,7 +431,7 @@ func confirmar_sizigia(etapa: int, assinatura: int = 0) -> bool:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _confirmar_sizigia(etapa: int, assinatura: int) -> void:
-	if etapa in [2, 4, 8, 9]:
+	if etapa in [2, 4, 5, 9, 10]:
 		assinaturas_sizigia[multiplayer.get_remote_sender_id()] = assinatura
 	sizigia_confirmada[multiplayer.get_remote_sender_id()] = etapa
 
