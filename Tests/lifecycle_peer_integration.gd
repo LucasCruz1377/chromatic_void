@@ -61,7 +61,12 @@ func _ready() -> void:
 		return
 	local.velocity = Vector2.ZERO # A prova de movimento começa após a atração da maré.
 	var destino_local := destino_teste(Rede.peer_local())
-	for quadro in 36:
+	# O ponto de partida depende de quanto tempo a maré atraiu esta nave.
+	var prazo_movimento := Time.get_ticks_msec() + 5000
+	while local.global_position.distance_to(destino_local) > 0.1:
+		if Time.get_ticks_msec() >= prazo_movimento:
+			falhar("a nave local não alcançou o destino após a maré")
+			return
 		local.global_position = local.global_position.move_toward(destino_local, 6.0)
 		await get_tree().physics_frame
 	if not await esperar(todos_chegaram):
