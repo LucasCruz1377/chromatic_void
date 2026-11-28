@@ -31,19 +31,35 @@ func _init(fase: int) -> void:
 	entrada = janela.y + 0.35
 	batida = 60.0 / [112.0, 128.0, 156.0][fase - 1]
 	travessia = [1.95, 1.55, 1.15][fase - 1]
-	duracao = entrada + 16.0 * batida + travessia + 0.45
-	for original in NOTAS:
-		if fase == 1 and original.x != floorf(original.x):
-			continue
-		var nota := original
-		nota.y = clampf(roundf(nota.y / 2.0) * 2.0, 0, 8)
-		if fase == 1 or (fase == 2 and nota.w == Articulacao.BEND):
-			nota.w = Articulacao.RETA
-		notas.append(nota)
-	if fase == 2:
-		graves = [6.0, 14.0]
-	elif fase == 3:
-		graves = [2.0, 4.0, 6.0, 9.0, 12.5, 15.0]
+	var blocos := fase + 1
+	for bloco in blocos:
+		var inicio_bloco := bloco * 16.0
+		for original in NOTAS:
+			if fase == 1 and original.x != floorf(original.x) and bloco == 0:
+				continue
+			var nota := original
+			nota.x += inicio_bloco
+			var linha := clampi(roundi(nota.y / 2.0), 0, 4)
+			if bloco % 2 == 1:
+				linha = 4 - linha
+			if bloco >= 2:
+				linha = (linha + 1) % 5
+			nota.y = linha * 2
+			if fase == 1 or (fase == 2 and nota.w == Articulacao.BEND):
+				nota.w = Articulacao.RETA
+			notas.append(nota)
+		if fase == 2:
+			graves.append(inicio_bloco + 6.0)
+		elif fase == 3:
+			for pulso: float in [2.0, 6.0, 9.0, 15.0]:
+				graves.append(inicio_bloco + pulso)
+	if fase == 3:
+		# Resposta final em colcheias seguida de um bend sustentado.
+		for i in 4:
+			notas.append(Vector4(64.0 + i * 0.5, i * 2, 0.5, Articulacao.RETA))
+		notas.append(Vector4(66, 8, 2, Articulacao.BEND))
+	var ultima := notas[-1]
+	duracao = inicio(ultima.x) + cauda(ultima) + travessia + 0.45
 
 
 func aviso(nota: Vector4) -> float:

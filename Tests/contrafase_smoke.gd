@@ -25,6 +25,8 @@ func _ready() -> void:
 	var volume: float = arena.tocarmusica.volume_db
 	for etapa in range(1, 4):
 		var part := Frase.new(etapa)
+		checar(part.duracao >= 20 and part.duracao <= 30, "solo fora da duração esperada")
+		print("Solo fase %d: %.2f s, %d notas" % [etapa, part.duracao, part.notas.size()])
 		for evento in part.notas:
 			checar(fmod(evento.y, 2.0) == 0 and evento.y >= 0 and evento.y <= 8, "nota fora da linha")
 			checar(part.aviso(evento) >= part.janela.x and part.aviso(evento) <= part.janela.y, "aviso fora da janela")

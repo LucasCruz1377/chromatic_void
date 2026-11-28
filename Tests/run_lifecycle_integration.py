@@ -29,7 +29,7 @@ def main():
                 time.sleep(0.5 if role == "host" else 0.15)
             for role, process in processes:
                 try:
-                    status = process.wait(timeout=45)
+                    status = process.wait(timeout=65)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()

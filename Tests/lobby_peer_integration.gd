@@ -619,7 +619,7 @@ func _testar_snapshots_chefes() -> bool:
 			if is_instance_valid(boss) and boss.ultima_sequencia_snapshot_visual_rede > 0:
 				var angulo := NAN
 				if boss is BossContrafase:
-					if boss.partitura.ativa and boss.partitura.frase.graves.size() == 6 and boss.partitura.is_visible_in_tree() and not boss.visible:
+					if boss.partitura.ativa and boss.partitura.frase.graves.size() == 16 and boss.partitura.is_visible_in_tree() and not boss.visible:
 						angulo = boss.partitura.tempo
 				elif boss is BossMensal:
 					angulo = boss.angulo_visual

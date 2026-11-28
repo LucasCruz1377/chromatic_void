@@ -351,7 +351,7 @@ func verificar_partitura_rede() -> bool:
 		return false
 	if not await esperar(func() -> bool: return palco.nota_soando >= 0 and palco.tempo > 1.4):
 		return false
-	if not await esperar(func() -> bool: return not palco.ativa and chefe.visible):
+	if not await esperar(func() -> bool: return not palco.ativa and chefe.visible, palco.frase.duracao + 2.0):
 		return false
 	if papel != "host":
 		_confirmar_solo.rpc_id(1)
@@ -561,8 +561,7 @@ func todos_chegaram() -> bool:
 	return true
 
 
-func esperar(condicao: Callable) -> bool:
-	var limite := 12.0
+func esperar(condicao: Callable, limite := 12.0) -> bool:
 	while limite > 0.0:
 		if condicao.call():
 			return true
