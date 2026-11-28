@@ -14,7 +14,7 @@ func _ready() -> void:
 	var sons := [
 		"res://sounds/Bosses/snd_intro_pet.wav",
 		"res://sounds/Bosses/snd_intro_boss2.wav",
-		"res://sounds/Bosses/snd_intro_ametista.wav",
+		"res://sounds/Bosses/contrafase_corda.wav",
 		"res://sounds/Bosses/snd_intro_flor.wav",
 		"res://sounds/Bosses/snd_intro_sizigia.wav",
 	]
@@ -25,7 +25,7 @@ func _ready() -> void:
 	var nomes_esperados: Dictionary = {
 		&"pet0": "PET-0",
 		&"constelacao_amparo": "CONSTELAÇÃO DO AMPARO",
-		&"no_ametista": "NÓ DE AMETISTA",
+		&"contrafase": "CONTRAFASE",
 		&"flor_equinocio": "CAOS PRIMAVERIL",
 		&"eclipse_colheita": "SIZÍGIA ETERNA",
 	}

@@ -78,7 +78,7 @@ func _ready() -> void:
 	var dados_setores = load("res://Scripts/SectorData.gd")
 	verificar(
 		dados_setores.ORDEM_CICLO == [
-			&"vazio_inicial", &"constelacao_amparo", &"no_ametista",
+			&"vazio_inicial", &"constelacao_amparo", &"contrafase",
 			&"florescimento", &"lua_colheita"
 		],
 		"a ordem única dos cinco bosses foi alterada"
@@ -87,7 +87,7 @@ func _ready() -> void:
 		"res://Entities/InimigoCentelhaGuia.tscn", "res://Entities/InimigoEloDourado.tscn",
 		"res://Entities/InimigoPrismaAmparo.tscn", "res://Entities/InimigoSateliteBerco.tscn",
 		"res://Entities/InimigoPulsoSolar.tscn", "res://Entities/InimigoFitaVioleta.tscn",
-		"res://Entities/InimigoNoFlutuante.tscn", "res://Entities/InimigoEcoAmetista.tscn",
+		"res://Entities/InimigoNoFlutuante.tscn", "res://Entities/InimigoEcoSonoro.tscn",
 		"res://Entities/InimigoLaminaIris.tscn", "res://Entities/InimigoCasuloPrismatico.tscn",
 		"res://Entities/InimigoBrotoPrimaveril.tscn", "res://Entities/InimigoSementeCanhao.tscn",
 		"res://Entities/InimigoPolenErrante.tscn", "res://Entities/InimigoCipoEspiral.tscn",
@@ -143,7 +143,7 @@ func _ready() -> void:
 
 	for caminho in [
 		"res://Entities/BossConstelacaoAmparo.tscn",
-		"res://Entities/BossNoAmetista.tscn",
+		"res://Entities/BossContrafase.tscn",
 	]:
 		var cena_boss := load(caminho) as PackedScene
 		verificar(cena_boss != null, "%s não carregou" % caminho)

@@ -4,7 +4,7 @@ class_name FaixaEnergiaBoss
 ## Faixa de energia procedural usada pelos bosses mensais. Ao contrário de um
 ## projétil, ela ocupa e transforma uma região da arena durante alguns segundos.
 
-enum Movimento { FIXA, RASTREADORA, CORREDOR, ESPIRAL, LIGACAO }
+enum Movimento { FIXA, RASTREADORA, LIGACAO = 4 }
 
 var movimento: Movimento = Movimento.FIXA
 var centro := Vector2.ZERO
@@ -18,12 +18,6 @@ var tempo_aviso := 0.85
 var antecedencia_trava := 0.0
 var mira_travada := false
 var tempo_ativo := 1.1
-var velocidade_angular := 0.0
-var velocidade_angular_atual := 0.0
-var inverter_no_meio := false
-var deslocamento := 0.0
-var velocidade_deslocamento := 0.0
-var amplitude_deslocamento := 80.0
 var alvo: Node2D
 var dono_formacao: Node
 var indice_a := -1
@@ -34,7 +28,6 @@ var recarga_dano := 0.0
 var recargas_por_jogador: Dictionary = {}
 var ponto_a := Vector2.ZERO
 var ponto_b := Vector2.ZERO
-var _sentido_deslocamento := 1.0
 var tempo_ate_redesenho := 0.0
 
 static func criar(cena: Node, dados: Dictionary) -> FaixaEnergiaBoss:
@@ -52,12 +45,6 @@ static func criar(cena: Node, dados: Dictionary) -> FaixaEnergiaBoss:
 	faixa.tempo_aviso = float(dados.get("aviso", 0.85))
 	faixa.tempo_ativo = float(dados.get("duracao", 1.1))
 	faixa.antecedencia_trava = clampf(float(dados.get("antecedencia_trava", 0.0)), 0.0, faixa.tempo_aviso)
-	faixa.velocidade_angular = float(dados.get("velocidade_angular", 0.0))
-	faixa.velocidade_angular_atual = faixa.velocidade_angular
-	faixa.inverter_no_meio = bool(dados.get("inverter", false))
-	faixa.deslocamento = float(dados.get("deslocamento", 0.0))
-	faixa.velocidade_deslocamento = float(dados.get("velocidade_deslocamento", 0.0))
-	faixa.amplitude_deslocamento = float(dados.get("amplitude", 80.0))
 	var alvo_candidato: Variant = dados.get("alvo")
 	if is_instance_valid(alvo_candidato) and alvo_candidato is Node2D:
 		faixa.alvo = alvo_candidato as Node2D
@@ -109,27 +96,6 @@ func _atualizar_geometria(delta: float) -> void:
 			ponto_b = origem + Vector2.RIGHT.rotated(angulo) * comprimento
 			if antecedencia_trava > 0.0 and local >= instante_trava:
 				mira_travada = true
-		Movimento.CORREDOR:
-			if local >= 0.0:
-				deslocamento += velocidade_deslocamento * _sentido_deslocamento * delta
-				if absf(deslocamento) >= amplitude_deslocamento:
-					deslocamento = clampf(deslocamento, -amplitude_deslocamento, amplitude_deslocamento)
-					_sentido_deslocamento *= -1.0
-			var direcao := Vector2.RIGHT.rotated(angulo)
-			var normal := direcao.orthogonal()
-			var meio := centro + normal * deslocamento
-			ponto_a = meio - direcao * comprimento * 0.5
-			ponto_b = meio + direcao * comprimento * 0.5
-		Movimento.ESPIRAL:
-			if local >= 0.0:
-				var alvo_velocidade := velocidade_angular
-				if inverter_no_meio and local > tempo_aviso + tempo_ativo * 0.5:
-					alvo_velocidade = -velocidade_angular
-				velocidade_angular_atual = move_toward(velocidade_angular_atual, alvo_velocidade, delta * 3.8)
-				angulo += velocidade_angular_atual * delta
-			var direcao := Vector2.RIGHT.rotated(angulo)
-			ponto_a = centro - direcao * comprimento * 0.5
-			ponto_b = centro + direcao * comprimento * 0.5
 		Movimento.LIGACAO:
 			ponto_a = _posicao_formacao(indice_a, centro)
 			ponto_b = _posicao_formacao(indice_b, centro)

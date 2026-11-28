@@ -59,6 +59,9 @@ func _ready() -> void:
 	# Cada processo move somente a nave que controla. Os quatro precisam
 	# observar a posição final dos três colegas antes de iniciar o combate.
 	var local := arena.call("_obter_jogador_rede", Rede.peer_local()) as Player
+	if not await verificar_partitura_rede():
+		falhar("a partitura não completou o solo nos quatro peers")
+		return
 	if not await verificar_sizigia_rede():
 		falhar("golpes ou transições da Sizígia divergiram entre quatro pilotos")
 		return
@@ -332,6 +335,39 @@ func _confirmar_fim() -> void:
 @rpc("authority", "call_remote", "reliable")
 func _liberar_saida() -> void:
 	saida_liberada = true
+
+
+func verificar_partitura_rede() -> bool:
+	if papel == "host":
+		arena._criar_boss(&"contrafase", 3, true)
+	if not await esperar(func() -> bool: return get_tree().has_group(&"partitura_ativa")):
+		return false
+	var chefe := arena.boss_ativo as BossContrafase
+	if not is_instance_valid(chefe):
+		return false
+	var caminho := arena.get_path_to(chefe)
+	var palco := chefe.partitura
+	if not palco.is_visible_in_tree() or chefe.visible or not palco.area.is_equal_approx(Global.obter_retangulo_area_visivel()):
+		return false
+	if not await esperar(func() -> bool: return palco.nota_soando >= 0 and palco.tempo > 1.4):
+		return false
+	if not await esperar(func() -> bool: return not palco.ativa and chefe.visible):
+		return false
+	if papel != "host":
+		_confirmar_solo.rpc_id(1)
+	else:
+		if not await esperar(func() -> bool: return solos_concluidos.size() == 3):
+			return false
+		arena.limpar_inimigos_sem_recompensa()
+	return await esperar(func() -> bool: return not arena.has_node(caminho))
+
+
+var solos_concluidos := {}
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _confirmar_solo() -> void:
+	solos_concluidos[multiplayer.get_remote_sender_id()] = true
 
 
 func verificar_sizigia_rede() -> bool:

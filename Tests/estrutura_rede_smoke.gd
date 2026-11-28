@@ -30,7 +30,7 @@ func testar_quadros_dos_chefes() -> void:
 		"BossFlorEquinocio",
 		"BossEclipseColheita",
 		"BossConstelacaoAmparo",
-		"BossNoAmetista"
+		"BossContrafase"
 	]:
 		var boss := (
 			(load("res://Entities/%s.tscn" % nome) as PackedScene).instantiate() as ChefeBase

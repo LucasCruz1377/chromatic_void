@@ -35,7 +35,7 @@ const INIMIGOS: Dictionary = {
 	&"pulso_solar": preload("res://Entities/InimigoPulsoSolar.tscn"),
 	&"fita_violeta": preload("res://Entities/InimigoFitaVioleta.tscn"),
 	&"no_flutuante": preload("res://Entities/InimigoNoFlutuante.tscn"),
-	&"eco_ametista": preload("res://Entities/InimigoEcoAmetista.tscn"),
+	&"eco_sonoro": preload("res://Entities/InimigoEcoSonoro.tscn"),
 	&"lamina_iris": preload("res://Entities/InimigoLaminaIris.tscn"),
 	&"casulo_prismatico": preload("res://Entities/InimigoCasuloPrismatico.tscn"),
 	&"semente_canhao": preload("res://Entities/InimigoSementeCanhao.tscn"),
@@ -54,7 +54,7 @@ const BOSSES: Dictionary = {
 	&"flor_equinocio": preload("res://Entities/BossFlorEquinocio.tscn"),
 	&"eclipse_colheita": preload("res://Entities/BossEclipseColheita.tscn"),
 	&"constelacao_amparo": preload("res://Entities/BossConstelacaoAmparo.tscn"),
-	&"no_ametista": preload("res://Entities/BossNoAmetista.tscn"),
+	&"contrafase": preload("res://Entities/BossContrafase.tscn"),
 }
 
 const ASTEROIDE_BONUS := preload("res://Entities/AsteroideBonus.tscn")
@@ -412,7 +412,7 @@ func _receber_snapshot_visual_boss(caminho: NodePath, snapshot: Dictionary) -> v
 	boss.receber_parte_snapshot_visual(snapshot)
 
 
-# Os satelites e as amarras existem como dados usados por _draw().
+# Satélites e partitura são reconstruídos a partir de dados compactos.
 # Esse pacote e pequeno e confiavel; a replicacao de CanvasItem nao
 # transmite arrays internos dos bosses.
 func replicar_estado_defesas_boss(boss: BossMensal, dados: Dictionary) -> void:
@@ -2201,7 +2201,7 @@ func _mostrar_intro_boss(id: StringName) -> void:
 	var nomes_boss: Dictionary = {
 		&"pet0": "PET-0",
 		&"constelacao_amparo": "CONSTELAÇÃO DO AMPARO",
-		&"no_ametista": "NÓ DE AMETISTA",
+		&"contrafase": "CONTRAFASE",
 		&"flor_equinocio": "CAOS PRIMAVERIL",
 		&"eclipse_colheita": "SIZÍGIA ETERNA",
 	}
@@ -2269,12 +2269,9 @@ func _mostrar_intro_boss(id: StringName) -> void:
 func limpar_inimigos_sem_recompensa() -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		return
-	for inimigo in get_tree().get_nodes_in_group("inimigo"):
-		if is_instance_valid(inimigo):
-			inimigo.queue_free()
-	for grupo in [&"projetil_inimigo", &"residuo_pet0", &"minion_pet0"]:
+	for grupo in [&"inimigo", &"boss", &"projetil_inimigo", &"residuo_pet0", &"minion_pet0"]:
 		for node in get_tree().get_nodes_in_group(grupo):
-			if is_instance_valid(node):
+			if not node.is_queued_for_deletion():
 				node.queue_free()
 
 

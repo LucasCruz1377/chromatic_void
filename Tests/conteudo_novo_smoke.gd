@@ -41,13 +41,13 @@ func _ready() -> void:
 
 	var setores = load("res://Scripts/SectorData.gd")
 	var ids_antigos := [&"seguidor", &"melee", &"investida", &"tanque", &"atirador"]
-	for setor_id in [&"constelacao_amparo", &"no_ametista", &"florescimento", &"lua_colheita"]:
+	for setor_id in [&"constelacao_amparo", &"contrafase", &"florescimento", &"lua_colheita"]:
 		var dados: Dictionary = setores.obter(setor_id)
 		verificar((dados.get("inimigos", []) as Array).size() == 5, "%s não tem cinco inimigos temáticos" % setor_id)
 		for entrada in dados.get("inimigos", []):
 			verificar(StringName(entrada[0]) not in ids_antigos, "%s ainda mistura inimigo antigo" % setor_id)
 
-	for boss_path in ["res://Entities/BossConstelacaoAmparo.tscn", "res://Entities/BossNoAmetista.tscn"]:
+	for boss_path in ["res://Entities/BossConstelacaoAmparo.tscn", "res://Entities/BossContrafase.tscn"]:
 		var cena_boss := load(boss_path) as PackedScene
 		verificar(cena_boss != null, "boss novo não carregou: " + boss_path)
 

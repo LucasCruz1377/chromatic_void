@@ -17,7 +17,7 @@ func _ready() -> void:
 		"res://sounds/Enemies/SFX_tiro_var3.wav",
 		"res://sounds/Enemies/SFX_tiro_var4.wav",
 		"res://sounds/Bosses/sfx_gravidade_eclipse.wav",
-		"res://sounds/Bosses/snd_attack1_ametista.wav",
+		"res://sounds/Bosses/contrafase_bumbo.wav",
 	]
 	for caminho in sons:
 		checar(ResourceLoader.exists(caminho), "arquivo ausente: " + caminho)
@@ -29,7 +29,6 @@ func _ready() -> void:
 		var controlador: Node = controlador_script.new()
 		checar(controlador.SONS_TIRO.size() == 4, "não há quatro variações de tiro")
 		checar(controlador.has_method("_tocar_gravidade_remoto"), "som gravitacional não configurado")
-		checar(controlador.has_method("_tocar_ametista_remoto"), "som da Ametista não configurado")
 		controlador.queue_free()
 
 	Rede.modo_multiplayer = true
@@ -70,6 +69,7 @@ func _ready() -> void:
 		(audio as AudioStreamPlayer2D).stop()
 	batalha.queue_free()
 	await get_tree().process_frame
+	await get_tree().create_timer(0.25, true, false, true).timeout
 
 	if falhas.is_empty():
 		print("TESTE OK: variações de áudio e projéteis multiplayer")

@@ -36,4 +36,4 @@ func _draw() -> void:
 
 
 func _init() -> void:
-	estilo = Estilo.ECO_AMETISTA
+	estilo = Estilo.ECO_SONORO

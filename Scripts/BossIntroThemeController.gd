@@ -7,7 +7,7 @@ const CONTROLADOR_AUDIO = preload("res://Scripts/CombatAudioController.gd")
 const SONS: Dictionary = {
 	&"pet0": "res://sounds/Bosses/snd_intro_pet.wav",
 	&"constelacao_amparo": "res://sounds/Bosses/snd_intro_boss2.wav",
-	&"no_ametista": "res://sounds/Bosses/snd_intro_ametista.wav",
+	&"contrafase": "res://sounds/Bosses/contrafase_corda.wav",
 	&"flor_equinocio": "res://sounds/Bosses/snd_intro_flor.wav",
 	&"eclipse_colheita": "res://sounds/Bosses/snd_intro_sizigia.wav",
 }
@@ -15,7 +15,7 @@ const SONS: Dictionary = {
 const CORES: Dictionary = {
 	&"pet0": Color(0.08, 0.30, 0.42, 0.94),
 	&"constelacao_amparo": Color(0.08, 0.18, 0.48, 0.94),
-	&"no_ametista": Color(0.24, 0.07, 0.38, 0.94),
+	&"contrafase": Color(0.24, 0.07, 0.38, 0.94),
 	&"flor_equinocio": Color(0.13, 0.34, 0.12, 0.94),
 	&"eclipse_colheita": Color(0.30, 0.08, 0.34, 0.94),
 }

@@ -28,7 +28,7 @@ ASTEROIDE_BONUS = (ROOT / "Scripts/AsteroideBonus.gd").read_text(encoding="utf-8
 FLOR = (ROOT / "Scripts/BossCaosPrimaveril.gd").read_text(encoding="utf-8")
 BOSS_PET = (ROOT / "Entities/BossPet0.tscn").read_text(encoding="utf-8")
 BOSS_AMPARO = (ROOT / "Entities/BossConstelacaoAmparo.tscn").read_text(encoding="utf-8")
-BOSS_AMETISTA = (ROOT / "Entities/BossNoAmetista.tscn").read_text(encoding="utf-8")
+BOSS_CONTRAFASE = (ROOT / "Entities/BossContrafase.tscn").read_text(encoding="utf-8")
 BOSS_FLOR = (ROOT / "Entities/BossFlorEquinocio.tscn").read_text(encoding="utf-8")
 BOSS_SIZIGIA = (ROOT / "Entities/BossEclipseColheita.tscn").read_text(encoding="utf-8")
 
@@ -160,7 +160,7 @@ assert 'ForcaShake + magnitude' not in CAMERA
 assert 'camera_transicao.shake(12.0, true)' in SIZIGIA
 assert 'camera.shake(obter_tremor_morte(), is_in_group("boss"))' in ENEMY
 assert 'const ORDEM_CICLO' in SETORES
-for setor in ["vazio_inicial", "constelacao_amparo", "no_ametista", "florescimento", "lua_colheita"]:
+for setor in ["vazio_inicial", "constelacao_amparo", "contrafase", "florescimento", "lua_colheita"]:
     assert f'&"{setor}"' in SETORES
 for nome in ["CentelhaGuia", "EloDourado", "FitaVioleta", "NoFlutuante", "BrotoPrimaveril", "FragmentoLunar"]:
     assert (ROOT / "Entities" / f"Inimigo{nome}.tscn").exists(), nome
@@ -192,7 +192,7 @@ assert 'conceder_xp_equipe(recompensa_xp)' in ENEMY
 assert 'conceder_xp_equipe(calcular_xp(' in ASTEROIDE_BONUS
 assert "vincular_colisao_visual(peca, forma)" in (ROOT / "Scripts/BossPet0.gd").read_text()
 assert 'radius = 32.0' in BOSS_AMPARO
-assert 'radius = 48.0' in BOSS_AMETISTA
+assert 'type="CollisionPolygon2D"' in BOSS_CONTRAFASE and 'polygon = PackedVector2Array(' in BOSS_CONTRAFASE
 assert 'radius = 40.5' in BOSS_FLOR and 'Dano = 48.0' in BOSS_FLOR
 assert 'radius = 59.4' in BOSS_SIZIGIA and 'Dano = 42.0' in BOSS_SIZIGIA
 assert 'return maxf(valor_base * pow(0.76, indice_setor_dificuldade), 0.5)' in ENEMY

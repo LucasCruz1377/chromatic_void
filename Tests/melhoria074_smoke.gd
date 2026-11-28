@@ -31,7 +31,7 @@ func testar_curva_xp_e_dano() -> void:
 	verificar(xp_pos_pet0 > xp_inicio, "o combo não melhorou o XP após o PET-0")
 	verificar(xp_final > xp_pos_pet0 and xp_final < 2.25, "a curva de XP não cresce de forma moderada")
 
-	setor_atual = &"no_ametista"
+	setor_atual = &"contrafase"
 	var inimigo := InimigoBase.new()
 	inimigo.VidaMaxima = 100.0
 	inimigo.Dano = 10.0
@@ -136,7 +136,7 @@ func testar_limites_hud_e_musica() -> void:
 	verificar(is_equal_approx(vida.position.x + vida.size.x * 0.5, centro), "a vida não está centralizada horizontalmente")
 	verificar(is_equal_approx(xp.position.x + xp.size.x * 0.5, centro), "o XP não está centralizado horizontalmente")
 
-	for id in [&"constelacao_amparo", &"no_ametista"]:
+	for id in [&"constelacao_amparo", &"contrafase"]:
 		batalha.aplicar_musica_boss(id)
 		verificar(is_instance_valid(batalha.tocarmusica.stream), "boss novo ficou sem música: %s" % id)
 

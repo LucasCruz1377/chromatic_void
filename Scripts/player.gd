@@ -276,7 +276,7 @@ func _process(delta: float) -> void:
 	atualizar_habilidade(delta)
 	atualizar_movimento(delta)
 	atualizar_combate(delta)
-	atualizar_limites()
+	atualizar_limites(delta)
 	atualizar_vida()
 
 
@@ -2781,7 +2781,11 @@ func DesbloquearGiro() -> void:
 	giroblock = false
 
 
-func atualizar_limites() -> void:
+func atualizar_limites(delta := 0.0) -> void:
+	var partitura := get_tree().get_first_node_in_group(&"partitura_ativa") if is_inside_tree() else null
+	if is_instance_valid(partitura):
+		partitura.conter_nave(self, delta)
+		return
 	var area := Global.obter_retangulo_area_visivel()
 	global_position.x = wrapf(global_position.x, area.position.x, area.end.x)
 	global_position.y = wrapf(global_position.y, area.position.y, area.end.y)

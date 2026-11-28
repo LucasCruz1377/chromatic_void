@@ -26,8 +26,8 @@ static func nome_do_boss(id: StringName) -> String:
 			return "PET-0"
 		&"constelacao_amparo":
 			return "CONSTELAÇÃO DO AMPARO"
-		&"no_ametista":
-			return "NÓ DE AMETISTA"
+		&"contrafase":
+			return "CONTRAFASE"
 		&"flor_equinocio":
 			return "CAOS PRIMAVERIL"
 		&"eclipse_colheita":
@@ -52,8 +52,8 @@ func _draw() -> void:
 			_desenhar_pet0()
 		&"constelacao_amparo":
 			_desenhar_constelacao()
-		&"no_ametista":
-			_desenhar_ametista()
+		&"contrafase":
+			_desenhar_contrafase()
 		&"flor_equinocio":
 			_desenhar_flor()
 		&"eclipse_colheita":
@@ -110,24 +110,10 @@ func _desenhar_constelacao() -> void:
 		draw_circle(ponto, 6.0, Color.WHITE)
 
 
-func _desenhar_ametista() -> void:
-	var roxo := Color(0.78, 0.36, 1.0)
-	var rosa := Color(1.0, 0.28, 0.68)
-	var cristal := PackedVector2Array([
-		Vector2(0, -61), Vector2(42, 0), Vector2(0, 69), Vector2(-42, 0)
-	])
-	draw_colored_polygon(cristal, rosa)
-	draw_polyline(PackedVector2Array([
-		cristal[0], cristal[1], cristal[2], cristal[3], cristal[0]
-	]), Color.WHITE, 4.0, true)
-	for indice in range(4):
-		var angulo := tempo * (0.32 if indice % 2 == 0 else -0.32) + indice * TAU / 4.0
-		var ponto := Vector2.from_angle(angulo) * 103.0
-		draw_line(Vector2.ZERO, ponto, Color(roxo, 0.82), 12.0, true)
-		draw_line(Vector2.ZERO, ponto, Color(rosa, 0.72), 4.0, true)
-		draw_circle(ponto, 17.0, roxo)
-		draw_circle(ponto, 6.0, Color.WHITE)
-	draw_arc(Vector2.ZERO, 79.0, tempo * 0.3, tempo * 0.3 + 4.8, 48, Color(roxo, 0.72), 6.0, true)
+func _desenhar_contrafase() -> void:
+	var guitarra := preload("res://Assets/Bosses/Contrafase/contrafase.svg")
+	var tamanho := guitarra.get_size() * 1.4
+	draw_texture_rect(guitarra, Rect2(-tamanho * 0.5, tamanho), false)
 
 
 func _desenhar_flor() -> void:

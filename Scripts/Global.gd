@@ -139,10 +139,10 @@ const CONQUISTAS: Dictionary = {
 		"tipo": &"boss", "alvo": &"constelacao_amparo", "meta": 1,
 		"recompensas": [&"p04_espirito_protetor", &"n09_familia_satelites"]
 	},
-	&"boss_ruptura": {
-		"nome": "NÓ DESATADO",
-		"descricao": "Derrote o Nó de Ametista.",
-		"tipo": &"boss", "alvo": &"no_ametista", "meta": 1,
+	&"boss_contrafase": {
+		"nome": "ÚLTIMO ACORDE",
+		"descricao": "Derrote Contrafase.",
+		"tipo": &"boss", "alvo": &"contrafase", "meta": 1,
 		"recompensas": [&"p06_rosa_espinhosa"]
 	},
 	&"boss_sizigia": {
@@ -398,6 +398,8 @@ func carregar_conquistas() -> void:
 	if salvas is Array:
 		for valor in salvas:
 			var id := StringName(str(valor))
+			if id == &"boss_ruptura":
+				id = &"boss_contrafase"
 			if CONQUISTAS.has(id) and id not in conquistas_desbloqueadas:
 				conquistas_desbloqueadas.append(id)
 	bosses_derrotados.clear()
@@ -407,8 +409,8 @@ func carregar_conquistas() -> void:
 			var id := StringName(str(valor))
 			if id == &"sentinela_dourada":
 				id = &"constelacao_amparo"
-			elif id == &"ruptura_lilas":
-				id = &"no_ametista"
+			elif id in [&"ruptura_lilas", &"no_ametista"]:
+				id = &"contrafase"
 			if id not in bosses_derrotados:
 				bosses_derrotados.append(id)
 	# Migra saves antigos e concede conquistas já alcançadas sem repetir avisos.

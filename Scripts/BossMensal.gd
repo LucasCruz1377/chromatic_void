@@ -10,7 +10,7 @@ enum Tema {
 	FLOR_EQUINOCIO,
 	ECLIPSE_COLHEITA,
 	CONSTELACAO_AMPARO,
-	NO_AMETISTA,
+	CONTRAFASE,
 }
 
 enum Estado {
@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 
 
 func _capturar_estado_defesas_rede() -> Dictionary:
-	# Os dois bosses de defesa implementam o proprio formato.
+	# Cada chefe publica seu estado compacto.
 	return {}
 
 
@@ -184,7 +184,7 @@ func preparar_ataque(indice: int) -> void:
 	tempo_estado = maxf(tempo_aviso - float(fase - 1) * 0.06, 0.38)
 	direcao_investida = global_position.direction_to(player.global_position)
 	linha_aviso.visible = true
-	if indice == 0 and tema in [Tema.ECLIPSE_COLHEITA, Tema.NO_AMETISTA]:
+	if indice == 0 and tema == Tema.ECLIPSE_COLHEITA:
 		linha_aviso.points = PackedVector2Array([
 			Vector2.ZERO, direcao_investida * 760.0
 		])
@@ -210,8 +210,6 @@ func executar_ataque(indice: int) -> void:
 			executar_eclipse(indice)
 		Tema.CONSTELACAO_AMPARO:
 			executar_sentinela(indice)
-		Tema.NO_AMETISTA:
-			executar_ruptura(indice)
 
 
 func executar_floresta(indice: int) -> void:
@@ -261,22 +259,6 @@ func executar_sentinela(indice: int) -> void:
 		_:
 			disparar_anel(18, 205.0, 0.32, -angulo_visual)
 			iniciar_recuperacao(0.95)
-
-
-func executar_ruptura(indice: int) -> void:
-	match indice:
-		0:
-			disparar_trama_ametista(3 + fase)
-			iniciar_recuperacao(0.72)
-		1:
-			disparar_anel_com_fendas(16, 225.0, 0.40, 3)
-			iniciar_recuperacao(0.7)
-		2:
-			disparar_ancoras_ametista(4 + fase)
-			iniciar_recuperacao(0.75)
-		_:
-			disparar_anel_com_fendas(24, 260.0, 0.34, 4)
-			iniciar_recuperacao(0.9)
 
 
 func iniciar_investida() -> void:
@@ -355,42 +337,6 @@ func disparar_satelites() -> void:
 		var direcao := Vector2.from_angle(angulo)
 		criar_projetil(direcao, 165.0 + indice * 18.0, 0.38)
 		criar_projetil(direcao.rotated(0.18), 245.0, 0.28)
-
-
-func disparar_trama_ametista(linhas: int) -> void:
-	if not is_instance_valid(player):
-		return
-	var base := global_position.direction_to(player.global_position)
-	var lateral := base.orthogonal()
-	for indice in range(linhas):
-		var faixa := float(indice) - float(linhas - 1) * 0.5
-		var projetil_a := criar_projetil(base.rotated(0.16), 245.0, 0.36)
-		var projetil_b := criar_projetil(base.rotated(-0.16), 245.0, 0.36)
-		if is_instance_valid(projetil_a):
-			projetil_a.global_position += lateral * faixa * 26.0
-		if is_instance_valid(projetil_b):
-			projetil_b.global_position -= lateral * faixa * 26.0
-
-
-func disparar_ancoras_ametista(quantidade: int) -> void:
-	for indice in range(quantidade):
-		var angulo := angulo_visual + TAU * float(indice) / float(quantidade)
-		criar_projetil(Vector2.from_angle(angulo), 145.0, 0.42, 1)
-
-
-func disparar_anel_com_fendas(
-	quantidade: int,
-	velocidade_projetil: float,
-	multiplicador_dano: float,
-	tamanho_fenda: int
-) -> void:
-	var inicio_fenda := randi_range(0, quantidade - 1)
-	for indice in range(quantidade):
-		var distancia_fenda := posmod(indice - inicio_fenda, quantidade)
-		if distancia_fenda < tamanho_fenda:
-			continue
-		var angulo := angulo_visual + TAU * float(indice) / float(quantidade)
-		criar_projetil(Vector2.from_angle(angulo), velocidade_projetil, multiplicador_dano)
 
 
 func criar_projetil(
@@ -486,9 +432,3 @@ func _draw() -> void:
 				draw_circle(ponto, 7.0, cor_secundaria)
 			for indice in range(anteriores.size()):
 				draw_line(anteriores[indice], anteriores[(indice + 1) % anteriores.size()], Color(cor_principal, 0.46), 2.0)
-		Tema.NO_AMETISTA:
-			for raio in [24.0, 40.0, 56.0]:
-				draw_arc(Vector2.ZERO, raio * pulso, angulo_visual + raio * 0.02, angulo_visual + raio * 0.02 + 4.8, 38, cor_principal, 5.0)
-			draw_line(Vector2(-46, -34), Vector2(46, 34), Color(cor_secundaria, 0.72), 4.0)
-			draw_line(Vector2(-46, 34), Vector2(46, -34), Color(cor_secundaria, 0.72), 4.0)
-			draw_circle(Vector2.ZERO, 15.0, cor_secundaria)

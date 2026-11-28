@@ -293,7 +293,7 @@ func _ready() -> void:
 		"res://Entities/BossFlorEquinocio.tscn",
 		"res://Entities/BossEclipseColheita.tscn",
 		"res://Entities/BossConstelacaoAmparo.tscn",
-		"res://Entities/BossNoAmetista.tscn",
+		"res://Entities/BossContrafase.tscn",
 	]:
 		var boss := (load(caminho_boss) as PackedScene).instantiate() as InimigoBase
 		var vida_anterior := boss.VidaMaxima

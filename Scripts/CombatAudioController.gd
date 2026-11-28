@@ -8,12 +8,10 @@ const SONS_TIRO: Array[AudioStream] = [
 	preload("res://sounds/Enemies/SFX_tiro_var4.wav"),
 ]
 const SOM_GRAVIDADE := preload("res://sounds/Bosses/sfx_gravidade_eclipse.wav")
-const SOM_AMETISTA := preload("res://sounds/Bosses/snd_attack1_ametista.wav")
 const INTERVALO_MINIMO_TIRO_MS := 55
 
 var ultimo_tiro_ms := -INTERVALO_MINIMO_TIRO_MS
 var gravidade_ativa_anterior := false
-var poderes_ametista_anterior := 0
 
 
 func _ready() -> void:
@@ -25,7 +23,6 @@ func _process(_delta: float) -> void:
 	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
 		return
 	_processar_gravidade()
-	_processar_ametista()
 
 
 func _ao_adicionar_node(node: Node) -> void:
@@ -61,42 +58,12 @@ func _processar_gravidade() -> void:
 	gravidade_ativa_anterior = ativa
 
 
-func _processar_ametista() -> void:
-	var boss_ametista: Node
-	for candidato in get_tree().get_nodes_in_group("boss"):
-		if candidato is BossNoAmetista:
-			boss_ametista = candidato
-			break
-	if not is_instance_valid(boss_ametista):
-		poderes_ametista_anterior = 0
-		return
-	var poderes := int(boss_ametista.get("poderes_executados"))
-	if poderes <= poderes_ametista_anterior:
-		return
-	poderes_ametista_anterior = poderes
-	var ataque := int(boss_ametista.get("ultimo_ataque"))
-	if ataque not in [0, 1, 3]:
-		return
-	if multiplayer.has_multiplayer_peer():
-		_tocar_ametista_remoto.rpc()
-	_tocar_ametista_remoto()
-
-
 @rpc("authority", "call_remote", "reliable")
 func _tocar_gravidade_remoto() -> void:
 	_criar_audio(
 		SOM_GRAVIDADE,
 		randf_range(0.90, 1.10),
 		-5.0
-	)
-
-
-@rpc("authority", "call_remote", "reliable")
-func _tocar_ametista_remoto() -> void:
-	_criar_audio(
-		SOM_AMETISTA,
-		randf_range(0.88, 1.12),
-		-6.0
 	)
 
 

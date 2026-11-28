@@ -3,7 +3,7 @@ class_name SectorData
 
 
 const ORDEM_CICLO: Array[StringName] = [
-	&"vazio_inicial", &"constelacao_amparo", &"no_ametista",
+	&"vazio_inicial", &"constelacao_amparo", &"contrafase",
 	&"florescimento", &"lua_colheita",
 ]
 
@@ -67,18 +67,18 @@ const DADOS: Dictionary = {
 			[&"prisma_amparo", 1.65], [&"satelite_berco", 0.8], [&"pulso_solar", 1.3]
 		]
 	},
-	&"no_ametista": {
-		"nome": "NÓ DE AMETISTA",
+	&"contrafase": {
+		"nome": "CONTRAFASE",
 		"subtitulo": "AGOSTO LILÁS",
-		"descricao": "Fitas cristalinas tecem caminhos perigosos que precisam ser desatados.",
+		"descricao": "Um riff percorre as cinco linhas da arena.",
 		"usar_fundo_original": false,
 		"cor_fundo": Color(0.026, 0.008, 0.038, 1.0),
 		"cor_destaque": Color(0.82, 0.48, 1.0, 1.0),
-		"simbolo": "✦",
-		"boss": &"no_ametista",
+		"simbolo": "♪",
+		"boss": &"contrafase",
 		"inimigos": [
 			[&"fita_violeta", 2.4], [&"no_flutuante", 1.8],
-			[&"eco_ametista", 1.5], [&"lamina_iris", 1.2], [&"casulo_prismatico", 1.0]
+			[&"eco_sonoro", 1.5], [&"lamina_iris", 1.2], [&"casulo_prismatico", 1.0]
 		]
 	}
 }

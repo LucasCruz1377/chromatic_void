@@ -46,6 +46,10 @@ func _ready() -> void:
 		var passou := await _testar_snapshots_chefes()
 		print("CHEFES ", papel, " ", passou)
 		await get_tree().create_timer(0.5).timeout
+		batalha._encerrar_audio_arena()
+		batalha.queue_free()
+		await get_tree().process_frame
+		await get_tree().create_timer(0.25, true, false, true).timeout
 		Rede.encerrar_lobby()
 		get_tree().quit(0 if passou else 1)
 		return
@@ -202,7 +206,7 @@ func _ready() -> void:
 		return
 	if papel == "host":
 		batalha.limpar_inimigos_sem_recompensa()
-		batalha._criar_boss(&"no_ametista", 2, true)
+		batalha._criar_boss(&"contrafase", 2, true)
 		await get_tree().process_frame
 		if is_instance_valid(batalha.boss_ativo):
 			batalha.boss_ativo.set_physics_process(false)
@@ -584,7 +588,7 @@ func _testar_snapshots_chefes() -> bool:
 	if papel == "host":
 		batalha.limpar_inimigos_sem_recompensa()
 	await get_tree().create_timer(0.3).timeout
-	for nome in ["BossPet0", "BossFlorEquinocio", "BossEclipseColheita", "BossConstelacaoAmparo", "BossNoAmetista"]:
+	for nome in ["BossPet0", "BossFlorEquinocio", "BossEclipseColheita", "BossConstelacaoAmparo", "BossContrafase"]:
 		if not await _barreira_rede(nome + "_inicio"):
 			return false
 		var boss: ChefeBase
@@ -599,8 +603,8 @@ func _testar_snapshots_chefes() -> bool:
 				boss.iniciar_onda_espinhos()
 			elif boss is BossConstelacaoAmparo:
 				boss.executar_sentinela(0)
-			elif boss is BossNoAmetista:
-				boss.executar_ruptura(0)
+			elif boss is BossContrafase:
+				boss.iniciar_partitura()
 			elif boss is BossSizigiaEterna:
 				boss.iniciar_transicao(BossSizigiaEterna.Fase.SOL)
 		var limite := 8.0
@@ -613,7 +617,10 @@ func _testar_snapshots_chefes() -> bool:
 			boss = batalha.get_node_or_null("ChefeIntegracao") as ChefeBase
 			if is_instance_valid(boss) and boss.ultima_sequencia_snapshot_visual_rede > 0:
 				var angulo := NAN
-				if boss is BossMensal:
+				if boss is BossContrafase:
+					if boss.partitura.ativa and boss.partitura.is_visible_in_tree() and not boss.visible:
+						angulo = boss.partitura.tempo
+				elif boss is BossMensal:
 					angulo = boss.angulo_visual
 				elif boss is BossPet0 and boss.estado == BossPet0.Estado.ROLANDO:
 					angulo = boss.visual.rotation
