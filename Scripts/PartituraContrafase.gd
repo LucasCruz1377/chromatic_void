@@ -24,7 +24,8 @@ var origem := Vector2.ZERO
 var dano := 0.0
 var area := Rect2()
 var ajuste_relogio := 0.0
-var voz: AudioStreamPlayer
+var vozes: Array[AudioStreamPlayer] = []
+var indices_vozes := [-1, -1, -1]
 var bumbo: AudioStreamPlayer
 var musica: AudioStreamPlayer2D
 var volume_anterior := 0.0
@@ -37,14 +38,16 @@ var protegido_ate: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
-	voz = AudioStreamPlayer.new()
+	for i in indices_vozes.size():
+		var voz := AudioStreamPlayer.new()
+		voz.stream = CORDA
+		voz.bus = &"Music"
+		add_child(voz)
+		vozes.append(voz)
 	bumbo = AudioStreamPlayer.new()
-	voz.stream = CORDA
 	bumbo.stream = BUMBO
-	voz.bus = &"Music"
 	bumbo.bus = &"Music"
 	bumbo.volume_db = -8.0
-	add_child(voz)
 	add_child(bumbo)
 	set_physics_process(false)
 
@@ -80,7 +83,9 @@ func encerrar() -> void:
 	ativa = false
 	if is_in_group(&"partitura_ativa"):
 		remove_from_group(&"partitura_ativa")
-	voz.stop()
+	for voz in vozes:
+		voz.stop()
+	indices_vozes.fill(-1)
 	bumbo.stop()
 	_restaurar_musica()
 	set_physics_process(false)
@@ -126,24 +131,29 @@ func _physics_process(delta: float) -> void:
 
 
 func _tocar_frase() -> void:
-	var atual := -1
+	var tocando := 0
+	nota_soando = -1
 	for i in frase.notas.size():
 		var nota := frase.notas[i]
 		var idade := tempo - frase.inicio(nota.x)
 		if idade < 0.0:
 			break
-		if idade < nota.z * frase.batida:
-			atual = i
-			var pitch := Frase.pitch(Frase.altura(nota, idade, volta))
-			voz.pitch_scale = maxf(0.01, pitch * Engine.time_scale)
-			var restante := nota.z * frase.batida - idade
-			voz.volume_db = -5.0 + linear_to_db(clampf(restante / 0.055, 0.01, 1.0))
-			if atual != nota_soando:
-				voz.play(idade * pitch)
-			break
-	if atual == -1 and nota_soando >= 0:
-		voz.stop()
-	nota_soando = atual
+		var restante := nota.z * frase.batida - idade
+		if restante <= 0.00001 or tocando >= vozes.size():
+			continue
+		var voz := vozes[tocando]
+		var pitch := Frase.pitch(Frase.altura(nota, idade, volta))
+		voz.pitch_scale = maxf(0.01, pitch * Engine.time_scale)
+		voz.volume_db = -5.0 - tocando * 4.0 + linear_to_db(clampf(restante / 0.055, 0.01, 1.0))
+		if indices_vozes[tocando] != i:
+			voz.play(idade * pitch)
+		indices_vozes[tocando] = i
+		nota_soando = i
+		tocando += 1
+	for i in range(tocando, vozes.size()):
+		if indices_vozes[i] >= 0:
+			vozes[i].stop()
+			indices_vozes[i] = -1
 	for i in range(ultimo_grave + 1, frase.graves.size()):
 		var idade := tempo - frase.inicio(frase.graves[i])
 		if idade < 0.0:

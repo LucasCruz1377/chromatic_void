@@ -29,14 +29,25 @@ func _ready() -> void:
 		print("Solo fase %d: %.2f s, %d notas" % [etapa, part.duracao, part.notas.size()])
 		var ultima := part.notas[-1]
 		checar(is_equal_approx(part.inicio(ultima.x) + part.travessia + part.cauda(ultima) + 0.45, 12.0), "última nota fora do solo")
-		var anterior := 0.0
+		var acordes := {}
 		for evento in part.notas:
-			checar((evento.x - anterior) * part.batida < 0.5, "intervalo longo entre projéteis")
-			anterior = evento.x
+			var t := part.inicio(evento.x)
+			checar(t >= Frase.PASSAGEM.y or t + part.travessia + part.cauda(evento) <= Frase.PASSAGEM.x, "nota ou cauda invadiu a passagem")
+			var cordas: Array = acordes.get(evento.x, [])
+			checar(evento.y not in cordas, "acorde sobreposto")
+			cordas.append(evento.y)
+			acordes[evento.x] = cordas
 			checar(fmod(evento.y, 2.0) == 0 and evento.y >= 0 and evento.y <= 8, "nota fora da linha")
 			checar(part.aviso(evento) >= part.janela.x and part.aviso(evento) <= part.janela.y, "aviso fora da janela")
 			checar(etapa >= 2 or evento.w == Frase.Articulacao.RETA, "articulação prematura")
 			checar(etapa == 3 or evento.w != Frase.Articulacao.BEND, "bend prematuro")
+		var maior := 0
+		for cordas: Array in acordes.values():
+			maior = maxi(maior, cordas.size())
+		checar(maior == (2 if etapa == 1 else 3), "faltou acorde da fase")
+		for grave in part.graves:
+			var t := part.inicio(grave)
+			checar(t + 0.22 <= Frase.PASSAGEM.x or t >= Frase.PASSAGEM.y, "grave invadiu a passagem")
 	chefe.Vida = chefe.obter_vida_maxima_atual() * 0.60
 	chefe.atualizar_fase()
 	checar(chefe.fase == 2, "fase intermediária ausente")
@@ -57,11 +68,11 @@ func _ready() -> void:
 	checar(is_equal_approx(palco.tempo, antes), "a pauta avançou na pausa")
 	get_tree().paused = false
 
-	var nota := palco.frase.notas[5]
+	var nota := palco.frase.notas[6]
 	var a := palco.frase.ponto(palco.area, nota, 0.1, 1)
 	var b := palco.frase.ponto(palco.area, nota, 0.45, 1)
 	checar(b.x < a.x and b.y < a.y, "o bend perdeu o sentido")
-	var vibrato := palco.frase.notas[2]
+	var vibrato := palco.frase.notas[3]
 	var linha := Frase.grau_base(vibrato, 1)
 	checar(Frase.altura(vibrato, 0.135, 1) > linha and Frase.altura(vibrato, 0.405, 1) < linha, "vibrato sem oscilação")
 	var idade := 0.7

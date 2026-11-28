@@ -9,6 +9,7 @@ var duracao: float
 var janela: Vector2
 var notas: Array[Vector4] = []
 var graves: Array[float] = []
+const PASSAGEM := Vector2(5.8, 7.1)
 const RAIO_NAVE := 13.5
 # Degraus da melodia: sobe em pares, segura o topo e volta pelo outro lado.
 const LINHAS := [0, 0, 1, 1, 2, 2, 3, 4, 4, 3, 3, 2, 2, 1, 1, 0]
@@ -33,12 +34,23 @@ func _init(fase: int) -> void:
 		elif fase >= 2 and i % 8 == 2:
 			articulacao = Articulacao.VIBRATO
 		var sustentada := articulacao == Articulacao.BEND
-		notas.append(Vector4(i * 0.5, grau, 1.0 if sustentada else 0.5, articulacao))
+		var nota := Vector4(i * 0.5, grau, 1.0 if sustentada else 0.5, articulacao)
+		var chegada := inicio(nota.x)
+		if chegada >= PASSAGEM.y or chegada + travessia + cauda(nota) <= PASSAGEM.x:
+			if i % 8 == 0:
+				# Acordes retos ocupam apenas um lado. A outra metade recebe a resposta.
+				var lado := 0 if (i / 8) % 2 == 0 else 8
+				var sentido := 1 if lado == 0 else -1
+				var vozes := 3 if fase >= 2 and i % 16 == 8 else 2
+				for j in vozes:
+					notas.append(Vector4(nota.x, lado + sentido * j * 2, 0.5, Articulacao.RETA))
+			else:
+				notas.append(nota)
 		i += 2 if sustentada else 1
 	if fase == 2:
 		graves = [5.0, 13.0]
 	elif fase == 3:
-		graves = [2.0, 5.0, 9.0, 13.0, 17.0, 20.0]
+		graves = [2.0, 5.0, 8.0, 15.0, 17.0, 20.0]
 
 
 static func escala_nota(area: Rect2) -> float:
