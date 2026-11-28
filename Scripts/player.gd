@@ -70,6 +70,8 @@ var cooldown := 0.0
 var mira_mouse = Global.mira_mouse
 var vivo := true
 var giroblock := false
+var stun_acorde := 0.0
+var especial_pronto_rede := false
 var ctrlblock := false
 var UsandoHabilidade := false
 var invulneravel_por_habilidade := false
@@ -273,7 +275,11 @@ func _process(delta: float) -> void:
 	atualizar_passivos(delta)
 	atualizar_equipamentos_monthly(delta)
 	atualizar_overdrive(delta)
+	if stun_acorde > 0.0:
+		stun_acorde = maxf(0.0, stun_acorde - delta)
+		queue_redraw()
 	atualizar_habilidade(delta)
+	especial_pronto_rede = HabilidadeEquipada != null and not UsandoHabilidade and HabilidadeEquipada.cooldown_atual <= 0.0
 	atualizar_movimento(delta)
 	atualizar_combate(delta)
 	atualizar_limites(delta)
@@ -970,7 +976,7 @@ func atualizar_habilidade(delta: float) -> void:
 		return
 
 	HabilidadeEquipada.update(self, delta)
-	if ctrlblock:
+	if ctrlblock or stun_acorde > 0.0:
 		return
 
 	if vivo and Input.is_action_just_pressed("Habilidade"):
@@ -1359,6 +1365,11 @@ func EncerrarHabilidade() -> void:
 
 
 func atualizar_movimento(delta: float) -> void:
+	if stun_acorde > 0.0:
+		velocity = Vector2.ZERO
+		rastro_ativo_rede = false
+		particles.emitting = false
+		return
 	if not vivo:
 		return
 
@@ -1544,12 +1555,16 @@ func arrowsctrl(delta: float, fator_movimento := 1.0) -> void:
 
 
 func atualizar_combate(delta: float) -> void:
-	var ativo := vivo and not ctrlblock and Input.is_action_pressed("atirar")
+	var ativo := vivo and stun_acorde <= 0.0 and not ctrlblock and Input.is_action_pressed("atirar")
 	if gatilho_pressionado != ativo:
 		gatilho_pressionado = ativo
 		if Rede.esta_conectado() and not multiplayer.is_server():
 			_sincronizar_gatilho.rpc_id(1, ativo)
 	cooldown = maxf(cooldown - delta, 0.0)
+	if stun_acorde > 0.0:
+		carga_arma = 0.0
+		_encerrar_feixe_perielio()
+		return
 	if arma_monthly == &"a06_feixe_perielio":
 		_atualizar_feixe_perielio(delta)
 		return
@@ -2085,6 +2100,25 @@ func _receber_impulso_de_perigo_rede(impulso: Vector2) -> void:
 		velocity += impulso
 
 
+func receber_power_chord(valor: float, origem: Vector2) -> void:
+	if Rede.modo_multiplayer and not is_multiplayer_authority():
+		if multiplayer.is_server():
+			_receber_acorde_host.rpc_id(peer_id_dono, valor, origem)
+		return
+	var antes := vida
+	tomar_dano(valor, origem)
+	if vivo and vida < antes:
+		stun_acorde = 4.0
+		velocity = Vector2.ZERO
+		queue_redraw()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _receber_acorde_host(valor: float, origem: Vector2) -> void:
+	if multiplayer.get_remote_sender_id() == 1 and is_multiplayer_authority():
+		receber_power_chord(valor, origem)
+
+
 func tomar_dano(valor: float, origem_dano := Vector2.INF) -> void:
 	if Rede.modo_multiplayer and not is_multiplayer_authority():
 		if multiplayer.is_server() and peer_id_dono > 1:
@@ -2324,6 +2358,8 @@ func atualizar_passivos(delta: float) -> void:
 
 
 func _draw() -> void:
+	if stun_acorde > 0.0:
+		draw_arc(Vector2.ZERO, 32.0, -PI / 2, -PI / 2 + TAU * stun_acorde / 4.0, 40, Color("#ffcd94"), 2.5, true)
 	if arma_monthly == &"a06_feixe_perielio" and calor_feixe_perielio > 0.0:
 		var cor := Color("68dafa") if bloqueio_feixe_perielio > 0.0 else obter_cor_calor_perielio()
 		draw_arc(Vector2.ZERO, 30.0, PI * 0.65, PI * 1.35, 32, Color(0.08, 0.09, 0.14, 0.85), 4.0, true)
@@ -2697,6 +2733,7 @@ func receber_upgrade(tipo: int) -> void:
 
 
 func morrer() -> void:
+	stun_acorde = 0.0
 	if not vivo:
 		return
 	if semente_renascimento_ativa:

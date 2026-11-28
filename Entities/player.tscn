@@ -124,6 +124,10 @@ properties/16/path = NodePath(".:fase_estrelas_solidarias")
 properties/16/spawn = true
 properties/16/replication_mode = 1
 
+properties/17/path = NodePath(".:especial_pronto_rede")
+properties/17/spawn = true
+properties/17/replication_mode = 2
+
 [node name="Player" type="CharacterBody2D" unique_id=1457330626 groups=["player"]]
 modulate = Color(1, 0.99607843, 1, 1)
 scale = Vector2(0.67625564, 0.67625564)

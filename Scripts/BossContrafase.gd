@@ -5,6 +5,8 @@ const JANELA_ENTRE_SOLOS := 5.0
 
 @onready var partitura: PartituraContrafase = $Palco/Partitura
 @onready var silhueta: CollisionPolygon2D = $Silhueta
+@onready var duelo = $Duelo
+var direto_pendente := false
 var volta := 0
 var camada_solida := 0
 var mascara_solida := 0
@@ -20,7 +22,7 @@ func _ready() -> void:
 
 func Mover(delta: float) -> void:
 	angulo_visual += delta
-	if partitura.ativa:
+	if partitura.ativa or duelo.golpe != duelo.Golpe.LIVRE:
 		velocity = Vector2.ZERO
 		return
 	rotation = -0.30 + 0.10 * sin(angulo_visual * 1.8)
@@ -28,7 +30,13 @@ func Mover(delta: float) -> void:
 	if is_instance_valid(player):
 		tempo_ataque -= delta
 		if tempo_ataque <= 0.0:
-			iniciar_partitura()
+			if direto_pendente:
+				direto_pendente = false
+				var golpe: int = duelo.Golpe.ACORDE if volta % 2 == 1 else duelo.Golpe.FEIXE
+				tempo_ataque = 1.5
+				duelo.iniciar(golpe, fase, player.global_position)
+			else:
+				iniciar_partitura()
 
 
 func iniciar_partitura() -> void:
@@ -46,6 +54,7 @@ func _retornar() -> void:
 	if Rede.modo_multiplayer and not multiplayer.is_server():
 		return
 	partitura.encerrar()
+	direto_pendente = true
 	_definir_corpo(true)
 	tempo_ataque = JANELA_ENTRE_SOLOS
 	_enviar_estado_defesas_rede()
@@ -101,6 +110,7 @@ func obter_cor_feedback() -> Color:
 
 func _capturar_estado_defesas_rede() -> Dictionary:
 	return {
+		"duelo": duelo.capturar(),
 		"fase": fase, "volta": volta, "solo": partitura.ativa, "tempo": partitura.tempo,
 		"origem": partitura.origem, "dano": partitura.dano,
 	}
@@ -109,6 +119,8 @@ func _capturar_estado_defesas_rede() -> Dictionary:
 func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
 	if not dados.has("solo"):
 		return
+	if dados.has("duelo"):
+		duelo.aplicar(dados["duelo"])
 	var nova_volta := int(dados["volta"])
 	if bool(dados["solo"]):
 		var instante := float(dados["tempo"])

@@ -102,6 +102,7 @@ func _ready() -> void:
 	nave.global_position.x = palco.area.end.x + 4
 	nave.atualizar_limites()
 	checar(is_equal_approx(nave.global_position.x, palco.area.position.x + 4), "wrap não voltou depois do solo")
+	testar_duelo(chefe, nave)
 	chefe.iniciar_partitura()
 	arena.limpar_inimigos_sem_recompensa()
 	await get_tree().process_frame
@@ -113,3 +114,40 @@ func _ready() -> void:
 	if falhas.is_empty():
 		print("TESTE OK: Contrafase, partitura, dano, pausa, bordas e retorno")
 	get_tree().quit(0 if falhas.is_empty() else 1)
+
+
+func testar_duelo(chefe: BossContrafase, nave: Player) -> void:
+	var duelo = chefe.duelo
+	var regra = duelo.Regra
+	checar(duelo.vulneravel(regra.VERMELHO, 0, false, 0, 0), "vermelho deveria atingir")
+	checar(duelo.vulneravel(regra.LARANJA, 0, false, 0, 0), "laranja deixou nave parada passar")
+	checar(not duelo.vulneravel(regra.LARANJA, 40, false, 0, 0), "laranja atingiu em movimento")
+	checar(not duelo.vulneravel(regra.AZUL, 24, false, 0, 0), "azul atingiu no limite seguro")
+	checar(duelo.vulneravel(regra.AZUL, 25, false, 0, 0), "azul ignorou velocidade")
+	checar(duelo.vulneravel(regra.ROXO, 0, true, 0, 0), "roxo ignorou carga")
+	checar(not duelo.vulneravel(regra.ROXO, 0, false, 0, 0), "roxo atingiu na recarga")
+	checar(duelo.vulneravel(regra.VERDE, 0, false, 49, 50), "verde ignorou altura")
+	checar(not duelo.vulneravel(regra.VERDE, 0, false, 50, 50), "verde atingiu na altura do boss")
+	chefe.global_position = Vector2(350, 270)
+	nave.global_position = Vector2(570, 270)
+	duelo.iniciar(duelo.Golpe.ACORDE, 1, nave.global_position)
+	nave.invencibilidade = false
+	nave.vida = nave.VIDA_MAXIMA
+	duelo._physics_process(4.99)
+	checar(nave.stun_acorde == 0, "acorde atingiu durante a carga")
+	duelo._physics_process(0.2)
+	checar(nave.stun_acorde == 4.0, "impacto deixou de atordoar por quatro segundos")
+	duelo.concluir()
+	nave.stun_acorde = 0.0
+	for fase in range(1, 4):
+		duelo.iniciar(duelo.Golpe.FEIXE, fase, nave.global_position)
+		checar(duelo.origem_raio(0).is_equal_approx(chefe.to_global(Vector2(0, -66))), "ponta desalinhada")
+		for i in range(1, fase):
+			var esperado: Vector2 = duelo.direcao_raio(0).rotated(TAU * i / fase)
+			checar(esperado.is_equal_approx(duelo.direcao_raio(i)), "raios assimétricos")
+		for cor in 5:
+			duelo.tempo = duelo.PRELUDIO + cor * duelo.PERIODO
+			checar(not duelo.feixe_ativo(), "troca de cor sem tolerância")
+			duelo._physics_process(0.3)
+			checar(duelo.feixe_ativo() and duelo.etapa_cor() == cor, "ordem ou duração das cores")
+		duelo.concluir()

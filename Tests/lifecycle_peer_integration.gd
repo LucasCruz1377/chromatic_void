@@ -353,6 +353,12 @@ func verificar_partitura_rede() -> bool:
 		return false
 	if not await esperar(func() -> bool: return not palco.ativa and chefe.visible, palco.frase.duracao + 2.0):
 		return false
+	if papel == "host":
+		chefe.duelo.iniciar(chefe.duelo.Golpe.FEIXE, 3, chefe.global_position + Vector2.RIGHT)
+	if not await esperar(func() -> bool:
+		return chefe.duelo.feixe_ativo() and chefe.duelo.golpe == chefe.duelo.Golpe.FEIXE and chefe.duelo.visual.raios[2].visible
+	):
+		return false
 	if papel != "host":
 		_confirmar_solo.rpc_id(1)
 	else:
