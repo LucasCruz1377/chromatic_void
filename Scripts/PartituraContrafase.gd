@@ -243,7 +243,8 @@ func _testar_colisoes(delta: float) -> void:
 
 
 func _atinge(p: Vector2, caminho: PackedVector2Array, nota: Vector4, idade: float) -> bool:
-	var raio := Frase.RAIO_NAVE + (3.0 if frase.cauda(nota) > 0.0 else 7.0)
+	var escala := Frase.escala_nota(area)
+	var raio := Frase.RAIO_NAVE + (3.0 if frase.cauda(nota) > 0.0 else 6.0 * escala)
 	for i in range(1, caminho.size()):
 		var a := caminho[i - 1]
 		var b := caminho[i]
@@ -253,8 +254,13 @@ func _atinge(p: Vector2, caminho: PackedVector2Array, nota: Vector4, idade: floa
 	if idade > frase.travessia:
 		return false
 	var cabeca := caminho[-1]
-	var haste := Geometry2D.get_closest_point_to_segment(p, cabeca + Vector2(6, 0), cabeca + Vector2(6, -22))
-	return p.distance_to(cabeca) <= Frase.RAIO_NAVE + 7.0 or p.distance_to(haste) <= Frase.RAIO_NAVE + 1.0
+	var haste := Geometry2D.get_closest_point_to_segment(p, cabeca + Vector2(6, 0) * escala, cabeca + Vector2(6, -22) * escala)
+	if p.distance_to(cabeca) <= Frase.RAIO_NAVE + 6.0 * escala or p.distance_to(haste) <= Frase.RAIO_NAVE + 1.4 * escala:
+		return true
+	if nota.z >= 1.0:
+		return false
+	var bandeira := Geometry2D.get_closest_point_to_segment(p, cabeca + Vector2(6, -21) * escala, cabeca + Vector2(12, -13) * escala)
+	return p.distance_to(bandeira) <= Frase.RAIO_NAVE + 2.0 * escala
 
 
 func _draw() -> void:
@@ -313,7 +319,10 @@ func _desenhar_nota(nota: Vector4, idade: float) -> void:
 			draw_polyline(caminho, Color("#ffe2ef"), 1.8, true)
 	if idade <= frase.travessia:
 		var cabeca := frase.ponto(area, nota, idade, volta)
-		draw_texture(SEMINIMA if longa else COLCHEIA, cabeca - ANCORAGEM, MARFIM if longa else Color("#f7acdf"))
+		var sprite := SEMINIMA if longa else COLCHEIA
+		var escala := Frase.escala_nota(area)
+		var destino := Rect2(cabeca - ANCORAGEM * escala, sprite.get_size() * escala)
+		draw_texture_rect(sprite, destino, false, MARFIM if longa else Color("#f7acdf"))
 
 
 func _desenhar_caixas() -> void:

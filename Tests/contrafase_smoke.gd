@@ -25,9 +25,14 @@ func _ready() -> void:
 	var volume: float = arena.tocarmusica.volume_db
 	for etapa in range(1, 4):
 		var part := Frase.new(etapa)
-		checar(part.duracao >= 20 and part.duracao <= 30, "solo fora da duração esperada")
+		checar(is_equal_approx(part.duracao, 12.0), "solo fora da duração esperada")
 		print("Solo fase %d: %.2f s, %d notas" % [etapa, part.duracao, part.notas.size()])
+		var ultima := part.notas[-1]
+		checar(is_equal_approx(part.inicio(ultima.x) + part.travessia + part.cauda(ultima) + 0.45, 12.0), "última nota fora do solo")
+		var anterior := 0.0
 		for evento in part.notas:
+			checar((evento.x - anterior) * part.batida < 0.5, "intervalo longo entre projéteis")
+			anterior = evento.x
 			checar(fmod(evento.y, 2.0) == 0 and evento.y >= 0 and evento.y <= 8, "nota fora da linha")
 			checar(part.aviso(evento) >= part.janela.x and part.aviso(evento) <= part.janela.y, "aviso fora da janela")
 			checar(etapa >= 2 or evento.w == Frase.Articulacao.RETA, "articulação prematura")
@@ -56,12 +61,12 @@ func _ready() -> void:
 	var a := palco.frase.ponto(palco.area, nota, 0.1, 1)
 	var b := palco.frase.ponto(palco.area, nota, 0.45, 1)
 	checar(b.x < a.x and b.y < a.y, "o bend perdeu o sentido")
-	var vibrato := palco.frase.notas[8]
+	var vibrato := palco.frase.notas[2]
 	var linha := Frase.grau_base(vibrato, 1)
 	checar(Frase.altura(vibrato, 0.135, 1) > linha and Frase.altura(vibrato, 0.405, 1) < linha, "vibrato sem oscilação")
 	var idade := 0.7
 	palco.tempo = palco.frase.inicio(nota.x) + idade
-	nave.global_position = palco.frase.ponto(palco.area, nota, idade - 0.25, 1)
+	nave.global_position = palco.frase.ponto(palco.area, nota, idade - 0.2, 1)
 	nave.invencibilidade = false
 	var hp := nave.vida
 	palco._testar_colisoes(1.0 / 60)
