@@ -13,7 +13,6 @@ const ROSA := Color("#f780bd")
 var duelo
 var raios: Array[Line2D] = []
 var materiais: Array[ShaderMaterial] = []
-var guitarra: Sprite2D
 var pista: AudioStreamPlayer
 var acorde: AudioStreamPlayer
 var ultimo_passo := -1
@@ -21,7 +20,6 @@ var ultimo_passo := -1
 
 func configurar(controlador: Node2D) -> void:
 	duelo = controlador
-	guitarra = duelo.get_parent().get_node("Guitarra")
 	z_index = 1
 	add_to_group(&"visual_boss_local")
 	for i in 3:
@@ -44,7 +42,7 @@ func _criar_raio() -> void:
 	var linha := Line2D.new()
 	var material_raio := ShaderMaterial.new()
 	material_raio.shader = LASER
-	material_raio.set_shader_parameter("tinta", MARFIM)
+	material_raio.set_shader_parameter("tinta", CORES[0])
 	linha.material = material_raio
 	linha.width = 18
 	linha.antialiased = true
@@ -67,7 +65,6 @@ func exibir() -> void:
 func recolher() -> void:
 	for linha in raios:
 		linha.hide()
-	guitarra.self_modulate = Color.WHITE
 	pista.stop()
 	acorde.stop()
 	hide()
@@ -85,10 +82,10 @@ func atualizar() -> void:
 func _atualizar_raios() -> void:
 	var regra: int = duelo.etapa_cor()
 	var tinta: Color = CORES[regra]
-	var mistura := 0.85
+	var intensidade := 1.0 if duelo.feixe_ativo() else 0.48
 	if duelo.antecipando_cor():
-		mistura -= 0.25 * sin(PI * (duelo.tempo_da_cor() - duelo.PERIODO + duelo.AVISO_COR) / duelo.AVISO_COR)
-	guitarra.self_modulate = Color.WHITE.lerp(tinta, mistura)
+		var progresso: float = (duelo.tempo_da_cor() - duelo.periodo_cor() + duelo.AVISO_COR) / duelo.AVISO_COR
+		intensidade -= 0.18 * sin(PI * progresso)
 	for i in raios.size():
 		var linha := raios[i]
 		linha.visible = i < duelo.fase_inicial
@@ -99,7 +96,8 @@ func _atualizar_raios() -> void:
 		linha.width = duelo.MEIA_LARGURA * 3.6 if duelo.feixe_ativo() else 6.0
 		var material_raio := materiais[i]
 		material_raio.set_shader_parameter("relogio", duelo.tempo)
-		material_raio.set_shader_parameter("intensidade", 1.0 if duelo.feixe_ativo() else 0.45)
+		material_raio.set_shader_parameter("tinta", tinta)
+		material_raio.set_shader_parameter("intensidade", intensidade)
 
 
 func _sonorizar_feixe() -> void:

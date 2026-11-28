@@ -11,13 +11,12 @@ const MEIO_LEQUE := PI / 4.5
 const VELOCIDADE_ONDA := 950.0
 const ESPESSURA_ONDA := 14.0
 const PRELUDIO := 1.0
-const PERIODO := 2.5
 const TROCA_SUAVE := 0.22
 const AVISO_COR := 0.55
 const INTERVALO_DANO := 0.85
 const PONTA := Vector2(0, -66)
 const RAIO_NAVE := 13.5
-const MEIA_LARGURA := 11.0
+const MEIA_LARGURA := 14.0
 
 var golpe := Golpe.LIVRE
 var tempo := 0.0
@@ -133,21 +132,25 @@ func _atualizar_pose() -> void:
 
 
 func velocidade_angular() -> float:
-	return deg_to_rad(48.0 + (fase_inicial - 1) * 16.0)
+	return deg_to_rad(90.0 + (fase_inicial - 1) * 30.0)
+
+
+func periodo_cor() -> float:
+	return TAU / velocidade_angular()
 
 
 func duracao() -> float:
 	if golpe == Golpe.ACORDE:
 		return CARGA + alcance_onda / VELOCIDADE_ONDA + 0.15
-	return PRELUDIO + PERIODO * 5.0
+	return PRELUDIO + periodo_cor() * 5.0
 
 
 func etapa_cor() -> int:
-	return clampi(floori((tempo - PRELUDIO) / PERIODO), 0, 4)
+	return clampi(floori((tempo - PRELUDIO) / periodo_cor() + 0.0000001), 0, 4)
 
 
 func tempo_da_cor() -> float:
-	return fposmod(maxf(tempo - PRELUDIO, 0.0), PERIODO)
+	return maxf(0.0, tempo - PRELUDIO - etapa_cor() * periodo_cor())
 
 
 func feixe_ativo() -> bool:
@@ -155,7 +158,7 @@ func feixe_ativo() -> bool:
 
 
 func antecipando_cor() -> bool:
-	return tempo >= PRELUDIO and etapa_cor() < 4 and tempo_da_cor() >= PERIODO - AVISO_COR
+	return tempo >= PRELUDIO and etapa_cor() < 4 and tempo_da_cor() >= periodo_cor() - AVISO_COR
 
 
 func direcao_raio(indice: int) -> Vector2:

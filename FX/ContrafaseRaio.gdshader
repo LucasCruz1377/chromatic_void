@@ -13,7 +13,7 @@ void fragment() {
 	float pulso = sin(UV.x * frequencia * 6.283 - relogio * 13.0);
 	float corda = abs(eixo - 0.40 - 0.07 * pulso);
 	float harmonico = 1.0 - smoothstep(0.0, 0.11, corda);
-	vec3 cor = mix(tinta.rgb, vec3(1.0), nucleo * 0.86);
-	float alfa = nucleo + halo * 0.72 + harmonico * 0.32;
+	vec3 cor = mix(tinta.rgb, vec3(1.0), nucleo * 0.22);
+	float alfa = nucleo + halo * 1.05 + harmonico * 0.32;
 	COLOR = vec4(cor, clamp(alfa * intensidade, 0.0, 1.0));
 }

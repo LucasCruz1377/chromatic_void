@@ -148,14 +148,22 @@ func testar_duelo(chefe: BossContrafase, nave: Player) -> void:
 		checar(chefe.global_position.is_equal_approx(partida.lerp(centro, 0.5)) and not duelo.feixe_ativo(), "aproximação ao centro")
 		duelo._physics_process(0.5)
 		checar(chefe.global_position.is_equal_approx(centro), "feixe fora do centro")
-		checar(is_equal_approx(rad_to_deg(duelo.velocidade_angular()), 48 + 16 * (fase - 1)), "giro por fase")
+		checar(is_equal_approx(rad_to_deg(duelo.velocidade_angular()), 90 + 30 * (fase - 1)), "giro por fase")
 		checar(duelo.origem_raio(0).is_equal_approx(chefe.to_global(Vector2(0, -66))), "ponta desalinhada")
 		for i in range(1, fase):
 			var esperado: Vector2 = duelo.direcao_raio(0).rotated(TAU * i / fase)
 			checar(esperado.is_equal_approx(duelo.direcao_raio(i)), "raios assimétricos")
+		var tinta_original: Color = chefe.get_node("Guitarra").self_modulate
+		checar(is_equal_approx(duelo.velocidade_angular() * duelo.periodo_cor(), TAU), "troca antes da volta completa")
 		for cor in 5:
-			duelo.tempo = duelo.PRELUDIO + cor * duelo.PERIODO
-			checar(not duelo.feixe_ativo(), "troca de cor sem tolerância")
+			if cor > 0:
+				duelo.tempo = duelo.PRELUDIO + cor * duelo.periodo_cor() - 0.001
+				checar(duelo.etapa_cor() == cor - 1, "cor antecipada")
+			duelo.tempo = duelo.PRELUDIO + cor * duelo.periodo_cor()
+			checar(duelo.etapa_cor() == cor and not duelo.feixe_ativo(), "troca de cor sem tolerância")
 			duelo._physics_process(0.3)
 			checar(duelo.feixe_ativo() and duelo.etapa_cor() == cor, "ordem ou duração das cores")
+			for i in fase:
+				checar(duelo.visual.materiais[i].get_shader_parameter("tinta") == duelo.visual.CORES[cor], "raio com cor errada")
+			checar(chefe.get_node("Guitarra").self_modulate == tinta_original, "cor aplicada ao sprite")
 		duelo.concluir()
