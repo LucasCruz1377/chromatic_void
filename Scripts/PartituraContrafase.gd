@@ -16,6 +16,7 @@ const ORDEM_CAIXAS := [0, 3, 1, 2]
 const FECHAMENTO := 0.64
 const ANCORAGEM := Vector2(8, 25)
 
+var frase := Frase.new(1)
 var ativa := false
 var volta := 0
 var tempo := 0.0
@@ -48,13 +49,14 @@ func _ready() -> void:
 	set_physics_process(false)
 
 
-func iniciar(numero: int, pos: Vector2, dano_nota: float, instante: float) -> void:
+func iniciar(numero: int, fase: int, pos: Vector2, dano_nota: float, instante: float) -> void:
 	if ativa:
 		encerrar()
 	volta = numero
+	frase = Frase.new(fase)
 	origem = pos
 	dano = dano_nota
-	tempo = clampf(instante, 0.0, Frase.DURACAO)
+	tempo = clampf(instante, 0.0, frase.duracao)
 	area = Global.obter_retangulo_area_visivel()
 	ajuste_relogio = 0.0
 	nota_soando = -1
@@ -111,9 +113,9 @@ func _physics_process(delta: float) -> void:
 	area = Global.obter_retangulo_area_visivel()
 	var ajuste := clampf(ajuste_relogio, -delta * 0.16, delta * 0.16)
 	ajuste_relogio -= ajuste
-	tempo = minf(tempo + delta + ajuste, Frase.DURACAO)
+	tempo = minf(tempo + delta + ajuste, frase.duracao)
 	var autoridade := not Rede.modo_multiplayer or multiplayer.is_server()
-	if tempo >= Frase.DURACAO:
+	if tempo >= frase.duracao:
 		if autoridade:
 			fim_da_frase.emit()
 		return
@@ -125,16 +127,16 @@ func _physics_process(delta: float) -> void:
 
 func _tocar_frase() -> void:
 	var atual := -1
-	for i in Frase.NOTAS.size():
-		var nota := Frase.NOTAS[i]
-		var idade := tempo - Frase.inicio(nota.x)
+	for i in frase.notas.size():
+		var nota := frase.notas[i]
+		var idade := tempo - frase.inicio(nota.x)
 		if idade < 0.0:
 			break
-		if idade < nota.z * Frase.BATIDA:
+		if idade < nota.z * frase.batida:
 			atual = i
 			var pitch := Frase.pitch(Frase.altura(nota, idade, volta))
 			voz.pitch_scale = maxf(0.01, pitch * Engine.time_scale)
-			var restante := nota.z * Frase.BATIDA - idade
+			var restante := nota.z * frase.batida - idade
 			voz.volume_db = -5.0 + linear_to_db(clampf(restante / 0.055, 0.01, 1.0))
 			if atual != nota_soando:
 				voz.play(idade * pitch)
@@ -142,8 +144,8 @@ func _tocar_frase() -> void:
 	if atual == -1 and nota_soando >= 0:
 		voz.stop()
 	nota_soando = atual
-	for i in range(ultimo_grave + 1, Frase.GRAVES.size()):
-		var idade := tempo - Frase.inicio(Frase.GRAVES[i])
+	for i in range(ultimo_grave + 1, frase.graves.size()):
+		var idade := tempo - frase.inicio(frase.graves[i])
 		if idade < 0.0:
 			break
 		ultimo_grave = i
@@ -153,7 +155,7 @@ func _tocar_frase() -> void:
 
 
 func _abertura() -> float:
-	return minf(smoothstep(0.0, FECHAMENTO, tempo), smoothstep(0.0, 0.45, Frase.DURACAO - tempo))
+	return minf(smoothstep(0.0, FECHAMENTO, tempo), smoothstep(0.0, 0.45, frase.duracao - tempo))
 
 
 func limites_nave() -> Rect2:
@@ -181,8 +183,8 @@ func conter_nave(nave: CharacterBody2D, delta: float) -> void:
 		var esquerda := 1.0 - smoothstep(0.0, 42.0, p.x - limites.position.x)
 		var direita := 1.0 - smoothstep(0.0, 42.0, limites.end.x - p.x)
 		nave.velocity.x += (esquerda - direita) * 680.0 * delta
-		for i in Frase.GRAVES.size():
-			var idade := tempo - Frase.inicio(Frase.GRAVES[i])
+		for i in frase.graves.size():
+			var idade := tempo - frase.inicio(frase.graves[i])
 			if idade < 0.0 or idade >= 0.22:
 				continue
 			var canto := _canto_da_batida(i)
@@ -214,19 +216,19 @@ func _testar_colisoes(delta: float) -> void:
 		var distancia := minf(nave.global_position.y - limites.position.y, limites.end.y - nave.global_position.y)
 		if distancia <= 3.0 and not encostados.has(id):
 			encostados[id] = true
-			if tempo > FECHAMENTO + 0.12 and tempo < Frase.DURACAO - 0.45:
+			if tempo > FECHAMENTO + 0.12 and tempo < frase.duracao - 0.45:
 				protegido_ate[id] = tempo + 0.60
 				nave.tomar_dano(nave.VIDA_MAXIMA * 0.03)
 		elif distancia > 7.0:
 			encostados.erase(id)
-	for i in Frase.NOTAS.size():
-		var nota := Frase.NOTAS[i]
-		var idade := tempo - Frase.inicio(nota.x)
+	for i in frase.notas.size():
+		var nota := frase.notas[i]
+		var idade := tempo - frase.inicio(nota.x)
 		if idade < 0.0:
 			break
-		if idade > Frase.TRAVESSIA + Frase.cauda(nota) + delta:
+		if idade > frase.travessia + frase.cauda(nota) + delta:
 			continue
-		var caminho := Frase.trecho(area, nota, idade, volta, delta)
+		var caminho := frase.trecho(area, nota, idade, volta, delta)
 		if caminho.is_empty():
 			continue
 		for nave in pilotos:
@@ -241,14 +243,14 @@ func _testar_colisoes(delta: float) -> void:
 
 
 func _atinge(p: Vector2, caminho: PackedVector2Array, nota: Vector4, idade: float) -> bool:
-	var raio := Frase.RAIO_NAVE + (3.0 if Frase.cauda(nota) > 0.0 else 7.0)
+	var raio := Frase.RAIO_NAVE + (3.0 if frase.cauda(nota) > 0.0 else 7.0)
 	for i in range(1, caminho.size()):
 		var a := caminho[i - 1]
 		var b := caminho[i]
 		var proximo := a if a.is_equal_approx(b) else Geometry2D.get_closest_point_to_segment(p, a, b)
 		if p.distance_squared_to(proximo) <= raio * raio:
 			return true
-	if idade > Frase.TRAVESSIA:
+	if idade > frase.travessia:
 		return false
 	var cabeca := caminho[-1]
 	var haste := Geometry2D.get_closest_point_to_segment(p, cabeca + Vector2(6, 0), cabeca + Vector2(6, -22))
@@ -265,27 +267,27 @@ func _draw() -> void:
 		draw_line(Vector2(inicio_x, y), Vector2(area.end.x, y), Color(0.72, 0.62, 0.78, 0.44 * abertura), 1.4, true)
 	_desenhar_caixas()
 	_desenhar_vento()
-	if tempo < Frase.ENTRADA:
+	if tempo < frase.entrada:
 		var altura := (Frase.y_do_grau(area, 0) - Frase.y_do_grau(area, 8)) * 0.65
 		var tamanho := Vector2(altura * 40.0 / 104.0, altura)
 		var pos := Vector2(inicio_x - tamanho.x * 0.5, area.get_center().y - altura * 0.5)
-		draw_texture_rect(CLAVE, Rect2(pos, tamanho), false, Color(Color.WHITE, 1.0 - smoothstep(0.8, Frase.ENTRADA, tempo)))
-	for nota in Frase.NOTAS:
-		var idade := tempo - Frase.inicio(nota.x)
-		if idade < -Frase.AVISO:
-			break
+		draw_texture_rect(CLAVE, Rect2(pos, tamanho), false, Color(Color.WHITE, 1.0 - smoothstep(0.8, frase.entrada, tempo)))
+	for nota in frase.notas:
+		var idade := tempo - frase.inicio(nota.x)
+		if idade < -frase.aviso(nota):
+			continue
 		if idade < 0.0:
 			_desenhar_aviso(nota, idade)
-		elif idade <= Frase.TRAVESSIA + Frase.cauda(nota):
+		elif idade <= frase.travessia + frase.cauda(nota):
 			_desenhar_nota(nota, idade)
-	if tempo < 0.48 or tempo > Frase.DURACAO - 0.45:
-		var progresso := tempo / 0.48 if tempo < 0.48 else (Frase.DURACAO - tempo) / 0.45
+	if tempo < 0.48 or tempo > frase.duracao - 0.45:
+		var progresso := tempo / 0.48 if tempo < 0.48 else (frase.duracao - tempo) / 0.45
 		_desenhar_teleporte(clampf(progresso, 0.0, 1.0))
 
 
 func _desenhar_aviso(nota: Vector4, idade: float) -> void:
 	var y := Frase.y_do_grau(area, Frase.grau_base(nota, volta))
-	var intensidade := smoothstep(-Frase.AVISO, -0.05, idade)
+	var intensidade := lerpf(0.28, 1.0, smoothstep(-frase.aviso(nota), -0.05, idade))
 	var pontos := PackedVector2Array()
 	var segmentos := maxi(16, ceili(area.size.x / 12.0))
 	for i in segmentos + 1:
@@ -297,20 +299,20 @@ func _desenhar_aviso(nota: Vector4, idade: float) -> void:
 	if int(nota.w) != Frase.Articulacao.RETA:
 		var curva := PackedVector2Array()
 		for i in 18:
-			curva.append(Frase.ponto(area, nota, i * 0.032, volta))
+			curva.append(frase.ponto(area, nota, i * 0.032, volta))
 		draw_polyline(curva, Color(ROSA, 0.33 * intensidade), 1.5, true)
 
 
 func _desenhar_nota(nota: Vector4, idade: float) -> void:
 	var longa := nota.z >= 1.0
 	if longa:
-		var caminho := Frase.trecho(area, nota, idade, volta)
+		var caminho := frase.trecho(area, nota, idade, volta)
 		if caminho.size() >= 2 and not caminho[0].is_equal_approx(caminho[-1]):
 			draw_polyline(caminho, Color(ROSA, 0.25), 10.0, true)
 			draw_polyline(caminho, ROSA, 6.0, true)
 			draw_polyline(caminho, Color("#ffe2ef"), 1.8, true)
-	if idade <= Frase.TRAVESSIA:
-		var cabeca := Frase.ponto(area, nota, idade, volta)
+	if idade <= frase.travessia:
+		var cabeca := frase.ponto(area, nota, idade, volta)
 		draw_texture(SEMINIMA if longa else COLCHEIA, cabeca - ANCORAGEM, MARFIM if longa else Color("#f7acdf"))
 
 
@@ -326,10 +328,10 @@ func _desenhar_caixas() -> void:
 		var caixa := _caixa(canto)
 		var aviso := 0.0
 		var pulso := 0.0
-		for i in Frase.GRAVES.size():
+		for i in frase.graves.size():
 			if _canto_da_batida(i) != canto:
 				continue
-			var idade := tempo - Frase.inicio(Frase.GRAVES[i])
+			var idade := tempo - frase.inicio(frase.graves[i])
 			if idade >= -0.46 and idade < 0.0:
 				aviso = smoothstep(-0.46, 0.0, idade)
 			elif idade >= 0.0 and idade < 0.28:

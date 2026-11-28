@@ -23,7 +23,19 @@ func _ready() -> void:
 	var palco := chefe.partitura
 	var nave := arena.player as Player
 	var volume: float = arena.tocarmusica.volume_db
+	for etapa in range(1, 4):
+		var part := Frase.new(etapa)
+		for evento in part.notas:
+			checar(fmod(evento.y, 2.0) == 0 and evento.y >= 0 and evento.y <= 8, "nota fora da linha")
+			checar(part.aviso(evento) >= part.janela.x and part.aviso(evento) <= part.janela.y, "aviso fora da janela")
+			checar(etapa >= 2 or evento.w == Frase.Articulacao.RETA, "articulação prematura")
+			checar(etapa == 3 or evento.w != Frase.Articulacao.BEND, "bend prematuro")
+	chefe.Vida = chefe.obter_vida_maxima_atual() * 0.60
+	chefe.atualizar_fase()
+	checar(chefe.fase == 2, "fase intermediária ausente")
+	chefe.Vida = chefe.obter_vida_maxima_atual() * 0.30
 	chefe.iniciar_partitura()
+	checar(chefe.fase == 3, "fase final ausente")
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	checar(palco.is_visible_in_tree() and not chefe.visible, "a pauta precisa permanecer visível sem a guitarra")
@@ -38,16 +50,16 @@ func _ready() -> void:
 	checar(is_equal_approx(palco.tempo, antes), "a pauta avançou na pausa")
 	get_tree().paused = false
 
-	var nota := Frase.NOTAS[5]
-	var a := Frase.ponto(palco.area, nota, 0.1, 1)
-	var b := Frase.ponto(palco.area, nota, 0.45, 1)
+	var nota := palco.frase.notas[5]
+	var a := palco.frase.ponto(palco.area, nota, 0.1, 1)
+	var b := palco.frase.ponto(palco.area, nota, 0.45, 1)
 	checar(b.x < a.x and b.y < a.y, "o bend perdeu o sentido")
-	var vibrato := Frase.NOTAS[8]
+	var vibrato := palco.frase.notas[8]
 	var linha := Frase.grau_base(vibrato, 1)
 	checar(Frase.altura(vibrato, 0.135, 1) > linha and Frase.altura(vibrato, 0.405, 1) < linha, "vibrato sem oscilação")
 	var idade := 0.7
-	palco.tempo = Frase.inicio(nota.x) + idade
-	nave.global_position = Frase.ponto(palco.area, nota, idade - 0.25, 1)
+	palco.tempo = palco.frase.inicio(nota.x) + idade
+	nave.global_position = palco.frase.ponto(palco.area, nota, idade - 0.25, 1)
 	nave.invencibilidade = false
 	var hp := nave.vida
 	palco._testar_colisoes(1.0 / 60)
@@ -62,7 +74,7 @@ func _ready() -> void:
 	nave.velocity = Vector2(325, 75)
 	nave.atualizar_limites(1.0 / 60)
 	checar(is_equal_approx(nave.global_position.x, limites.end.x) and is_equal_approx(nave.velocity.y, 75), "o vento inverteu a borda ou removeu a velocidade tangencial")
-	palco.tempo = Frase.DURACAO - 0.001
+	palco.tempo = palco.frase.duracao - 0.001
 	palco._physics_process(1.0 / 60)
 	await get_tree().physics_frame
 	await get_tree().physics_frame

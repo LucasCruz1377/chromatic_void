@@ -34,9 +34,10 @@ func Mover(delta: float) -> void:
 func iniciar_partitura() -> void:
 	if morto or partitura.ativa or (Rede.modo_multiplayer and not multiplayer.is_server()):
 		return
+	atualizar_fase()
 	volta += 1
 	velocity = Vector2.ZERO
-	partitura.iniciar(volta, global_position, Dano * 0.38, 0.0)
+	partitura.iniciar(volta, fase, global_position, Dano * 0.38, 0.0)
 	_definir_corpo(false)
 	_enviar_estado_defesas_rede()
 
@@ -82,7 +83,16 @@ func ao_colidir_com_player(alvo: Node) -> void:
 
 # O solo tem somente um ataque, inclusive quando cruza os limiares de vida.
 func atualizar_fase() -> void:
-	pass
+	var proporcao := Vida / maxf(obter_vida_maxima_atual(), 1.0)
+	var nova := 1
+	if proporcao <= 0.34:
+		nova = 3
+	elif proporcao <= 0.68:
+		nova = 2
+	if nova > fase:
+		fase = nova
+		fase_alterada.emit(fase)
+		_enviar_estado_defesas_rede()
 
 
 func obter_cor_feedback() -> Color:
@@ -91,7 +101,7 @@ func obter_cor_feedback() -> Color:
 
 func _capturar_estado_defesas_rede() -> Dictionary:
 	return {
-		"volta": volta, "solo": partitura.ativa, "tempo": partitura.tempo,
+		"fase": fase, "volta": volta, "solo": partitura.ativa, "tempo": partitura.tempo,
 		"origem": partitura.origem, "dano": partitura.dano,
 	}
 
@@ -104,7 +114,7 @@ func _aplicar_estado_defesas_rede(dados: Dictionary) -> void:
 		var instante := float(dados["tempo"])
 		if not partitura.ativa or nova_volta != volta:
 			volta = nova_volta
-			partitura.iniciar(volta, dados["origem"], float(dados["dano"]), instante)
+			partitura.iniciar(volta, int(dados["fase"]), dados["origem"], float(dados["dano"]), instante)
 			_definir_corpo(false)
 		else:
 			partitura.corrigir_tempo(instante)
