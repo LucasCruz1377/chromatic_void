@@ -44,6 +44,7 @@ func _criar_raio() -> void:
 	var linha := Line2D.new()
 	var material_raio := ShaderMaterial.new()
 	material_raio.shader = LASER
+	material_raio.set_shader_parameter("tinta", MARFIM)
 	linha.material = material_raio
 	linha.width = 18
 	linha.antialiased = true
@@ -84,7 +85,10 @@ func atualizar() -> void:
 func _atualizar_raios() -> void:
 	var regra: int = duelo.etapa_cor()
 	var tinta: Color = CORES[regra]
-	guitarra.self_modulate = Color.WHITE.lerp(tinta, 0.85)
+	var mistura := 0.85
+	if duelo.antecipando_cor():
+		mistura -= 0.25 * sin(PI * (duelo.tempo_da_cor() - duelo.PERIODO + duelo.AVISO_COR) / duelo.AVISO_COR)
+	guitarra.self_modulate = Color.WHITE.lerp(tinta, mistura)
 	for i in raios.size():
 		var linha := raios[i]
 		linha.visible = i < duelo.fase_inicial
@@ -92,9 +96,8 @@ func _atualizar_raios() -> void:
 			continue
 		linha.set_point_position(0, to_local(duelo.origem_raio(i)))
 		linha.set_point_position(1, to_local(duelo.fim_raio(i)))
-		linha.width = 19.0 if duelo.feixe_ativo() else 4.0
+		linha.width = duelo.MEIA_LARGURA * 3.6 if duelo.feixe_ativo() else 6.0
 		var material_raio := materiais[i]
-		material_raio.set_shader_parameter("tinta", tinta)
 		material_raio.set_shader_parameter("relogio", duelo.tempo)
 		material_raio.set_shader_parameter("intensidade", 1.0 if duelo.feixe_ativo() else 0.45)
 
@@ -178,35 +181,10 @@ func _desenhar_feixe() -> void:
 	var tinta: Color = CORES[regra]
 	draw_circle(ponta, 8.0, Color(tinta, 0.4))
 	draw_circle(ponta, 3.0, MARFIM)
-	# Mantém os símbolos na vertical enquanto a guitarra gira.
 	draw_set_transform(Vector2.ZERO, -global_rotation, Vector2.ONE)
-	_simbolo(regra, Vector2(0, -35), tinta)
-	if duelo.antecipando_cor():
-		_simbolo(regra + 1, Vector2(24, -35), CORES[regra + 1])
 	if regra == duelo.Regra.VERDE:
 		var area := Global.obter_retangulo_area_visivel()
 		var esquerda := Vector2(area.position.x - global_position.x, 0)
 		var direita := Vector2(area.end.x - global_position.x, 0)
 		draw_dashed_line(esquerda, direita, Color(tinta, 0.52), 1.2, 12)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-func _simbolo(regra: int, centro: Vector2, tinta: Color) -> void:
-	draw_circle(centro, 10.5, Color("#211726"))
-	draw_arc(centro, 10, 0, TAU, 26, tinta, 1.4, true)
-	match regra:
-		0:
-			draw_line(centro + Vector2(-4, -4), centro + Vector2(4, 4), tinta, 2)
-			draw_line(centro + Vector2(-4, 4), centro + Vector2(4, -4), tinta, 2)
-		1:
-			for x: float in [-4, 1]:
-				var p := centro + Vector2(x, 0)
-				draw_polyline(PackedVector2Array([p + Vector2(-2,-4), p + Vector2(2,0), p + Vector2(-2,4)]), tinta, 1.7, true)
-		2:
-			for x: float in [-2.5, 2.5]:
-				draw_line(centro + Vector2(x,-4), centro + Vector2(x,4), tinta, 2)
-		3:
-			draw_polyline(PackedVector2Array([centro + Vector2(2,-6), centro + Vector2(-3,0), centro + Vector2(2,0), centro + Vector2(-2,6)]), tinta, 2, true)
-		4:
-			draw_line(centro + Vector2(0,-5), centro + Vector2(0,4), tinta, 2)
-			draw_polyline(PackedVector2Array([centro + Vector2(-4,1), centro + Vector2(0,5), centro + Vector2(4,1)]), tinta, 2, true)

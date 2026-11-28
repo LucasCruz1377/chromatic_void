@@ -17,12 +17,14 @@ const AVISO_COR := 0.55
 const INTERVALO_DANO := 0.85
 const PONTA := Vector2(0, -66)
 const RAIO_NAVE := 13.5
-const MEIA_LARGURA := 5.0
+const MEIA_LARGURA := 11.0
 
 var golpe := Golpe.LIVRE
 var tempo := 0.0
 var fase_inicial := 1
 var angulo_base := 0.0
+var partida_feixe := Vector2.ZERO
+var centro_feixe := Vector2.ZERO
 var alcance_onda := 0.0
 var atingidos := {}
 var visual := Visual.new()
@@ -49,6 +51,10 @@ func iniciar(tipo: Golpe, fase: int, alvo: Vector2) -> void:
 	atingidos.clear()
 	angulo_base = chefe.global_position.angle_to_point(alvo) + PI / 2
 	alcance_onda = Global.obter_retangulo_area_visivel().size.length() + 90.0
+	if golpe == Golpe.FEIXE:
+		partida_feixe = chefe.global_position
+		centro_feixe = Global.obter_retangulo_area_visivel().get_center()
+		angulo_base = centro_feixe.angle_to_point(alvo) + PI / 2
 	chefe.rotation = angulo_base
 	set_physics_process(true)
 	visual.exibir()
@@ -63,13 +69,17 @@ func concluir() -> void:
 
 
 func capturar() -> Dictionary:
-	return {
+	var estado := {
 		"golpe": golpe,
 		"relogio": tempo,
 		"fase_golpe": fase_inicial,
 		"mira": angulo_base,
 		"alcance": alcance_onda,
 	}
+	if golpe == Golpe.FEIXE:
+		estado["partida"] = partida_feixe
+		estado["centro"] = centro_feixe
+	return estado
 
 
 func aplicar(dados: Dictionary) -> void:
@@ -81,6 +91,9 @@ func aplicar(dados: Dictionary) -> void:
 	if golpe != recebido:
 		visual.exibir()
 	golpe = recebido
+	if golpe == Golpe.FEIXE:
+		partida_feixe = dados["partida"]
+		centro_feixe = dados["centro"]
 	tempo = float(dados["relogio"])
 	fase_inicial = int(dados["fase_golpe"])
 	angulo_base = float(dados["mira"])
@@ -114,12 +127,13 @@ func _physics_process(delta: float) -> void:
 func _atualizar_pose() -> void:
 	var giro := 0.0
 	if golpe == Golpe.FEIXE:
+		chefe.global_position = partida_feixe.lerp(centro_feixe, smoothstep(0.0, PRELUDIO, tempo))
 		giro = maxf(tempo - PRELUDIO, 0.0) * velocidade_angular()
 	chefe.rotation = angulo_base + giro
 
 
 func velocidade_angular() -> float:
-	return deg_to_rad(24.0 + fase_inicial * 6.0)
+	return deg_to_rad(48.0 + (fase_inicial - 1) * 16.0)
 
 
 func duracao() -> float:

@@ -140,7 +140,15 @@ func testar_duelo(chefe: BossContrafase, nave: Player) -> void:
 	duelo.concluir()
 	nave.stun_acorde = 0.0
 	for fase in range(1, 4):
+		var centro := Global.obter_retangulo_area_visivel().get_center()
+		var partida := centro + Vector2(-120, 80)
+		chefe.global_position = partida
 		duelo.iniciar(duelo.Golpe.FEIXE, fase, nave.global_position)
+		duelo._physics_process(0.5)
+		checar(chefe.global_position.is_equal_approx(partida.lerp(centro, 0.5)) and not duelo.feixe_ativo(), "aproximação ao centro")
+		duelo._physics_process(0.5)
+		checar(chefe.global_position.is_equal_approx(centro), "feixe fora do centro")
+		checar(is_equal_approx(rad_to_deg(duelo.velocidade_angular()), 48 + 16 * (fase - 1)), "giro por fase")
 		checar(duelo.origem_raio(0).is_equal_approx(chefe.to_global(Vector2(0, -66))), "ponta desalinhada")
 		for i in range(1, fase):
 			var esperado: Vector2 = duelo.direcao_raio(0).rotated(TAU * i / fase)
